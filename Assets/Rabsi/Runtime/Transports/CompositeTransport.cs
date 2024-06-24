@@ -1,0 +1,431 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Rabsi.Transports
+{
+    internal delegate void OnCompositeDataReceived(int transportIdx, Connection conn, ByteData data, bool asServer);
+    internal delegate void OnCompositeConnected(int transportIdx, Connection conn, bool asServer);
+    internal delegate void OnCompositeDisconnected(int transportIdx, Connection conn, bool asServer);
+    
+    internal class CompositeTransportEvents
+    {
+        private int index { get; set; }
+        private ITransport _transport;
+        
+        public bool isSubscribed => _transport != null;
+        
+        public event OnCompositeConnected onConnected;
+        public event OnCompositeDisconnected onDisconnected;
+        public event OnCompositeDataReceived onDataReceived;
+        
+        public void Subscribe(int idx, ITransport transport)
+        {
+            index = idx;
+            _transport = transport;
+            
+            _transport.onConnected += OnConnected;
+            _transport.onDisconnected += OnDisconnected;
+            _transport.onDataReceived += OnDataReceived;
+        }
+        
+        public void Unsubscribe()
+        {
+            if (_transport == null) return;
+            
+            _transport.onConnected -= OnConnected;
+            _transport.onDisconnected -= OnDisconnected;
+            _transport.onDataReceived -= OnDataReceived;
+            _transport = null;
+        }
+
+        private void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        {
+            onDataReceived?.Invoke(index, conn, data, asserver);
+        }
+
+        private void OnDisconnected(Connection conn, bool asserver)
+        {
+            onDisconnected?.Invoke(index, conn, asserver);
+        }
+
+        private void OnConnected(Connection conn, bool asserver)
+        {
+            onConnected?.Invoke(index, conn, asserver);
+        }
+    }
+    
+    internal readonly struct RoutedConnection
+    {
+        public readonly int transportIdx;
+        public readonly Connection originalConnection;
+        
+        public RoutedConnection(int transportIdx, Connection originalConnection)
+        {
+            this.transportIdx = transportIdx;
+            this.originalConnection = originalConnection;
+        }
+    }
+
+    internal readonly struct ConnectionPair
+    {
+        private readonly int transportIdx;
+        private readonly Connection connection;
+        
+        public ConnectionPair(int transportIdx, Connection connection)
+        {
+            this.transportIdx = transportIdx;
+            this.connection = connection;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(transportIdx, connection);
+        }
+    }
+    
+    public class CompositeTransport : GenericTransport, ITransport
+    {
+        [SerializeField] private GenericTransport[] _transports;
+        
+        private GenericTransport _clientTransport;
+        
+        public event OnConnected onConnected;
+        public event OnDisconnected onDisconnected;
+        public event OnDataReceived onDataReceived;
+        public event OnConnectionState onConnectionState;
+
+        public IReadOnlyList<Connection> connections => _connections;
+
+        readonly Dictionary<ConnectionPair, Connection> _router = new ();
+        
+        readonly List<RoutedConnection> _rawConnections = new ();
+        
+        private bool _internalIsListening;
+
+        public ConnectionState listenerState
+        {
+            get
+            {
+                bool anyConnecting = false;
+                bool anyDisconnecting = false;
+                
+                for (int i = 0; i < _transports.Length; i++)
+                {
+                    if (_transports[i])
+                    {
+                        var state = _transports[i].transport.listenerState;
+                        
+                        switch (state)
+                        {
+                            case ConnectionState.Connecting: anyConnecting = true; break;
+                            case ConnectionState.Disconnecting: anyDisconnecting = true; break;
+                        }
+                    }
+                }
+
+                if (_internalIsListening)
+                    return anyConnecting ? ConnectionState.Connecting : ConnectionState.Connected;
+                return anyDisconnecting ? ConnectionState.Disconnecting : ConnectionState.Disconnected;
+            }
+        }
+        
+        public ConnectionState clientState => _clientTransport ? 
+            _clientTransport.transport.clientState : ConnectionState.Disconnected;
+
+        public override ITransport transport => this;
+        
+        private readonly List<Connection> _connections = new ();
+        
+        private readonly List<CompositeTransportEvents> _events = new ();
+
+        private readonly CompositeTransportEvents _clientEvent = new();
+        
+        public override bool isSupported
+        {
+            get
+            {
+                for (int i = 0; i < _transports.Length; i++)
+                {
+                    if (_transports[i] && _transports[i].isSupported)
+                        return true;
+                }
+
+                return false;
+            }
+        }
+        
+        Connection GetNextConnection(int transportIdx, Connection original)
+        {
+            var conn = new Connection(_rawConnections.Count);
+            var routed = new RoutedConnection(transportIdx, original);
+            _rawConnections.Add(routed);
+            return conn;
+        }
+
+        private void Awake()
+        {
+            if (_clientTransport == null)
+            {
+                for (int i = 0; i < _transports.Length; i++)
+                {
+                    if (_transports[i] && _transports[i].isSupported)
+                    {
+                        _clientTransport = _transports[i];
+                        break;
+                    }
+                }
+            }
+
+            SetupEvents();
+        }
+
+        private void FixedUpdate()
+        {
+            TriggerConnectionStateEvent(true);
+            TriggerConnectionStateEvent(false);
+        }
+
+        private void SetupEvents()
+        {
+            _events.Clear();
+
+            for (int i = 0; i < _transports.Length; i++)
+            {
+                var events = new CompositeTransportEvents();
+                events.onConnected += OnTransportConnected;
+                events.onDisconnected += OnTransportDisconnected;
+                events.onDataReceived += OnTransportDataReceived;
+                _events.Add(events);
+            }
+            
+            _clientEvent.onConnected += OnTransportConnected;
+            _clientEvent.onDisconnected += OnTransportDisconnected;
+            _clientEvent.onDataReceived += OnTransportDataReceived;
+        }
+
+        private void OnTransportDataReceived(int transportidx, Connection conn, ByteData data, bool asserver)
+        {
+            switch (asserver)
+            {
+                case false when transportidx != -1:
+                case true when transportidx == -1:
+                    return;
+                case true:
+                {
+                    var pair = new ConnectionPair(transportidx, conn);
+
+                    if (_router.TryGetValue(pair, out var target))
+                        onDataReceived?.Invoke(target, data, true);
+                    else Debug.LogError($"Connection {conn} coming from transport {transportidx} is not routed.");
+                    break;
+                }
+                default:
+                    onDataReceived?.Invoke(conn, data, false);
+                    break;
+            }
+        }
+
+        private void OnTransportDisconnected(int transportidx, Connection conn, bool asserver)
+        {
+            switch (asserver)
+            {
+                case false when transportidx != -1:
+                case true when transportidx == -1:
+                    return;
+            }
+            
+            TriggerConnectionStateEvent(asserver);
+
+            if (asserver)
+            {
+                var pair = new ConnectionPair(transportidx, conn);
+
+                if (_router.TryGetValue(pair, out var target))
+                {
+                    _router.Remove(pair);
+                    _connections.Remove(target);
+
+                    onDisconnected?.Invoke(target, true);
+                }
+                else Debug.LogError($"Connection {conn} coming from transport {transportidx} is not routed.");
+            }
+            else
+            {
+                onDisconnected?.Invoke(conn, false);
+            }
+        }
+
+        private void OnTransportConnected(int transportidx, Connection conn, bool asserver)
+        {
+            switch (asserver)
+            {
+                case false when transportidx != -1:
+                case true when transportidx == -1:
+                    return;
+            }
+
+            TriggerConnectionStateEvent(asserver);
+
+            if (asserver)
+            {
+                var fakedConnection = GetNextConnection(transportidx, conn);
+                var realConnectionPair = new ConnectionPair(transportidx, conn);
+                _router[realConnectionPair] = fakedConnection;
+                _connections.Add(fakedConnection);
+                
+                onConnected?.Invoke(fakedConnection, true);
+            }
+            else
+            {
+                onConnected?.Invoke(conn, false);
+            }
+        }
+
+        public void SetClientTransport(GenericTransport target)
+        {
+            if (_clientTransport && _clientTransport.transport.clientState != ConnectionState.Disconnected)
+                throw new NotSupportedException("Cannot change client transport while connected.");
+            
+            _clientTransport = target;
+        }
+
+        public override void Connect()
+        {
+            if (!_clientTransport || !_clientTransport.isSupported)
+                throw new NotSupportedException("No supported transport found for client.");
+
+            _clientEvent.Subscribe(-1, _clientTransport.transport);
+            _clientTransport.Connect();
+            
+            TriggerConnectionStateEvent(false);
+        }
+        
+        public void Connect(string up, ushort port)
+        {
+            if (!_clientTransport || !_clientTransport.isSupported)
+                throw new NotSupportedException("No supported transport found for client.");
+            
+            _clientTransport.transport.Connect(up, port);
+            TriggerConnectionStateEvent(false);
+        }
+
+        public override void Listen()
+        {
+            if (_internalIsListening)
+                return;
+            
+            _internalIsListening = true;
+            
+            TriggerConnectionStateEvent(true);
+
+            for (int i = 0; i < _transports.Length; i++)
+            {
+                if (_transports[i])
+                {
+                    var e = _events[i];
+                    if (!e.isSubscribed)
+                    {
+                        _events[i].Subscribe(i, _transports[i].transport);
+                        _transports[i].Listen();
+                    }
+                }
+            }
+            
+            TriggerConnectionStateEvent(true);
+        }
+
+        public void Listen(ushort port)
+        {
+            throw new NotSupportedException("Cannot listen on specific port with composite transport.");
+        }
+
+        public void StopListening()
+        {
+            if (!_internalIsListening)
+                return;
+            
+            _internalIsListening = false;
+            
+            TriggerConnectionStateEvent(true);
+
+            for (int i = 0; i < _transports.Length; i++)
+            {
+                if (_transports[i])
+                {
+                    _transports[i].transport.StopListening();
+
+                    var e = _events[i];
+                    e.Unsubscribe();
+                }
+            }
+            
+            TriggerConnectionStateEvent(true);
+            
+            _connections.Clear();
+            _router.Clear();
+            _rawConnections.Clear();
+        }
+
+        public void Disconnect()
+        {
+            if (!_clientTransport)
+                throw new NotSupportedException("No supported transport found for client.");
+
+            _clientTransport.transport.Disconnect();
+            _clientEvent.Unsubscribe();
+            
+            TriggerConnectionStateEvent(false);
+        }
+        
+        public void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable)
+        {
+            var pair = _rawConnections[target.connectionId];
+            var protocol = _transports[pair.transportIdx];
+            protocol.transport.SendToClient(pair.originalConnection, data, method);
+        }
+
+        public void SendToServer(ByteData data, Channel method = Channel.Unreliable)
+        {
+            if (!_clientTransport)
+                throw new NotSupportedException("No supported transport found for client.");
+            
+            _clientTransport.transport.SendToServer(data, method);
+        }
+        
+        ConnectionState _prevClientState = ConnectionState.Disconnected;
+        ConnectionState _prevServerState = ConnectionState.Disconnected;
+        
+        private void TriggerConnectionStateEvent(bool asServer)
+        {
+            if (asServer)
+            {
+                if (_prevServerState != listenerState)
+                {
+                    if (listenerState == ConnectionState.Disconnected && _prevServerState != ConnectionState.Disconnecting)
+                        onConnectionState?.Invoke(ConnectionState.Disconnecting, true);
+                    
+                    if (listenerState == ConnectionState.Connected && _prevServerState != ConnectionState.Connecting)
+                        onConnectionState?.Invoke(ConnectionState.Connecting, true);
+                    
+                    onConnectionState?.Invoke(listenerState, true);
+                    _prevServerState = listenerState;
+                }
+            }
+            else
+            {
+                if (_prevClientState != clientState)
+                {
+                    if (clientState == ConnectionState.Disconnected && _prevClientState != ConnectionState.Disconnecting)
+                        onConnectionState?.Invoke(ConnectionState.Disconnecting, false);
+                    
+                    if (clientState == ConnectionState.Connected && _prevClientState != ConnectionState.Connecting)
+                        onConnectionState?.Invoke(ConnectionState.Disconnecting, false);
+                    
+                    onConnectionState?.Invoke(clientState, false);
+                    _prevClientState = clientState;
+                }
+            }
+        }
+    }
+}
