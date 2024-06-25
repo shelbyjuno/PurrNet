@@ -60,15 +60,15 @@ namespace Rabsi.Editor
             var generic = (GenericTransport)target;
             var transport = generic.transport;
 
+            GUILayout.Space(10);
+            
+            EditorGUILayout.LabelField("Protocol Status", EditorStyles.boldLabel);
+            
             if (!generic.isSupported)
             {
                 EditorGUILayout.HelpBox("Transport is not supported on this platform", MessageType.Info);
                 return;
             }
-            
-            GUILayout.Space(10);
-            
-            EditorGUILayout.LabelField("Protocol Status", EditorStyles.boldLabel);
 
             GUILayout.BeginHorizontal();
             DrawLed(transport.listenerState);
