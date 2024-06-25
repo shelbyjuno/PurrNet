@@ -10,24 +10,32 @@ namespace Rabsi.Editor
         static void DrawLed(ConnectionState state)
         {
             var white = Texture2D.whiteTexture;
-            GUI.color = state switch
+            var color = state switch
             {
                 ConnectionState.Connecting => Color.yellow,
                 ConnectionState.Connected => Color.green,
                 ConnectionState.Disconnecting => new Color(1, 0.5f, 0),
                 _ => Color.red
             };
+
+            GUILayout.Space(EditorGUIUtility.singleLineHeight);
+            var rect = GUILayoutUtility.GetLastRect();
+            rect.height = EditorGUIUtility.singleLineHeight;
             
-            GUILayout.Label(white, GUILayout.Width(20), GUILayout.Height(20));
-            GUI.color = Color.white;
+            const float padding = 5;
+            
+            rect.x += padding;
+            rect.y += padding;
+            
+            rect.width -= padding * 2;
+            rect.height -= padding * 2;
+            
+            GUI.DrawTexture(rect, white, ScaleMode.StretchToFill, true, 1f, color, 0, 10f);
         }
         
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            
-            if (!Application.isPlaying)
-                return;
 
             var generic = (GenericTransport)target;
             var transport = generic.transport;
@@ -53,30 +61,6 @@ namespace Rabsi.Editor
             GUILayout.EndHorizontal();
             
             GUILayout.Space(10);
-            
-            EditorGUILayout.LabelField("Server Options", EditorStyles.boldLabel);
-            
-            GUILayout.BeginHorizontal();
-            
-            if (GUILayout.Button("Start Server"))
-                generic.Listen();
-            
-            if (GUILayout.Button("Stop Server"))
-                transport.StopListening();
-            
-            GUILayout.EndHorizontal();
-            
-            EditorGUILayout.LabelField("Client Options", EditorStyles.boldLabel);
-
-            GUILayout.BeginHorizontal();
-
-            if (GUILayout.Button("Connect"))
-                generic.Connect();
-            
-            if (GUILayout.Button("Disconnect"))
-                transport.Disconnect();
-            
-            GUILayout.EndHorizontal();
         }
     }
 }
