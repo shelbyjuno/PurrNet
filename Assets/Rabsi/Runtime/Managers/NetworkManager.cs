@@ -23,6 +23,12 @@ namespace Rabsi
         [Header("Network Settings")]
         [SerializeField] private GenericTransport _transport;
         
+        [Header("Time Settings")]
+        [Tooltip("How many ticks per second the server/client should run at.")]
+        [SerializeField, Range(1, 128)] private int _fixedTickRate = 64;
+        [Tooltip("If true, if the game struggles to keep up with the tick rate, it will skip ticks to catch up.")]
+        [SerializeField] private bool _allowDroppingClientTicks;
+        
         public GenericTransport transport
         {
             get => _transport;

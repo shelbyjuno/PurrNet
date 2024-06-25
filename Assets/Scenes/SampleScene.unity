@@ -473,6 +473,8 @@ MonoBehaviour:
   _startServerFlags: 9
   _startClientFlags: 7
   _transport: {fileID: 1386555453}
+  _fixedTickRate: 64
+  _allowSkippingTick: 0
 --- !u!114 &1386555453
 MonoBehaviour:
   m_ObjectHideFlags: 0

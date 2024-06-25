@@ -54,12 +54,14 @@ namespace Rabsi.Transports
             
             _client = new NetManager(_clientListener)
             {
-                UnconnectedMessagesEnabled = true
+                UnconnectedMessagesEnabled = true,
+                PingInterval = 1500
             };
             
             _server = new NetManager(_serverListener)
             {
-                UnconnectedMessagesEnabled = true
+                UnconnectedMessagesEnabled = true,
+                PingInterval = 1500
             };
 
             _client.Start();
