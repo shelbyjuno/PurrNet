@@ -1,3 +1,4 @@
+using System;
 using Rabsi.Transports;
 using UnityEditor;
 using UnityEngine;
@@ -32,7 +33,26 @@ namespace Rabsi.Editor
             
             GUI.DrawTexture(rect, white, ScaleMode.StretchToFill, true, 1f, color, 0, 10f);
         }
-        
+
+        private void OnEnable()
+        {
+            var generic = (GenericTransport)target;
+            if (generic && generic.transform != null)
+                generic.transport.onConnectionState += OnDirty;
+        }
+
+        private void OnDisable()
+        {
+            var generic = (GenericTransport)target;
+            if (generic && generic.transform != null)
+                generic.transport.onConnectionState -= OnDirty;
+        }
+
+        private void OnDirty(ConnectionState state, bool asserver)
+        {
+            Repaint();
+        }
+
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
