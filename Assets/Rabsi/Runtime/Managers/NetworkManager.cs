@@ -31,6 +31,16 @@ namespace Rabsi
         
         public bool shouldAutoStartServer => ShouldStart(_startServerFlags);
         public bool shouldAutoStartClient => ShouldStart(_startClientFlags);
+        
+        public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
+        
+        public bool isClient => _transport.transport.clientState == ConnectionState.Connected;
+        
+        public bool isHost => isServer && isClient;
+        
+        public bool isServerOnly => isServer && !isClient;
+        
+        public bool isClientOnly => !isServer && isClient;
 
         private void Awake()
         {
