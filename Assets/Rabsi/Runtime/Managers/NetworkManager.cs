@@ -1,26 +1,26 @@
+using System;
 using Rabsi.Transports;
 using Rabsi.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Rabsi
 {
+    [Flags]
+    public enum StartFlags
+    {
+        Editor = 1,
+        Clone = 2,
+        ClientBuild = 4,
+        ServerBuild = 8
+    }
+    
     public sealed class NetworkManager : MonoBehaviour
     {
-        [Header("Editor Settings")]
-        [Tooltip("Automatically start the server when running in the editor. Excluding clones.")]
-        [SerializeField] private bool _startServerInEditor = true;
-        [Tooltip("Automatically start the client when running in the editor. Excluding clones.")]
-        [SerializeField] private bool _startClientInEditor = true;
-        
-        [Header("Clones Settings")]
-        [Tooltip("Automatically start the client in cloned instances.")]
-        [SerializeField] private bool _startClientInClones = true;
-        
-        [Header("Build Settings")]
-        [Tooltip("Automatically start the client in non server builds.")]
-        [SerializeField] private bool _startClientInBuilds = true;
-        [Tooltip("Automatically start the server in server builds.")]
-        [SerializeField] private bool _startServerInServerBuilds = true;
+        [Header("Auto Start Settings")]
+
+        [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
+        [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
         [Header("Network Settings")]
         [SerializeField] private GenericTransport _transport;
@@ -35,15 +35,19 @@ namespace Rabsi
         {
             Application.runInBackground = true;
         }
+        
+        static bool ShouldStart(StartFlags flags)
+        {
+            return (flags.HasFlag(StartFlags.Editor) && ApplicationContext.isMainEditor) ||
+                   (flags.HasFlag(StartFlags.Clone) && ApplicationContext.isClone) ||
+                   (flags.HasFlag(StartFlags.ClientBuild) && ApplicationContext.isClientBuild) ||
+                   (flags.HasFlag(StartFlags.ServerBuild) && ApplicationContext.isServerBuild);
+        }
 
         private void Start()
         {
-            bool shouldStartServer = ApplicationContext.isServerBuild && _startServerInServerBuilds ||
-                                     ApplicationContext.isMainEditor && _startServerInEditor;
-
-            bool shouldStartClient = ApplicationContext.isMainEditor && _startClientInEditor ||
-                                     ApplicationContext.isClone && _startClientInClones ||
-                                     ApplicationContext.isClientBuild && _startClientInBuilds;
+            bool shouldStartServer = ShouldStart(_startServerFlags);
+            bool shouldStartClient = ShouldStart(_startClientFlags);
 
             if (shouldStartServer)
                 StartServer();
