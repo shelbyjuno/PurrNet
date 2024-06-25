@@ -2,7 +2,6 @@ using System;
 using Rabsi.Transports;
 using Rabsi.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Rabsi
 {
@@ -18,7 +17,6 @@ namespace Rabsi
     public sealed class NetworkManager : MonoBehaviour
     {
         [Header("Auto Start Settings")]
-
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
@@ -30,6 +28,9 @@ namespace Rabsi
             get => _transport;
             set => _transport = value;
         }
+        
+        public bool shouldAutoStartServer => ShouldStart(_startServerFlags);
+        public bool shouldAutoStartClient => ShouldStart(_startClientFlags);
 
         private void Awake()
         {
