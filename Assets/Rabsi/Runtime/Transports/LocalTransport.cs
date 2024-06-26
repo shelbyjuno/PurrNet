@@ -36,7 +36,7 @@ namespace Rabsi.Transports
             }
         }
 
-        public override void Listen()
+        internal override void StartServer()
         {
             Listen(default);
         }
@@ -72,7 +72,7 @@ namespace Rabsi.Transports
             }
         }
 
-        public override void Connect()
+        internal override void StartClient()
         {
             Connect(default, default);
         }

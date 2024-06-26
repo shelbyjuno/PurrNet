@@ -8,8 +8,12 @@ namespace Rabsi.Transports
         
         public abstract ITransport transport { get; }
         
-        public abstract void Connect();
+        internal abstract void StartClient();
         
-        public abstract void Listen();
+        internal abstract void StartServer();
+        
+        internal void StopClient() => transport.Disconnect();
+        
+        internal void StopServer() => transport.StopListening();
     }
 }

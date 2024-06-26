@@ -97,12 +97,12 @@ namespace Rabsi.Transports
             else request.Reject();
         }
 
-        public override void Listen()
+        internal override void StartServer()
         {
             Listen(_serverPort);
         }
 
-        public override void Connect()
+        internal override void StartClient()
         {
             Connect(_address, _serverPort);
         }

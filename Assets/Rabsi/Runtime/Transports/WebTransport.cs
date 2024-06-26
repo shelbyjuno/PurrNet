@@ -145,7 +145,7 @@ namespace Rabsi.Transports
             TriggerConnectionStateEvent(true);
         }
 
-        public override void Listen()
+        internal override void StartServer()
         {
             Listen(_serverPort);
         }
@@ -259,7 +259,7 @@ namespace Rabsi.Transports
             }
         }
 
-        public override void Connect()
+        internal override void StartClient()
         {
             Connect(_address, _serverPort);
         }

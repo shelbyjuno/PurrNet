@@ -290,13 +290,13 @@ namespace Rabsi.Transports
             _clientTransport = target;
         }
 
-        public override void Connect()
+        internal override void StartClient()
         {
             if (!_clientTransport || !_clientTransport.isSupported)
                 throw new NotSupportedException("No supported transport found for client.");
 
             _clientEvent.Subscribe(-1, _clientTransport.transport);
-            _clientTransport.Connect();
+            _clientTransport.StartClient();
             
             TriggerConnectionStateEvent(false);
         }
@@ -310,7 +310,7 @@ namespace Rabsi.Transports
             TriggerConnectionStateEvent(false);
         }
 
-        public override void Listen()
+        internal override void StartServer()
         {
             if (_internalIsListening)
                 return;
@@ -327,7 +327,7 @@ namespace Rabsi.Transports
                     if (!e.isSubscribed)
                     {
                         _events[i].Subscribe(i, _transports[i].transport);
-                        _transports[i].Listen();
+                        _transports[i].StartServer();
                     }
                 }
             }
