@@ -1,4 +1,3 @@
-using System;
 using Rabsi.Transports;
 using UnityEditor;
 using UnityEngine;
@@ -44,7 +43,7 @@ namespace Rabsi.Editor
                 case ConnectionState.Disconnected:
                 {
                     GUI.color = Color.white;
-                    if (GUILayout.Button("Start Server"))
+                    if (GUILayout.Button("Start Server", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
                         networkManager.StartServer();
                     break;
                 }
@@ -52,20 +51,20 @@ namespace Rabsi.Editor
                 {
                     GUI.color = new Color(1f, 0.5f, 0f);
                     GUI.enabled = false;
-                    GUILayout.Button("Stopping Server");
+                    GUILayout.Button("Stopping Server", GUILayout.Width(10), GUILayout.ExpandWidth(true));
                     break;
                 }
                 case ConnectionState.Connecting:
                 {
                     GUI.color = Color.yellow;
                     GUI.enabled = false;
-                    GUILayout.Button("Starting Server");
+                    GUILayout.Button("Starting Server", GUILayout.Width(10), GUILayout.ExpandWidth(true));
                     break;
                 }
                 case ConnectionState.Connected:
                 {
                     GUI.color = Color.green;
-                    if (GUILayout.Button("Stop Server"))
+                    if (GUILayout.Button("Stop Server", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
                         networkManager.StopServer();
                     break;
                 }
@@ -78,7 +77,7 @@ namespace Rabsi.Editor
                 case ConnectionState.Disconnected:
                 {
                     GUI.color = Color.white;
-                    if (GUILayout.Button("Start Client"))
+                    if (GUILayout.Button("Start Client", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
                         networkManager.StartClient();
                     break;
                 }
@@ -86,20 +85,20 @@ namespace Rabsi.Editor
                 {
                     GUI.color = new Color(1f, 0.5f, 0f);
                     GUI.enabled = false;
-                    GUILayout.Button("Stopping Client");
+                    GUILayout.Button("Stopping Client", GUILayout.Width(10), GUILayout.ExpandWidth(true));
                     break;
                 }
                 case ConnectionState.Connecting:
                 {
                     GUI.color = Color.yellow;
                     GUI.enabled = false;
-                    GUILayout.Button("Starting Client");
+                    GUILayout.Button("Starting Client", GUILayout.Width(10), GUILayout.ExpandWidth(true));
                     break;
                 }
                 case ConnectionState.Connected:
                 {
                     GUI.color = Color.green;
-                    if (GUILayout.Button("Stop Client"))
+                    if (GUILayout.Button("Stop Client", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
                         networkManager.StopClient();
                     break;
                 }
