@@ -117,9 +117,12 @@ namespace Rabsi.Transports
             onDisconnected?.Invoke(new Connection(peer.Id), false);
         }
 
+        private Connection? _clientToServerConn;
+
         private void OnClientConnected(NetPeer peer)
         {
             var conn = new Connection(peer.Id);
+            _clientToServerConn = conn;
             clientState = ConnectionState.Connected;
             TriggerConnectionStateEvent(false);
             onConnected?.Invoke(conn, false);
@@ -139,6 +142,7 @@ namespace Rabsi.Transports
             }
             
             onDisconnected?.Invoke(conn, true);
+            _clientToServerConn = null;
         }
 
         private void OnServerConnected(NetPeer peer)
@@ -172,6 +176,12 @@ namespace Rabsi.Transports
             
             clientState = ConnectionState.Disconnecting;
             TriggerConnectionStateEvent(false);
+
+            if (_clientToServerConn.HasValue)
+            {
+                onDisconnected?.Invoke(_clientToServerConn.Value, false);
+                _clientToServerConn = null;
+            }
 
             _client.DisconnectAll();
             

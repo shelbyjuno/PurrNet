@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Rabsi.Transports;
 using Rabsi.Utils;
 using UnityEngine;
@@ -13,6 +14,89 @@ namespace Rabsi
         ClientBuild = 4,
         ServerBuild = 8
     }
+
+    internal readonly struct ModulesCollection
+    {
+        private readonly List<INetworkModule> _modules;
+        private readonly List<IConnectionListener> _connectionListeners;
+        private readonly List<IConnectionStateListener> _connectionStateListeners;
+        private readonly List<IDataListener> _dataListeners;
+
+        private readonly NetworkManager _manager;
+        private readonly bool _asServer;
+        
+        public ModulesCollection(NetworkManager manager, bool asServer)
+        {
+            _modules = new List<INetworkModule>();
+            _connectionListeners = new List<IConnectionListener>();
+            _connectionStateListeners = new List<IConnectionStateListener>();
+            _dataListeners = new List<IDataListener>();
+            _manager = manager;
+            _asServer = asServer;
+        }
+        
+        public void RegisterModules()
+        {
+            UnregisterModules();
+            
+            NetworkManager.RegisterModules(this, _asServer);
+            _modules.Sort((moduleA, moduleB) => moduleA.priority.CompareTo(moduleB.priority));
+
+            for (int i = 0; i < _modules.Count; i++)
+            {
+                _modules[i].Setup(_manager);
+                
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is IConnectionListener connectionListener)
+                    _connectionListeners.Add(connectionListener);
+                
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is IConnectionStateListener connectionStateListener)
+                    _connectionStateListeners.Add(connectionStateListener);
+                
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is IDataListener dataListener)
+                    _dataListeners.Add(dataListener);
+            }
+        }
+        
+        public void OnNewConnection(Connection conn, bool asserver)
+        {
+            for (int i = 0; i < _connectionListeners.Count; i++)
+                _connectionListeners[i].OnConnected(conn, asserver);
+        }
+
+        public void OnLostConnection(Connection conn, bool asserver)
+        {
+            for (int i = 0; i < _connectionListeners.Count; i++)
+                _connectionListeners[i].OnDisconnected(conn, asserver);
+        }
+
+        public void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        {
+            for (int i = 0; i < _dataListeners.Count; i++)
+                _dataListeners[i].OnDataReceived(conn, data, asserver);
+        }
+
+        public void OnConnectionState(ConnectionState state, bool asserver)
+        {
+            for (int i = 0; i < _connectionStateListeners.Count; i++)
+                _connectionStateListeners[i].OnConnectionState(state, asserver);
+        }
+        
+        public void UnregisterModules()
+        {
+            _modules.Clear();
+            _connectionListeners.Clear();
+            _connectionStateListeners.Clear();
+            _dataListeners.Clear();
+        }
+
+        public void AddModule(INetworkModule module)
+        {
+            _modules.Add(module);
+        }
+    }
     
     public sealed class NetworkManager : MonoBehaviour
     {
@@ -26,11 +110,35 @@ namespace Rabsi
         public GenericTransport transport
         {
             get => _transport;
-            set => _transport = value;
+            set
+            {
+                if (_transport)
+                {
+                    _transport.transport.onConnected -= OnNewConnection;
+                    _transport.transport.onDisconnected -= OnLostConnection;
+                    _transport.transport.onConnectionState -= OnConnectionState;
+                    _transport.transport.onDataReceived -= OnDataReceived;
+                }
+
+                _transport = value;
+                
+                if (_transport)
+                {
+                    _transport.transport.onConnected += OnNewConnection;
+                    _transport.transport.onDisconnected += OnLostConnection;
+                    _transport.transport.onConnectionState += OnConnectionState;
+                    _transport.transport.onDataReceived += OnDataReceived;
+                    _subscribed = true;
+                }
+            }
         }
-        
+
         public bool shouldAutoStartServer => ShouldStart(_startServerFlags);
         public bool shouldAutoStartClient => ShouldStart(_startClientFlags);
+        
+        public ConnectionState serverState => _transport.transport.listenerState;
+        
+        public ConnectionState clientState => _transport.transport.clientState;
         
         public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
         
@@ -41,12 +149,28 @@ namespace Rabsi
         public bool isServerOnly => isServer && !isClient;
         
         public bool isClientOnly => !isServer && isClient;
+        
+        private ModulesCollection _serverModules;
+        private ModulesCollection _clientModules;
+        
+        private bool _subscribed;
 
         private void Awake()
         {
             Application.runInBackground = true;
+
+            if (!_subscribed)
+                transport = _transport;
+            
+            _serverModules = new ModulesCollection(this, true);
+            _clientModules = new ModulesCollection(this, false);
         }
         
+        internal static void RegisterModules(ModulesCollection modules, bool asServer)
+        {
+            modules.AddModule(new PlayersManager());
+        }
+
         static bool ShouldStart(StartFlags flags)
         {
             return (flags.HasFlag(StartFlags.Editor) && ApplicationContext.isMainEditor) ||
@@ -71,14 +195,50 @@ namespace Rabsi
         {
             if (_transport)
             {
-                StopServer();
                 StopClient();
+                StopServer();
             }
         }
 
-        public void StartServer() => _transport.StartServer();
+        public void StartServer()
+        {
+            _serverModules.RegisterModules();
+            _transport.StartServer();
+        }
+        
+        public void StartClient()
+        {
+            _clientModules.RegisterModules();
+            _transport.StartClient();
+        }
 
-        public void StartClient() => _transport.StartClient();
+        private void OnNewConnection(Connection conn, bool asserver)
+        {
+            if (asserver)
+                 _serverModules.OnNewConnection(conn, true);
+            else _clientModules.OnNewConnection(conn, false);
+        }
+
+        private void OnLostConnection(Connection conn, bool asserver)
+        {
+            if (asserver)
+                 _serverModules.OnLostConnection(conn, true);
+            else _clientModules.OnLostConnection(conn, false);
+        }
+
+        private void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        {
+            if (asserver)
+                 _serverModules.OnDataReceived(conn, data, true);
+            else _clientModules.OnDataReceived(conn, data, false);
+        }
+
+        private void OnConnectionState(ConnectionState state, bool asserver)
+        {
+            if (asserver)
+                 _serverModules.OnConnectionState(state, true);
+            else _clientModules.OnConnectionState(state, false);
+        }
 
         public void StopServer() => _transport.StopServer();
 
