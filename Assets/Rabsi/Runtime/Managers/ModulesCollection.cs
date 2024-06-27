@@ -47,7 +47,7 @@ namespace Rabsi
 
             for (int i = 0; i < _modules.Count; i++)
             {
-                _modules[i].Enable(_manager);
+                _modules[i].Enable(_asServer);
                 
                 // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IConnectionListener connectionListener)
@@ -90,7 +90,7 @@ namespace Rabsi
         private void UnregisterModules()
         {
             for (int i = 0; i < _modules.Count; i++)
-                _modules[i].Disable(_manager);
+                _modules[i].Disable(_asServer);
             
             _modules.Clear();
             _connectionListeners.Clear();
