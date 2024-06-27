@@ -3,23 +3,28 @@ using Rabsi.Packets;
 
 namespace Rabsi
 {
-    public readonly struct PlayerID : INetworkedData, IEquatable<PlayerID>
+    public struct PlayerID : INetworkedData, IEquatable<PlayerID>
     {
-        private readonly uint id;
+        private uint _id;
         
         public PlayerID(uint id)
         {
-            this.id = id;
+            _id = id;
         }
         
         public override int GetHashCode()
         {
-            return (int)id;
+            return (int)_id;
         }
-        
+
+        public void Serialize(NetworkStream packer)
+        {
+            packer.Serialize(ref _id);
+        }
+
         public bool Equals(PlayerID other)
         {
-            return id == other.id;
+            return _id == other._id;
         }
 
         public override bool Equals(object obj)
@@ -29,12 +34,12 @@ namespace Rabsi
         
         public static bool operator ==(PlayerID a, PlayerID b)
         {
-            return a.id == b.id;
+            return a._id == b._id;
         }
 
         public static bool operator !=(PlayerID a, PlayerID b)
         {
-            return a.id != b.id;
+            return a._id != b._id;
         }
     }
 }

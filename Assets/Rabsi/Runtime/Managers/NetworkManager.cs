@@ -30,7 +30,8 @@ namespace Rabsi
 
         [Header("Network Settings")]
         [SerializeField] private GenericTransport _transport;
-        
+
+        [NotNull]
         public GenericTransport transport
         {
             get => _transport;
@@ -95,7 +96,7 @@ namespace Rabsi
         {
             var broadcastModule = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
-            var playersManager = new PlayersManager(networkCookies);
+            var playersManager = new PlayersManager(networkCookies, broadcastModule);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);

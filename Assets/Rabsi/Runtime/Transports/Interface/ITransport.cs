@@ -1,3 +1,5 @@
+using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 namespace Rabsi.Transports
@@ -22,6 +24,8 @@ namespace Rabsi.Transports
         public readonly int length;
         public readonly int offset;
         
+        public ReadOnlySpan<byte> span => new (data, offset, length);
+
         public ByteData(byte[] data, int offset, int length)
         {
             this.data = data;
