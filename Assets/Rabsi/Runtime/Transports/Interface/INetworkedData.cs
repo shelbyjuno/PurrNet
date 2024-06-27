@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using MemoryPack;
+using UnityEngine;
 
 namespace Rabsi.Packets
 {
@@ -86,7 +87,8 @@ namespace Rabsi.Packets
             if (isReading)
             {
                 var span = _stream.GetSpan();
-                data = MemoryPackSerializer.Deserialize<T>(span);
+                int consumed = MemoryPackSerializer.Deserialize(span, ref data);
+                _stream.Advance(consumed);
             }
             else MemoryPackSerializer.Serialize(_stream, data);
         }

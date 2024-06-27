@@ -31,7 +31,10 @@ namespace Rabsi.Packets
         public void Write(ByteData data)
         {
             EnsureCapacity(data.length);
-            data.data.CopyTo(_buffer.AsSpan(pointer));
+            
+            for (int i = 0; i < data.length; i++)
+                _buffer[pointer + i] = data.data[i + data.offset];
+            
             pointer += data.length;
         }
         
@@ -43,7 +46,8 @@ namespace Rabsi.Packets
         public void Write(byte data)
         {
             EnsureCapacity(1);
-            _buffer[pointer++] = data;
+            _buffer[pointer] = data;
+            pointer++;
         }
 
         public void Advance(int count)

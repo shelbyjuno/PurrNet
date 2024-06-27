@@ -21,7 +21,7 @@ namespace Rabsi.Utils
             if (_hashes.TryGetValue(type, out var hash))
                 return hash;
 
-            var value = GetStableHashU32(type.AssemblyQualifiedName);
+            var value = GetStableHashU32(type.FullName);
             _hashes.Add(type, value);
             _decoder.Add(value, type);
             return value;

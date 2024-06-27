@@ -12,7 +12,7 @@ namespace Rabsi.Modules
     public enum PacketType : byte
     {
         Ping = 0,
-        Broadcast = 1
+        Broadcast = 69
     }
 
     internal interface IBroadcastCallback
@@ -78,35 +78,32 @@ namespace Rabsi.Modules
                 throw new InvalidOperationException(PREFIX + message);
         }
 
+        private static void WriteHeader(NetworkStream stream, Type typeData)
+        {
+            byte type = (byte)PacketType.Broadcast;
+            var typeId = Hasher.GetStableHashU32(typeData);
+
+            stream.Serialize(ref type);
+            stream.Serialize<uint>(ref typeId);
+        }
+
         private ByteData GetData<T>(T data)
         {
-            const byte type = (byte)PacketType.Broadcast;
-
             _stream.Clear();
-            var typeId = Hasher.GetStableHashU32(typeof(T));
+            
             var stream = new NetworkStream(_stream, false);
             
-            _stream.Write(type);
-            
-            stream.Serialize(ref typeId, false);
-            stream.Serialize(ref data);
-            
-            return _stream.ToByteData();
-        }
-        
-        private ByteData GetData(INetworkedData data)
-        {
-            const byte type = (byte)PacketType.Broadcast;
+            WriteHeader(stream, typeof(T));
 
-            _stream.Clear();
-            var typeId = Hasher.GetStableHashU32(data.GetType());
-            var stream = new NetworkStream(_stream, false);
+            if (data is INetworkedData networkedData)
+            {
+                networkedData.Serialize(stream);
+            }
+            else
+            {
+                stream.Serialize(ref data);
+            }
 
-            _stream.Write(type);
-
-            stream.Serialize(ref typeId, false);
-            stream.Serialize(ref data);
-            
             return _stream.ToByteData();
         }
         
@@ -123,30 +120,7 @@ namespace Rabsi.Modules
             }
         }
         
-        public void SendToAll(INetworkedData data, Channel method = Channel.ReliableOrdered)
-        {
-            if (!_asServer)
-                throw new InvalidOperationException(PREFIX + "Cannot send data to all clients from client.");
-            
-            var byteData = GetData(data);
-
-            for (int i = 0; i < _transport.connections.Count; i++)
-            {
-                var conn = _transport.connections[i];
-                _transport.SendToClient(conn, byteData, method);
-            }
-        }
-        
         public void SendToClient<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
-        {
-            if (!_asServer)
-                throw new InvalidOperationException(PREFIX + "Cannot send data to client from client.");
-            
-            var byteData = GetData(data);
-            _transport.SendToClient(conn, byteData, method);
-        }
-        
-        public void SendToClient(Connection conn, INetworkedData data, Channel method = Channel.ReliableOrdered)
         {
             if (!_asServer)
                 throw new InvalidOperationException(PREFIX + "Cannot send data to client from client.");
@@ -168,36 +142,23 @@ namespace Rabsi.Modules
             _transport.SendToServer(byteData, method);
         }
         
-        public void SendToServer(INetworkedData data, Channel method = Channel.ReliableOrdered)
-        {
-            var byteData = GetData(data);
-
-            if (_asServer)
-            {
-                _transport.RaiseDataReceived(default, byteData, true);
-                return;
-            }
-
-            _transport.SendToServer(byteData, method);
-        }
-
         public void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
             _stream.Clear();
             _stream.Write(data);
             _stream.ResetPointer();
-            
+
             var stream = new NetworkStream(_stream, true);
 
             byte type = _stream.ReadByte();
-            
+
             const byte expected = (byte)PacketType.Broadcast;
 
             if (type != expected)
                 return;
             
             uint typeId = 0;
-            stream.Serialize(ref typeId, false);
+            stream.Serialize<uint>(ref typeId);
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {

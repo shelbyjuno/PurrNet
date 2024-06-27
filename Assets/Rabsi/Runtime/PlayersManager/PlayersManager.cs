@@ -8,12 +8,13 @@ namespace Rabsi.Modules
     [MemoryPackable]
     public partial struct TestMessage : INetworkedData
     {
-        public string message;
+        public string test;
         public Vector3 pos;
         
         public void Serialize(NetworkStream packer)
         {
-            packer.Serialize(ref message);
+            packer.Serialize(ref test);
+            packer.Serialize(ref pos);
         }
     }
     
@@ -36,7 +37,7 @@ namespace Rabsi.Modules
 
         private void OnReceivedString(Connection conn, TestMessage data, bool asserver)
         {
-            Debug.Log($"Received string: {data.message} from {conn} as {(asserver ? "server" : "client")}");
+            Debug.Log($"Received string: {data.test}, {data.pos} from {conn} as {(asserver ? "server" : "client")}");
         }
 
         public void Disable(bool asServer)
@@ -51,7 +52,7 @@ namespace Rabsi.Modules
             
             _broadcastModule.SendToClient(conn, new TestMessage
             {
-                message = "Hello from server!",
+                test = "69.42f",
                 pos = new Vector3(1, 2, 3)
             });
         }
