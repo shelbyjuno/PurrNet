@@ -1,4 +1,6 @@
 using System;
+using JetBrains.Annotations;
+using Rabsi.Modules;
 using Rabsi.Transports;
 using Rabsi.Utils;
 using UnityEngine;
@@ -16,10 +18,16 @@ namespace Rabsi
 
     public sealed class NetworkManager : MonoBehaviour
     {
+        [UsedImplicitly]
+        public static NetworkManager lastInstance { get; private set; }
+        
         [Header("Auto Start Settings")]
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
+        [Header("Persistency Settings")]
+        [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
+
         [Header("Network Settings")]
         [SerializeField] private GenericTransport _transport;
         
@@ -73,6 +81,7 @@ namespace Rabsi
 
         private void Awake()
         {
+            lastInstance = this;
             Application.runInBackground = true;
 
             if (!_subscribed)
@@ -82,9 +91,15 @@ namespace Rabsi
             _clientModules = new ModulesCollection(this, false);
         }
         
-        internal static void RegisterModules(ModulesCollection modules, bool asServer)
+        internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
-            modules.AddModule(new PlayersManager());
+            var broadcastModule = new BroadcastModule(this, asServer);
+            var networkCookies = new CookiesModule(_cookieScope);
+            var playersManager = new PlayersManager(networkCookies);
+            
+            modules.AddModule(broadcastModule);
+            modules.AddModule(networkCookies);
+            modules.AddModule(playersManager);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -154,6 +169,13 @@ namespace Rabsi
             if (asserver)
                  _serverModules.OnConnectionState(state, true);
             else _clientModules.OnConnectionState(state, false);
+        }
+        
+        public bool TryGetModule<T>(bool asServer, out T module) where T : INetworkModule
+        {
+            return asServer ? 
+                _serverModules.TryGetModule(out module) : 
+                _clientModules.TryGetModule(out module);
         }
 
         public void StopServer() => _transport.StopServer();

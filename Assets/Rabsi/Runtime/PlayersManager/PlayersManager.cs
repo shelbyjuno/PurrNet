@@ -1,29 +1,28 @@
 using Rabsi.Transports;
-using UnityEngine;
 
-namespace Rabsi
+namespace Rabsi.Modules
 {
     public class PlayersManager : INetworkModule, IConnectionListener
     {
-        public const int PRIORITY = -1000;
-        
-        public int priority => PRIORITY;
-        
-        private NetworkManager _manager;
-        
-        public void Setup(NetworkManager manager)
-        {
-            _manager = manager;
-        }
+        private CookiesModule _cookiesModule;
 
+        public PlayersManager(CookiesModule cookiesModule)
+        {
+            _cookiesModule = cookiesModule;
+        }
+        
+        public void Enable(bool asServer) { }
+
+        public void Disable(bool asServer) { }
+        
         public void OnConnected(Connection conn, bool asServer)
         {
-            Debug.Log($"Player connected: {conn}; {asServer}");
+            
         }
 
         public void OnDisconnected(Connection conn, bool asServer)
         {
-            Debug.Log($"Player disconnected: {conn}; {asServer}");
+            
         }
     }
 }

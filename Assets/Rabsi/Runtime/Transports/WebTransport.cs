@@ -68,6 +68,11 @@ namespace Rabsi.Transports
             _client.onError += OnClientError;
         }
         
+        public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
+        {
+            onDataReceived?.Invoke(conn, data, asServer);
+        }
+        
         private void ReconstructServer()
         {
             _connections.Clear();

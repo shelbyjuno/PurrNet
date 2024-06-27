@@ -40,6 +40,11 @@ namespace Rabsi.Transports
         {
             Listen(default);
         }
+        
+        public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
+        {
+            onDataReceived?.Invoke(conn, data, asServer);
+        }
 
         public void StopListening()
         {

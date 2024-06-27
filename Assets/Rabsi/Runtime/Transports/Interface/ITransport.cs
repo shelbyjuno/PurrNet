@@ -67,6 +67,8 @@ namespace Rabsi.Transports
         event OnConnectionState onConnectionState;
         
         public IReadOnlyList<Connection> connections { get; }
+
+        void RaiseDataReceived(Connection conn, ByteData data, bool asServer);
         
         void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable);
         

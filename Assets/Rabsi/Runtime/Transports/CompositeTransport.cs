@@ -377,7 +377,12 @@ namespace Rabsi.Transports
             
             TriggerConnectionStateEvent(false);
         }
-        
+
+        public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
+        {
+            onDataReceived?.Invoke(conn, data, asServer);
+        }
+
         public void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable)
         {
             var pair = _rawConnections[target.connectionId];

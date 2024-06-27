@@ -1,12 +1,12 @@
 using Rabsi.Transports;
 
-namespace Rabsi
+namespace Rabsi.Modules
 {
-    internal interface INetworkModule
+    public interface INetworkModule
     {
-        int priority { get; }
+        void Enable(bool asServer);
 
-        void Setup(NetworkManager manager);
+        void Disable(bool asServer);
     }
     
     internal interface IConnectionListener

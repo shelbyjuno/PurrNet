@@ -7,14 +7,20 @@ namespace Rabsi.Editor
     [CustomEditor(typeof(NetworkManager), true)]
     public class NetworkManagerInspector : UnityEditor.Editor
     {
-        SerializedProperty _startServerFlags;
-        SerializedProperty _startClientFlags;
-        SerializedProperty _transport;
+        private SerializedProperty _startServerFlags;
+        private SerializedProperty _startClientFlags;
+        
+        private SerializedProperty _cookieScope;
+        
+        private SerializedProperty _transport;
         
         private void OnEnable()
         {
             _startServerFlags = serializedObject.FindProperty("_startServerFlags");
             _startClientFlags = serializedObject.FindProperty("_startClientFlags");
+            
+            _cookieScope = serializedObject.FindProperty("_cookieScope");
+            
             _transport = serializedObject.FindProperty("_transport");
         }
 
@@ -35,6 +41,17 @@ namespace Rabsi.Editor
             EditorGUILayout.PropertyField(_startServerFlags);
             EditorGUILayout.PropertyField(_startClientFlags);
 
+            if (Application.isPlaying)
+                RenderStartStopButtons(networkManager);
+
+            EditorGUILayout.PropertyField(_cookieScope);
+            EditorGUILayout.PropertyField(_transport);
+            
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void RenderStartStopButtons(NetworkManager networkManager)
+        {
             GUILayout.BeginHorizontal();
             GUI.enabled = Application.isPlaying;
 
@@ -69,7 +86,7 @@ namespace Rabsi.Editor
                     break;
                 }
             }
-            
+
             GUI.enabled = Application.isPlaying;
 
             switch (networkManager.clientState)
@@ -103,14 +120,10 @@ namespace Rabsi.Editor
                     break;
                 }
             }
-            
+
             GUI.color = Color.white;
             GUI.enabled = true;
             GUILayout.EndHorizontal();
-            
-            EditorGUILayout.PropertyField(_transport);
-            
-            serializedObject.ApplyModifiedProperties();
         }
     }
 }

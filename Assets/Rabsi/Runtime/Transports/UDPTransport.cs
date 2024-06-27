@@ -75,6 +75,11 @@ namespace Rabsi.Transports
             _serverListener.PeerDisconnectedEvent += OnServerDisconnected;
             _serverListener.NetworkReceiveEvent += OnServerData;
         }
+        
+        public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
+        {
+            onDataReceived?.Invoke(conn, data, asServer);
+        }
 
         private void OnServerData(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod deliverymethod)
         {
