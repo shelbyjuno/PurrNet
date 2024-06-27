@@ -1,9 +1,12 @@
+using System;
 using System.Runtime.CompilerServices;
 using MemoryPack;
 using UnityEngine;
 
 namespace Rabsi.Packets
 {
+    public interface IAutoNetworkedData { }
+    
     public interface INetworkedData
     {
         void Serialize(NetworkStream packer);
@@ -88,6 +91,18 @@ namespace Rabsi.Packets
             {
                 var span = _stream.GetSpan();
                 int consumed = MemoryPackSerializer.Deserialize(span, ref data);
+                _stream.Advance(consumed);
+            }
+            else MemoryPackSerializer.Serialize(_stream, data);
+        }
+        
+        public void Serialize(Type type, ref object data)
+        {
+            if (isReading)
+            {
+                var span = _stream.GetSpan();
+                Debug.Log($"Reading {type.Name} from {span.Length} bytes");
+                int consumed = MemoryPackSerializer.Deserialize(type, span, ref data);
                 _stream.Advance(consumed);
             }
             else MemoryPackSerializer.Serialize(_stream, data);

@@ -1,21 +1,13 @@
-using MemoryPack;
 using Rabsi.Packets;
 using Rabsi.Transports;
 using UnityEngine;
 
 namespace Rabsi.Modules
 {
-    [MemoryPackable]
-    public partial struct TestMessage : INetworkedData
-    {
+    public partial struct TestMessage : IAutoNetworkedData
+    { 
         public string test;
         public Vector3 pos;
-        
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize(ref test);
-            packer.Serialize(ref pos);
-        }
     }
     
     public class PlayersManager : INetworkModule, IConnectionListener
@@ -32,7 +24,7 @@ namespace Rabsi.Modules
         public void Enable(bool asServer)
         {
             if (!asServer)
-                _broadcastModule.RegisterCallback<TestMessage>(OnReceivedString);
+                _broadcastModule.RegisterCallback<TestMessage>(OnReceivedString, false);
         }
 
         private void OnReceivedString(Connection conn, TestMessage data, bool asserver)
@@ -43,7 +35,7 @@ namespace Rabsi.Modules
         public void Disable(bool asServer)
         {
             if (!asServer)
-                _broadcastModule.UnregisterCallback<TestMessage>(OnReceivedString);
+                _broadcastModule.UnregisterCallback<TestMessage>(OnReceivedString, false);
         }
         
         public void OnConnected(Connection conn, bool asServer)

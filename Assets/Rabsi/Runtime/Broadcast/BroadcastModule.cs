@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MemoryPack;
 using Rabsi.Packets;
 using Rabsi.Transports;
 using Rabsi.Utils;
@@ -59,7 +60,8 @@ namespace Rabsi.Modules
 
         private readonly ByteBuffer _stream;
         
-        private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new();
+        private readonly Dictionary<uint, List<IBroadcastCallback>> _clientActions = new();
+        private readonly Dictionary<uint, List<IBroadcastCallback>> _serverActions = new();
         
         public BroadcastModule(NetworkManager manager, bool asServer)
         {
@@ -86,14 +88,40 @@ namespace Rabsi.Modules
             stream.Serialize(ref type);
             stream.Serialize<uint>(ref typeId);
         }
+        
+        private ByteData GetData(IAutoNetworkedData data)
+        {
+            _stream.Clear();
+            
+            var stream = new NetworkStream(_stream, false);
+            var type = data.GetType();
+            
+            WriteHeader(stream, type);
+            stream.Serialize(ref data);
 
-        private ByteData GetData<T>(T data)
+            return _stream.ToByteData();
+        }
+
+        private ByteData GetData(INetworkedData data) 
+        {
+            _stream.Clear();
+            
+            var stream = new NetworkStream(_stream, false);
+            var type = data.GetType();
+
+            WriteHeader(stream, type);
+            data.Serialize(stream);
+
+            return _stream.ToByteData();
+        }
+        
+        private ByteData GetData(Type type, object data)
         {
             _stream.Clear();
             
             var stream = new NetworkStream(_stream, false);
             
-            WriteHeader(stream, typeof(T));
+            WriteHeader(stream, type);
 
             if (data is INetworkedData networkedData)
             {
@@ -101,17 +129,25 @@ namespace Rabsi.Modules
             }
             else
             {
-                stream.Serialize(ref data);
+                try
+                {
+                    stream.Serialize(type, ref data);
+                }
+                catch (MemoryPackSerializationException)
+                {
+                    throw new MemoryPackSerializationException($"{PREFIX}Cannot serialize {type.Name}, add the IAutoNetworkedData interface to the class.");
+                }
             }
 
             return _stream.ToByteData();
         }
         
-        public void SendToAll<T>(T data, Channel method = Channel.ReliableOrdered) where T : unmanaged
+        
+        public void SendToAll(object data, Channel method = Channel.ReliableOrdered)
         {
             AssertIsServer("Cannot send data to all clients from client.");
 
-            var byteData = GetData(data);
+            var byteData = GetData(data.GetType(), data);
             
             for (int i = 0; i < _transport.connections.Count; i++)
             {
@@ -120,7 +156,42 @@ namespace Rabsi.Modules
             }
         }
         
-        public void SendToClient<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
+        public void SendToAll(INetworkedData data, Channel method = Channel.ReliableOrdered)
+        {
+            AssertIsServer("Cannot send data to all clients from client.");
+
+            var byteData = GetData(data.GetType(), data);
+            
+            for (int i = 0; i < _transport.connections.Count; i++)
+            {
+                var conn = _transport.connections[i];
+                _transport.SendToClient(conn, byteData, method);
+            }
+        }
+        
+        public void SendToAll(IAutoNetworkedData data, Channel method = Channel.ReliableOrdered)
+        {
+            AssertIsServer("Cannot send data to all clients from client.");
+
+            var byteData = GetData(data.GetType(), data);
+            
+            for (int i = 0; i < _transport.connections.Count; i++)
+            {
+                var conn = _transport.connections[i];
+                _transport.SendToClient(conn, byteData, method);
+            }
+        }
+        
+
+        public void SendToClient(Connection conn, INetworkedData data, Channel method = Channel.ReliableOrdered)
+        {
+            if (!_asServer)
+                throw new InvalidOperationException(PREFIX + "Cannot send data to client from client.");
+            
+            var byteData = GetData(data);
+            _transport.SendToClient(conn, byteData, method);
+        }
+        public void SendToClient(Connection conn, IAutoNetworkedData data, Channel method = Channel.ReliableOrdered)
         {
             if (!_asServer)
                 throw new InvalidOperationException(PREFIX + "Cannot send data to client from client.");
@@ -129,9 +200,45 @@ namespace Rabsi.Modules
             _transport.SendToClient(conn, byteData, method);
         }
         
-        public void SendToServer<T>(T data, Channel method = Channel.ReliableOrdered)
+        public void SendToClient(Connection conn, object data, Channel method = Channel.ReliableOrdered)
+        {
+            if (!_asServer)
+                throw new InvalidOperationException(PREFIX + "Cannot send data to client from client.");
+            
+            var byteData = GetData(data.GetType(), data);
+            _transport.SendToClient(conn, byteData, method);
+        }
+        
+        
+        public void SendToServer(INetworkedData data, Channel method = Channel.ReliableOrdered)
         {
             var byteData = GetData(data);
+
+            if (_asServer)
+            {
+                _transport.RaiseDataReceived(default, byteData, true);
+                return;
+            }
+
+            _transport.SendToServer(byteData, method);
+        }
+        
+        public void SendToServer(IAutoNetworkedData data, Channel method = Channel.ReliableOrdered)
+        {
+            var byteData = GetData(data);
+
+            if (_asServer)
+            {
+                _transport.RaiseDataReceived(default, byteData, true);
+                return;
+            }
+
+            _transport.SendToServer(byteData, method);
+        }
+        
+        public void SendToServer(object data, Channel method = Channel.ReliableOrdered)
+        {
+            var byteData = GetData(data.GetType(), data);
 
             if (_asServer)
             {
@@ -162,7 +269,7 @@ namespace Rabsi.Modules
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {
-                Debug.LogWarning($"{PREFIX} Cannot find type with id {typeId}; probably nothing is listening to this type.");
+                Debug.LogWarning($"{PREFIX}Cannot find type with id {typeId}; probably nothing is listening to this type.");
                 return;
             }
 
@@ -170,32 +277,33 @@ namespace Rabsi.Modules
             
             if (instance is INetworkedData networkData)
                  networkData.Serialize(stream);
-            else stream.Serialize(ref instance);
+            else stream.Serialize(typeInfo, ref instance);
             
             TriggerCallback(conn, typeId, instance, asServer);
         }
 
-        public void RegisterCallback<T>(BroadcastDelegate<T> callback)
+        public void RegisterCallback<T>(BroadcastDelegate<T> callback, bool asServer)
         {
             var hash = Hasher.GetStableHashU32(typeof(T));
-            
-            if (_actions.TryGetValue(hash, out var actions))
+            var action = asServer ? _serverActions : _clientActions;
+
+            if (action.TryGetValue(hash, out var actions))
             {
                 actions.Add(new BroadcastCallback<T>(callback));
                 return;
             }
             
-            _actions.Add(hash, new List<IBroadcastCallback>()
+            action.Add(hash, new List<IBroadcastCallback>()
             {
                 new BroadcastCallback<T>(callback)
             });
         }
         
-        public void UnregisterCallback<T>(BroadcastDelegate<T> callback)
+        public void UnregisterCallback<T>(BroadcastDelegate<T> callback, bool asServer)
         {
             var hash = Hasher.GetStableHashU32(typeof(T));
-            
-            if (!_actions.TryGetValue(hash, out var actions))
+            var action = asServer ? _serverActions : _clientActions;
+            if (!action.TryGetValue(hash, out var actions))
                 return;
             
             object boxed = callback;
@@ -212,7 +320,9 @@ namespace Rabsi.Modules
 
         private void TriggerCallback(Connection conn, uint hash, object instance, bool asServer)
         {
-            if (_actions.TryGetValue(hash, out var actions))
+            var action = asServer ? _serverActions : _clientActions;
+
+            if (action.TryGetValue(hash, out var actions))
             {
                 for (int i = 0; i < actions.Count; i++)
                     actions[i].TriggerCallback(conn, instance, asServer);

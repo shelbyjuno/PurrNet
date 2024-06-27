@@ -73,12 +73,6 @@ namespace Rabsi.Packets
             return _buffer.AsSpan(pointer);
         }
         
-        public Span<byte> GetSpanWithSize(int targetSize)
-        {
-            EnsureCapacity(targetSize);
-            return _buffer.AsSpan(pointer, targetSize);
-        }
-        
         private void EnsureCapacity(int sizeHint)
         {
             if (sizeHint < 0)
