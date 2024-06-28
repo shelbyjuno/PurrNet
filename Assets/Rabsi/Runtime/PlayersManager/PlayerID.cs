@@ -1,6 +1,5 @@
 using System;
 using Rabsi.Packets;
-using UnityEngine;
 
 namespace Rabsi
 {
@@ -25,7 +24,6 @@ namespace Rabsi
 
         public void Serialize(NetworkStream packer)
         {
-            Debug.Log("Serializing PlayerID");
             packer.Serialize(ref _id);
         }
 
