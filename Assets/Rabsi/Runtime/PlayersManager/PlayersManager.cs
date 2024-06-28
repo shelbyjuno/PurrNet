@@ -6,34 +6,14 @@ using UnityEngine;
 
 namespace Rabsi.Modules
 {
-    public partial struct ClientLoginRequest : INetworkedData
+    public partial struct ClientLoginRequest : IAutoNetworkedData
     {
-        public string join;
-
-        public ClientLoginRequest(string join)
-        {
-            this.join = join;
-        }
-        
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize(ref join);
-        }
+        public string join { get; set; }
     }
     
-    public partial struct ServerLoginResponse : INetworkedData
+    public partial struct ServerLoginResponse : IAutoNetworkedData
     {
-        public PlayerID playerId;
-
-        public ServerLoginResponse(PlayerID playerId)
-        {
-            this.playerId = playerId;
-        }
-        
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize(ref playerId);
-        }
+        public PlayerID playerId { get; set; }
     }
     
     public class PlayersManager : INetworkModule, IConnectionListener
@@ -80,7 +60,10 @@ namespace Rabsi.Modules
                 _cookieToPlayerId.Add(data.join, playerId);
             }
             
-            _broadcastModule.SendToClient(conn, new ServerLoginResponse(playerId), Channel.ReliableUnordered);
+            _broadcastModule.SendToClient(conn, new ServerLoginResponse
+            {
+                playerId = playerId
+            }, Channel.ReliableUnordered);
         }
 
         public void Disable(bool asServer)
@@ -101,7 +84,10 @@ namespace Rabsi.Modules
             
             // Generate a new session cookie or get the existing one and send it to the server
             var cookie = _cookiesModule.GetOrSet("client_connection_session", Guid.NewGuid().ToString(), false);
-            _broadcastModule.SendToServer(new ClientLoginRequest(cookie), Channel.ReliableUnordered);
+            _broadcastModule.SendToServer(new ClientLoginRequest
+            {
+                join = cookie
+            }, Channel.ReliableUnordered);
         }
 
         public void OnDisconnected(Connection conn, bool asServer)
