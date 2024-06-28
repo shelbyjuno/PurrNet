@@ -16,6 +16,17 @@ namespace Rabsi.Utils
             return _decoder.TryGetValue(hash, out type);
         }
 
+        public static void PrepareType<T>()
+        {
+            var type = typeof(T);
+
+            if (_hashes.ContainsKey(type)) return;
+            
+            var value = GetStableHashU32(type.FullName);
+            _hashes.Add(type, value);
+            _decoder.Add(value, type);
+        }
+
         public static uint GetStableHashU32(Type type)
         {
             if (_hashes.TryGetValue(type, out var hash))

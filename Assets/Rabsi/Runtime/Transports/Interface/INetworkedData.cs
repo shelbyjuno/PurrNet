@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
-using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace Rabsi.Packets

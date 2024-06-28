@@ -170,8 +170,11 @@ namespace Rabsi.Modules
                 return;
             }
 
-            var instance = Activator.CreateInstance(typeInfo);
+            //var instance = Activator.CreateInstance(typeInfo);
+            object instance = null;
             
+            //T obj = default (T);
+
             stream.Serialize(typeInfo, ref instance);
             
             ByteBufferPool.Free(dataStream);
@@ -179,7 +182,7 @@ namespace Rabsi.Modules
             TriggerCallback(conn, typeId, instance, asServer);
         }
 
-        public void RegisterCallback<T>(BroadcastDelegate<T> callback, bool asServer)
+        public void RegisterCallback<T>(BroadcastDelegate<T> callback, bool asServer) where T : new()
         {
             RegisterTypeForSerializer<T>();
 
@@ -198,10 +201,20 @@ namespace Rabsi.Modules
             });
         }
 
-        private static void RegisterTypeForSerializer<T>()
+        private static void RegisterTypeForSerializer<T>() where T : new()
         {
-            if (!MemoryPackFormatterProvider.IsRegistered<T>() && !RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-                MemoryPackFormatterProvider.Register(new UnmanagedFormatterUnsage<T>());
+            if (!MemoryPackFormatterProvider.IsRegistered<T>())
+            {
+                if (typeof(INetworkedData).IsAssignableFrom(typeof(T)))
+                {
+                    Debug.LogWarning($"{PREFIX}Type {typeof(T).Name} is not registered in the MemoryPackFormatterProvider. Registering it now.");
+                    RuntimeHelpers.RunClassConstructor(typeof(T).TypeHandle);
+                }
+                else if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+                {
+                    MemoryPackFormatterProvider.Register(new UnmanagedFormatterUnsage<T>());
+                }
+            }
         }
 
         public void UnregisterCallback<T>(BroadcastDelegate<T> callback, bool asServer)

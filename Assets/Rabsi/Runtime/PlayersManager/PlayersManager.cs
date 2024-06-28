@@ -9,25 +9,22 @@ namespace Rabsi.Modules
     public partial struct ClientLoginRequest : INetworkedData
     {
         public string join;
-        public PlayerID playerId;
 
         public ClientLoginRequest(string join)
         {
             this.join = join;
-            playerId = new(69);
         }
         
         public void Serialize(NetworkStream packer)
         {
             packer.Serialize(ref join);
-            playerId.Serialize(packer);
         }
     }
-
+    
     public partial struct ServerLoginResponse : INetworkedData
     {
         public PlayerID playerId;
-        
+
         public ServerLoginResponse(PlayerID playerId)
         {
             this.playerId = playerId;
