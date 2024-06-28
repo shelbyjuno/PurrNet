@@ -1,37 +1,51 @@
+using System;
+using System.Collections.Generic;
 using Rabsi.Packets;
 using Rabsi.Transports;
 using UnityEngine;
 
 namespace Rabsi.Modules
 {
-    public partial struct TestMessage : IAutoNetworkedData
-    { 
-        public string test;
-        public Vector3 pos;
-        public PlayerID pid;
-    }
-    
-    public partial struct TestMessageB : INetworkedData
+    public partial struct ClientLoginRequest : INetworkedData
     {
-        public string test;
-        public Vector3 pos;
+        public string join;
+        public PlayerID playerId;
+
+        public ClientLoginRequest(string join)
+        {
+            this.join = join;
+            playerId = new(69);
+        }
         
         public void Serialize(NetworkStream packer)
         {
-            packer.Serialize(ref test);
-            packer.Serialize(ref pos);
+            packer.Serialize(ref join);
+            playerId.Serialize(packer);
         }
     }
-    
-    public struct TestMessageC
-    { 
-        public Vector3 pos;
+
+    public partial struct ServerLoginResponse : INetworkedData
+    {
+        public PlayerID playerId;
+        
+        public ServerLoginResponse(PlayerID playerId)
+        {
+            this.playerId = playerId;
+        }
+        
+        public void Serialize(NetworkStream packer)
+        {
+            packer.Serialize(ref playerId);
+        }
     }
     
     public class PlayersManager : INetworkModule, IConnectionListener
     {
         private readonly CookiesModule _cookiesModule;
         private readonly BroadcastModule _broadcastModule;
+
+        private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new();
+        private uint _playerIdCounter;
 
         public PlayersManager(CookiesModule cookiesModule, BroadcastModule broadcaste)
         {
@@ -41,60 +55,56 @@ namespace Rabsi.Modules
 
         public void Enable(bool asServer)
         {
-            if (!asServer)
+            if (asServer)
             {
-                _broadcastModule.RegisterCallback<TestMessage>(OnReceivedString, false);
-                _broadcastModule.RegisterCallback<TestMessageB>(OnReceivedBString, false);
-                _broadcastModule.RegisterCallback<TestMessageC>(OnReceivedCString, false);
+                _broadcastModule.RegisterCallback<ClientLoginRequest>(OnClientLoginRequest, true);
+            }
+            else
+            {
+                _broadcastModule.RegisterCallback<ServerLoginResponse>(OnClientLoginResponse, false);
             }
         }
-
-        private void OnReceivedCString(Connection conn, TestMessageC data, bool asserver)
+        
+        private void OnClientLoginResponse(Connection conn, ServerLoginResponse data, bool asServer)
         {
-            Debug.Log($"Received string: {data.pos} from {conn} as {(asserver ? "server" : "client")}");
+            Debug.Log("Received login response: " + data.playerId);
         }
 
-        private void OnReceivedBString(Connection conn, TestMessageB data, bool asserver)
+        private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asserver)
         {
-            Debug.Log($"Received string: {data.test}, {data.pos} from {conn} as {(asserver ? "server" : "client")}");
-        }
-
-        private void OnReceivedString(Connection conn, TestMessage data, bool asserver)
-        {
-            Debug.Log($"Received string: {data.test}, {data.pos}, {data.pid} from {conn} as {(asserver ? "server" : "client")}");
+            if (_cookieToPlayerId.TryGetValue(data.join, out var playerId))
+            {
+                Debug.Log("Player already exists: " + playerId);
+            }
+            else
+            {
+                Debug.Log("Player does not exist, creating new player");
+                playerId = new PlayerID(++_playerIdCounter);
+                _cookieToPlayerId.Add(data.join, playerId);
+            }
+            
+            _broadcastModule.SendToClient(conn, new ServerLoginResponse(playerId), Channel.ReliableUnordered);
         }
 
         public void Disable(bool asServer)
         {
-            if (!asServer)
+            if (asServer)
             {
-                _broadcastModule.UnregisterCallback<TestMessage>(OnReceivedString, false);
-                _broadcastModule.UnregisterCallback<TestMessageB>(OnReceivedBString, false);
-                _broadcastModule.UnregisterCallback<TestMessageC>(OnReceivedCString, false);
+                _broadcastModule.UnregisterCallback<ClientLoginRequest>(OnClientLoginRequest, true);
+            }
+            else
+            {
+                _broadcastModule.UnregisterCallback<ServerLoginResponse>(OnClientLoginResponse, false);
             }
         }
         
         public void OnConnected(Connection conn, bool asServer)
         {
-            if (!asServer) return;
+            if (asServer) return;
             
-            _broadcastModule.SendToClient(conn, new TestMessage
-            {
-                test = "69.42f",
-                pos = new Vector3(1, 2, 3),
-                pid = new PlayerID(69)
-            });
-            
-            _broadcastModule.SendToClient(conn, new TestMessageB
-            {
-                test = "69.42f",
-                pos = new Vector3(1, 2, 3)
-            });
-            
-            _broadcastModule.SendToClient(conn, new TestMessageC
-            {
-                pos = new Vector3(1, 2, 3)
-            });
+            // Generate a new session cookie or get the existing one and send it to the server
+            var cookie = _cookiesModule.GetOrSet("client_connection_session", Guid.NewGuid().ToString(), false);
+            _broadcastModule.SendToServer(new ClientLoginRequest(cookie), Channel.ReliableUnordered);
         }
 
         public void OnDisconnected(Connection conn, bool asServer)

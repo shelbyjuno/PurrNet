@@ -46,6 +46,18 @@ namespace Rabsi.Modules
             Save(asServer);
         }
         
+        public string GetOrSet(string key, string defaultValue, bool asServer)
+        {
+            var value = Get(key);
+            if (value == null)
+            {
+                Set(key, defaultValue, asServer);
+                return defaultValue;
+            }
+
+            return value;
+        }
+        
         /// <summary>
         /// Unset a cookie by key.
         /// </summary>

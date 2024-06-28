@@ -200,17 +200,8 @@ namespace Rabsi.Modules
 
         private static void RegisterTypeForSerializer<T>()
         {
-            if (!MemoryPackFormatterProvider.IsRegistered<T>())
-            {
-                if (typeof(INetworkedData).IsAssignableFrom(typeof(T)))
-                {
-                    MemoryPackFormatterProvider.Register(new NetworkedDataFormatterUnsafe<T>());
-                }
-                else if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-                {
-                    MemoryPackFormatterProvider.Register(new UnmanagedFormatterUnsage<T>());
-                }
-            }
+            if (!MemoryPackFormatterProvider.IsRegistered<T>() && !RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+                MemoryPackFormatterProvider.Register(new UnmanagedFormatterUnsage<T>());
         }
 
         public void UnregisterCallback<T>(BroadcastDelegate<T> callback, bool asServer)
