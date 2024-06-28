@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 
 namespace Rabsi.Transports
@@ -32,8 +31,6 @@ namespace Rabsi.Transports
             this.offset = offset;
             this.length = length;
         }
-        
-        public ByteData(byte[] data) : this(data, 0, data.Length) { }
     }
     
     public enum Channel : byte

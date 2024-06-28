@@ -3,7 +3,7 @@ using Rabsi.Packets;
 
 namespace Rabsi
 {
-    public struct PlayerID : INetworkedData, IEquatable<PlayerID>
+    public partial struct PlayerID : INetworkedData, IEquatable<PlayerID>
     {
         private uint _id;
         
@@ -11,7 +11,12 @@ namespace Rabsi
         {
             _id = id;
         }
-        
+
+        public override string ToString()
+        {
+            return _id.ToString("000");
+        }
+
         public override int GetHashCode()
         {
             return (int)_id;

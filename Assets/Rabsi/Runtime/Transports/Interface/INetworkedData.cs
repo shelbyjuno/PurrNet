@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using MemoryPack;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Rabsi.Packets
 {
@@ -93,7 +94,10 @@ namespace Rabsi.Packets
                 int consumed = MemoryPackSerializer.Deserialize(span, ref data);
                 _stream.Advance(consumed);
             }
-            else MemoryPackSerializer.Serialize(_stream, data);
+            else
+            {
+                MemoryPackSerializer.Serialize(_stream, data);
+            }
         }
         
         public void Serialize(Type type, ref object data)
@@ -101,7 +105,6 @@ namespace Rabsi.Packets
             if (isReading)
             {
                 var span = _stream.GetSpan();
-                Debug.Log($"Reading {type.Name} from {span.Length} bytes");
                 int consumed = MemoryPackSerializer.Deserialize(type, span, ref data);
                 _stream.Advance(consumed);
             }
@@ -272,4 +275,120 @@ namespace Rabsi.Packets
             return value << 1;
         }
     }
+
+#pragma warning disable CS9074
+    
+    [Preserve]
+    internal class NetworkedDataFormatter<T> : MemoryPackFormatter<T> where T : INetworkedData
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        public static void RegisterInitialFormatters()
+        {
+            MemoryPackFormatterProvider.Register(new NetworkedDataFormatter<INetworkedData>());
+        }
+        
+        public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref T value)
+        {
+            bool isNull = value == null;
+            
+            writer.WriteUnmanaged(isNull);
+
+            if (isNull) return;
+            
+            var dataStream = ByteBufferPool.Alloc();
+            var stream = new NetworkStream(dataStream, false);
+            value.Serialize(stream);
+            writer.WriteUnmanagedSpan(dataStream.ToByteData().span);
+            ByteBufferPool.Free(dataStream);
+        }
+
+        public override void Deserialize(ref MemoryPackReader reader, ref T value)
+        {
+            if (reader.ReadUnmanaged<bool>())
+            {
+                value = default;
+                return;
+            }
+            
+            var dataStream = ByteBufferPool.Alloc();
+            var stream = new NetworkStream(dataStream, true);
+
+            Span<byte> data = default;
+            reader.ReadUnmanagedSpan(ref data);
+            dataStream.Write(data);
+            dataStream.ResetPointer();
+            value.Serialize(stream);
+            ByteBufferPool.Free(dataStream);
+        }
+    }
+    
+    [Preserve]
+    internal class NetworkedDataFormatterUnsafe<T> : MemoryPackFormatter<T>
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        public static void RegisterInitialFormatters()
+        {
+            MemoryPackFormatterProvider.Register(new NetworkedDataFormatterUnsafe<INetworkedData>());
+        }
+        
+        public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref T v)
+        {
+            var value = (INetworkedData)v;
+            bool isNull = value == null;
+            
+            writer.WriteUnmanaged(isNull);
+
+            if (isNull) return;
+            
+            var dataStream = ByteBufferPool.Alloc();
+            var stream = new NetworkStream(dataStream, false);
+            value.Serialize(stream);
+            var span = dataStream.ToByteData().span;
+            writer.WriteUnmanagedSpan(span);
+            ByteBufferPool.Free(dataStream);
+        }
+
+        public override void Deserialize(ref MemoryPackReader reader, ref T v)
+        {
+            var value = (INetworkedData)v;
+
+            if (reader.ReadUnmanaged<bool>())
+            {
+                v = default;
+                return;
+            }
+            
+            var dataStream = ByteBufferPool.Alloc();
+            var stream = new NetworkStream(dataStream, true);
+
+            Span<byte> data = default;
+            reader.ReadUnmanagedSpan(ref data);
+            dataStream.Write(data);
+            dataStream.ResetPointer();
+            value.Serialize(stream);
+            v = (T)value;
+            ByteBufferPool.Free(dataStream);
+        }
+    }
+    
+    [Preserve]
+    internal sealed class UnmanagedFormatterUnsage<T> : MemoryPackFormatter<T>
+    {
+        [Preserve]
+        public override void Serialize<TBufferWriter>(
+            ref MemoryPackWriter<TBufferWriter> writer,
+            ref T value)
+        {
+            Unsafe.WriteUnaligned(ref writer.GetSpanReference(Unsafe.SizeOf<T>()), value);
+            writer.Advance(Unsafe.SizeOf<T>());
+        }
+
+        [Preserve]
+        public override void Deserialize(ref MemoryPackReader reader, ref T value)
+        {
+            value = Unsafe.ReadUnaligned<T>(ref reader.GetSpanReference(Unsafe.SizeOf<T>()));
+            reader.Advance(Unsafe.SizeOf<T>());
+        }
+    }
+#pragma warning restore CS9074
 }

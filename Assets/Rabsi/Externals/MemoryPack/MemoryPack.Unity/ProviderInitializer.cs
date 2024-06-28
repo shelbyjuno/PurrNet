@@ -31,7 +31,7 @@ namespace MemoryPack
             UnityRegister<RangeInt>();
             UnityRegister<RectInt>();
             UnityRegister<BoundsInt>();
-
+            
             // class
             if (!MemoryPackFormatterProvider.IsRegistered<AnimationCurve>())
             {

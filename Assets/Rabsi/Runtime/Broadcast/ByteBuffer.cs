@@ -27,6 +27,16 @@ namespace Rabsi.Packets
         {
             pointer = 0;
         }
+        
+        public void Write(Span<byte> data)
+        {
+            EnsureCapacity(data.Length);
+            
+            for (int i = 0; i < data.Length; i++)
+                _buffer[pointer + i] = data[i];
+            
+            pointer += data.Length;
+        }
 
         public void Write(ByteData data)
         {
