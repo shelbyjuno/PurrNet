@@ -74,5 +74,7 @@ namespace Rabsi.Transports
         void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable);
         
         void SendToServer(ByteData data, Channel method = Channel.Unreliable);
+        
+        void CloseConnection(Connection conn);
     }
 }
