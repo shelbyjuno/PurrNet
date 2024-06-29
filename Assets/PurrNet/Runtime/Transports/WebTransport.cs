@@ -302,5 +302,16 @@ namespace PurrNet.Transports
 
             _client.Send(new ArraySegment<byte>(data.data, data.offset, data.length));
         }
+
+        public void CloseConnection(Connection conn)
+        {
+            if (listenerState != ConnectionState.Connected)
+                return;
+            
+            if (!conn.isValid)
+                return;
+            
+            _server.KickClient(conn.connectionId);
+        }
     }
 }

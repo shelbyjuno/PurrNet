@@ -397,7 +397,14 @@ namespace PurrNet.Transports
             
             _clientTransport.transport.SendToServer(data, method);
         }
-        
+
+        public void CloseConnection(Connection conn)
+        {
+            var pair = _rawConnections[conn.connectionId];
+            var protocol = _transports[pair.transportIdx];
+            protocol.transport.CloseConnection(pair.originalConnection);
+        }
+
         ConnectionState _prevClientState = ConnectionState.Disconnected;
         ConnectionState _prevServerState = ConnectionState.Disconnected;
         
