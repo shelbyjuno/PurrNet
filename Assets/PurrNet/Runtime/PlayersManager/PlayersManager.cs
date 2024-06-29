@@ -30,6 +30,7 @@ namespace PurrNet.Modules
         private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new();
         private uint _playerIdCounter;
         
+        private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new();
         private readonly List<PlayerID> _connectedPlayers = new();
         private PlayerID? _localPlayerId;
 
@@ -40,6 +41,11 @@ namespace PurrNet.Modules
             _broadcastModule = broadcaste;
         }
 
+        public bool IsLocalPlayer(PlayerID playerId)
+        {
+            return _localPlayerId == playerId;
+        }
+        
         public void Enable(bool asServer)
         {
             if (asServer)
@@ -73,12 +79,26 @@ namespace PurrNet.Modules
                 return;
             }
             
-            // _connectedPlayers.Add(playerId);
+            RegisterPlayer(conn, playerId);
             
             _broadcastModule.SendToClient(conn, new ServerLoginResponse
             {
                 playerId = playerId
             }, Channel.ReliableUnordered);
+        }
+
+        private void RegisterPlayer(Connection conn, PlayerID player)
+        {
+            _connectedPlayers.Add(player);
+            _connectionToPlayerId.Add(conn, player);
+        }
+        
+        private void UnregisterPlayer(Connection conn)
+        {
+            if (!_connectionToPlayerId.TryGetValue(conn, out var player)) return;
+            
+            _connectedPlayers.Remove(player);
+            _connectionToPlayerId.Remove(conn);
         }
 
         public void Disable(bool asServer)
@@ -107,7 +127,9 @@ namespace PurrNet.Modules
 
         public void OnDisconnected(Connection conn, bool asServer)
         {
+            if (!asServer) return;
             
+            UnregisterPlayer(conn);
         }
     }
 }
