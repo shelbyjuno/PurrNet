@@ -73,7 +73,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            _connectedPlayers.Add(playerId);
+            // _connectedPlayers.Add(playerId);
             
             _broadcastModule.SendToClient(conn, new ServerLoginResponse
             {
