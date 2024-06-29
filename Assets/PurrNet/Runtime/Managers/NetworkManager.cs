@@ -91,12 +91,19 @@ namespace PurrNet
             _serverModules = new ModulesCollection(this, true);
             _clientModules = new ModulesCollection(this, false);
         }
+
+        public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
+        {
+            return asServer ?
+                _serverModules.TryGetModule(out module) :
+                _clientModules.TryGetModule(out module);
+        }
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
             var broadcastModule = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
-            var playersManager = new PlayersManager(networkCookies, broadcastModule);
+            var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);

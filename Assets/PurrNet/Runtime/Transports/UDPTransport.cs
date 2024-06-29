@@ -249,6 +249,12 @@ namespace PurrNet.Transports
             _client.SendToAll(data.data, data.offset, data.length, deliveryMethod);
         }
 
+        public void CloseConnection(Connection conn)
+        {
+            var peer = _server.GetPeerById(conn.connectionId);
+            peer?.Disconnect();
+        }
+
         private void OnDisable()
         {
             _client.Stop();

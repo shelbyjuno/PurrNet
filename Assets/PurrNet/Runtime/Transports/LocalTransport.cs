@@ -124,7 +124,12 @@ namespace PurrNet.Transports
             var conn = new Connection(0);
             onDataReceived?.Invoke(conn, data, true);
         }
-        
+
+        public void CloseConnection(Connection conn)
+        {
+            StopClient();
+        }
+
         ConnectionState _prevClientState = ConnectionState.Disconnected;
         ConnectionState _prevServerState = ConnectionState.Disconnected;
         
