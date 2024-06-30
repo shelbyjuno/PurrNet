@@ -473,6 +473,7 @@ MonoBehaviour:
   _startServerFlags: 9
   _startClientFlags: 7
   _cookieScope: 1
+  _networkPrefabs: {fileID: 11400000, guid: 7e8d528809eb3d049aee237120863a81, type: 2}
   _transport: {fileID: 1386555453}
 --- !u!114 &1386555453
 MonoBehaviour:

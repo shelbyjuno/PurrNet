@@ -8,6 +8,8 @@ namespace PurrNet
         private uint _id { get; }
 
         public bool isBot { get; }
+        
+        public uint id => _id;
 
         public PlayerID(uint id, bool isBot)
         {

@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using MemoryPack;
+using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -47,14 +47,6 @@ namespace PurrNet.Modules
     
     public class BroadcastModule : INetworkModule, IDataListener
     {
-        const string MODULENAME = nameof(PurrNet) + "." + nameof(BroadcastModule);
-
-#if UNITY_EDITOR
-        const string PREFIX = "<b>[" + MODULENAME + "]</b> ";
-#else
-        const string PREFIX = "[" + MODULENAME + "] ";
-#endif
-        
         private readonly ITransport _transport;
 
         private readonly bool _asServer;
@@ -75,7 +67,7 @@ namespace PurrNet.Modules
         void AssertIsServer(string message)
         {
             if (!_asServer)
-                throw new InvalidOperationException(PREFIX + message);
+                throw new InvalidOperationException(PurrLogger.FormatMessage(message));
         }
 
         private static void WriteHeader(NetworkStream stream, Type typeData)
@@ -100,7 +92,7 @@ namespace PurrNet.Modules
             }
             catch (MemoryPackSerializationException e)
             {
-                throw new MemoryPackSerializationException($"{PREFIX}Cannot serialize {typeof(T).Name}, add the IAutoNetworkedData interface to the class.\n{e.Message}");
+                throw new MemoryPackSerializationException(PurrLogger.FormatMessage($"Cannot serialize {typeof(T).Name}, add the IAutoNetworkedData interface to the class.\n{e.Message}"));
             }
 
             var value = dataStream.ToByteData();
@@ -125,7 +117,7 @@ namespace PurrNet.Modules
         public void SendToClient<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
         {
             if (!_asServer)
-                throw new InvalidOperationException(PREFIX + "Cannot send data to client from client.");
+                throw new InvalidOperationException(PurrLogger.FormatMessage("Cannot send data to client from client."));
             
             var byteData = GetData(data);
             _transport.SendToClient(conn, byteData, method);
@@ -166,7 +158,7 @@ namespace PurrNet.Modules
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {
-                Debug.LogWarning($"{PREFIX}Cannot find type with id {typeId}; probably nothing is listening to this type.");
+                PurrLogger.LogWarning($"Cannot find type with id {typeId}; probably nothing is listening to this type.");
                 return;
             }
 
@@ -207,7 +199,7 @@ namespace PurrNet.Modules
             {
                 if (typeof(INetworkedData).IsAssignableFrom(typeof(T)))
                 {
-                    Debug.LogWarning($"{PREFIX}Type {typeof(T).Name} is not registered in the MemoryPackFormatterProvider. Registering it now.");
+                    PurrLogger.LogWarning($"Type {typeof(T).Name} is not registered in the MemoryPackFormatterProvider. Registering it now.");
                     RuntimeHelpers.RunClassConstructor(typeof(T).TypeHandle);
                 }
                 else if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
