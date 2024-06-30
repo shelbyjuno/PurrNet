@@ -3,13 +3,16 @@ using PurrNet.Packets;
 
 namespace PurrNet
 {
-    public partial struct PlayerID : IAutoNetworkedData, IEquatable<PlayerID>
+    public readonly partial struct PlayerID : IAutoNetworkedData, IEquatable<PlayerID>
     {
-        private uint _id;
-        
-        public PlayerID(uint id)
+        private uint _id { get; }
+
+        public bool isBot { get; }
+
+        public PlayerID(uint id, bool isBot)
         {
             _id = id;
+            this.isBot = isBot;
         }
 
         public override string ToString()
