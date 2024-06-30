@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using UnityEngine;
@@ -146,7 +147,9 @@ namespace PurrNet.Modules
         public PlayerID CreateBot()
         {
             if (!_asServer)
-                throw new InvalidOperationException("Cannot create a bot from a client.");
+            {
+                throw new InvalidOperationException(PurrLogger.FormatMessage("Cannot create a bot from a client."));
+            }
             
             var playerId = new PlayerID(++_playerIdCounter, true);
             RegisterPlayer(default, playerId);
@@ -217,7 +220,7 @@ namespace PurrNet.Modules
             {
                 // Player is already connected?
                 _transport.CloseConnection(conn);
-                Debug.LogError("Client connected using a cookie from an already connected player; closing their connection.");
+                PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
                 return;
             }
             
