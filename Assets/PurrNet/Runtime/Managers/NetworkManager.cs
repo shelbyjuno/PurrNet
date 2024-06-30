@@ -5,6 +5,7 @@ using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -31,6 +32,7 @@ namespace PurrNet
 
         [Header("Network Settings")] 
         [SerializeField] private NetworkPrefabs _networkPrefabs;
+        [SerializeField] private int _tickRate = 20;
         [SerializeField] private GenericTransport _transport;
         
         public event Action<ConnectionState> onServerState;
@@ -127,12 +129,14 @@ namespace PurrNet
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
             var spawnManager = new SpawnManager(playersBroadcast, _networkPrefabs);
+            var tickManager = new TickManager(_tickRate);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
             modules.AddModule(spawnManager);
+            modules.AddModule(tickManager);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -153,6 +157,12 @@ namespace PurrNet
             
             if (shouldStartClient)
                 StartClient();
+        }
+
+        private void Update()
+        {
+            _serverModules.TriggerOnUpdate();
+            _clientModules.TriggerOnUpdate();
         }
 
         private void FixedUpdate()
