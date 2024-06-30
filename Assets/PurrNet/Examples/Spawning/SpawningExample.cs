@@ -27,10 +27,10 @@ public class SpawningExample : MonoBehaviour
         switch (state)
         {
             case ConnectionState.Connected:
-                players.OnPlayerJoined += OnPlayerJoined;
+                players.onPlayerJoined += OnPlayerJoined;
                 break;
             case ConnectionState.Disconnected:
-                players.OnPlayerJoined -= OnPlayerJoined;
+                players.onPlayerJoined -= OnPlayerJoined;
                 break;
         }
     }

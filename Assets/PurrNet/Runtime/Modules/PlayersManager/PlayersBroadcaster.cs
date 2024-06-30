@@ -79,7 +79,7 @@ namespace PurrNet
             _broadcastModule.onRawDataReceived -= OnRawDataReceived;
         }
 
-        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback, bool asServer) where T : new()
+        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
         {
             BroadcastModule.RegisterTypeForSerializer<T>();
 

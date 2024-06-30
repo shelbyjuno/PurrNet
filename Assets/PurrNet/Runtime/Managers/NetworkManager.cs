@@ -35,8 +35,15 @@ namespace PurrNet
         [SerializeField] private int _tickRate = 20;
         [SerializeField] private GenericTransport _transport;
         
-        public event Action<ConnectionState> onServerState;
-        public event Action<ConnectionState> onClientState;
+        /// <summary>
+        /// Occurs when the server connection state changes.
+        /// </summary>
+        public event Action<ConnectionState> onServerConnectionState;
+        
+        /// <summary>
+        /// Occurs when the client connection state changes.
+        /// </summary>
+        public event Action<ConnectionState> onClientConnectionState;
 
         [NotNull]
         public GenericTransport transport
@@ -167,8 +174,11 @@ namespace PurrNet
 
         private void FixedUpdate()
         {
-            _serverModules.TriggerOnFixedUpdate();
-            _clientModules.TriggerOnFixedUpdate();
+            if (serverState == ConnectionState.Connected)
+                _serverModules.TriggerOnFixedUpdate();
+            
+            if (clientState == ConnectionState.Connected)
+                _clientModules.TriggerOnFixedUpdate();
         }
 
         private void OnDestroy()
@@ -220,8 +230,8 @@ namespace PurrNet
             else _clientModules.OnConnectionState(state, false);
             
             if (asserver)
-                 onServerState?.Invoke(state);
-            else onClientState?.Invoke(state);
+                 onServerConnectionState?.Invoke(state);
+            else onClientConnectionState?.Invoke(state);
         }
         
         public bool TryGetModule<T>(bool asServer, out T module) where T : INetworkModule
