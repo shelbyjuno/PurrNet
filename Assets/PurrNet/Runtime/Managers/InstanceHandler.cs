@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet
@@ -15,18 +16,20 @@ namespace PurrNet
         {
             get
             {
-                if (NetworkManager == null)
+                if (_networkManager == null)
                     PopulateNetworkManager();
-                return NetworkManager;
+                return _networkManager;
             }
-            private set => NetworkManager = value;
+            private set => _networkManager = value;
         }
+
+        private static NetworkManager _networkManager;
         
         private static void PopulateNetworkManager()
         {
             NetworkManager = GameObject.FindAnyObjectByType<NetworkManager>();
             if (!NetworkManager)
-                Debug.LogError($"{nameof(InstanceHandler)}: No {nameof(NetworkManager)} found in scene!");
+                PurrLogger.LogError($"No {nameof(NetworkManager)} found in scene!");
         }
         
         /// <summary>

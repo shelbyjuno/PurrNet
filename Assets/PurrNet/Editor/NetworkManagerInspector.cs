@@ -14,6 +14,7 @@ namespace PurrNet.Editor
         
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _transport;
+        private SerializedProperty _tickRate;
         
         private void OnEnable()
         {
@@ -24,6 +25,7 @@ namespace PurrNet.Editor
             
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _transport = serializedObject.FindProperty("_transport");
+            _tickRate = serializedObject.FindProperty("_tickRate");
         }
 
         public override void OnInspectorGUI()
@@ -51,10 +53,27 @@ namespace PurrNet.Editor
 
             if (networkManager.serverState != ConnectionState.Disconnected || networkManager.clientState != ConnectionState.Disconnected)
                 GUI.enabled = false;
+
+            RenderTickSlider(networkManager);
             
             EditorGUILayout.PropertyField(_transport);
             GUI.enabled = true;
             
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void RenderTickSlider(NetworkManager networkManager)
+        {
+            serializedObject.Update();
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.IntSlider(_tickRate, 1, 128, new GUIContent("Tick Rate"));
+            if (EditorGUI.EndChangeCheck())
+            {
+                Time.fixedDeltaTime = 1f / _tickRate.intValue;
+                EditorUtility.SetDirty(networkManager);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
             serializedObject.ApplyModifiedProperties();
         }
 
