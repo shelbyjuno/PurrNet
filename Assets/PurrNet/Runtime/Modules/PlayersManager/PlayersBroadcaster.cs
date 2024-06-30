@@ -43,6 +43,8 @@ namespace PurrNet
         
         private readonly Dictionary<uint, List<IPlayerBroadcastCallback>> _actions = new();
         private readonly List<Connection> _connections = new();
+        
+        public PlayersManager playersManager => _playersManager;
 
         private bool _asServer;
         
@@ -55,9 +57,27 @@ namespace PurrNet
         public void Enable(bool asServer)
         {
             _asServer = asServer;
+            _broadcastModule.onRawDataReceived += OnRawDataReceived;
         }
 
-        public void Disable(bool asServer) { }
+        private void OnRawDataReceived(Connection conn, uint hash, object data)
+        {
+            if (!_playersManager.TryGetPlayer(conn, out var player))
+                player = default;
+            
+            if (_actions.TryGetValue(hash, out var actions))
+            {
+                for (int i = 0; i < actions.Count; i++)
+                {
+                    actions[i].TriggerCallback(player, data, _asServer);
+                }
+            }
+        }
+
+        public void Disable(bool asServer)
+        {
+            _broadcastModule.onRawDataReceived -= OnRawDataReceived;
+        }
 
         public void Subscribe<T>(PlayerBroadcastDelegate<T> callback, bool asServer) where T : new()
         {

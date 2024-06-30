@@ -30,9 +30,16 @@ namespace PurrNet
         
         private void OnValidate()
         {
-            // Keep this method for future validations
+            if (autoGenerate)
+                Generate();
         }
 #endif
+        
+        public bool TryGetPrefabId(GameObject prefab, out int id)
+        {
+            id = prefabs.IndexOf(prefab);
+            return id != -1;
+        }
 
         /// <summary>
         /// Editor only method to generate network prefabs from a specified folder.
@@ -43,14 +50,28 @@ namespace PurrNet
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Checking existing...",  0f);
             if (folder == null)
             {
-                PurrLogger.LogError("Network prefabs project folder is not set!", this);
+                if (autoGenerate)
+                {
+                    prefabs.Clear();
+                    EditorUtility.SetDirty(this);
+                }
+
+                EditorUtility.ClearProgressBar();
                 return;
             }
 
             string folderPath = AssetDatabase.GetAssetPath(folder);
             if (string.IsNullOrEmpty(folderPath))
             {
-                PurrLogger.LogError($"Invalid folder path: {folderPath}", this);
+                folder = null;
+                
+                if (autoGenerate)
+                {
+                    prefabs.Clear();
+                    EditorUtility.SetDirty(this);
+                }
+                
+                EditorUtility.ClearProgressBar();
                 return;
             }
 
@@ -76,11 +97,11 @@ namespace PurrNet
                 if (gameObject != null)
                 {
                     EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {gameObject.name}",  0.1f + 0.7f * ((i + 1f) / guids.Length));
-                    NetworkBehaviour networkBehaviour = gameObject.GetComponent<NetworkBehaviour>();
-                    if (!networkBehaviour)
-                        networkBehaviour = gameObject.GetComponentInChildren<NetworkBehaviour>();
+                    NetworkIdentity networkIdentity = gameObject.GetComponent<NetworkIdentity>();
+                    if (!networkIdentity)
+                        networkIdentity = gameObject.GetComponentInChildren<NetworkIdentity>();
 
-                    if (!networkBehaviour)
+                    if (!networkIdentity)
                         continue;
 
                     foundPrefabs.Add(gameObject);

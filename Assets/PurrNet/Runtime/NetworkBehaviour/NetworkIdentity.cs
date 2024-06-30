@@ -4,15 +4,15 @@ namespace PurrNet
 {
     public class NetworkIdentity : MonoBehaviour
     {
-        private uint _identity;
+        private int _identity;
         
         public bool isValid => _identity != 0;
         
-        public uint identity => _identity;
+        public int identity => _identity;
         
-        internal void SetIdentity(uint identity)
+        internal void SetIdentity(int value)
         {
-            _identity = identity;
+            _identity = value;
         }
     }
 }

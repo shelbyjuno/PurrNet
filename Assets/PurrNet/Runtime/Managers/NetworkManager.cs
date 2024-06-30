@@ -32,6 +32,9 @@ namespace PurrNet
         [Header("Network Settings")] 
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private GenericTransport _transport;
+        
+        public event Action<ConnectionState> onServerState;
+        public event Action<ConnectionState> onClientState;
 
         [NotNull]
         public GenericTransport transport
@@ -107,7 +110,7 @@ namespace PurrNet
             if (TryGetModule(out T module, asServer))
                 return module;
             
-            throw new InvalidOperationException($"Module {typeof(T).Name} not found.");
+            throw new InvalidOperationException(PurrLogger.FormatMessage($"Module {typeof(T).Name} not found."));
         }
 
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
@@ -123,11 +126,13 @@ namespace PurrNet
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
+            var spawnManager = new SpawnManager(playersBroadcast, _networkPrefabs);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
+            modules.AddModule(spawnManager);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -197,6 +202,10 @@ namespace PurrNet
             if (asserver)
                  _serverModules.OnConnectionState(state, true);
             else _clientModules.OnConnectionState(state, false);
+            
+            if (asserver)
+                 onServerState?.Invoke(state);
+            else onClientState?.Invoke(state);
         }
         
         public bool TryGetModule<T>(bool asServer, out T module) where T : INetworkModule

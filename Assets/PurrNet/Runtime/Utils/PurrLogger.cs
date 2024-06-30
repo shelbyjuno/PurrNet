@@ -53,6 +53,12 @@ namespace PurrNet.Logging
         {
             return FormatMessage_Internal(message, logStyle, filePath);
         }
+        
+        public static void Throw<T>(string message, LogStyle logStyle = default, [CallerFilePath] string filePath = "") where T : Exception
+        {
+            string formattedMessage = FormatMessage_Internal(message, logStyle, filePath);
+            throw (T)Activator.CreateInstance(typeof(T), formattedMessage);
+        }
 
         private static string FormatMessage_Internal(string message, LogStyle logStyle, string filePath)
         {

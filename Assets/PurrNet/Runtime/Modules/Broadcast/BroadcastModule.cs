@@ -47,6 +47,8 @@ namespace PurrNet.Modules
 
         private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new();
         
+        internal event Action<Connection, uint, object> onRawDataReceived;
+        
         public BroadcastModule(NetworkManager manager, bool asServer)
         {
             _transport = manager.transport.transport;
@@ -229,6 +231,8 @@ namespace PurrNet.Modules
                 for (int i = 0; i < actions.Count; i++)
                     actions[i].TriggerCallback(conn, instance, _asServer);
             }
+            
+            onRawDataReceived?.Invoke(conn, hash, instance);
         }
     }
 }

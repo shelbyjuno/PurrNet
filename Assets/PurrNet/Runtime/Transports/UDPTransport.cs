@@ -259,6 +259,9 @@ namespace PurrNet.Transports
         {
             _client.Stop();
             _server.Stop();
+            
+            listenerState = ConnectionState.Disconnected;
+            clientState = ConnectionState.Disconnected;
 
             TriggerConnectionStateEvent(true);
             TriggerConnectionStateEvent(false);
