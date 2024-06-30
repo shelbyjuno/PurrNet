@@ -3,7 +3,7 @@ using PurrNet.Packets;
 
 namespace PurrNet
 {
-    public partial struct PlayerID : INetworkedData, IEquatable<PlayerID>
+    public partial struct PlayerID : IAutoNetworkedData, IEquatable<PlayerID>
     {
         private uint _id;
         
@@ -20,11 +20,6 @@ namespace PurrNet
         public override int GetHashCode()
         {
             return (int)_id;
-        }
-
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize(ref _id);
         }
 
         public bool Equals(PlayerID other)

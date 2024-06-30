@@ -6,19 +6,30 @@ using UnityEngine;
 
 namespace PurrNet.Modules
 {
-    public partial struct ClientLoginRequest : INetworkedData
+    public partial struct ClientLoginRequest : IAutoNetworkedData
     {
         public string join;
-        
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize(ref join);
-        }
     }
     
     public partial struct ServerLoginResponse : IAutoNetworkedData
     {
         public PlayerID playerId { get; set; }
+    }
+    
+    public partial struct PlayerJoinedEvent : IAutoNetworkedData
+    {
+        public PlayerID playerId;
+        public Connection connection;
+    }
+    
+    public partial struct PlayerLeftEvent : IAutoNetworkedData
+    {
+        public PlayerID playerId;
+    }
+    
+    public partial struct PlayerSnapshotEvent : IAutoNetworkedData
+    {
+        public Dictionary<Connection, PlayerID> _connectionToPlayerId { get; set; }
     }
     
     public class PlayersManager : INetworkModule, IConnectionListener
@@ -33,6 +44,9 @@ namespace PurrNet.Modules
         private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new();
         private readonly List<PlayerID> _connectedPlayers = new();
         private PlayerID? _localPlayerId;
+        
+        public List<PlayerID> connectedPlayers => _connectedPlayers;
+        public PlayerID? localPlayerId => _localPlayerId;
 
         public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaste)
         {

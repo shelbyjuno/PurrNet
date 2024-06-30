@@ -1,17 +1,18 @@
 using System;
+using PurrNet.Packets;
 
 namespace PurrNet.Transports
 {
-    public readonly struct Connection : IEquatable<Connection>
+    public partial struct Connection : IEquatable<Connection>, IAutoNetworkedData
     {
         public override int GetHashCode()
         {
             return HashCode.Combine(connectionId, isValid);
         }
 
-        public int connectionId { get; }
+        public int connectionId { get; private set; }
         
-        public bool isValid { get; }
+        public bool isValid { get; private set; }
 
         public Connection(int connectionId)
         {
