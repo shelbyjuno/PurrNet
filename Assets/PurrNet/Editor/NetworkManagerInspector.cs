@@ -48,7 +48,12 @@ namespace PurrNet.Editor
 
             EditorGUILayout.PropertyField(_cookieScope);
             EditorGUILayout.PropertyField(_networkPrefabs);
+
+            if (networkManager.serverState != ConnectionState.Disconnected || networkManager.clientState != ConnectionState.Disconnected)
+                GUI.enabled = false;
+            
             EditorGUILayout.PropertyField(_transport);
+            GUI.enabled = true;
             
             serializedObject.ApplyModifiedProperties();
         }
