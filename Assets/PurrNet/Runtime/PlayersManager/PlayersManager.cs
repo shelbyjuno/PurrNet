@@ -83,10 +83,76 @@ namespace PurrNet.Modules
             _cookiesModule = cookiesModule;
             _broadcastModule = broadcaste;
         }
+        
+        /// <summary>
+        /// Try to get the connection of a playerId.
+        /// For bots, this will always return false.
+        /// </summary>
+        /// <param name="playerId"></param>
+        /// <param name="conn"></param>
+        /// <returns>The network connection tied to this player</returns>
+        public bool TryGetConnection(PlayerID playerId, out Connection conn)
+        {
+            if (playerId.isBot)
+            {
+                conn = default;
+                return false;
+            }
+            
+            return _playerToConnection.TryGetValue(playerId, out conn);
+        }
+        
+        /// <summary>
+        /// Try to get the playerId of a connection.
+        /// </summary>
+        public bool TryGetPlayer(Connection conn, out PlayerID playerId)
+        {
+            return _connectionToPlayerId.TryGetValue(conn, out playerId);
+        }
 
+        /// <summary>
+        /// Check if a playerId is the local player.
+        /// </summary>
         public bool IsLocalPlayer(PlayerID playerId)
         {
             return _localPlayerId == playerId;
+        }
+
+        /// <summary>
+        /// Check if a playerId is a valid player.
+        /// A valid player is a player that is connected to the server.
+        /// </summary>
+        public bool IsValidPlayer(PlayerID playerId)
+        {
+            return _connectedPlayers.Contains(playerId);
+        }
+        
+        /// <summary>
+        /// Create a new bot player and add it to the connected players list.
+        /// </summary>
+        /// <returns>The playerId of the new bot player</returns>
+        public PlayerID CreateBot()
+        {
+            if (!_asServer)
+                throw new InvalidOperationException("Cannot create a bot from a client.");
+            
+            var playerId = new PlayerID(++_playerIdCounter, true);
+            RegisterPlayer(default, playerId);
+            SendNewUserToAllClients(default, playerId);
+            return playerId;
+        }
+        
+        /// <summary>
+        /// Kick a player from the server.
+        /// If the user has a connection, it will be closed.
+        /// </summary>
+        /// <param name="playerId"></param>
+        public void KickPlayer(PlayerID playerId)
+        {
+            if (_playerToConnection.TryGetValue(playerId, out var conn))
+                _transport.CloseConnection(conn);
+            UnregisterPlayer(playerId);
+            SendUserLeftToAllClients(playerId);
         }
         
         public void Enable(bool asServer)
