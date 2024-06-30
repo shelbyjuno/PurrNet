@@ -50,6 +50,7 @@ namespace PurrNet.Modules
         public void FixedUpdate()
         {
             Tick++;
+            FloatingPoint = 0;
             
             OnPreTick?.Invoke();
             OnTick?.Invoke();
@@ -58,8 +59,43 @@ namespace PurrNet.Modules
 
         public void Update()
         {
-            double elapsedTimeSinceLastFixedUpdate = Time.time - Time.fixedTime;
-            FloatingPoint = elapsedTimeSinceLastFixedUpdate * TickRate;
+            FloatingPoint += Time.unscaledDeltaTime * TickRate;
+        }
+
+        /// <summary>
+        /// Converts the input tick to float time
+        /// </summary>
+        /// <param name="tick">The amount of ticks to convert to time</param>
+        public float TickToTime(uint tick)
+        {
+            return tick / (float)TickRate;
+        }
+
+        /// <summary>
+        /// Converts the precise input tick to float time
+        /// </summary>
+        /// <param name="preciseTick">The precise tick to convert</param>
+        public float PreciseTickToTime(double preciseTick)
+        {
+            return (float)(preciseTick / TickRate);
+        }
+        
+        /// <summary>
+        /// Converts the input float time to ticks
+        /// </summary>
+        /// <param name="time">The amount of time to convert</param>
+        public uint TimeToTick(float time)
+        {
+            return (uint)(time * TickRate);
+        }
+        
+        /// <summary>
+        /// Converts the input float time to precise ticks (double)
+        /// </summary>
+        /// <param name="time">And amount of time to convert</param>
+        public double TimeToPreciseTick(float time)
+        {
+            return time * TickRate;
         }
     }
 }
