@@ -12,6 +12,7 @@ namespace PurrNet.Editor
         
         private SerializedProperty _cookieScope;
         
+        private SerializedProperty _networkPrefabs;
         private SerializedProperty _transport;
         
         private void OnEnable()
@@ -21,6 +22,7 @@ namespace PurrNet.Editor
             
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
+            _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _transport = serializedObject.FindProperty("_transport");
         }
 
@@ -45,6 +47,7 @@ namespace PurrNet.Editor
                 RenderStartStopButtons(networkManager);
 
             EditorGUILayout.PropertyField(_cookieScope);
+            EditorGUILayout.PropertyField(_networkPrefabs);
             EditorGUILayout.PropertyField(_transport);
             
             serializedObject.ApplyModifiedProperties();

@@ -28,7 +28,8 @@ namespace PurrNet
         [Header("Persistency Settings")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
-        [Header("Network Settings")]
+        [Header("Network Settings")] 
+        [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private GenericTransport _transport;
 
         [NotNull]
@@ -84,6 +85,8 @@ namespace PurrNet
         {
             lastInstance = this;
             Application.runInBackground = true;
+            if(_networkPrefabs.autoGenerate)
+                _networkPrefabs.Generate();
 
             if (!_subscribed)
                 transport = _transport;

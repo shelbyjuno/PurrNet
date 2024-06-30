@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Rabsi
+namespace PurrNet
 {
     public class NetworkBehaviour : MonoBehaviour
     {
