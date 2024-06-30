@@ -11,13 +11,6 @@ namespace PurrNet.Modules
 {
     public delegate void BroadcastDelegate<in T>(Connection conn, T data, bool asServer);
     
-    public enum PacketType : byte
-    {
-        Ping = 0,
-        Broadcast = 69,
-        PlayerBroadcast = 70,
-    }
-
     internal interface IBroadcastCallback
     {
         bool IsSame(object callback);
@@ -72,11 +65,15 @@ namespace PurrNet.Modules
 
         private static void WriteHeader(NetworkStream stream, Type typeData)
         {
-            byte type = (byte)PacketType.Broadcast;
             var typeId = Hasher.GetStableHashU32(typeData);
-
-            stream.Serialize(ref type);
             stream.Serialize<uint>(ref typeId);
+        }
+        
+        private static uint ReadHeader(NetworkStream stream)
+        {
+            uint typeId = 0;
+            stream.Serialize<uint>(ref typeId);
+            return typeId;
         }
         
         internal static ByteData GetData<T>(T data)
@@ -113,12 +110,22 @@ namespace PurrNet.Modules
             }
         }
         
-        public void SendToClient<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
+        public void Send<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
         {
             AssertIsServer("Cannot send data to player from client.");
             
             var byteData = GetData(data);
             _transport.SendToClient(conn, byteData, method);
+        }
+        
+        public void Send<T>(IEnumerable<Connection> conn, T data, Channel method = Channel.ReliableOrdered)
+        {
+            AssertIsServer("Cannot send data to player from client.");
+            
+            var byteData = GetData(data);
+
+            foreach (var connection in conn)
+                _transport.SendToClient(connection, byteData, method);
         }
         
         public void SendToServer<T>(T data, Channel method = Channel.ReliableOrdered)
@@ -145,16 +152,7 @@ namespace PurrNet.Modules
             dataStream.ResetPointer();
 
             var stream = new NetworkStream(dataStream, true);
-
-            byte type = dataStream.ReadByte();
-
-            const byte expected = (byte)PacketType.Broadcast;
-
-            if (type != expected)
-                return;
-            
-            uint typeId = 0;
-            stream.Serialize<uint>(ref typeId);
+            uint typeId = ReadHeader(stream);
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {
@@ -164,8 +162,6 @@ namespace PurrNet.Modules
 
             //var instance = Activator.CreateInstance(typeInfo);
             object instance = null;
-            
-            //T obj = default (T);
 
             stream.Serialize(typeInfo, ref instance);
             
@@ -174,7 +170,7 @@ namespace PurrNet.Modules
             TriggerCallback(conn, typeId, instance);
         }
 
-        public void RegisterCallback<T>(BroadcastDelegate<T> callback, bool asServer) where T : new()
+        public void Subscribe<T>(BroadcastDelegate<T> callback, bool asServer) where T : new()
         {
             RegisterTypeForSerializer<T>();
 
@@ -192,7 +188,7 @@ namespace PurrNet.Modules
             });
         }
 
-        private static void RegisterTypeForSerializer<T>() where T : new()
+        internal static void RegisterTypeForSerializer<T>() where T : new()
         {
             if (!MemoryPackFormatterProvider.IsRegistered<T>())
             {
@@ -208,7 +204,7 @@ namespace PurrNet.Modules
             }
         }
 
-        public void UnregisterCallback<T>(BroadcastDelegate<T> callback)
+        public void Unsubscribe<T>(BroadcastDelegate<T> callback) where T : new()
         {
             var hash = Hasher.GetStableHashU32(typeof(T));
             if (!_actions.TryGetValue(hash, out var actions))

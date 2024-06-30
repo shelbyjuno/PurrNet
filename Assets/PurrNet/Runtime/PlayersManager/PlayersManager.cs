@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -176,14 +175,14 @@ namespace PurrNet.Modules
             
             if (asServer)
             {
-                _broadcastModule.RegisterCallback<ClientLoginRequest>(OnClientLoginRequest, true);
+                _broadcastModule.Subscribe<ClientLoginRequest>(OnClientLoginRequest, true);
             }
             else
             {
-                _broadcastModule.RegisterCallback<ServerLoginResponse>(OnClientLoginResponse, false);
-                _broadcastModule.RegisterCallback<PlayerSnapshotEvent>(OnPlayerSnapshotEvent, false);
-                _broadcastModule.RegisterCallback<PlayerJoinedEvent>(OnPlayerJoinedEvent, false);
-                _broadcastModule.RegisterCallback<PlayerLeftEvent>(OnPlayerLeftEvent, false);
+                _broadcastModule.Subscribe<ServerLoginResponse>(OnClientLoginResponse, false);
+                _broadcastModule.Subscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent, false);
+                _broadcastModule.Subscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent, false);
+                _broadcastModule.Subscribe<PlayerLeftEvent>(OnPlayerLeftEvent, false);
             }
         }
 
@@ -224,7 +223,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            _broadcastModule.SendToClient(conn, new ServerLoginResponse(playerId));
+            _broadcastModule.Send(conn, new ServerLoginResponse(playerId));
 
             SendSnapshotToClient(conn);
             RegisterPlayer(conn, playerId);
@@ -243,7 +242,7 @@ namespace PurrNet.Modules
         
         private void SendSnapshotToClient(Connection conn)
         {
-            _broadcastModule.SendToClient(conn, new PlayerSnapshotEvent(_connectionToPlayerId));
+            _broadcastModule.Send(conn, new PlayerSnapshotEvent(_connectionToPlayerId));
         }
 
         private void RegisterPlayer(Connection conn, PlayerID player)
@@ -287,17 +286,7 @@ namespace PurrNet.Modules
             OnPostPlayerLeft?.Invoke(playerId, _asServer);
         }
 
-        public void Disable(bool asServer)
-        {
-            if (asServer)
-            {
-                _broadcastModule.UnregisterCallback<ClientLoginRequest>(OnClientLoginRequest);
-            }
-            else
-            {
-                _broadcastModule.UnregisterCallback<ServerLoginResponse>(OnClientLoginResponse);
-            }
-        }
+        public void Disable(bool asServer) { }
         
         public void OnConnected(Connection conn, bool asServer)
         {

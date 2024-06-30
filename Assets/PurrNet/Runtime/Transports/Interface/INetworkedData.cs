@@ -101,7 +101,7 @@ namespace PurrNet.Packets
             }
         }
         
-        public void Serialize(Type type, ref object data)
+        public void Serialize(Type type, [CanBeNull] ref object data)
         {
             if (isReading)
             {
