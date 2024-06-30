@@ -10,6 +10,7 @@ namespace PurrNet
         private readonly List<IConnectionListener> _connectionListeners;
         private readonly List<IConnectionStateListener> _connectionStateListeners;
         private readonly List<IDataListener> _dataListeners;
+        private readonly List<IFixedUpdate> _fixedUpdatesListeners;
 
         private readonly NetworkManager _manager;
         private readonly bool _asServer;
@@ -20,6 +21,7 @@ namespace PurrNet
             _connectionListeners = new List<IConnectionListener>();
             _connectionStateListeners = new List<IConnectionStateListener>();
             _dataListeners = new List<IDataListener>();
+            _fixedUpdatesListeners = new List<IFixedUpdate>();
             _manager = manager;
             _asServer = asServer;
         }
@@ -60,6 +62,10 @@ namespace PurrNet
                 // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IDataListener dataListener)
                     _dataListeners.Add(dataListener);
+
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is IFixedUpdate fixedUpdate)
+                    _fixedUpdatesListeners.Add(fixedUpdate);
             }
         }
         
@@ -85,6 +91,12 @@ namespace PurrNet
         {
             for (int i = 0; i < _connectionStateListeners.Count; i++)
                 _connectionStateListeners[i].OnConnectionState(state, asserver);
+        }
+
+        public void TriggerOnFixedUpdate()
+        {
+            for (int i = 0; i < _fixedUpdatesListeners.Count; i++)
+                _fixedUpdatesListeners[i].FixedUpdate();
         }
 
         private void UnregisterModules()

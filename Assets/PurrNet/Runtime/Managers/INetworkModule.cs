@@ -25,4 +25,9 @@ namespace PurrNet.Modules
     {
         void OnDataReceived(Connection conn, ByteData data, bool asServer);
     }
+    
+    internal interface IFixedUpdate
+    {
+        void FixedUpdate();
+    }
 }

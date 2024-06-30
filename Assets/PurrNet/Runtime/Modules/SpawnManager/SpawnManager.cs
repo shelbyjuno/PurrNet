@@ -18,11 +18,16 @@ namespace PurrNet.Modules
         public Vector3 scale { get; set; }
     }
     
+    internal partial struct SpawnPrefabsSnapshot : IAutoNetworkedData
+    {
+        public List<SpawnPrefabMessage> prefabs { get; set; }
+    }
+    
     public class SpawnManager : INetworkModule
     {
         private readonly NetworkPrefabs _prefabs;
         private readonly PlayersBroadcaster _broadcaster;
-        private readonly List<NetworkIdentity> _identitiesCache = new ();
+        internal static readonly List<NetworkIdentity> _identitiesCache = new ();
         
         private bool _asServer;
         private int _nextIdentity;
@@ -105,16 +110,7 @@ namespace PurrNet.Modules
             _spawnedObjects.Add(rootIdentity);
             
             // Send the spawn message to all clients
-            _broadcaster.SendToAll(new SpawnPrefabMessage
-            {
-                prefabId = prefabId,
-                prefabOffset = 0,
-                rootIdentityId = rootIdentity.identity,
-                childrenCount = identitiesCount,
-                position = instance.transform.position,
-                rotation = instance.transform.rotation,
-                scale = instance.transform.localScale
-            });
+            _broadcaster.SendToAll(rootIdentity.GetSpawnMessage(identitiesCount));
         }
     }
 }

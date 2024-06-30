@@ -13,7 +13,7 @@ namespace PurrNet
         
         public bool isValid => identity != -1;
 
-        internal SpawnPrefabMessage GetSpawnMessage()
+        internal SpawnPrefabMessage GetSpawnMessage(int childrenCount)
         {
             var trs = transform;
             
@@ -21,13 +21,32 @@ namespace PurrNet
             {
                 prefabId = prefabId,
                 prefabOffset = prefabOffset,
-                childrenCount = 0,
+                rootIdentityId = identity,
+                childrenCount = childrenCount,
                 position = trs.position,
                 rotation = trs.rotation,
                 scale = trs.localScale
             };
         }
         
+        internal SpawnPrefabMessage GetSpawnMessage()
+        {
+            var trs = transform;
+            gameObject.GetComponentsInChildren(true, SpawnManager._identitiesCache);
+            
+            return new SpawnPrefabMessage
+            {
+                prefabId = prefabId,
+                prefabOffset = prefabOffset,
+                rootIdentityId = identity,
+                childrenCount = SpawnManager._identitiesCache.Count,
+                position = trs.position,
+                rotation = trs.rotation,
+                scale = trs.localScale
+            };
+        }
+        
+        // ReSharper disable once ParameterHidesMember
         internal void SetIdentity(int prefabId, int prefabOffset, int value)
         {
             this.prefabId = prefabId;

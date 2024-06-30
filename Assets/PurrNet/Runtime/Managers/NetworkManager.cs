@@ -154,7 +154,13 @@ namespace PurrNet
             if (shouldStartClient)
                 StartClient();
         }
-        
+
+        private void FixedUpdate()
+        {
+            _serverModules.TriggerOnFixedUpdate();
+            _clientModules.TriggerOnFixedUpdate();
+        }
+
         private void OnDestroy()
         {
             if (_transport)
