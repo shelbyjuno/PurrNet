@@ -1,10 +1,12 @@
 {
-    "name": "Rabsi.Editor",
-    "rootNamespace": "",
+    "name": "PurrNet.Editor",
+    "rootNamespace": "PurrNet.Editor",
     "references": [
         "GUID:6e20f757a1bae164fa42750dd2b27dcb"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
