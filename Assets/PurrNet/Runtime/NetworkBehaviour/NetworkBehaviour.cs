@@ -1,8 +1,6 @@
-using UnityEngine;
-
 namespace PurrNet
 {
-    public class NetworkBehaviour : MonoBehaviour
+    public class NetworkBehaviour : NetworkIdentity
     {
         
     }
