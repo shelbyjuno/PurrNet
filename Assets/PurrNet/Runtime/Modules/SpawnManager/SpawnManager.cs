@@ -50,59 +50,73 @@ namespace PurrNet.Modules
 
             if (!asServer)
             {
-                _broadcaster.Subscribe<SpawnPrefabMessage>(ClientSpawnEvent);
                 _broadcaster.Subscribe<SpawnPrefabsSnapshot>(ClientBatchedSpawnEvent);
+                _broadcaster.Subscribe<SpawnPrefabMessage>(ClientSpawnEvent);
             }
             else
             {
-                _playersManager.onPlayerJoined += PlayerJoined;
+                _playersManager.onPrePlayerJoined += PlayerJoined;
             }
         }
 
         private void PlayerJoined(PlayerID player, bool asserver)
         {
-            var snapshot = new SpawnPrefabsSnapshot
-            {
-                prefabs = _prefabsCache
-            };
+            if (_spawnedObjects.Count == 0)
+                return;
 
+            _prefabsCache.Clear();
+            
             for (var i = 0; i < _spawnedObjects.Count; i++)
             {
                 var spawnedObject = _spawnedObjects[i];
                 _prefabsCache.Add(spawnedObject.GetSpawnMessage());
             }
+                        
+            var snapshot = new SpawnPrefabsSnapshot
+            {
+                prefabs = _prefabsCache
+            };
 
             _broadcaster.Send(player, snapshot);
         }
         
         private void ClientBatchedSpawnEvent(PlayerID player, SpawnPrefabsSnapshot data, bool asserver)
         {
+            Debug.Log("ClientBatchedSpawnEvent " + data.prefabs.Count + " asserver " + asserver );
             for (var i = 0; i < data.prefabs.Count; i++)
-                ClientSpawnEvent(player, data.prefabs[i], asserver);
+                CreateInstanceFromSpawnMessage(data.prefabs[i]);
         }
 
         private void ClientSpawnEvent(PlayerID player, SpawnPrefabMessage data, bool asserver)
         {
+            Debug.Log("ClientSpawnEvent " + asserver);
+            CreateInstanceFromSpawnMessage(data);
+        }
+
+        private void CreateInstanceFromSpawnMessage(SpawnPrefabMessage data)
+        {
             if (!_prefabs.TryGetPrefab(data.prefabId, out var prefab))
-                PurrLogger.Throw<InvalidOperationException>($"The specified prefab id '{data.prefabId}' is not a network prefab.");
-            
+                PurrLogger.Throw<InvalidOperationException>(
+                    $"The specified prefab id '{data.prefabId}' is not a network prefab.");
+
             var instance = Object.Instantiate(prefab, data.position, data.rotation);
             instance.transform.localScale = data.scale;
-            
+
             if (!instance.TryGetComponent<NetworkIdentity>(out _))
                 instance.AddComponent<NetworkIdentity>();
-            
+
             instance.GetComponentsInChildren(true, _identitiesCache);
 
             var identitiesCount = _identitiesCache.Count;
             int firstIdentity = data.rootIdentityId;
 
             if (identitiesCount != data.childrenCount)
-                PurrLogger.Throw<InvalidOperationException>($"The specified prefab '{prefab.name}' has a different amount of NetworkIdentities than the one sent by the server.");
-            
+                PurrLogger.Throw<InvalidOperationException>(
+                    $"The specified prefab '{prefab.name}' has a different amount of NetworkIdentities than the one sent by the server.");
+
             for (int i = 0; i < identitiesCount; i++)
                 _identitiesCache[i].SetIdentity(data.prefabId, i, firstIdentity + i);
-            
+
             var rootIdentity = _identitiesCache[0];
             _spawnedObjects.Add(rootIdentity);
         }
@@ -116,6 +130,7 @@ namespace PurrNet.Modules
         
         public void Spawn(GameObject prefab, GameObject instance)
         {
+            Debug.Log("Spawning prefab for player");
             if (!_asServer)
                 PurrLogger.Throw<InvalidOperationException>("Only clients can spawn objects.");
 
@@ -128,6 +143,8 @@ namespace PurrNet.Modules
             
             // Get all NetworkIdentities in the object
             instance.GetComponentsInChildren(true, _identitiesCache);
+            
+            instance.name += "_Server";
 
             var identitiesCount = _identitiesCache.Count;
             for (int i = 0; i < identitiesCount; i++)
@@ -142,6 +159,7 @@ namespace PurrNet.Modules
             
             // Send the spawn message to all clients
             _broadcaster.SendToAll(rootIdentity.GetSpawnMessage(identitiesCount));
+            Debug.Log("Total server: " + _spawnedObjects.Count);
         }
 
         public void OnConnectionState(ConnectionState state, bool asServer)
