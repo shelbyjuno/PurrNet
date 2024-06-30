@@ -27,7 +27,7 @@ namespace PurrNet
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
-        [Header("Persistency Settings")]
+        [Header("Persistence Settings")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
         [Header("Network Settings")] 
