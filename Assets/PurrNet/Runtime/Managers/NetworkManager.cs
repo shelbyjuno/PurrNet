@@ -5,6 +5,7 @@ using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -26,15 +27,23 @@ namespace PurrNet
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
-        [Header("Persistency Settings")]
+        [Header("Persistence Settings")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
         [Header("Network Settings")] 
         [SerializeField] private NetworkPrefabs _networkPrefabs;
+        [SerializeField] private int _tickRate = 20;
         [SerializeField] private GenericTransport _transport;
         
-        public event Action<ConnectionState> onServerState;
-        public event Action<ConnectionState> onClientState;
+        /// <summary>
+        /// Occurs when the server connection state changes.
+        /// </summary>
+        public event Action<ConnectionState> onServerConnectionState;
+        
+        /// <summary>
+        /// Occurs when the client connection state changes.
+        /// </summary>
+        public event Action<ConnectionState> onClientConnectionState;
 
         [NotNull]
         public GenericTransport transport
@@ -127,12 +136,14 @@ namespace PurrNet
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
             var spawnManager = new SpawnManager(playersManager, playersBroadcast, _networkPrefabs);
+            var tickManager = new TickManager(_tickRate);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
             modules.AddModule(spawnManager);
+            modules.AddModule(tickManager);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -153,6 +164,12 @@ namespace PurrNet
             
             if (shouldStartClient)
                 StartClient();
+        }
+
+        private void Update()
+        {
+            _serverModules.TriggerOnUpdate();
+            _clientModules.TriggerOnUpdate();
         }
 
         private void FixedUpdate()
@@ -213,8 +230,8 @@ namespace PurrNet
             else _clientModules.OnConnectionState(state, false);
             
             if (asserver)
-                 onServerState?.Invoke(state);
-            else onClientState?.Invoke(state);
+                 onServerConnectionState?.Invoke(state);
+            else onClientConnectionState?.Invoke(state);
         }
         
         public bool TryGetModule<T>(bool asServer, out T module) where T : INetworkModule

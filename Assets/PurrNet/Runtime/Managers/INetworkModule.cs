@@ -30,4 +30,9 @@ namespace PurrNet.Modules
     {
         void FixedUpdate();
     }
+    
+    internal interface IUpdate
+    {
+        void Update();
+    }
 }
