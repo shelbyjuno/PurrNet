@@ -58,6 +58,10 @@ namespace PurrNet.Modules
         }
     }
     
+    public delegate void OnPlayerJoinedEvent(PlayerID player, bool asserver);
+    
+    public delegate void OnPlayerLeftEvent(PlayerID player, bool asserver);
+    
     public class PlayersManager : INetworkModule, IConnectionListener
     {
         private readonly CookiesModule _cookiesModule;
@@ -74,6 +78,14 @@ namespace PurrNet.Modules
         
         public List<PlayerID> connectedPlayers => _connectedPlayers;
         public PlayerID? localPlayerId => _localPlayerId;
+        
+        public event OnPlayerJoinedEvent OnPrePlayerJoined;
+        public event OnPlayerJoinedEvent OnPlayerJoined;
+        public event OnPlayerJoinedEvent OnPostPlayerJoined;
+        
+        public event OnPlayerLeftEvent OnPrePlayerLeft;
+        public event OnPlayerLeftEvent OnPlayerLeft;
+        public event OnPlayerLeftEvent OnPostPlayerLeft;
 
         private bool _asServer;
 
@@ -240,6 +252,10 @@ namespace PurrNet.Modules
                 _connectionToPlayerId.Add(conn, player);
                 _playerToConnection.Add(player, conn);
             }
+            
+            OnPrePlayerJoined?.Invoke(player, _asServer);
+            OnPlayerJoined?.Invoke(player, _asServer);
+            OnPostPlayerJoined?.Invoke(player, _asServer);
         }
         
         private void UnregisterPlayer(Connection conn)
@@ -250,6 +266,10 @@ namespace PurrNet.Modules
             _connectedPlayers.Remove(player);
             _playerToConnection.Remove(player);
             _connectionToPlayerId.Remove(conn);
+            
+            OnPrePlayerLeft?.Invoke(player, _asServer);
+            OnPlayerLeft?.Invoke(player, _asServer);
+            OnPostPlayerLeft?.Invoke(player, _asServer);
         }
         
         private void UnregisterPlayer(PlayerID playerId)
@@ -258,6 +278,10 @@ namespace PurrNet.Modules
                 _connectionToPlayerId.Remove(conn);
             _connectedPlayers.Remove(playerId);
             _playerToConnection.Remove(playerId);
+            
+            OnPrePlayerLeft?.Invoke(playerId, _asServer);
+            OnPlayerLeft?.Invoke(playerId, _asServer);
+            OnPostPlayerLeft?.Invoke(playerId, _asServer);
         }
 
         public void Disable(bool asServer)

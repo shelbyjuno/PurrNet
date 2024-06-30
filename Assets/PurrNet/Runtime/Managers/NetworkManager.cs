@@ -92,6 +92,14 @@ namespace PurrNet
             _clientModules = new ModulesCollection(this, false);
         }
 
+        public T GetModule<T>(bool asServer) where T : INetworkModule
+        {
+            if (TryGetModule(out T module, asServer))
+                return module;
+            
+            throw new InvalidOperationException($"Module {typeof(T).Name} not found.");
+        }
+
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
         {
             return asServer ?
