@@ -57,6 +57,11 @@ namespace PurrNet.Editor
             base.OnInspectorGUI();
 
             var generic = (GenericTransport)target;
+            DrawTransportStatus(generic);
+        }
+
+        public static void DrawTransportStatus(GenericTransport generic)
+        {
             var transport = generic.transport;
 
             GUILayout.Space(10);
