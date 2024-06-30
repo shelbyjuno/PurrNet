@@ -19,6 +19,11 @@ namespace PurrNet.Modules
         public Vector3 scale { get; set; }
     }
     
+    internal partial struct DespawnIdentityMessage : IAutoNetworkedData
+    {
+        public int identityId { get; set; }
+    }
+    
     internal partial struct SpawnPrefabsSnapshot : IAutoNetworkedData
     {
         public List<SpawnPrefabMessage> prefabs { get; set; }
@@ -31,11 +36,11 @@ namespace PurrNet.Modules
         private readonly PlayersBroadcaster _broadcaster;
         internal static readonly List<NetworkIdentity> _identitiesCache = new ();
         
-        private bool _asServer;
-        private int _nextIdentity;
-        
         private readonly List<NetworkIdentity> _spawnedObjects = new ();
         private readonly List<SpawnPrefabMessage> _prefabsCache = new ();
+        
+        private bool _asServer;
+        private int _nextIdentity;
         
         public SpawnManager(PlayersManager players, PlayersBroadcaster broadcaster, NetworkPrefabs prefabs)
         {
@@ -52,10 +57,24 @@ namespace PurrNet.Modules
             {
                 _broadcaster.Subscribe<SpawnPrefabsSnapshot>(ClientBatchedSpawnEvent);
                 _broadcaster.Subscribe<SpawnPrefabMessage>(ClientSpawnEvent);
+                _broadcaster.Subscribe<DespawnIdentityMessage>(ClientDespawnEvent);
             }
             else
             {
                 _playersManager.onPrePlayerJoined += PlayerJoined;
+            }
+        }
+
+        private void ClientDespawnEvent(PlayerID player, DespawnIdentityMessage data, bool asserver)
+        {
+            for (var i = 0; i < _spawnedObjects.Count; i++)
+            {
+                if (_spawnedObjects[i].identity == data.identityId)
+                {
+                    Object.Destroy(_spawnedObjects[i].gameObject);
+                    _spawnedObjects.RemoveAt(i);
+                    break;
+                }
             }
         }
 
@@ -82,22 +101,22 @@ namespace PurrNet.Modules
         
         private void ClientBatchedSpawnEvent(PlayerID player, SpawnPrefabsSnapshot data, bool asserver)
         {
-            Debug.Log("ClientBatchedSpawnEvent " + data.prefabs.Count + " asserver " + asserver );
             for (var i = 0; i < data.prefabs.Count; i++)
                 CreateInstanceFromSpawnMessage(data.prefabs[i]);
         }
 
         private void ClientSpawnEvent(PlayerID player, SpawnPrefabMessage data, bool asserver)
         {
-            Debug.Log("ClientSpawnEvent " + asserver);
             CreateInstanceFromSpawnMessage(data);
         }
 
         private void CreateInstanceFromSpawnMessage(SpawnPrefabMessage data)
         {
             if (!_prefabs.TryGetPrefab(data.prefabId, out var prefab))
+            {
                 PurrLogger.Throw<InvalidOperationException>(
                     $"The specified prefab id '{data.prefabId}' is not a network prefab.");
+            }
 
             var instance = Object.Instantiate(prefab, data.position, data.rotation);
             instance.transform.localScale = data.scale;
@@ -111,8 +130,10 @@ namespace PurrNet.Modules
             int firstIdentity = data.rootIdentityId;
 
             if (identitiesCount != data.childrenCount)
+            {
                 PurrLogger.Throw<InvalidOperationException>(
                     $"The specified prefab '{prefab.name}' has a different amount of NetworkIdentities than the one sent by the server.");
+            }
 
             for (int i = 0; i < identitiesCount; i++)
                 _identitiesCache[i].SetIdentity(data.prefabId, i, firstIdentity + i);
@@ -130,7 +151,6 @@ namespace PurrNet.Modules
         
         public void Spawn(GameObject prefab, GameObject instance)
         {
-            Debug.Log("Spawning prefab for player");
             if (!_asServer)
                 PurrLogger.Throw<InvalidOperationException>("Only clients can spawn objects.");
 
@@ -154,12 +174,48 @@ namespace PurrNet.Modules
             }
             
             var rootIdentity = _identitiesCache[0];
+            rootIdentity.onDestroy += OnSpawnedObjectGotDestroyed;
             
             _spawnedObjects.Add(rootIdentity);
             
             // Send the spawn message to all clients
             _broadcaster.SendToAll(rootIdentity.GetSpawnMessage(identitiesCount));
-            Debug.Log("Total server: " + _spawnedObjects.Count);
+        }
+
+        public void Despawn(GameObject instance)
+        {
+            if (!_asServer)
+                PurrLogger.Throw<InvalidOperationException>("Only clients can despawn objects.");
+            
+            if (!instance.TryGetComponent<NetworkIdentity>(out var identity))
+                PurrLogger.Throw<InvalidOperationException>("The specified object does not have a NetworkIdentity component.");
+            
+            Despawn(identity);
+        }
+        
+        public void Despawn(NetworkIdentity identity)
+        {
+            if (!_asServer)
+                PurrLogger.Throw<InvalidOperationException>("Only clients can despawn objects.");
+
+            if (!identity.isValid)
+                PurrLogger.Throw<InvalidOperationException>("The specified object isn't spawn, can't despawn it.");
+            
+            identity.onDestroy -= OnSpawnedObjectGotDestroyed;
+            
+            Object.Destroy(identity.gameObject);
+
+            _spawnedObjects.Remove(identity);
+            
+            _broadcaster.SendToAll(new DespawnIdentityMessage
+            {
+                identityId = identity.identity
+            });
+        }
+
+        private void OnSpawnedObjectGotDestroyed(NetworkIdentity ni)
+        {
+            Despawn(ni);
         }
 
         public void OnConnectionState(ConnectionState state, bool asServer)

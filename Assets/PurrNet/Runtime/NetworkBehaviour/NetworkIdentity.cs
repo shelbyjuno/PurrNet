@@ -1,3 +1,4 @@
+using System;
 using PurrNet.Modules;
 using UnityEngine;
 
@@ -12,6 +13,8 @@ namespace PurrNet
         public int identity { get; private set; } = -1;
         
         public bool isValid => identity != -1;
+        
+        internal event Action<NetworkIdentity> onDestroy; 
 
         internal SpawnPrefabMessage GetSpawnMessage(int childrenCount)
         {
@@ -46,12 +49,16 @@ namespace PurrNet
             };
         }
         
-        // ReSharper disable once ParameterHidesMember
-        internal void SetIdentity(int prefabId, int prefabOffset, int value)
+        internal void SetIdentity(int pid, int poffset, int id)
         {
-            this.prefabId = prefabId;
-            this.prefabOffset = prefabOffset;
-            identity = value;
+            prefabId = pid;
+            prefabOffset = poffset;
+            identity = id;
+        }
+
+        protected virtual void OnDestroy()
+        {
+            onDestroy?.Invoke(this);
         }
     }
 }

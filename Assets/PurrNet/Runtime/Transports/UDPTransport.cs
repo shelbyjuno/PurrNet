@@ -55,10 +55,7 @@ namespace PurrNet.Transports
             _client = new NetManager(_clientListener)
             {
                 UnconnectedMessagesEnabled = true,
-                PingInterval = 1500/*,
-                SimulateLatency = true,
-                SimulationMinLatency = 1,
-                SimulationMaxLatency = 2*/
+                PingInterval = 1500
             };
             
             _server = new NetManager(_serverListener)
