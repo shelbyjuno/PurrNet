@@ -126,7 +126,7 @@ namespace PurrNet
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
-            var spawnManager = new SpawnManager(playersBroadcast, _networkPrefabs);
+            var spawnManager = new SpawnManager(playersManager, playersBroadcast, _networkPrefabs);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);

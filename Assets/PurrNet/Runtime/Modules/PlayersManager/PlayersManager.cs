@@ -79,13 +79,13 @@ namespace PurrNet.Modules
         public List<PlayerID> connectedPlayers => _connectedPlayers;
         public PlayerID? localPlayerId => _localPlayerId;
         
-        public event OnPlayerJoinedEvent OnPrePlayerJoined;
-        public event OnPlayerJoinedEvent OnPlayerJoined;
-        public event OnPlayerJoinedEvent OnPostPlayerJoined;
+        public event OnPlayerJoinedEvent onPrePlayerJoined;
+        public event OnPlayerJoinedEvent onPlayerJoined;
+        public event OnPlayerJoinedEvent onPostPlayerJoined;
         
-        public event OnPlayerLeftEvent OnPrePlayerLeft;
-        public event OnPlayerLeftEvent OnPlayerLeft;
-        public event OnPlayerLeftEvent OnPostPlayerLeft;
+        public event OnPlayerLeftEvent onPrePlayerLeft;
+        public event OnPlayerLeftEvent onPlayerLeft;
+        public event OnPlayerLeftEvent onPostPlayerLeft;
 
         private bool _asServer;
 
@@ -255,9 +255,9 @@ namespace PurrNet.Modules
                 _playerToConnection.Add(player, conn);
             }
             
-            OnPrePlayerJoined?.Invoke(player, _asServer);
-            OnPlayerJoined?.Invoke(player, _asServer);
-            OnPostPlayerJoined?.Invoke(player, _asServer);
+            onPrePlayerJoined?.Invoke(player, _asServer);
+            onPlayerJoined?.Invoke(player, _asServer);
+            onPostPlayerJoined?.Invoke(player, _asServer);
         }
         
         private void UnregisterPlayer(Connection conn)
@@ -269,9 +269,9 @@ namespace PurrNet.Modules
             _playerToConnection.Remove(player);
             _connectionToPlayerId.Remove(conn);
             
-            OnPrePlayerLeft?.Invoke(player, _asServer);
-            OnPlayerLeft?.Invoke(player, _asServer);
-            OnPostPlayerLeft?.Invoke(player, _asServer);
+            onPrePlayerLeft?.Invoke(player, _asServer);
+            onPlayerLeft?.Invoke(player, _asServer);
+            onPostPlayerLeft?.Invoke(player, _asServer);
         }
         
         private void UnregisterPlayer(PlayerID playerId)
@@ -281,9 +281,9 @@ namespace PurrNet.Modules
             _connectedPlayers.Remove(playerId);
             _playerToConnection.Remove(playerId);
             
-            OnPrePlayerLeft?.Invoke(playerId, _asServer);
-            OnPlayerLeft?.Invoke(playerId, _asServer);
-            OnPostPlayerLeft?.Invoke(playerId, _asServer);
+            onPrePlayerLeft?.Invoke(playerId, _asServer);
+            onPlayerLeft?.Invoke(playerId, _asServer);
+            onPostPlayerLeft?.Invoke(playerId, _asServer);
         }
 
         public void Disable(bool asServer) { }
