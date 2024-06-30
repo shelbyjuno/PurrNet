@@ -157,8 +157,11 @@ namespace PurrNet
 
         private void FixedUpdate()
         {
-            _serverModules.TriggerOnFixedUpdate();
-            _clientModules.TriggerOnFixedUpdate();
+            if (serverState == ConnectionState.Connected)
+                _serverModules.TriggerOnFixedUpdate();
+            
+            if (clientState == ConnectionState.Connected)
+                _clientModules.TriggerOnFixedUpdate();
         }
 
         private void OnDestroy()
