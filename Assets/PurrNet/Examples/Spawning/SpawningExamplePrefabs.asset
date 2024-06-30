@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: SpawningExamplePrefabs
   m_EditorClassIdentifier: 
   autoGenerate: 1
-  folder: {fileID: 102900000, guid: 4e4c030eb374040459644e35037e2228, type: 3}
+  folder: {fileID: 102900000, guid: b0ab51c611f611344ab59e2fb6be9aa8, type: 3}
   prefabs:
   - {fileID: 1560444519250819605, guid: db03de8c3e30c094fbaad7cd57f45a01, type: 3}

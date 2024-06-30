@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
     internal partial struct SpawnPrefabMessage : IAutoNetworkedData
     {
         public int prefabId { get; set; }
-        
-        public List<int> identities { get; set; }
+        public int prefabOffset { get; set; }
+        public int rootIdentityId { get; set; }
+        public int childrenCount { get; set; }
+        public Vector3 position { get; set; }
+        public Quaternion rotation { get; set; }
+        public Vector3 scale { get; set; }
     }
     
     public class SpawnManager : INetworkModule
@@ -21,6 +26,8 @@ namespace PurrNet.Modules
         
         private bool _asServer;
         private int _nextIdentity;
+        
+        private readonly List<NetworkIdentity> _spawnedObjects = new ();
         
         public SpawnManager(PlayersBroadcaster broadcaster, NetworkPrefabs prefabs)
         {
@@ -40,7 +47,28 @@ namespace PurrNet.Modules
 
         private void ClientSpawnEvent(PlayerID player, SpawnPrefabMessage data, bool asserver)
         {
-            Debug.Log($"Client received spawn event from {player} for prefab {data.prefabId} with {data.identities.Count} identities.");
+            if (!_prefabs.TryGetPrefab(data.prefabId, out var prefab))
+                PurrLogger.Throw<InvalidOperationException>($"The specified prefab id '{data.prefabId}' is not a network prefab.");
+            
+            var instance = Object.Instantiate(prefab, data.position, data.rotation);
+            instance.transform.localScale = data.scale;
+            
+            if (!instance.TryGetComponent<NetworkIdentity>(out _))
+                instance.AddComponent<NetworkIdentity>();
+            
+            instance.GetComponentsInChildren(true, _identitiesCache);
+
+            var identitiesCount = _identitiesCache.Count;
+            int firstIdentity = data.rootIdentityId;
+
+            if (identitiesCount != data.childrenCount)
+                PurrLogger.Throw<InvalidOperationException>($"The specified prefab '{prefab.name}' has a different amount of NetworkIdentities than the one sent by the server.");
+            
+            for (int i = 0; i < identitiesCount; i++)
+                _identitiesCache[i].SetIdentity(data.prefabId, i, firstIdentity + i);
+            
+            var rootIdentity = _identitiesCache[0];
+            _spawnedObjects.Add(rootIdentity);
         }
 
         public void Disable(bool asServer) { }
@@ -50,38 +78,42 @@ namespace PurrNet.Modules
             return _nextIdentity++;
         }
         
-        private readonly List<int> _tempIdentities = new ();
-
-        public void Spawn(GameObject gameObject)
+        public void Spawn(GameObject prefab, GameObject instance)
         {
             if (!_asServer)
                 PurrLogger.Throw<InvalidOperationException>("Only clients can spawn objects.");
 
-            if (!_prefabs.TryGetPrefabId(gameObject, out var prefabId))
-                PurrLogger.Throw<InvalidOperationException>($"The specified object '{gameObject.name}' is not a network prefab.");
-
-            _tempIdentities.Clear();
+            if (!_prefabs.TryGetPrefabId(prefab, out var prefabId))
+                PurrLogger.Throw<InvalidOperationException>($"The specified object '{prefab.name}' is not a network prefab.");
             
             // Check if the object already has a NetworkIdentity if not add one
-            if (!gameObject.TryGetComponent<NetworkIdentity>(out _))
-                gameObject.AddComponent<NetworkIdentity>();
+            if (!instance.TryGetComponent<NetworkIdentity>(out _))
+                instance.AddComponent<NetworkIdentity>();
             
             // Get all NetworkIdentities in the object
-            gameObject.GetComponentsInChildren(true, _identitiesCache);
-            
-            for (int i = 0; i < _identitiesCache.Count; i++)
+            instance.GetComponentsInChildren(true, _identitiesCache);
+
+            var identitiesCount = _identitiesCache.Count;
+            for (int i = 0; i < identitiesCount; i++)
             {
-                var identity = _identitiesCache[i];
                 var allocatedIdentity = AllocateNewIdentity();
-                
-                identity.SetIdentity(allocatedIdentity);
-                _tempIdentities.Add(allocatedIdentity);
+                _identitiesCache[i].SetIdentity(prefabId, i, allocatedIdentity);
             }
             
+            var rootIdentity = _identitiesCache[0];
+            
+            _spawnedObjects.Add(rootIdentity);
+            
+            // Send the spawn message to all clients
             _broadcaster.SendToAll(new SpawnPrefabMessage
             {
                 prefabId = prefabId,
-                identities = _tempIdentities
+                prefabOffset = 0,
+                rootIdentityId = rootIdentity.identity,
+                childrenCount = identitiesCount,
+                position = instance.transform.position,
+                rotation = instance.transform.rotation,
+                scale = instance.transform.localScale
             });
         }
     }

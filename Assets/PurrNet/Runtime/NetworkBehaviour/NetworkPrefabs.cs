@@ -40,6 +40,18 @@ namespace PurrNet
             id = prefabs.IndexOf(prefab);
             return id != -1;
         }
+        
+        public bool TryGetPrefab(int id, out GameObject prefab)
+        {
+            if (id < 0 || id >= prefabs.Count)
+            {
+                prefab = null;
+                return false;
+            }
+
+            prefab = prefabs[id];
+            return true;
+        }
 
         /// <summary>
         /// Editor only method to generate network prefabs from a specified folder.

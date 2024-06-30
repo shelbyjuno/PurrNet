@@ -1,18 +1,38 @@
+using PurrNet.Modules;
 using UnityEngine;
 
 namespace PurrNet
 {
     public class NetworkIdentity : MonoBehaviour
     {
-        private int _identity;
+        public int prefabId { get; private set; } = -1;
+
+        public int prefabOffset { get; private set; } = -1;
+
+        public int identity { get; private set; } = -1;
         
-        public bool isValid => _identity != 0;
-        
-        public int identity => _identity;
-        
-        internal void SetIdentity(int value)
+        public bool isValid => identity != -1;
+
+        internal SpawnPrefabMessage GetSpawnMessage()
         {
-            _identity = value;
+            var trs = transform;
+            
+            return new SpawnPrefabMessage
+            {
+                prefabId = prefabId,
+                prefabOffset = prefabOffset,
+                childrenCount = 0,
+                position = trs.position,
+                rotation = trs.rotation,
+                scale = trs.localScale
+            };
+        }
+        
+        internal void SetIdentity(int prefabId, int prefabOffset, int value)
+        {
+            this.prefabId = prefabId;
+            this.prefabOffset = prefabOffset;
+            identity = value;
         }
     }
 }
