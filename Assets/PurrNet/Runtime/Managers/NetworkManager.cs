@@ -1,5 +1,6 @@
 using System;
 using JetBrains.Annotations;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -40,6 +41,12 @@ namespace PurrNet
             {
                 if (_transport)
                 {
+                    if (serverState != ConnectionState.Disconnected ||
+                        clientState != ConnectionState.Disconnected)
+                    {
+                        throw new InvalidOperationException(PurrLogger.FormatMessage("Cannot change transport while it is being used."));
+                    }
+                    
                     _transport.transport.onConnected -= OnNewConnection;
                     _transport.transport.onDisconnected -= OnLostConnection;
                     _transport.transport.onConnectionState -= OnConnectionState;
@@ -115,10 +122,12 @@ namespace PurrNet
             var broadcastModule = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
+            var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
             
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
             modules.AddModule(playersManager);
+            modules.AddModule(playersBroadcast);
         }
 
         static bool ShouldStart(StartFlags flags)

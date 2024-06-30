@@ -14,7 +14,8 @@ namespace PurrNet.Modules
     public enum PacketType : byte
     {
         Ping = 0,
-        Broadcast = 69
+        Broadcast = 69,
+        PlayerBroadcast = 70,
     }
 
     internal interface IBroadcastCallback
@@ -51,8 +52,7 @@ namespace PurrNet.Modules
 
         private readonly bool _asServer;
 
-        private readonly Dictionary<uint, List<IBroadcastCallback>> _clientActions = new();
-        private readonly Dictionary<uint, List<IBroadcastCallback>> _serverActions = new();
+        private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new();
         
         public BroadcastModule(NetworkManager manager, bool asServer)
         {
@@ -79,7 +79,7 @@ namespace PurrNet.Modules
             stream.Serialize<uint>(ref typeId);
         }
         
-        private static ByteData GetData<T>(T data)
+        internal static ByteData GetData<T>(T data)
         {
             var dataStream = ByteBufferPool.Alloc();
             var stream = new NetworkStream(dataStream, false);
@@ -100,7 +100,6 @@ namespace PurrNet.Modules
             return value;
         }
         
-        
         public void SendToAll<T>(T data, Channel method = Channel.ReliableOrdered)
         {
             AssertIsServer("Cannot send data to all clients from client.");
@@ -116,13 +115,11 @@ namespace PurrNet.Modules
         
         public void SendToClient<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
         {
-            if (!_asServer)
-                throw new InvalidOperationException(PurrLogger.FormatMessage("Cannot send data to client from client."));
+            AssertIsServer("Cannot send data to player from client.");
             
             var byteData = GetData(data);
             _transport.SendToClient(conn, byteData, method);
         }
-        
         
         public void SendToServer<T>(T data, Channel method = Channel.ReliableOrdered)
         {
@@ -139,6 +136,9 @@ namespace PurrNet.Modules
         
         public void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
+            if (_asServer != asServer)
+                return;
+            
             var dataStream = ByteBufferPool.Alloc();
 
             dataStream.Write(data);
@@ -171,7 +171,7 @@ namespace PurrNet.Modules
             
             ByteBufferPool.Free(dataStream);
 
-            TriggerCallback(conn, typeId, instance, asServer);
+            TriggerCallback(conn, typeId, instance);
         }
 
         public void RegisterCallback<T>(BroadcastDelegate<T> callback, bool asServer) where T : new()
@@ -179,15 +179,14 @@ namespace PurrNet.Modules
             RegisterTypeForSerializer<T>();
 
             var hash = Hasher.GetStableHashU32(typeof(T));
-            var action = asServer ? _serverActions : _clientActions;
 
-            if (action.TryGetValue(hash, out var actions))
+            if (_actions.TryGetValue(hash, out var actions))
             {
                 actions.Add(new BroadcastCallback<T>(callback));
                 return;
             }
             
-            action.Add(hash, new List<IBroadcastCallback>
+            _actions.Add(hash, new List<IBroadcastCallback>
             {
                 new BroadcastCallback<T>(callback)
             });
@@ -209,11 +208,10 @@ namespace PurrNet.Modules
             }
         }
 
-        public void UnregisterCallback<T>(BroadcastDelegate<T> callback, bool asServer)
+        public void UnregisterCallback<T>(BroadcastDelegate<T> callback)
         {
             var hash = Hasher.GetStableHashU32(typeof(T));
-            var action = asServer ? _serverActions : _clientActions;
-            if (!action.TryGetValue(hash, out var actions))
+            if (!_actions.TryGetValue(hash, out var actions))
                 return;
             
             object boxed = callback;
@@ -228,14 +226,12 @@ namespace PurrNet.Modules
             }
         }
 
-        private void TriggerCallback(Connection conn, uint hash, object instance, bool asServer)
+        private void TriggerCallback(Connection conn, uint hash, object instance)
         {
-            var action = asServer ? _serverActions : _clientActions;
-
-            if (action.TryGetValue(hash, out var actions))
+            if (_actions.TryGetValue(hash, out var actions))
             {
                 for (int i = 0; i < actions.Count; i++)
-                    actions[i].TriggerCallback(conn, instance, asServer);
+                    actions[i].TriggerCallback(conn, instance, _asServer);
             }
         }
     }

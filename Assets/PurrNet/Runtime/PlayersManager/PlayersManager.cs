@@ -291,11 +291,11 @@ namespace PurrNet.Modules
         {
             if (asServer)
             {
-                _broadcastModule.UnregisterCallback<ClientLoginRequest>(OnClientLoginRequest, true);
+                _broadcastModule.UnregisterCallback<ClientLoginRequest>(OnClientLoginRequest);
             }
             else
             {
-                _broadcastModule.UnregisterCallback<ServerLoginResponse>(OnClientLoginResponse, false);
+                _broadcastModule.UnregisterCallback<ServerLoginResponse>(OnClientLoginResponse);
             }
         }
         
