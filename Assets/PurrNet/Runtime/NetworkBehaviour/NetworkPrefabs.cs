@@ -76,10 +76,10 @@ namespace PurrNet
             }
 
             // Track paths of existing prefabs for quick lookup
-            HashSet<string> existingPaths = new HashSet<string>();
+            var existingPaths = new HashSet<string>();
             foreach (var prefab in prefabs)
             {
-                if (prefab != null)
+                if (prefab)
                 {
                     existingPaths.Add(AssetDatabase.GetAssetPath(prefab));
                 }
@@ -123,8 +123,17 @@ namespace PurrNet
             
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Removing invalid prefabs...",  0.95f);
             // Remove invalid or no longer existing prefabs
-            prefabs.RemoveAll(prefab => prefab == null || !File.Exists(AssetDatabase.GetAssetPath(prefab)));
-
+            prefabs.RemoveAll(prefab => !prefab || !File.Exists(AssetDatabase.GetAssetPath(prefab)));
+            
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                if (!foundPrefabs.Contains(prefabs[i]))
+                {
+                    prefabs.RemoveAt(i);
+                    i--;
+                }
+            }
+            
             // Add new prefabs found in the folder to the list if they don't already exist
             foreach (var foundPrefab in foundPrefabs)
             {
