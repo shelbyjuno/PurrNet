@@ -12,15 +12,15 @@ public class SpawningExample : MonoBehaviour
 
     private void OnEnable()
     {
-        _networkManager.onServerState += OnServerState;
+        _networkManager.onServerConnectionState += OnServerConnectionState;
     }
 
     private void OnDisable()
     {
-        _networkManager.onServerState -= OnServerState;
+        _networkManager.onServerConnectionState -= OnServerConnectionState;
     }
 
-    private void OnServerState(ConnectionState state)
+    private void OnServerConnectionState(ConnectionState state)
     {
         var players = _networkManager.GetModule<PlayersManager>(true);
 
