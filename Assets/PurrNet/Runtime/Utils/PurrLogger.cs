@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace PurrNet.Logging
 {
-    public class PurrLogger
+    public static class PurrLogger
     {
         public static void Log(string message, Object reference = null, LogStyle logStyle = default, [CallerFilePath] string filePath = "")
         {
@@ -67,19 +67,17 @@ namespace PurrNet.Logging
         }
     }
 
-    public struct LogStyle
+    public readonly struct LogStyle
     {
-        private Color? _headerColor, _textColor;
+        private readonly Color? _headerColor;
+        private readonly Color? _textColor;
         public Color headerColor => _headerColor ?? Color.white;
         public Color textColor => _textColor ?? Color.white;
         
-        public LogStyle(Color headerColor = default, Color textColor = default)
+        public LogStyle(Color? headerColor = default, Color? textColor = default)
         {
-            headerColor = headerColor == default ? Color.white : headerColor;
-            this._headerColor = headerColor;
-            
-            textColor = textColor == default ? Color.white : textColor;
-            this._textColor = textColor;
+            _headerColor = headerColor ?? Color.white;
+            _textColor = textColor ?? Color.white;
         }
     }
 }

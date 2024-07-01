@@ -18,12 +18,9 @@ namespace PurrNet.Editor
 
             if (identity.isValid)
             {
-                EditorGUILayout.LabelField("Identity",identity.identity.ToString());
+                EditorGUILayout.LabelField("Identity", identity.id.ToString());
 
-                EditorGUILayout.LabelField("Prefab Id",
-                    identity.prefabOffset > 0
-                        ? $"{identity.prefabId} (+{identity.prefabOffset})"
-                        : $"{identity.prefabId}");
+                EditorGUILayout.LabelField("Prefab Id", identity.prefabId.ToString());
             }
             else
             {

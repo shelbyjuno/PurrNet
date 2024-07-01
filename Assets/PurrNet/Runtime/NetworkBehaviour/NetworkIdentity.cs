@@ -8,12 +8,11 @@ namespace PurrNet
     {
         public int prefabId { get; private set; } = -1;
 
-        public int prefabOffset { get; private set; } = -1;
+        public int id { get; private set; } = -1;
 
-        public int identity { get; private set; } = -1;
+        public bool isValid => id != -1;
         
-        public bool isValid => identity != -1;
-        
+        internal event Action<NetworkIdentity> onParentChanged; 
         internal event Action<NetworkIdentity> onDestroy; 
 
         internal SpawnPrefabMessage GetSpawnMessage(int childrenCount)
@@ -23,8 +22,7 @@ namespace PurrNet
             return new SpawnPrefabMessage
             {
                 prefabId = prefabId,
-                prefabOffset = prefabOffset,
-                rootIdentityId = identity,
+                rootIdentityId = id,
                 childrenCount = childrenCount,
                 position = trs.position,
                 rotation = trs.rotation,
@@ -32,28 +30,15 @@ namespace PurrNet
             };
         }
         
-        internal SpawnPrefabMessage GetSpawnMessage()
-        {
-            var trs = transform;
-            gameObject.GetComponentsInChildren(true, SpawnManager._identitiesCache);
-            
-            return new SpawnPrefabMessage
-            {
-                prefabId = prefabId,
-                prefabOffset = prefabOffset,
-                rootIdentityId = identity,
-                childrenCount = SpawnManager._identitiesCache.Count,
-                position = trs.position,
-                rotation = trs.rotation,
-                scale = trs.localScale
-            };
-        }
-        
-        internal void SetIdentity(int pid, int poffset, int id)
+        internal void SetIdentity(int pid, int identityId)
         {
             prefabId = pid;
-            prefabOffset = poffset;
-            identity = id;
+            id = identityId;
+        }
+        
+        protected virtual void OnTransformParentChanged()
+        {
+            onParentChanged?.Invoke(this);
         }
 
         protected virtual void OnDestroy()

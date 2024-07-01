@@ -11,9 +11,8 @@ namespace PurrNet.Modules
     internal partial struct SpawnPrefabMessage : IAutoNetworkedData
     {
         public int prefabId { get; set; }
-        public int prefabOffset { get; set; }
-        public int rootIdentityId { get; set; }
         public int childrenCount { get; set; }
+        public int rootIdentityId { get; set; }
         public Vector3 position { get; set; }
         public Quaternion rotation { get; set; }
         public Vector3 scale { get; set; }
@@ -24,20 +23,90 @@ namespace PurrNet.Modules
         public int identityId { get; set; }
     }
     
-    internal partial struct SpawnPrefabsSnapshot : IAutoNetworkedData
+    internal partial struct ParentInfoMessage : IAutoNetworkedData
     {
-        public List<SpawnPrefabMessage> prefabs { get; set; }
+        public int identityId { get; set; }
+        public int parentId { get; set; }
     }
     
-    public class SpawnManager : INetworkModule, IConnectionStateListener
+    internal enum GameSpawnActionType
+    {
+        Spawn,
+        Despawn,
+        ChangeParent
+    }
+    
+    internal partial struct GameActionSnapshot : IAutoNetworkedData
+    {
+        public List<GameSpawnActionEvent> events { get; set; }
+        
+        public GameActionSnapshot(List<GameSpawnActionEvent> events)
+        {
+            this.events = events;
+        }
+    }
+
+    internal partial struct GameSpawnActionEvent : INetworkedData
+    {
+        public GameSpawnActionType type;
+        
+        public ParentInfoMessage setParentMessage;
+        public SpawnPrefabMessage spawnPrefabMessage;
+        public DespawnIdentityMessage despawnIdentityMessage;
+        
+        public GameSpawnActionEvent(DespawnIdentityMessage despawn)
+        {
+            type = GameSpawnActionType.Despawn;
+            setParentMessage = default;
+            spawnPrefabMessage = default;
+            despawnIdentityMessage = despawn;
+        }
+        
+        public GameSpawnActionEvent(ParentInfoMessage setParent)
+        {
+            type = GameSpawnActionType.ChangeParent;
+            setParentMessage = setParent;
+            spawnPrefabMessage = default;
+            despawnIdentityMessage = default;
+        }
+        
+        public GameSpawnActionEvent(SpawnPrefabMessage spawnPrefab)
+        {
+            type = GameSpawnActionType.Spawn;
+            setParentMessage = default;
+            despawnIdentityMessage = default;
+            spawnPrefabMessage = spawnPrefab;
+        }
+
+        public void Serialize(NetworkStream packer)
+        {
+            packer.Serialize(ref type);
+
+            switch (type)
+            {
+                case GameSpawnActionType.Spawn:
+                    packer.Serialize(ref spawnPrefabMessage);
+                    break;
+                case GameSpawnActionType.ChangeParent:
+                    packer.Serialize(ref setParentMessage);
+                    break;
+                case GameSpawnActionType.Despawn:
+                    packer.Serialize(ref despawnIdentityMessage);
+                    break;
+            }
+        }
+    }
+    
+    public class SpawnManager : INetworkModule, IConnectionStateListener, IFixedUpdate
     {
         private readonly NetworkPrefabs _prefabs;
         private readonly PlayersManager _playersManager;
         private readonly PlayersBroadcaster _broadcaster;
         internal static readonly List<NetworkIdentity> _identitiesCache = new ();
         
-        private readonly List<NetworkIdentity> _spawnedObjects = new ();
-        private readonly List<SpawnPrefabMessage> _prefabsCache = new ();
+        private readonly Dictionary<int, NetworkIdentity> _allObjects = new ();
+        private readonly List<GameSpawnActionEvent> _allServerEvents = new ();
+        private readonly List<GameSpawnActionEvent> _serverEvents = new ();
         
         private bool _asServer;
         private int _nextIdentity;
@@ -55,67 +124,77 @@ namespace PurrNet.Modules
 
             if (!asServer)
             {
-                _broadcaster.Subscribe<SpawnPrefabsSnapshot>(ClientBatchedSpawnEvent);
-                _broadcaster.Subscribe<SpawnPrefabMessage>(ClientSpawnEvent);
-                _broadcaster.Subscribe<DespawnIdentityMessage>(ClientDespawnEvent);
+                _broadcaster.Subscribe<GameActionSnapshot>(ClientBatchedSpawnEvent);
             }
             else
             {
                 _playersManager.onPrePlayerJoined += PlayerJoined;
             }
         }
-
-        private void ClientDespawnEvent(PlayerID player, DespawnIdentityMessage data, bool asserver)
+        
+        
+        private void PlayerJoined(PlayerID player, bool asserver)
         {
-            for (var i = 0; i < _spawnedObjects.Count; i++)
+            if (_allServerEvents.Count == 0)
+                return;
+
+            _broadcaster.Send(player, new GameActionSnapshot(_allServerEvents));
+        }
+        
+        private void ClientBatchedSpawnEvent(PlayerID player, GameActionSnapshot data, bool asserver)
+        {
+            if (data.events == null) return;
+            
+            for (int i = 0; i < data.events.Count; i++)
             {
-                if (_spawnedObjects[i].identity == data.identityId)
+                var serverEvent = data.events[i];
+                
+                switch (serverEvent.type)
                 {
-                    Object.Destroy(_spawnedObjects[i].gameObject);
-                    _spawnedObjects.RemoveAt(i);
-                    break;
+                    case GameSpawnActionType.Spawn:
+                        HandleSpawnMessage(serverEvent.spawnPrefabMessage);
+                        break;
+                    case GameSpawnActionType.ChangeParent:
+                        HandleParentChangedMessage(serverEvent.setParentMessage);
+                        break;
+                    case GameSpawnActionType.Despawn:
+                        HandleDespawnMessage(serverEvent.despawnIdentityMessage);
+                        break;
                 }
             }
         }
 
-        private void PlayerJoined(PlayerID player, bool asserver)
+        private void HandleDespawnMessage(DespawnIdentityMessage data)
         {
-            if (_spawnedObjects.Count == 0)
-                return;
-
-            _prefabsCache.Clear();
-            
-            for (var i = 0; i < _spawnedObjects.Count; i++)
-            {
-                var spawnedObject = _spawnedObjects[i];
-                _prefabsCache.Add(spawnedObject.GetSpawnMessage());
-            }
-                        
-            var snapshot = new SpawnPrefabsSnapshot
-            {
-                prefabs = _prefabsCache
-            };
-
-            _broadcaster.Send(player, snapshot);
+            if (_allObjects.TryGetValue(data.identityId, out var identity))
+                Object.Destroy(identity.gameObject);
         }
         
-        private void ClientBatchedSpawnEvent(PlayerID player, SpawnPrefabsSnapshot data, bool asserver)
+        private void HandleParentChangedMessage(ParentInfoMessage data)
         {
-            for (var i = 0; i < data.prefabs.Count; i++)
-                CreateInstanceFromSpawnMessage(data.prefabs[i]);
-        }
+            if (!_allObjects.TryGetValue(data.identityId, out var identity))
+            {
+                PurrLogger.LogError($"UpdateParent - The specified identity id '{data.identityId}' does not exist.");
+                return;
+            }
 
-        private void ClientSpawnEvent(PlayerID player, SpawnPrefabMessage data, bool asserver)
-        {
-            CreateInstanceFromSpawnMessage(data);
-        }
+            NetworkIdentity parent = null;
+            
+            if (data.parentId != -1 && !_allObjects.TryGetValue(data.parentId, out parent))
+            {
+                PurrLogger.LogError($"The specified parent for '{identity.name}' with id '{data.parentId}' does not exist.", identity);
+                return;
+            }
 
-        private void CreateInstanceFromSpawnMessage(SpawnPrefabMessage data)
+            identity.transform.SetParent(parent == null ? null : parent.transform);
+        }
+        
+        private void HandleSpawnMessage(SpawnPrefabMessage data)
         {
             if (!_prefabs.TryGetPrefab(data.prefabId, out var prefab))
             {
                 PurrLogger.Throw<InvalidOperationException>(
-                    $"The specified prefab id '{data.prefabId}' is not a network prefab.");
+                    $"SpawnAction - The specified prefab id '{data.prefabId}' is not a network prefab.");
             }
 
             var instance = Object.Instantiate(prefab, data.position, data.rotation);
@@ -129,17 +208,11 @@ namespace PurrNet.Modules
             var identitiesCount = _identitiesCache.Count;
             int firstIdentity = data.rootIdentityId;
 
-            if (identitiesCount != data.childrenCount)
-            {
-                PurrLogger.Throw<InvalidOperationException>(
-                    $"The specified prefab '{prefab.name}' has a different amount of NetworkIdentities than the one sent by the server.");
-            }
-
             for (int i = 0; i < identitiesCount; i++)
-                _identitiesCache[i].SetIdentity(data.prefabId, i, firstIdentity + i);
-
-            var rootIdentity = _identitiesCache[0];
-            _spawnedObjects.Add(rootIdentity);
+            {
+                _identitiesCache[i].SetIdentity(data.prefabId, firstIdentity + i);
+                _allObjects.Add(firstIdentity + i, _identitiesCache[i]);
+            }
         }
 
         public void Disable(bool asServer) { }
@@ -170,16 +243,20 @@ namespace PurrNet.Modules
             for (int i = 0; i < identitiesCount; i++)
             {
                 var allocatedIdentity = AllocateNewIdentity();
-                _identitiesCache[i].SetIdentity(prefabId, i, allocatedIdentity);
+                var identity = _identitiesCache[i];
+                
+                identity.SetIdentity(prefabId, allocatedIdentity);
+                identity.onParentChanged += OnParentChangedServer;
+                identity.onDestroy += OnSpawnedObjectGotDestroyedServer;
+                
+                _allObjects.Add(allocatedIdentity, identity);
             }
             
             var rootIdentity = _identitiesCache[0];
-            rootIdentity.onDestroy += OnSpawnedObjectGotDestroyed;
+            var message = rootIdentity.GetSpawnMessage(_identitiesCache.Count);
             
-            _spawnedObjects.Add(rootIdentity);
-            
-            // Send the spawn message to all clients
-            _broadcaster.SendToAll(rootIdentity.GetSpawnMessage(identitiesCount));
+            _serverEvents.Add(new GameSpawnActionEvent(message));
+            _parentsDirty = true;
         }
 
         public void Despawn(GameObject instance)
@@ -201,35 +278,110 @@ namespace PurrNet.Modules
             if (!identity.isValid)
                 PurrLogger.Throw<InvalidOperationException>("The specified object isn't spawn, can't despawn it.");
             
-            identity.onDestroy -= OnSpawnedObjectGotDestroyed;
+            identity.onDestroy -= OnSpawnedObjectGotDestroyedServer;
+            identity.GetComponentsInChildren(true, _identitiesCache);
+            
+            for (int i = 0; i < _identitiesCache.Count; i++)
+            {
+                var id = _identitiesCache[i].id;
+                _allObjects.Remove(id);
+            }
             
             Object.Destroy(identity.gameObject);
 
-            _spawnedObjects.Remove(identity);
-            
-            _broadcaster.SendToAll(new DespawnIdentityMessage
+            _serverEvents.Add(new GameSpawnActionEvent(new DespawnIdentityMessage
             {
-                identityId = identity.identity
-            });
+                identityId = identity.id
+            }));
+            
+            _parentsDirty = true;
+        }
+        
+        private void OnParentChangedServer(NetworkIdentity obj)
+        {
+            int parentId = -1;
+            var parentTrs = obj.transform.parent;
+            
+            if (parentTrs != null)
+            {
+                if (parentTrs.TryGetComponent<NetworkIdentity>(out var parent))
+                     parentId = parent.id;
+                else
+                {
+                    PurrLogger.LogError($"The parent object '{parentTrs.name}' does not have a NetworkIdentity component.", obj);
+                    return;
+                }
+            }
+
+            _serverEvents.Add(new GameSpawnActionEvent(new ParentInfoMessage
+            {
+                identityId = obj.id,
+                parentId = parentId
+            }));
+            
+            _parentsDirty = true;
         }
 
-        private void OnSpawnedObjectGotDestroyed(NetworkIdentity ni)
+        private static void CompressEvents(List<GameSpawnActionEvent> events)
+        {
+            if (events.Count <= 1)
+                return;
+
+        }
+
+        private void OnSpawnedObjectGotDestroyedServer(NetworkIdentity ni)
         {
             Despawn(ni);
+            
+            _allObjects.Remove(ni.id);
         }
 
         public void OnConnectionState(ConnectionState state, bool asServer)
         {
             if (state == ConnectionState.Disconnecting)
             {
-                for (var i = 0; i < _spawnedObjects.Count; i++)
-                {
-                    if (_spawnedObjects[i])
-                        Object.Destroy(_spawnedObjects[i].gameObject);
-                }
+                foreach (var (_, identity) in _allObjects)
+                    Object.Destroy(identity.gameObject);
                 
-                _spawnedObjects.Clear();
+                _allObjects.Clear();
             }
+        }
+        
+        private bool _parentsDirty;
+
+        public void FixedUpdate()
+        {
+            if (!_parentsDirty) return;
+
+            CompressEvents(_serverEvents);
+            _allServerEvents.AddRange(_serverEvents);
+            CompressEvents(_allServerEvents);
+            
+            string log = "Server events: \n";
+            
+            for (int i = 0; i < _allServerEvents.Count; i++)
+            {
+                var serverEvent = _allServerEvents[i];
+                
+                switch (serverEvent.type)
+                {
+                    case GameSpawnActionType.Spawn:
+                        log += $"Spawn action {serverEvent.spawnPrefabMessage.rootIdentityId}\n";
+                        break;
+                    case GameSpawnActionType.ChangeParent:
+                        log += $"Change parent action {serverEvent.setParentMessage.identityId} to {serverEvent.setParentMessage.parentId}\n";
+                        break;
+                    case GameSpawnActionType.Despawn:
+                        log += $"Despawn action {serverEvent.despawnIdentityMessage.identityId}\n";
+                        break;
+                }
+            }
+
+            Debug.Log(log);
+            
+            _broadcaster.SendToAll(new GameActionSnapshot(_serverEvents));
+            _serverEvents.Clear();
+            _parentsDirty = false;
         }
     }
 }
