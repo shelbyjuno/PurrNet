@@ -49,32 +49,30 @@ namespace PurrNet.Editor
                 RenderStartStopButtons(networkManager);
 
             EditorGUILayout.PropertyField(_cookieScope);
+            
+            EditorGUILayout.PropertyField(_transport);
             EditorGUILayout.PropertyField(_networkPrefabs);
 
             if (networkManager.serverState != ConnectionState.Disconnected || networkManager.clientState != ConnectionState.Disconnected)
                 GUI.enabled = false;
 
-            RenderTickSlider(networkManager);
+            RenderTickSlider();
             
-            EditorGUILayout.PropertyField(_transport);
             GUI.enabled = true;
             
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void RenderTickSlider(NetworkManager networkManager)
+        private void RenderTickSlider()
         {
-            serializedObject.Update();
+            // serializedObject.Update();
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.IntSlider(_tickRate, 1, 128, new GUIContent("Tick Rate"));
             if (EditorGUI.EndChangeCheck())
             {
                 Time.fixedDeltaTime = 1f / _tickRate.intValue;
-                EditorUtility.SetDirty(networkManager);
                 AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
             }
-            serializedObject.ApplyModifiedProperties();
         }
 
         private static void RenderStartStopButtons(NetworkManager networkManager)

@@ -12,7 +12,6 @@ namespace PurrNet
 
         public bool isValid => id != -1;
         
-        internal event Action<NetworkIdentity> onParentChanged; 
         internal event Action<NetworkIdentity> onDestroy; 
 
         internal SpawnPrefabMessage GetSpawnMessage(int childrenCount)
@@ -34,11 +33,6 @@ namespace PurrNet
         {
             prefabId = pid;
             id = identityId;
-        }
-        
-        protected virtual void OnTransformParentChanged()
-        {
-            onParentChanged?.Invoke(this);
         }
 
         protected virtual void OnDestroy()

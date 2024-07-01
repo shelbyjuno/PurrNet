@@ -55,13 +55,13 @@ namespace PurrNet.Transports
             _client = new NetManager(_clientListener)
             {
                 UnconnectedMessagesEnabled = true,
-                PingInterval = 1500
+                PingInterval = 900
             };
             
             _server = new NetManager(_serverListener)
             {
                 UnconnectedMessagesEnabled = true,
-                PingInterval = 1500
+                PingInterval = 900
             };
 
             _client.Start();
