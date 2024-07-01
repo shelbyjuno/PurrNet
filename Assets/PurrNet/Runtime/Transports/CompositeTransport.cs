@@ -86,7 +86,7 @@ namespace PurrNet.Transports
     
     public class CompositeTransport : GenericTransport, ITransport
     {
-        [SerializeField] private GenericTransport[] _transports = new GenericTransport[] {};
+        [SerializeField] private GenericTransport[] _transports = {};
         
         private GenericTransport _clientTransport;
         

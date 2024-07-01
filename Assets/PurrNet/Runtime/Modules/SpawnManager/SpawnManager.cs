@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
-using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -241,8 +240,13 @@ namespace PurrNet.Modules
             
             var obj = identity as NetworkTransform;
 
-            if (obj) obj.StartIgnoreParentChanged();
+            if (obj)
+            {
+                obj.StartIgnoreParentChanged();
+            }
+            
             identity.transform.SetParent(parent == null ? null : parent.transform);
+            
             if (obj)
             {
                 obj.StopIgnoreParentChanged();

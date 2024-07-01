@@ -80,9 +80,9 @@ namespace PurrNet
         public bool shouldAutoStartServer => ShouldStart(_startServerFlags);
         public bool shouldAutoStartClient => ShouldStart(_startClientFlags);
         
-        public ConnectionState serverState => _transport.transport.listenerState;
+        public ConnectionState serverState => _transport == null ? ConnectionState.Disconnected : _transport.transport.listenerState;
         
-        public ConnectionState clientState => _transport.transport.clientState;
+        public ConnectionState clientState => _transport == null ? ConnectionState.Disconnected : _transport.transport.clientState;
         
         public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
         
