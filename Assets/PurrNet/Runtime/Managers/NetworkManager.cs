@@ -33,10 +33,10 @@ namespace PurrNet
         [Header("Persistence Settings")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
-        [Header("Network Settings")] 
+        [Header("Network Settings")]
+        [SerializeField] private GenericTransport _transport;
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private int _tickRate = 20;
-        [SerializeField] private GenericTransport _transport;
         
         /// <summary>
         /// Occurs when the server connection state changes.

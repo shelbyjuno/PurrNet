@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 8001544072162061334}
   - component: {fileID: 2499625934359998503}
   - component: {fileID: 240680432112183908}
-  - component: {fileID: -2169546807357917549}
   m_Layer: 0
   m_Name: SpawningPlayer
   m_TagString: Untagged
@@ -127,18 +126,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &-2169546807357917549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1560444519250819605}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &3568380479217191225
 GameObject:
   m_ObjectHideFlags: 0
@@ -151,7 +138,7 @@ GameObject:
   - component: {fileID: 5403868327392250363}
   - component: {fileID: 4319337149487438665}
   - component: {fileID: 1527733866334533207}
-  - component: {fileID: 6883301847892651173}
+  - component: {fileID: 4793121055180698241}
   m_Layer: 0
   m_Name: Cube - Bottom
   m_TagString: Untagged
@@ -248,7 +235,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &6883301847892651173
+--- !u!114 &4793121055180698241
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -257,9 +244,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 3568380479217191225}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _syncParentFrom: 4
+  _syncTransformFrom: 1
+  _syncPosition: 1
+  _positionInterpolationTicks: 1
+  _syncRotation: 1
+  _rotationInterpolationTicks: 1
+  _syncLocalScale: 0
+  _localScaleInterpolationTicks: 1
 --- !u!1 &3706820735218235372
 GameObject:
   m_ObjectHideFlags: 0
@@ -272,7 +267,7 @@ GameObject:
   - component: {fileID: 6698379790470558667}
   - component: {fileID: 3392471211856301127}
   - component: {fileID: 2452940176272903929}
-  - component: {fileID: 1930863831587484742}
+  - component: {fileID: 2094792936452001535}
   m_Layer: 0
   m_Name: Cube - Center
   m_TagString: Untagged
@@ -369,7 +364,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1930863831587484742
+--- !u!114 &2094792936452001535
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -378,9 +373,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 3706820735218235372}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _syncParentFrom: 4
+  _syncTransformFrom: 1
+  _syncPosition: 1
+  _positionInterpolationTicks: 1
+  _syncRotation: 1
+  _rotationInterpolationTicks: 1
+  _syncLocalScale: 0
+  _localScaleInterpolationTicks: 1
 --- !u!1 &7964827295588954381
 GameObject:
   m_ObjectHideFlags: 0
@@ -393,7 +396,7 @@ GameObject:
   - component: {fileID: 7703629486919121978}
   - component: {fileID: 2021606879982386158}
   - component: {fileID: 4053259548688830731}
-  - component: {fileID: 5240474636017235912}
+  - component: {fileID: 7291925292199472257}
   m_Layer: 0
   m_Name: Cube - Top
   m_TagString: Untagged
@@ -490,7 +493,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5240474636017235912
+--- !u!114 &7291925292199472257
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -499,6 +502,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 7964827295588954381}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _syncParentFrom: 1
+  _syncTransformFrom: 1
+  _syncPosition: 1
+  _positionInterpolationTicks: 1
+  _syncRotation: 1
+  _rotationInterpolationTicks: 1
+  _syncLocalScale: 0
+  _localScaleInterpolationTicks: 1
