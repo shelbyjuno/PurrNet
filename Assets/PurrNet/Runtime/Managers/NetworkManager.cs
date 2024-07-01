@@ -1,3 +1,7 @@
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 using System;
 using JetBrains.Annotations;
 using PurrNet.Logging;
@@ -112,6 +116,16 @@ namespace PurrNet
             _serverModules = new ModulesCollection(this, true);
             _clientModules = new ModulesCollection(this, false);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            Time.fixedDeltaTime = 1f / _tickRate;
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+#endif
 
         public T GetModule<T>(bool asServer) where T : INetworkModule
         {
