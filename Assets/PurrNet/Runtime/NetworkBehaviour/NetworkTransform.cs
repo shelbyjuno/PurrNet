@@ -85,7 +85,7 @@ namespace PurrNet
             return _syncParentFrom.HasFlag(NetworkPermissions.Server) && asServer;
         }
         
-        public bool HasParentSyncAuthority(PlayerID playersManagerLocalPlayerId)
+        public bool HasParentSyncAuthority(PlayerID playerId)
         {
             if (_syncParentFrom.HasFlag(NetworkPermissions.Everyone))
                 return true;

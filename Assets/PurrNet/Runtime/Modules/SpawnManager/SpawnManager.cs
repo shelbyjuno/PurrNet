@@ -277,7 +277,8 @@ namespace PurrNet.Modules
             {
                 var identity = _identitiesCache[i];
                 identity.SetIdentity(data.prefabId, firstIdentity + i);
-                
+                identity.onDestroy += OnSpawnedObjectGotDestroyedClient;
+
                 if (identity is NetworkTransform obj)
                     obj.onParentChanged += OnParentChangedClient;
                 
@@ -443,6 +444,11 @@ namespace PurrNet.Modules
                 return;
         }
 
+        private void OnSpawnedObjectGotDestroyedClient(NetworkIdentity ni)
+        {
+            _allObjects.Remove(ni.id);
+        }
+        
         private void OnSpawnedObjectGotDestroyedServer(NetworkIdentity ni)
         {
             Despawn(ni);
