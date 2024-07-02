@@ -19,6 +19,13 @@ namespace PurrNet
         Owner
     }
     
+    [Serializable]
+    public struct PropertySyncSettings
+    {
+        public bool sync;
+        public int interpolationTicks;
+    }
+    
     public class NetworkTransform : NetworkIdentity
     {
         [Header("Permission Settings")]
@@ -26,14 +33,9 @@ namespace PurrNet
         [SerializeField] private NetworkTarget _syncTransformFrom = NetworkTarget.Server;
         
         [Header("Sync Settings")]
-        [SerializeField] private bool _syncPosition = true;
-        [SerializeField, Range(0, 10)] private int _positionInterpolationTicks = 1;
-        [Space]
-        [SerializeField] private bool _syncRotation = true;
-        [SerializeField, Range(0, 10)] private int _rotationInterpolationTicks = 1;
-        [Space]
-        [SerializeField] private bool _syncLocalScale;
-        [SerializeField, Range(0, 10)] private int _localScaleInterpolationTicks = 1;
+        [SerializeField] private PropertySyncSettings _transformPosition = new() { sync = true, interpolationTicks = 1 };
+        [SerializeField] private PropertySyncSettings _transformRotation =  new() { sync = true, interpolationTicks = 1 };
+        [SerializeField] private PropertySyncSettings _transformScale = new() { sync = false, interpolationTicks = 1 };
         
         Transform _lastValidParent;
         

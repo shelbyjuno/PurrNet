@@ -1,4 +1,3 @@
-using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -27,6 +26,20 @@ namespace PurrNet.Editor
 
             statisticsManager.checkInterval = EditorGUILayout.Slider("Check Interval", statisticsManager.checkInterval, 0.05f, 1f);
             
+            var scriptProp = serializedObject.FindProperty("m_Script");
+
+            GUI.enabled = false;
+            EditorGUILayout.PropertyField(scriptProp, true);
+            GUI.enabled = true;
+
+            GUILayout.Space(10);
+            EditorGUILayout.LabelField("Collection Settings", EditorStyles.boldLabel);
+
+            statisticsManager.checkInterval = EditorGUILayout.Slider("Check Rate In Seconds", statisticsManager.checkInterval, 0.05f, 1f);
+            
+            GUILayout.Space(10);
+            EditorGUILayout.LabelField("Statistics Preview", EditorStyles.boldLabel);
+
             RenderStatistics(statisticsManager);
             
             serializedObject.ApplyModifiedProperties();
@@ -38,10 +51,7 @@ namespace PurrNet.Editor
 
             if (!statisticsManager.ConnectedServer && !statisticsManager.ConnectedClient)
             {
-                GUILayout.BeginHorizontal();
-                DrawLed(Status.red);
-                EditorGUILayout.LabelField($"Not connected");  
-                GUILayout.EndHorizontal();
+                EditorGUILayout.LabelField("Awaiting connection");  
                 return;
             }
 
@@ -79,15 +89,15 @@ namespace PurrNet.Editor
             GUILayout.EndHorizontal();
         }
 
-        private Status GetPingStatus(StatisticsManager statisticsManager)
+        private static Status GetPingStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.Ping < 50)
-                return Status.green;
-            if (statisticsManager.Ping < 100)
-                return Status.yellow;
-            if (statisticsManager.Ping < 200)
-                return Status.orange;
-            return Status.red;
+            return statisticsManager.ping switch
+            {
+                < 50 => Status.green,
+                < 100 => Status.yellow,
+                < 200 => Status.orange,
+                _ => Status.red
+            };
         }
         
         private Status GetJitterStatus(StatisticsManager statisticsManager)
