@@ -35,6 +35,7 @@ namespace PurrNet
         
         // Download stuff
         private float _totalDataReceived;
+        private float _totalDataSent;
         private float _lastDataCheckTime;
         
         private void Awake()
@@ -51,7 +52,9 @@ namespace PurrNet
             if (Time.time - _lastDataCheckTime >= 1f)
             {
                 Download = Mathf.Round((_totalDataReceived / 1024f) * 1000f) / 1000f;
+                Upload = Mathf.Round((_totalDataSent / 1024f) * 1000f) / 1000f;
                 _totalDataReceived = 0;
+                _totalDataSent = 0;
                 _lastDataCheckTime = Time.time;
             }
         }
@@ -68,6 +71,7 @@ namespace PurrNet
             _playersServerBroadcaster.Subscribe<PacketMessage>(ReceivePacket);
             _networkManager.GetModule<TickManager>(true).OnTick += OnServerTick;
             _networkManager.transport.transport.onDataReceived += OnDataReceived;
+            _networkManager.transport.transport.onDataSent += OnDataSent;
         }
 
         private void OnClientConnectionState(ConnectionState state)
@@ -81,13 +85,16 @@ namespace PurrNet
             _playersClientBroadcaster = _networkManager.GetModule<PlayersBroadcaster>(false);
             _playersClientBroadcaster.Subscribe<PingMessage>(ReceivePing);
             _playersClientBroadcaster.Subscribe<PacketMessage>(ReceivePacket);
-            _networkManager.GetModule<TickManager>(true).OnTick += OnClientTick;
-            
-            if(!ConnectedServer)
+            _networkManager.GetModule<TickManager>(false).OnTick += OnClientTick;
+
+            if (!ConnectedServer)
+            {
                 _networkManager.transport.transport.onDataReceived += OnDataReceived;
+                _networkManager.transport.transport.onDataSent += OnDataSent;
+            }
             
             if(_tickManager.TickRate < _packetsToSendPerSec)
-                _packetsToSendPerSec = (int)_tickManager.TickRate;
+                _packetsToSendPerSec = (int)_tickManager.TickRate; 
         }
 
         private void OnServerTick()
@@ -97,6 +104,9 @@ namespace PurrNet
         
         private void OnClientTick()
         {
+            if (!gameObject.activeInHierarchy)
+                return;
+            
             HandlePingCheck();
             HandlePacketCheck();
         }
@@ -159,6 +169,11 @@ namespace PurrNet
         private void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
             _totalDataReceived += data.length;
+        }
+
+        private void OnDataSent(Connection conn, ByteData data, bool asServer)
+        {
+            _totalDataSent += data.length;
         }
 
         private struct PingMessage

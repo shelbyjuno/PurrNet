@@ -16,6 +16,7 @@ namespace PurrNet.Transports
         public event OnConnected onConnected;
         public event OnDisconnected onDisconnected;
         public event OnDataReceived onDataReceived;
+        public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
 
         public string address { get => _address; set => _address = value; }
@@ -79,6 +80,11 @@ namespace PurrNet.Transports
         public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
         {
             onDataReceived?.Invoke(conn, data, asServer);
+        }
+
+        public void RaiseDataSent(Connection conn, ByteData data, bool asServer)
+        {
+            onDataSent?.Invoke(conn, data, asServer);
         }
 
         private void OnServerData(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod deliverymethod)
@@ -238,6 +244,7 @@ namespace PurrNet.Transports
             var peer = _server.GetPeerById(target.connectionId);
             
             peer?.Send(data.data, data.offset, data.length, deliveryMethod);
+            RaiseDataSent(target, data, true);
         }
         
         public void SendToServer(ByteData data, Channel method = Channel.Unreliable)
@@ -247,6 +254,7 @@ namespace PurrNet.Transports
             
             var deliveryMethod = (DeliveryMethod)(byte)method;
             _client.SendToAll(data.data, data.offset, data.length, deliveryMethod);
+            RaiseDataSent(default, data, false);
         }
 
         public void CloseConnection(Connection conn)

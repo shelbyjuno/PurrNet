@@ -24,6 +24,7 @@ namespace PurrNet.Transports
         public event OnConnected onConnected;
         public event OnDisconnected onDisconnected;
         public event OnDataReceived onDataReceived;
+        public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
 
         public string address { get => _address; set => _address = value; }
@@ -72,7 +73,12 @@ namespace PurrNet.Transports
         {
             onDataReceived?.Invoke(conn, data, asServer);
         }
-        
+
+        public void RaiseDataSent(Connection conn, ByteData data, bool asServer)
+        {
+            onDataSent?.Invoke(conn, data, asServer);
+        }
+
         private void ReconstructServer()
         {
             _connections.Clear();
@@ -293,6 +299,7 @@ namespace PurrNet.Transports
                 return;
             
             _server.SendOne(target.connectionId, new ArraySegment<byte>(data.data, data.offset, data.length));
+            RaiseDataSent(target, data, true);
         }
 
         public void SendToServer(ByteData data, Channel method = Channel.ReliableOrdered)
@@ -301,6 +308,7 @@ namespace PurrNet.Transports
                 return;
 
             _client.Send(new ArraySegment<byte>(data.data, data.offset, data.length));
+            RaiseDataSent(default, data, false);
         }
 
         public void CloseConnection(Connection conn)

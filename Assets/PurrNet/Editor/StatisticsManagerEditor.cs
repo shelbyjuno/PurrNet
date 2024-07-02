@@ -24,7 +24,7 @@ namespace PurrNet.Editor
             GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
             GUILayout.Space(13);
 
-            statisticsManager.checkInterval = EditorGUILayout.Slider("Check Interval", statisticsManager.checkInterval, 0.05f, 1f);
+            //statisticsManager.checkInterval = EditorGUILayout.Slider("Check Interval", statisticsManager.checkInterval, 0.05f, 1f);
             
             var scriptProp = serializedObject.FindProperty("m_Script");
 

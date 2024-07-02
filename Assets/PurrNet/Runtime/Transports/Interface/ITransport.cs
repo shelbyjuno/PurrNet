@@ -5,6 +5,7 @@ namespace PurrNet.Transports
 {
     public delegate void OnConnectionState(ConnectionState state, bool asServer);
     public delegate void OnDataReceived(Connection conn, ByteData data, bool asServer);
+    public delegate void OnDataSent(Connection conn, ByteData data, bool asServer); //Cannot send from clients
     public delegate void OnConnected(Connection conn, bool asServer);
     public delegate void OnDisconnected(Connection conn, bool asServer);
     
@@ -65,11 +66,14 @@ namespace PurrNet.Transports
         event OnConnected onConnected;
         event OnDisconnected onDisconnected;
         event OnDataReceived onDataReceived;
+        event OnDataSent onDataSent;
         event OnConnectionState onConnectionState;
         
         public IReadOnlyList<Connection> connections { get; }
 
         void RaiseDataReceived(Connection conn, ByteData data, bool asServer);
+        
+        void RaiseDataSent(Connection conn, ByteData data, bool asServer);
         
         void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable);
         
