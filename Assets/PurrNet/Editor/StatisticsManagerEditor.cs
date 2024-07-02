@@ -1,4 +1,3 @@
-using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,12 +17,21 @@ namespace PurrNet.Editor
         {
             serializedObject.Update();
             var statisticsManager = (StatisticsManager)target;
+            
+            var scriptProp = serializedObject.FindProperty("m_Script");
 
-            GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
-            GUILayout.Space(13);
+            GUI.enabled = false;
+            EditorGUILayout.PropertyField(scriptProp, true);
+            GUI.enabled = true;
+
+            GUILayout.Space(10);
+            EditorGUILayout.LabelField("Collection Settings", EditorStyles.boldLabel);
 
             statisticsManager.checkRate = EditorGUILayout.Slider("Check Rate", statisticsManager.checkRate, 0.05f, 1f);
             
+            GUILayout.Space(10);
+            EditorGUILayout.LabelField("Statistics Preview", EditorStyles.boldLabel);
+
             RenderStatistics(statisticsManager);
             
             serializedObject.ApplyModifiedProperties();
@@ -46,45 +54,40 @@ namespace PurrNet.Editor
             {
                 GUILayout.BeginHorizontal();
                 DrawLed(GetPingStatus(statisticsManager));
-                EditorGUILayout.LabelField($"Ping:");
-                EditorGUILayout.LabelField($"{statisticsManager.ping}ms");
+                EditorGUILayout.LabelField("Ping", $"{statisticsManager.ping}ms");
                 GUILayout.EndHorizontal();
             
                 GUILayout.BeginHorizontal();
                 DrawLed(GetJitterStatus(statisticsManager));
-                EditorGUILayout.LabelField($"Jitter:");
-                EditorGUILayout.LabelField($"{statisticsManager.jitter}ms");
+                EditorGUILayout.LabelField("Jitter", $"{statisticsManager.jitter}ms");
                 GUILayout.EndHorizontal();
             
                 GUILayout.BeginHorizontal();
                 DrawLed(GetPacketLossStatus(statisticsManager));
-                EditorGUILayout.LabelField($"Packet Loss:");
-                EditorGUILayout.LabelField($"{statisticsManager.packetLoss}%");
+                EditorGUILayout.LabelField("Packet Loss", $"{statisticsManager.packetLoss}%");
                 GUILayout.EndHorizontal();
             }
             
             GUILayout.BeginHorizontal();
-            DrawLed(Status.green);
-            EditorGUILayout.LabelField($"Upload:");
-            EditorGUILayout.LabelField($"{statisticsManager.upload}KB/s");
+            DrawLed(statisticsManager.upload > 0 ? Status.green : Status.yellow);
+            EditorGUILayout.LabelField("Upload", $"{statisticsManager.upload}KB/s");
             GUILayout.EndHorizontal();
             
             GUILayout.BeginHorizontal();
-            DrawLed(Status.green);
-            EditorGUILayout.LabelField($"Download:");
-            EditorGUILayout.LabelField($"{statisticsManager.download}KB/s");
+            DrawLed(statisticsManager.download > 0 ? Status.green : Status.yellow);
+            EditorGUILayout.LabelField("Download", $"{statisticsManager.download}KB/s");
             GUILayout.EndHorizontal();
         }
 
-        private Status GetPingStatus(StatisticsManager statisticsManager)
+        private static Status GetPingStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.ping < 50)
-                return Status.green;
-            if (statisticsManager.ping < 100)
-                return Status.yellow;
-            if (statisticsManager.ping < 200)
-                return Status.orange;
-            return Status.red;
+            return statisticsManager.ping switch
+            {
+                < 50 => Status.green,
+                < 100 => Status.yellow,
+                < 200 => Status.orange,
+                _ => Status.red
+            };
         }
         
         private Status GetJitterStatus(StatisticsManager statisticsManager)

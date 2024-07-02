@@ -8,23 +8,14 @@ namespace PurrNet
     public class NetworkPrefabsEditor : UnityEditor.Editor
     {
         private NetworkPrefabs networkPrefabs;
+        private SerializedProperty prefabs;
         
         private void OnEnable()
         {
-            Selection.selectionChanged += OnSelectionChanged;
             networkPrefabs = (NetworkPrefabs)target;
-        }
-
-        private void OnDisable()
-        {
-            Selection.selectionChanged -= OnSelectionChanged;
-        }
-
-        private void OnSelectionChanged()
-        {
-            if (Selection.activeObject != networkPrefabs)
-                return;
-
+            
+            prefabs = serializedObject.FindProperty("prefabs");
+            
             if (networkPrefabs.autoGenerate)
                 networkPrefabs.Generate();
         }
@@ -33,26 +24,30 @@ namespace PurrNet
         {
             serializedObject.Update();
 
-            GUILayout.Box("Network Prefabs", HeaderStyle(), GUILayout.ExpandWidth(true));
-            string description = "This asset is used to store any prefabs containing a Network Behaviour. " +
-                                 "You can add prefabs to this asset manually or auto generate the references. " +
-                                 "This list is used by the NetworkManager to spawn network prefabs.";
-            GUILayout.Box(description, new GUIStyle(GUI.skin.box) { wordWrap = true });
+            GUILayout.Label("Network Prefabs", EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
+            const string description = "This asset is used to store any prefabs containing a Network Behaviour. " +
+                                       "You can add prefabs to this asset manually or auto generate the references. " +
+                                       "This list is used by the NetworkManager to spawn network prefabs.";
+            
+            GUILayout.Label(description, DescriptionStyle());
 
-            GUILayout.Space(20);
+            GUILayout.Space(10);
 
-            EditorGUILayout.LabelField("Project Folder", FolderStyle());
-
+            EditorGUILayout.LabelField("Generation Settings", EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("folder"), new GUIContent(""));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("folder"), GUIContent.none);
             if (EditorGUI.EndChangeCheck())
             {
                 EditorUtility.SetDirty(networkPrefabs);
             }
 
-            GUILayout.Space(10);
+            GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(networkPrefabs.autoGenerate ? "Auto generate: Enabled" : "Auto generate: Disabled", GenerateButtonStyle(networkPrefabs.autoGenerate)))
+            if (networkPrefabs.autoGenerate)
+                GUI.color = Color.green;
+            
+            if (GUILayout.Button(networkPrefabs.autoGenerate ? "Auto generate: Enabled" : "Auto generate: Disabled",
+                    GUILayout.Width(1), GUILayout.ExpandWidth(true)))
             {
                 networkPrefabs.autoGenerate = !networkPrefabs.autoGenerate;
                 
@@ -61,46 +56,36 @@ namespace PurrNet
                 
                 EditorUtility.SetDirty(networkPrefabs);
             }
+            
+            GUI.color = Color.white;
 
-            if (GUILayout.Button("Generate", new GUIStyle(GUI.skin.button) { fontSize = 15 }))
-            {
+            if (GUILayout.Button("Generate", GUILayout.Width(1), GUILayout.ExpandWidth(true)))
                 networkPrefabs.Generate();
-            }
+            
+            GUILayout.EndHorizontal();
 
-            GUIStyle backgroundStyle = new GUIStyle(GUI.skin.box)
-            {
-                normal = { background = EditorGUIUtility.isProSkin ? MakeTex(2, 2, new Color(0.2f, 0.2f, 0.2f, 1f)) : MakeTex(2, 2, new Color(0.8f, 0.8f, 0.8f, 1f)) }
-            };
+            GUILayout.Space(10);
 
-            EditorGUILayout.BeginVertical(backgroundStyle);
             EditorGUI.BeginDisabledGroup(networkPrefabs.autoGenerate);
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("prefabs"), new GUIContent("Prefabs"), true);
+            EditorGUILayout.PropertyField(prefabs, true);
             EditorGUI.EndDisabledGroup();
-            EditorGUILayout.EndVertical();
 
             serializedObject.ApplyModifiedProperties();
 
             if (GUI.changed)
-            {
                 EditorUtility.SetDirty(networkPrefabs);
-            }
         }
 
-        private GUIStyle HeaderStyle()
+        private static GUIStyle DescriptionStyle()
         {
-            GUIStyle headerStyle = new GUIStyle(GUI.skin.box)
+            var headerStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 30,
-                wordWrap = true,
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Color.white }
+                wordWrap = true
             };
 
-            return headerStyle;
+            return headerStyle; 
         }
-
-
+        
         private Texture2D MakeTex(int width, int height, Color col)
         {
             Color[] pix = new Color[width * height];
@@ -116,13 +101,11 @@ namespace PurrNet
 
         private GUIStyle GenerateButtonStyle(bool toggle)
         {
-            GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
+            var buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 15,
-                fontStyle = FontStyle.Bold,
                 normal = new GUIStyleState()
                 {
-                    textColor = toggle ? Color.green : Color.red
+                    textColor = toggle ? Color.green : Color.white
                 }
             };
 
