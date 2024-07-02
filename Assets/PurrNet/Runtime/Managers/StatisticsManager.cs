@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using PurrNet.Modules;
 using PurrNet.Transports;
@@ -8,20 +9,20 @@ namespace PurrNet
     [RequireComponent(typeof(NetworkManager))]
     public class StatisticsManager : MonoBehaviour
     {
-        [Range(0.05f, 1f)] public float checkRate = 0.33f;
+        [Range(0.05f, 1f)] public float checkInterval = 0.33f;
         
-        public int ping = 0;
-        public int jitter = 0;
-        public int packetLoss = 0;
-        public int upload = 0;
-        public int download = 0;
+        public int Ping { get; private set; }
+        public int Jitter { get; private set; }
+        public int PacketLoss { get; private set; }
+        public float Upload { get; private set; }
+        public float Download { get; private set; }
         
         private NetworkManager _networkManager;
         private PlayersBroadcaster _playersClientBroadcaster;
         private PlayersBroadcaster _playersServerBroadcaster;
         private TickManager _tickManager;
-        public bool connectedServer;
-        public bool connectedClient;
+        public bool ConnectedServer { get; private set; }
+        public bool ConnectedClient { get; private set; }
         
         // Ping stuff
         private Queue<float> _pingHistory = new();
@@ -32,6 +33,10 @@ namespace PurrNet
         private List<float> _receivedPacketTimes = new();
         private uint _lastPacketSendTick;
         
+        // Download stuff
+        private float _totalDataReceived;
+        private float _lastDataCheckTime;
+        
         private void Awake()
         {
             if (!TryGetComponent(out _networkManager))
@@ -41,9 +46,19 @@ namespace PurrNet
             _networkManager.onClientConnectionState += OnClientConnectionState;
         }
 
+        private void Update()
+        {
+            if (Time.time - _lastDataCheckTime >= 1f)
+            {
+                Download = Mathf.Round((_totalDataReceived / 1024f) * 1000f) / 1000f;
+                _totalDataReceived = 0;
+                _lastDataCheckTime = Time.time;
+            }
+        }
+
         private void OnServerConnectionState(ConnectionState state)
         {
-            connectedServer = state == ConnectionState.Connected;
+            ConnectedServer = state == ConnectionState.Connected;
             
             if (state != ConnectionState.Connected)
                 return;
@@ -52,11 +67,12 @@ namespace PurrNet
             _playersServerBroadcaster.Subscribe<PingMessage>(ReceivePing);
             _playersServerBroadcaster.Subscribe<PacketMessage>(ReceivePacket);
             _networkManager.GetModule<TickManager>(true).OnTick += OnServerTick;
+            _networkManager.transport.transport.onDataReceived += OnDataReceived;
         }
 
         private void OnClientConnectionState(ConnectionState state)
         {
-            connectedClient = state == ConnectionState.Connected;
+            ConnectedClient = state == ConnectionState.Connected;
             
             if (state != ConnectionState.Connected)
                 return;
@@ -67,10 +83,13 @@ namespace PurrNet
             _playersClientBroadcaster.Subscribe<PacketMessage>(ReceivePacket);
             _networkManager.GetModule<TickManager>(true).OnTick += OnClientTick;
             
+            if(!ConnectedServer)
+                _networkManager.transport.transport.onDataReceived += OnDataReceived;
+            
             if(_tickManager.TickRate < _packetsToSendPerSec)
                 _packetsToSendPerSec = (int)_tickManager.TickRate;
         }
-        
+
         private void OnServerTick()
         {
             
@@ -84,7 +103,7 @@ namespace PurrNet
 
         private void HandlePingCheck()
         {
-            if (_lastPingSendTick + _tickManager.TimeToTick(checkRate) > _tickManager.Tick)
+            if (_lastPingSendTick + _tickManager.TimeToTick(checkInterval) > _tickManager.Tick)
                 return;
             
             _pingHistory.Enqueue(Time.time);
@@ -105,9 +124,9 @@ namespace PurrNet
                 return;
             }
 
-            var oldPing = ping;
-            ping = Mathf.Max(0, Mathf.FloorToInt((Time.time - _pingHistory.Dequeue()) * 1000) - 1000/_tickManager.TickRate * 2);
-            jitter = Mathf.Abs(ping - oldPing);
+            var oldPing = Ping;
+            Ping = Mathf.Max(0, Mathf.FloorToInt((Time.time - _pingHistory.Dequeue()) * 1000) - 1000/_tickManager.TickRate * 2);
+            Jitter = Mathf.Abs(Ping - oldPing);
         }
 
         private void HandlePacketCheck()
@@ -130,11 +149,16 @@ namespace PurrNet
                 return;
             }
             
-            packetLoss = 100 - Mathf.FloorToInt((_receivedPacketTimes.Count / (float)_packetsToSendPerSec) * 100);
-            if (_tickManager.Tick < 10 * _tickManager.TickRate || packetLoss < 0)
-                packetLoss = 0;
+            PacketLoss = 100 - Mathf.FloorToInt((_receivedPacketTimes.Count / (float)_packetsToSendPerSec) * 100);
+            if (_tickManager.Tick < 10 * _tickManager.TickRate || PacketLoss < 0)
+                PacketLoss = 0;
             
             _receivedPacketTimes.Add(Time.time);
+        }
+
+        private void OnDataReceived(Connection conn, ByteData data, bool asServer)
+        {
+            _totalDataReceived += data.length;
         }
 
         private struct PingMessage

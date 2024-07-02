@@ -7,11 +7,14 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(StatisticsManager), true)]
     public class StatisticsManagerEditor : UnityEditor.Editor
     {
-        private SerializedProperty _checkRate;
-
         private void OnEnable()
         {
-            _checkRate = serializedObject.FindProperty("checkRate");
+            EditorApplication.update += Repaint;
+        }
+
+        private void OnDisable()
+        {
+            EditorApplication.update -= Repaint;
         }
 
         public override void OnInspectorGUI()
@@ -22,7 +25,7 @@ namespace PurrNet.Editor
             GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
             GUILayout.Space(13);
 
-            statisticsManager.checkRate = EditorGUILayout.Slider("Check Rate", statisticsManager.checkRate, 0.05f, 1f);
+            statisticsManager.checkInterval = EditorGUILayout.Slider("Check Interval", statisticsManager.checkInterval, 0.05f, 1f);
             
             RenderStatistics(statisticsManager);
             
@@ -33,7 +36,7 @@ namespace PurrNet.Editor
         {
             serializedObject.Update();
 
-            if (!statisticsManager.connectedServer && !statisticsManager.connectedClient)
+            if (!statisticsManager.ConnectedServer && !statisticsManager.ConnectedClient)
             {
                 GUILayout.BeginHorizontal();
                 DrawLed(Status.red);
@@ -42,69 +45,69 @@ namespace PurrNet.Editor
                 return;
             }
 
-            if (statisticsManager.connectedClient)
+            if (statisticsManager.ConnectedClient)
             {
                 GUILayout.BeginHorizontal();
                 DrawLed(GetPingStatus(statisticsManager));
                 EditorGUILayout.LabelField($"Ping:");
-                EditorGUILayout.LabelField($"{statisticsManager.ping}ms");
+                EditorGUILayout.LabelField($"{statisticsManager.Ping}ms");
                 GUILayout.EndHorizontal();
             
                 GUILayout.BeginHorizontal();
                 DrawLed(GetJitterStatus(statisticsManager));
                 EditorGUILayout.LabelField($"Jitter:");
-                EditorGUILayout.LabelField($"{statisticsManager.jitter}ms");
+                EditorGUILayout.LabelField($"{statisticsManager.Jitter}ms");
                 GUILayout.EndHorizontal();
             
                 GUILayout.BeginHorizontal();
                 DrawLed(GetPacketLossStatus(statisticsManager));
                 EditorGUILayout.LabelField($"Packet Loss:");
-                EditorGUILayout.LabelField($"{statisticsManager.packetLoss}%");
+                EditorGUILayout.LabelField($"{statisticsManager.PacketLoss}%");
                 GUILayout.EndHorizontal();
             }
             
             GUILayout.BeginHorizontal();
             DrawLed(Status.green);
             EditorGUILayout.LabelField($"Upload:");
-            EditorGUILayout.LabelField($"{statisticsManager.upload}KB/s");
+            EditorGUILayout.LabelField($"{statisticsManager.Upload}KB/s");
             GUILayout.EndHorizontal();
             
             GUILayout.BeginHorizontal();
             DrawLed(Status.green);
             EditorGUILayout.LabelField($"Download:");
-            EditorGUILayout.LabelField($"{statisticsManager.download}KB/s");
+            EditorGUILayout.LabelField($"{statisticsManager.Download}KB/s");
             GUILayout.EndHorizontal();
         }
 
         private Status GetPingStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.ping < 50)
+            if(statisticsManager.Ping < 50)
                 return Status.green;
-            if (statisticsManager.ping < 100)
+            if (statisticsManager.Ping < 100)
                 return Status.yellow;
-            if (statisticsManager.ping < 200)
+            if (statisticsManager.Ping < 200)
                 return Status.orange;
             return Status.red;
         }
         
         private Status GetJitterStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.jitter < 10)
+            if(statisticsManager.Jitter < 10)
                 return Status.green;
-            if (statisticsManager.jitter < 20)
+            if (statisticsManager.Jitter < 20)
                 return Status.yellow;
-            if (statisticsManager.jitter < 40)
+            if (statisticsManager.Jitter < 40)
                 return Status.orange;
             return Status.red;
         }
         
         private Status GetPacketLossStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.packetLoss < 11)
+            if(statisticsManager.PacketLoss < 11)
                 return Status.green;
-            if (statisticsManager.packetLoss < 21)
+            if (statisticsManager.PacketLoss < 21)
                 return Status.yellow;
-            if (statisticsManager.packetLoss < 31)
+            if (statisticsManager.PacketLoss < 31)
                 return Status.orange;
             return Status.red;
         }
@@ -147,20 +150,6 @@ namespace PurrNet.Editor
             };
 
             return headerStyle;
-        }
-        
-        private GUIStyle FolderStyle()
-        {
-            GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 15,
-                fontStyle = FontStyle.Bold,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
-            };
-            return labelStyle;
         }
 
         private enum Status
