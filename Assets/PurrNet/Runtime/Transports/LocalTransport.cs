@@ -7,6 +7,7 @@ namespace PurrNet.Transports
         public event OnConnected onConnected;
         public event OnDisconnected onDisconnected;
         public event OnDataReceived onDataReceived;
+        public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
 
         public IReadOnlyList<Connection> connections => new [] { new Connection(0) };
@@ -44,6 +45,11 @@ namespace PurrNet.Transports
         public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
         {
             onDataReceived?.Invoke(conn, data, asServer);
+        }
+
+        public void RaiseDataSent(Connection conn, ByteData data, bool asServer)
+        {
+            onDataSent?.Invoke(conn, data, asServer);
         }
 
         public void StopListening()
@@ -113,6 +119,7 @@ namespace PurrNet.Transports
                 return;
             
             onDataReceived?.Invoke(target, data, false);
+            RaiseDataSent(target, data, true);
         }
 
         public void SendToServer(ByteData data, Channel method = Channel.Unreliable)
@@ -123,6 +130,7 @@ namespace PurrNet.Transports
             
             var conn = new Connection(0);
             onDataReceived?.Invoke(conn, data, true);
+            RaiseDataSent(default, data, false);
         }
 
         public void CloseConnection(Connection conn)

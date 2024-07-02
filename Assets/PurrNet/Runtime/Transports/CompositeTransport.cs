@@ -93,6 +93,7 @@ namespace PurrNet.Transports
         public event OnConnected onConnected;
         public event OnDisconnected onDisconnected;
         public event OnDataReceived onDataReceived;
+        public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
 
         public IReadOnlyList<Connection> connections => _connections;
@@ -383,11 +384,17 @@ namespace PurrNet.Transports
             onDataReceived?.Invoke(conn, data, asServer);
         }
 
+        public void RaiseDataSent(Connection conn, ByteData data, bool asServer)
+        {
+            onDataSent?.Invoke(conn, data, asServer);
+        }
+
         public void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable)
         {
             var pair = _rawConnections[target.connectionId];
             var protocol = _transports[pair.transportIdx];
             protocol.transport.SendToClient(pair.originalConnection, data, method);
+            RaiseDataSent(pair.originalConnection, data, true);
         }
 
         public void SendToServer(ByteData data, Channel method = Channel.Unreliable)
@@ -396,6 +403,7 @@ namespace PurrNet.Transports
                 throw new NotSupportedException("No supported transport found for client.");
             
             _clientTransport.transport.SendToServer(data, method);
+            RaiseDataSent(default, data, false);
         }
 
         public void CloseConnection(Connection conn)
