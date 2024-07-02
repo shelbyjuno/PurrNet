@@ -91,7 +91,7 @@ namespace PurrNet.Editor
 
         private static Status GetPingStatus(StatisticsManager statisticsManager)
         {
-            return statisticsManager.ping switch
+            return statisticsManager.Ping switch
             {
                 < 50 => Status.green,
                 < 100 => Status.yellow,
