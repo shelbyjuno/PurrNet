@@ -6,14 +6,11 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(StatisticsManager), true)]
     public class StatisticsManagerEditor : UnityEditor.Editor
     {
+        private SerializedProperty _scriptProp;
+        
         private void OnEnable()
         {
-            EditorApplication.update += Repaint;
-        }
-
-        private void OnDisable()
-        {
-            EditorApplication.update -= Repaint;
+            _scriptProp = serializedObject.FindProperty("m_Script");
         }
 
         public override void OnInspectorGUI()
@@ -24,10 +21,8 @@ namespace PurrNet.Editor
             /*GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
             GUILayout.Space(13);*/
 
-            var scriptProp = serializedObject.FindProperty("m_Script");
-
             GUI.enabled = false;
-            EditorGUILayout.PropertyField(scriptProp, true);
+            EditorGUILayout.PropertyField(_scriptProp, true);
             GUI.enabled = true;
 
             GUILayout.Space(10);
@@ -41,6 +36,8 @@ namespace PurrNet.Editor
             RenderStatistics(statisticsManager);
             
             serializedObject.ApplyModifiedProperties();
+            
+            Repaint();
         }
         
         private void RenderStatistics(StatisticsManager statisticsManager)

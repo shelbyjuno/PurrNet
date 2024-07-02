@@ -7,6 +7,8 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(NetworkManager), true)]
     public class NetworkManagerInspector : UnityEditor.Editor
     {
+        private SerializedProperty _scriptProp;
+
         private SerializedProperty _startServerFlags;
         private SerializedProperty _startClientFlags;
         
@@ -18,6 +20,8 @@ namespace PurrNet.Editor
         
         private void OnEnable()
         {
+            _scriptProp = serializedObject.FindProperty("m_Script");
+
             _startServerFlags = serializedObject.FindProperty("_startServerFlags");
             _startClientFlags = serializedObject.FindProperty("_startClientFlags");
             
@@ -36,12 +40,16 @@ namespace PurrNet.Editor
             bool willStartClient = networkManager.shouldAutoStartClient;
             string status = willStartClient && willStartServer ? "HOST" : willStartClient ? "CLIENT" : willStartServer ? "SERVER" : "NONE";
 
+            GUI.enabled = false;
+            EditorGUILayout.PropertyField(_scriptProp, true);
+            GUI.enabled = true;
+            
             GUI.color = willStartClient && willStartServer ? Color.green : willStartClient ? Color.blue : willStartServer ? Color.red : Color.white;
             GUILayout.BeginVertical("box");
             GUI.color = Color.white;
             EditorGUILayout.LabelField($"During play mode this instance will start as a <b>{status}</b>", new GUIStyle(GUI.skin.label) {richText = true});
             GUILayout.EndVertical();
-            
+
             EditorGUILayout.PropertyField(_startServerFlags);
             EditorGUILayout.PropertyField(_startClientFlags);
 
@@ -49,9 +57,14 @@ namespace PurrNet.Editor
                 RenderStartStopButtons(networkManager);
 
             EditorGUILayout.PropertyField(_cookieScope);
+
+            if (networkManager.isClient || networkManager.isServer)
+                GUI.enabled = false;
             
             EditorGUILayout.PropertyField(_transport);
             EditorGUILayout.PropertyField(_networkPrefabs);
+            
+            GUI.enabled = true;
 
             if (networkManager.serverState != ConnectionState.Disconnected || networkManager.clientState != ConnectionState.Disconnected)
                 GUI.enabled = false;

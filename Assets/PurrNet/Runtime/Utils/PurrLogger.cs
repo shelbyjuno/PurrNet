@@ -63,21 +63,27 @@ namespace PurrNet.Logging
         private static string FormatMessage_Internal(string message, LogStyle logStyle, string filePath)
         {
             string fileName = System.IO.Path.GetFileName(filePath).Replace(".cs", "");
-            return $"<color=#{ColorUtility.ToHtmlStringRGB(logStyle.headerColor)}>[{fileName}]</color> <color=#{ColorUtility.ToHtmlStringRGB(logStyle.textColor)}>{message}</color>";
+            
+            var prefix = logStyle.headerColor.HasValue ? $"<color=#{ColorUtility.ToHtmlStringRGB(logStyle.headerColor.Value)}>[{fileName}]</color>" :
+                $"[{fileName}]";
+            
+            var text = logStyle.textColor.HasValue ? $"<color=#{ColorUtility.ToHtmlStringRGB(logStyle.textColor.Value)}>{message}</color>" :
+                message;
+            
+            return $"{prefix} {text}";
         }
     }
 
     public readonly struct LogStyle
     {
-        private readonly Color? _headerColor;
-        private readonly Color? _textColor;
-        public Color headerColor => _headerColor ?? Color.white;
-        public Color textColor => _textColor ?? Color.white;
-        
+        public Color? headerColor { get; }
+
+        public Color? textColor { get; }
+
         public LogStyle(Color? headerColor = default, Color? textColor = default)
         {
-            _headerColor = headerColor ?? Color.white;
-            _textColor = textColor ?? Color.white;
+            this.headerColor = headerColor;
+            this.textColor = textColor;
         }
     }
 }
