@@ -210,12 +210,16 @@ namespace PurrNet
 
         public void StartServer()
         {
+            if (!_transport)
+                PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
             _serverModules.RegisterModules();
             _transport.StartServer();
         }
         
         public void StartClient()
         {
+            if (!_transport)
+                PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
             _clientModules.RegisterModules();
             _transport.StartClient();
         }
