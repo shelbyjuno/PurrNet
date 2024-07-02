@@ -11,7 +11,6 @@ namespace PurrNet.Modules
     internal partial struct SpawnPrefabMessage : IAutoNetworkedData
     {
         public int prefabId { get; set; }
-        public int childrenCount { get; set; }
         public int rootIdentityId { get; set; }
         public Vector3 position { get; set; }
         public Quaternion rotation { get; set; }
@@ -326,7 +325,7 @@ namespace PurrNet.Modules
             }
             
             var rootIdentity = _identitiesCache[0];
-            var message = rootIdentity.GetSpawnMessage(_identitiesCache.Count);
+            var message = rootIdentity.GetSpawnMessage();
             
             _serverEvents.Add(new GameSpawnActionEvent(message));
             _parentsDirty = true;

@@ -14,7 +14,7 @@ namespace PurrNet
         
         internal event Action<NetworkIdentity> onDestroy; 
 
-        internal SpawnPrefabMessage GetSpawnMessage(int childrenCount)
+        internal SpawnPrefabMessage GetSpawnMessage()
         {
             var trs = transform;
             
@@ -22,7 +22,6 @@ namespace PurrNet
             {
                 prefabId = prefabId,
                 rootIdentityId = id,
-                childrenCount = childrenCount,
                 position = trs.position,
                 rotation = trs.rotation,
                 scale = trs.localScale

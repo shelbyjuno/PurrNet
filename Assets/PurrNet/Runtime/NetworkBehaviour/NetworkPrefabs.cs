@@ -52,6 +52,10 @@ namespace PurrNet
             prefab = prefabs[id];
             return true;
         }
+        
+#if UNITY_EDITOR
+        private bool _generating;
+#endif
 
         /// <summary>
         /// Editor only method to generate network prefabs from a specified folder.
@@ -59,6 +63,10 @@ namespace PurrNet
         public void Generate()
         {
         #if UNITY_EDITOR
+            if (_generating) return;
+            
+            _generating = true;
+            
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Checking existing...",  0f);
             if (folder == null)
             {
@@ -69,6 +77,7 @@ namespace PurrNet
                 }
 
                 EditorUtility.ClearProgressBar();
+                _generating = false;
                 return;
             }
 
@@ -84,6 +93,7 @@ namespace PurrNet
                 }
                 
                 EditorUtility.ClearProgressBar();
+                _generating = false;
                 return;
             }
 
@@ -158,6 +168,8 @@ namespace PurrNet
 
             EditorUtility.SetDirty(this);
             EditorUtility.ClearProgressBar();
+            
+            _generating = false;
 
             //PurrLogger.Log($"{prefabs.Count} prefabs found in {folderPath}", new LogStyle( Color.green));
         #endif

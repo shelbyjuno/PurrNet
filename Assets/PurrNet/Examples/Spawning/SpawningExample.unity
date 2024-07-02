@@ -149,12 +149,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _syncParentFrom: 1
   _syncTransformFrom: 2
-  _syncPosition: 1
-  _positionInterpolationTicks: 1
-  _syncRotation: 1
-  _rotationInterpolationTicks: 1
-  _syncLocalScale: 0
-  _localScaleInterpolationTicks: 1
+  _transformPosition:
+    sync: 1
+    interpolationTicks: 1
+  _transformRotation:
+    sync: 1
+    interpolationTicks: 1
+  _transformScale:
+    sync: 0
+    interpolationTicks: 1
 --- !u!4 &256655797
 Transform:
   m_ObjectHideFlags: 0
