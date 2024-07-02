@@ -28,7 +28,7 @@ namespace PurrNet.Utils
             return _decoder_64.TryGetValue(hash, out type);
         }
 
-        static uint PrepareType(Type type)
+        public static uint PrepareType(Type type)
         {
             if (_hashes.TryGetValue(type, out var hash))
                 return hash;

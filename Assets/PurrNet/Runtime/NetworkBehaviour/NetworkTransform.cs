@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -28,8 +29,9 @@ namespace PurrNet
     
     public class NetworkTransform : NetworkIdentity
     {
+        [FormerlySerializedAs("_syncParentFrom")]
         [Header("Permission Settings")]
-        [SerializeField] private NetworkPermissions _syncParentFrom = NetworkPermissions.None;
+        [SerializeField] private NetworkPermissions _syncParentPermissions = NetworkPermissions.None;
         [SerializeField] private NetworkTarget _syncTransformFrom = NetworkTarget.Server;
         
         [Header("Sync Settings")]
@@ -56,8 +58,9 @@ namespace PurrNet
             }
         }
 
-        protected virtual void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             ValidateParent();
         }
 
@@ -81,15 +84,15 @@ namespace PurrNet
         
         public bool HasParentSyncAuthority(bool asServer)
         {
-            if (_syncParentFrom.HasFlag(NetworkPermissions.Everyone))
+            if (_syncParentPermissions.HasFlag(NetworkPermissions.Everyone))
                 return true;
             
-            return _syncParentFrom.HasFlag(NetworkPermissions.Server) && asServer;
+            return _syncParentPermissions.HasFlag(NetworkPermissions.Server) && asServer;
         }
         
         public bool HasParentSyncAuthority(PlayerID playerId)
         {
-            if (_syncParentFrom.HasFlag(NetworkPermissions.Everyone))
+            if (_syncParentPermissions.HasFlag(NetworkPermissions.Everyone))
                 return true;
             
             /*if (_syncParentFrom.HasFlag(NetworkPermissions.Owner) && playersManagerLocalPlayerId == PlayerID.LocalPlayer)

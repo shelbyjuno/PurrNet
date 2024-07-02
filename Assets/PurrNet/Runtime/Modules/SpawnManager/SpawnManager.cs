@@ -17,6 +17,11 @@ namespace PurrNet.Modules
         public Vector3 scale { get; set; }
     }
     
+    internal partial struct RemoveIdentityMessage : IAutoNetworkedData
+    {
+        public int identityId { get; set; }
+    }
+    
     internal partial struct DespawnIdentityMessage : IAutoNetworkedData
     {
         public int identityId { get; set; }
@@ -32,6 +37,7 @@ namespace PurrNet.Modules
     {
         Spawn,
         Despawn,
+        Remove,
         ChangeParent
     }
     
@@ -47,12 +53,14 @@ namespace PurrNet.Modules
         public ParentInfoMessage setParentMessage;
         public SpawnPrefabMessage spawnPrefabMessage;
         public DespawnIdentityMessage despawnIdentityMessage;
+        public RemoveIdentityMessage removeIdentityMessage;
         
         public GameSpawnActionEvent(DespawnIdentityMessage despawn)
         {
             type = GameSpawnActionType.Despawn;
             setParentMessage = default;
             spawnPrefabMessage = default;
+            removeIdentityMessage = default;
             despawnIdentityMessage = despawn;
         }
         
@@ -62,6 +70,7 @@ namespace PurrNet.Modules
             setParentMessage = setParent;
             spawnPrefabMessage = default;
             despawnIdentityMessage = default;
+            removeIdentityMessage = default;
         }
         
         public GameSpawnActionEvent(SpawnPrefabMessage spawnPrefab)
@@ -69,7 +78,17 @@ namespace PurrNet.Modules
             type = GameSpawnActionType.Spawn;
             setParentMessage = default;
             despawnIdentityMessage = default;
+            removeIdentityMessage = default;
             spawnPrefabMessage = spawnPrefab;
+        }
+        
+        public GameSpawnActionEvent(RemoveIdentityMessage remove)
+        {
+            type = GameSpawnActionType.Remove;
+            setParentMessage = default;
+            spawnPrefabMessage = default;
+            despawnIdentityMessage = default;
+            removeIdentityMessage = remove;
         }
 
         public void Serialize(NetworkStream packer)
@@ -87,6 +106,9 @@ namespace PurrNet.Modules
                 case GameSpawnActionType.Despawn:
                     packer.Serialize(ref despawnIdentityMessage);
                     break;
+                case GameSpawnActionType.Remove:
+                    packer.Serialize(ref removeIdentityMessage);
+                    break;
             }
         }
     }
@@ -96,7 +118,7 @@ namespace PurrNet.Modules
         private readonly NetworkPrefabs _prefabs;
         private readonly PlayersManager _playersManager;
         private readonly PlayersBroadcaster _broadcaster;
-        internal static readonly List<NetworkIdentity> _identitiesCache = new ();
+        static readonly List<NetworkIdentity> _identitiesCache = new ();
         
         private readonly Dictionary<int, NetworkIdentity> _allObjects = new ();
         private readonly List<GameSpawnActionEvent> _allServerEvents = new ();
@@ -174,7 +196,7 @@ namespace PurrNet.Modules
             obj.ValidateParent();
             
             _serverEvents.Add(new GameSpawnActionEvent(data));
-            _parentsDirty = true;
+            _eventsDirty = true;
         }
 
         private void PlayerJoined(PlayerID player, bool asserver)
@@ -212,6 +234,18 @@ namespace PurrNet.Modules
                 case GameSpawnActionType.Despawn:
                     HandleDespawnMessage(serverEvent.despawnIdentityMessage);
                     break;
+                case GameSpawnActionType.Remove:
+                    HandleRemoveMessage(serverEvent.removeIdentityMessage);
+                    break;
+            }
+        }
+        
+        private void HandleRemoveMessage(RemoveIdentityMessage data)
+        {
+            if (_allObjects.TryGetValue(data.identityId, out var identity))
+            {
+                identity.onRemoved -= OnIdentityRemovedClient;
+                Object.Destroy(identity);
             }
         }
 
@@ -277,6 +311,7 @@ namespace PurrNet.Modules
                 var identity = _identitiesCache[i];
                 identity.SetIdentity(data.prefabId, firstIdentity + i);
                 identity.onDestroy += OnSpawnedObjectGotDestroyedClient;
+                identity.onRemoved += OnIdentityRemovedClient;
 
                 if (identity is NetworkTransform obj)
                     obj.onParentChanged += OnParentChangedClient;
@@ -317,6 +352,7 @@ namespace PurrNet.Modules
                 
                 identity.SetIdentity(prefabId, allocatedIdentity);
                 identity.onDestroy += OnSpawnedObjectGotDestroyedServer;
+                identity.onRemoved += OnIdentityRemovedServer;
                 
                 if (identity is NetworkTransform obj)
                     obj.onParentChanged += OnParentChangedServer;
@@ -328,7 +364,7 @@ namespace PurrNet.Modules
             var message = rootIdentity.GetSpawnMessage();
             
             _serverEvents.Add(new GameSpawnActionEvent(message));
-            _parentsDirty = true;
+            _eventsDirty = true;
         }
 
         public void Despawn(GameObject instance)
@@ -344,6 +380,9 @@ namespace PurrNet.Modules
         
         public void Despawn(NetworkIdentity identity)
         {
+            if (!identity)
+                return;
+            
             if (!_asServer)
                 PurrLogger.Throw<InvalidOperationException>("Only clients can despawn objects.");
 
@@ -351,6 +390,7 @@ namespace PurrNet.Modules
                 PurrLogger.Throw<InvalidOperationException>("The specified object isn't spawn, can't despawn it.");
             
             identity.onDestroy -= OnSpawnedObjectGotDestroyedServer;
+            identity.onRemoved -= OnIdentityRemovedServer;
             identity.GetComponentsInChildren(true, _identitiesCache);
             
             for (int i = 0; i < _identitiesCache.Count; i++)
@@ -366,7 +406,7 @@ namespace PurrNet.Modules
                 identityId = identity.id
             }));
             
-            _parentsDirty = true;
+            _eventsDirty = true;
         }
 
         private bool ValidateParentChange(NetworkTransform obj, bool asServer)
@@ -425,7 +465,7 @@ namespace PurrNet.Modules
                     parentId = parentId
                 }));
 
-                _parentsDirty = true;
+                _eventsDirty = true;
             }
             else
             {
@@ -439,8 +479,10 @@ namespace PurrNet.Modules
 
         private static void CompressEvents(List<GameSpawnActionEvent> events)
         {
-            if (events.Count <= 1)
-                return;
+            /*if (events.Count <= 1)
+                return;*/
+            
+            Debug.Assert(events.Count > 0, "The events list is empty.");
         }
 
         private void OnSpawnedObjectGotDestroyedClient(NetworkIdentity ni)
@@ -454,23 +496,55 @@ namespace PurrNet.Modules
             
             _allObjects.Remove(ni.id);
         }
+        
+        private void OnIdentityRemovedClient(NetworkIdentity ni)
+        {
+            _allObjects.Remove(ni.id);
+
+            if (ni.gameObject && !ni.HasSpawningAuthority(false))
+                PurrLogger.LogError($"Client removed '{ni.GetType().Name}' without having permissions to do so.");
+        }
+        
+        private void OnIdentityRemovedServer(NetworkIdentity ni)
+        {
+            _serverEvents.Add(new GameSpawnActionEvent(new RemoveIdentityMessage
+            {
+                identityId = ni.id
+            }));
+            
+            _eventsDirty = true;
+            _allObjects.Remove(ni.id);
+        }
 
         public void OnConnectionState(ConnectionState state, bool asServer)
         {
             if (state == ConnectionState.Disconnecting)
             {
                 foreach (var (_, identity) in _allObjects)
+                {
+                    if (asServer)
+                    {
+                        identity.onRemoved -= OnIdentityRemovedServer;
+                        identity.onDestroy -= OnSpawnedObjectGotDestroyedServer;
+                    }
+                    else
+                    {
+                        identity.onRemoved -= OnIdentityRemovedClient;
+                        identity.onDestroy -= OnIdentityRemovedClient;
+                    }
+
                     Object.Destroy(identity.gameObject);
+                }
                 
                 _allObjects.Clear();
             }
         }
         
-        private bool _parentsDirty;
+        private bool _eventsDirty;
 
         public void FixedUpdate()
         {
-            if (!_parentsDirty) return;
+            if (!_eventsDirty) return;
 
             CompressEvents(_serverEvents);
             _allServerEvents.AddRange(_serverEvents);
@@ -493,6 +567,9 @@ namespace PurrNet.Modules
                     case GameSpawnActionType.Despawn:
                         log += $"Despawn action {serverEvent.despawnIdentityMessage.identityId}\n";
                         break;
+                    case GameSpawnActionType.Remove:
+                        log += $"Remove action {serverEvent.removeIdentityMessage.identityId}\n";
+                        break;
                 }
             }
 
@@ -504,7 +581,7 @@ namespace PurrNet.Modules
             });
             
             _serverEvents.Clear();
-            _parentsDirty = false;
+            _eventsDirty = false;
         }
     }
 }
