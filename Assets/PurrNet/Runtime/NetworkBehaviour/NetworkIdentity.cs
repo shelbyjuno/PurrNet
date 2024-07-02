@@ -34,8 +34,14 @@ namespace PurrNet
             id = identityId;
         }
 
+        private bool _triggeredOnDestroy;
+
         protected virtual void OnDestroy()
         {
+            if (_triggeredOnDestroy) 
+                return;
+            
+            _triggeredOnDestroy = true;
             onDestroy?.Invoke(this);
         }
     }

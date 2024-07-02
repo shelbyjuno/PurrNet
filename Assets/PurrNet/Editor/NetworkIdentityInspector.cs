@@ -16,6 +16,12 @@ namespace PurrNet.Editor
             
             var identity = (NetworkIdentity)target;
 
+            if (!identity)
+            {
+                EditorGUILayout.LabelField("Invalid identity");
+                return;
+            }
+
             if (identity.isValid)
             {
                 EditorGUILayout.LabelField("Identity", identity.id.ToString());
