@@ -1,4 +1,3 @@
-using System;
 using PurrNet.Transports;
 using UnityEditor;
 using UnityEngine;
@@ -22,7 +21,6 @@ namespace PurrNet.Editor
                 GUI.enabled = false;
             EditorGUILayout.PropertyField(_transportArray);
             GUI.enabled = true;
-            
             
             TransportInspector.DrawTransportStatus(composite);
         }

@@ -21,11 +21,9 @@ namespace PurrNet.Editor
             serializedObject.Update();
             var statisticsManager = (StatisticsManager)target;
 
-            GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
-            GUILayout.Space(13);
+            /*GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
+            GUILayout.Space(13);*/
 
-            //statisticsManager.checkInterval = EditorGUILayout.Slider("Check Interval", statisticsManager.checkInterval, 0.05f, 1f);
-            
             var scriptProp = serializedObject.FindProperty("m_Script");
 
             GUI.enabled = false;

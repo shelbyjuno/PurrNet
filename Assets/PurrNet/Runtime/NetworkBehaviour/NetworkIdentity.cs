@@ -12,7 +12,7 @@ namespace PurrNet
 
         public bool isValid => id != -1;
         
-        internal event Action<NetworkIdentity> onDestroy; 
+        internal event Action<NetworkIdentity> onDestroy;
 
         internal SpawnPrefabMessage GetSpawnMessage()
         {

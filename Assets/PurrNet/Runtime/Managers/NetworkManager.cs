@@ -81,8 +81,8 @@ namespace PurrNet
             }
         }
 
-        public bool shouldAutoStartServer => ShouldStart(_startServerFlags);
-        public bool shouldAutoStartClient => ShouldStart(_startClientFlags);
+        public bool shouldAutoStartServer => transport && ShouldStart(_startServerFlags);
+        public bool shouldAutoStartClient => transport && ShouldStart(_startClientFlags);
         
         public ConnectionState serverState => _transport == null ? ConnectionState.Disconnected : _transport.transport.listenerState;
         
@@ -120,7 +120,12 @@ namespace PurrNet
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            Time.fixedDeltaTime = 1f / _tickRate;
+            float tickRate = 1f / _tickRate;
+            
+            if (Time.fixedDeltaTime == tickRate)
+                return;
+            
+            Time.fixedDeltaTime = tickRate;
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -169,8 +174,8 @@ namespace PurrNet
 
         private void Start()
         {
-            bool shouldStartServer = ShouldStart(_startServerFlags);
-            bool shouldStartClient = ShouldStart(_startClientFlags);
+            bool shouldStartServer = transport && ShouldStart(_startServerFlags);
+            bool shouldStartClient = transport && ShouldStart(_startClientFlags);
 
             if (shouldStartServer)
                 StartServer();
