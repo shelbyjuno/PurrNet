@@ -27,7 +27,7 @@ namespace PurrNet.Editor
             GUILayout.Space(10);
             EditorGUILayout.LabelField("Collection Settings", EditorStyles.boldLabel);
 
-            statisticsManager.checkRate = EditorGUILayout.Slider("Check Rate", statisticsManager.checkRate, 0.05f, 1f);
+            statisticsManager.checkRate = EditorGUILayout.Slider("Check Rate In Seconds", statisticsManager.checkRate, 0.05f, 1f);
             
             GUILayout.Space(10);
             EditorGUILayout.LabelField("Statistics Preview", EditorStyles.boldLabel);
@@ -43,10 +43,7 @@ namespace PurrNet.Editor
 
             if (!statisticsManager.connectedServer && !statisticsManager.connectedClient)
             {
-                GUILayout.BeginHorizontal();
-                DrawLed(Status.red);
-                EditorGUILayout.LabelField($"Not connected");  
-                GUILayout.EndHorizontal();
+                EditorGUILayout.LabelField("Awaiting connection");  
                 return;
             }
 
