@@ -94,7 +94,7 @@ namespace PurrNet
             }
             
             if(_tickManager.TickRate < _packetsToSendPerSec)
-                _packetsToSendPerSec = (int)_tickManager.TickRate;
+                _packetsToSendPerSec = (int)_tickManager.TickRate; 
         }
 
         private void OnServerTick()
