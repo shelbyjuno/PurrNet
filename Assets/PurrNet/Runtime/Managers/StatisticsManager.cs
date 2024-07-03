@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using UnityEngine;
@@ -26,6 +27,7 @@ namespace PurrNet
         
         // Ping stuff
         private Queue<float> _pingHistory = new();
+        private Queue<int> _pingStats = new();
         private uint _lastPingSendTick;
         
         // Packet loss stuff
@@ -134,8 +136,12 @@ namespace PurrNet
                 return;
             }
 
+            if(_tickManager.TickToTime((uint)_pingStats.Count) > 0.33f) //0.33f is the time for over we take the average
+                _pingStats.Dequeue();
+            _pingStats.Enqueue(Mathf.Max(0, Mathf.FloorToInt((Time.time - _pingHistory.Dequeue()) * 1000) - 1000/_tickManager.TickRate * 2));
+            
             var oldPing = Ping;
-            Ping = Mathf.Max(0, Mathf.FloorToInt((Time.time - _pingHistory.Dequeue()) * 1000) - 1000/_tickManager.TickRate * 2);
+            Ping = (int)_pingStats.Average();
             Jitter = Mathf.Abs(Ping - oldPing);
         }
 
