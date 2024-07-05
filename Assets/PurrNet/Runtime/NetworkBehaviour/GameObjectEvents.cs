@@ -31,22 +31,22 @@ namespace PurrNet
 
         private void UpdateEnabled(bool updateChildren = true)
         {
-            if (updateChildren)
-            {
-                gameObject.GetComponentsInChildren(true, _children);
-
-                for (var i = 0; i < _children.Count; i++)
-                {
-                    var child = _children[i];
-                    if (!child.gameObject.activeSelf)
-                        child.UpdateEnabled(false);
-                }
-            }
-
             var enabledState = gameObject.activeSelf;
             
             if (_lastActive != enabledState)
             {
+                if (updateChildren)
+                {
+                    gameObject.GetComponentsInChildren(true, _children);
+
+                    for (var i = 0; i < _children.Count; i++)
+                    {
+                        var child = _children[i];
+                        if (!child.gameObject.activeSelf)
+                            child.UpdateEnabled(false);
+                    }
+                }
+                
                 onActivatedChanged?.Invoke(enabledState);
                 _lastActive = enabledState;
             }
