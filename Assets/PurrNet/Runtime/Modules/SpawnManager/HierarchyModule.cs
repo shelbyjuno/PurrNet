@@ -17,7 +17,7 @@ namespace PurrNet.Modules
         public bool isActive;
     }
     
-    public class HierarchyModule : INetworkModule, IFixedUpdate
+    public class HierarchyModule : INetworkModule, IFixedUpdate, IUpdate
     {
         private readonly NetworkPrefabs _prefabs;
         private readonly PlayersManager _playersManager;
@@ -606,6 +606,14 @@ namespace PurrNet.Modules
             else
             {
                 Debug.Log("TODO: Implement client flush logic.");
+            }
+        }
+
+        public void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.X))
+            {
+                Debug.Log($"Actions: {_history.GetFullHistory().actions.Count} | Pending: {_history.GetDelta().actions.Count}");
             }
         }
     }
