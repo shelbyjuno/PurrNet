@@ -221,6 +221,8 @@ namespace PurrNet.Modules
             go.transform.SetLocalPositionAndRotation(trsInfo.localPos, trsInfo.localRot);
             go.transform.localScale = trsInfo.localScale;
             
+            MakeSureAwakeIsCalled(go);
+            
             go.GetComponentsInChildren(true, _children);
             
             for (int i = 0; i < _children.Count; i++)
@@ -315,6 +317,8 @@ namespace PurrNet.Modules
 
         public void Spawn(GameObject instance)
         {
+            MakeSureAwakeIsCalled(instance);
+            
             if (!_asServer)
             {
                 Debug.Log("TODO: Implement client spawn logic.");
@@ -344,6 +348,13 @@ namespace PurrNet.Modules
             for (int i = 0; i < _children.Count; i++)
             {
                 var child = _children[i];
+
+                if (child.isSpawned)
+                {
+                    PurrLogger.LogError($"Identity with id {child.id} is already spawned", child);
+                    return;
+                }
+                
                 child.SetIdentity(prefabId, _identities.GetNextId());
                 _identities.RegisterIdentity(child);
 
@@ -375,6 +386,59 @@ namespace PurrNet.Modules
             {
                 Debug.Log("TODO: Implement client spawn logic.");
             }
+        }
+
+        struct BehaviourState
+        {
+            public Behaviour component;
+            public bool enabled;
+        }
+        
+        static readonly List<Behaviour> _components = new ();
+        static readonly List<BehaviourState> _cache = new ();
+        static readonly HashSet<GameObject> _gosToDeactivate = new ();
+
+        /// <summary>
+        /// Awake is not called on disabled game objects, so we need to ensure it's called for all components.
+        /// </summary>
+        private static void MakeSureAwakeIsCalled(GameObject root)
+        {
+            _cache.Clear();
+            
+            // for components in disabled game objects, disabled them, activate game object, and reset their enabled state
+            root.GetComponentsInChildren(true, _components);
+            
+            for (int i = 0; i < _components.Count; i++)
+            {
+                var child = _components[i];
+                if (!child.gameObject.activeSelf)
+                {
+                    _cache.Add(new BehaviourState
+                    {
+                        component = child,
+                        enabled = child.enabled
+                    });
+                    
+                    child.enabled = false;
+                    
+                    _gosToDeactivate.Add(child.gameObject);
+                }
+            }
+
+            foreach (var go in _gosToDeactivate)
+            {
+                go.SetActive(true);
+                go.SetActive(false);
+            }
+            
+            for (int i = 0; i < _cache.Count; i++)
+            {
+                var state = _cache[i];
+                state.component.enabled = state.enabled;
+            }
+
+            _cache.Clear();
+            _gosToDeactivate.Clear();
         }
 
         private void OnIdentityParentChangedClient(NetworkTransform obj) => OnIdentityParentChanged(obj, false);

@@ -421,7 +421,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkManager: {fileID: 1386555452}
-  _prefab: {fileID: 1560444519250819605, guid: db03de8c3e30c094fbaad7cd57f45a01, type: 3}
+  _prefab: {fileID: 1560444519250819605, guid: 9c94830e4fb1f9a449c584760ebb1ead, type: 3}
   _minSpawnPosition: {x: -3, y: 1, z: 3}
   _maxSpawnPosition: {x: 3, y: 1, z: -3}
 --- !u!1 &861083548
