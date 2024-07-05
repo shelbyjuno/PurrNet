@@ -31,18 +31,19 @@ namespace PurrNet
 
         private void UpdateEnabled(bool updateChildren = true)
         {
-            var enabledState = gameObject.activeSelf;
+            var go = gameObject;
+            var enabledState = go.activeSelf;
             
             if (_lastActive != enabledState)
             {
                 if (updateChildren)
                 {
-                    gameObject.GetComponentsInChildren(true, _children);
+                    go.GetComponentsInChildren(true, _children);
 
                     for (var i = 0; i < _children.Count; i++)
                     {
                         var child = _children[i];
-                        if (!child.gameObject.activeSelf)
+                        if (!child.gameObject.activeSelf && child.gameObject != go)
                             child.UpdateEnabled(false);
                     }
                 }

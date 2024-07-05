@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -20,6 +21,7 @@ namespace PurrNet
         
         public bool UnregisterIdentity(NetworkIdentity identity)
         {
+            Debug.Log($"Unregistering identity {identity.id}", identity);
             return _identities.Remove(identity.id);
         }
 

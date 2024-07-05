@@ -138,8 +138,9 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find identity with id {dataSetActiveAction.identityId}");
                 return;
             }
-            
+
             identity.IgnoreNextActivationCallback();
+            identity.IgnoreNextEnableCallback();
             identity.gameObject.SetActive(dataSetActiveAction.active);
         }
 
@@ -461,8 +462,14 @@ namespace PurrNet.Modules
             });
         }
         
-        private void OnToggledComponent(NetworkIdentity identity, bool active)
+        private void OnToggledComponent(NetworkIdentity identity, bool active, bool asServer)
         {
+            if (!asServer)
+            {
+                Debug.Log("TODO: Implement client actions with permissions");
+                return;
+            }
+            
             _history.AddSetEnabledAction(new SetEnabledAction
             {
                 identityId = identity.id,
@@ -470,8 +477,14 @@ namespace PurrNet.Modules
             });
         }
         
-        private void OnToggledGameObject(NetworkIdentity identity, bool active)
+        private void OnToggledGameObject(NetworkIdentity identity, bool active, bool asServer)
         {
+            if (!asServer)
+            {
+                Debug.Log("TODO: Implement client actions with permissions");
+                return;
+            }
+            
             _history.AddSetActiveAction(new SetActiveAction
             {
                 identityId = identity.id,
@@ -490,7 +503,7 @@ namespace PurrNet.Modules
                     if (!identity)
                         continue;
 
-                    OnToggledComponent(identity, identity.enabled);
+                    OnToggledComponent(identity, identity.enabled, _asServer);
                 }
                 
                 _toggledLastFrame.Clear();
@@ -505,7 +518,7 @@ namespace PurrNet.Modules
                     if (!active.identity) 
                         continue;
                     
-                    OnToggledGameObject(active.identity, active.isActive);
+                    OnToggledGameObject(active.identity, active.isActive, _asServer);
                 }
                 _activatedLastFrame.Clear();
             }
