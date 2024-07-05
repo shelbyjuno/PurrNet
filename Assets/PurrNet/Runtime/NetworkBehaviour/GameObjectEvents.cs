@@ -26,9 +26,23 @@ namespace PurrNet
         {
             _lastActive = gameObject.activeSelf;
         }
+        
+        static readonly List<GameObjectEvents> _children = new ();
 
-        private void UpdateEnabled()
+        private void UpdateEnabled(bool updateChildren = true)
         {
+            if (updateChildren)
+            {
+                gameObject.GetComponentsInChildren(true, _children);
+
+                for (var i = 0; i < _children.Count; i++)
+                {
+                    var child = _children[i];
+                    if (!child.gameObject.activeSelf)
+                        child.UpdateEnabled(false);
+                }
+            }
+
             var enabledState = gameObject.activeSelf;
             
             if (_lastActive != enabledState)

@@ -119,7 +119,8 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find identity with id {dataSetEnabledAction.identityId}");
                 return;
             }
-            
+
+            identity.IgnoreNextEnableCallback();
             identity.enabled = dataSetEnabledAction.enabled;
         }
 
@@ -138,6 +139,7 @@ namespace PurrNet.Modules
                 return;
             }
             
+            identity.IgnoreNextActivationCallback();
             identity.gameObject.SetActive(dataSetActiveAction.active);
         }
 

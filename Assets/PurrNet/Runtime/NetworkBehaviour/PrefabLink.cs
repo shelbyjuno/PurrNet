@@ -52,13 +52,7 @@ namespace PurrNet
             spawnModule.Spawn(gameObject);
         }
 
-        internal bool SetGUID(string guid)
-        {
-            if (guid == _guid)
-                return false;
-            _guid = guid;
-            return true;
-        }
+        internal void SetGUID(string guid) => _guid = guid;
 
         public bool MatchesGUID(string guid)
         {

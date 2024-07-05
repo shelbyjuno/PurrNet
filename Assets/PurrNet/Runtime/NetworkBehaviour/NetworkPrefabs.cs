@@ -232,18 +232,21 @@ namespace PurrNet
                             DestroyImmediate(_links[j]);
                         var link = prefabContents.AddComponent<PrefabLink>();
                         link.SetGUID(guid);
+                        link.hideFlags = HideFlags.NotEditable;
                     }
                     else
                     {
                         for (int j = 1; j < _links.Count; j++)
                             DestroyImmediate(_links[j]);
                         _links[0].SetGUID(guid);
+                        _links[0].hideFlags = HideFlags.NotEditable;
                     }
                 }
                 else
                 {
                     var link = prefabContents.AddComponent<PrefabLink>();
                     link.SetGUID(guid);
+                    link.hideFlags = HideFlags.NotEditable;
                 }
                 
                 PrefabUtility.SaveAsPrefabAsset(prefabContents, assetPath);

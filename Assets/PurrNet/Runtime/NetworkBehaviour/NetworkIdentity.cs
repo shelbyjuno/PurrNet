@@ -37,6 +37,12 @@ namespace PurrNet
 
         private void OnActivated(bool active)
         {
+            if (_ignoreNextActivation)
+            {
+                _ignoreNextActivation = false;
+                return;
+            }
+            
             onActivatedChanged?.Invoke(this, active);
         }
 
@@ -49,7 +55,10 @@ namespace PurrNet
         {
             if (_lastEnabledState != enabled)
             {
-                onEnabledChanged?.Invoke(this, enabled);
+                if (_ignoreNextEnable)
+                     _ignoreNextEnable = false;
+                else onEnabledChanged?.Invoke(this, enabled);
+
                 _lastEnabledState = enabled;
             }
         }
@@ -88,6 +97,19 @@ namespace PurrNet
                 return;
             
             onRemoved?.Invoke(this);
+        }
+        
+        private bool _ignoreNextActivation;
+        private bool _ignoreNextEnable;
+
+        internal void IgnoreNextActivationCallback()
+        {
+            _ignoreNextActivation = true;
+        }
+        
+        internal void IgnoreNextEnableCallback()
+        {
+            _ignoreNextEnable = true;
         }
     }
 }
