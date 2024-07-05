@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace PurrNet
 {
-    public class PrefabLink : NetworkIdentity
+    public sealed class PrefabLink : NetworkIdentity
     {
         [SerializeField] private string _guid;
 
@@ -16,10 +16,8 @@ namespace PurrNet
             _muteAutoSpawn = true;
         }
 
-        protected override void Awake()
+        void Awake()
         {
-            base.Awake();
-
             if (_muteAutoSpawn)
             {
                 _muteAutoSpawn = false;

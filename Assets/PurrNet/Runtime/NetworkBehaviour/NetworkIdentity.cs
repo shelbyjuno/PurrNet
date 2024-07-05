@@ -4,34 +4,67 @@ using UnityEngine;
 
 namespace PurrNet
 {
-    public enum AuthorityLevel
-    {
-        Server,
-        Owner,
-        Everyone
-    }
-
     public class NetworkIdentity : MonoBehaviour
     {
-        // [SerializeField] private AuthorityLevel _spawnAuthorityLevel = AuthorityLevel.Server;
-
         public int prefabId { get; private set; } = -1;
         
         public int id { get; private set; } = -1;
 
         public bool isSpawned => id != -1;
         
+        private bool _lastEnabledState;
+        
         internal event Action<NetworkIdentity> onRemoved;
+        internal event Action<NetworkIdentity, bool> onEnabledChanged;
+        internal event Action<NetworkIdentity, bool> onActivatedChanged;
+        
+        private GameObjectEvents _events;
 
-        protected virtual void Awake()
+        void InternalAwake()
         {
             Hasher.PrepareType(GetType());
+            _lastEnabledState = enabled;
+
+            if (!gameObject.TryGetComponent(out _events))
+            {
+                _events = gameObject.AddComponent<GameObjectEvents>();
+                _events.InternalAwake();
+                _events.hideFlags = HideFlags.HideInInspector;
+                _events.onActivatedChanged += OnActivated;
+                _events.Register(this);
+            }
         }
-        
+
+        private void OnActivated(bool active)
+        {
+            onActivatedChanged?.Invoke(this, active);
+        }
+
+        private void OnEnable()
+        {
+            UpdateEnabledState();
+        }
+
+        internal void UpdateEnabledState()
+        {
+            if (_lastEnabledState != enabled)
+            {
+                onEnabledChanged?.Invoke(this, enabled);
+                _lastEnabledState = enabled;
+            }
+        }
+
+        private void OnDisable()
+        {
+            UpdateEnabledState();
+        }
+
         internal void SetIdentity(int pid, int identityId)
         {
             prefabId = pid;
             id = identityId;
+            
+            InternalAwake();
         }
 
         private bool _ignoreNextDestroy;
@@ -43,6 +76,8 @@ namespace PurrNet
         
         protected virtual void OnDestroy()
         {
+            _events.Unregister(this);
+            
             if (_ignoreNextDestroy)
             {
                 _ignoreNextDestroy = false;

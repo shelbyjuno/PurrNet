@@ -3,6 +3,7 @@ using UnityEditor;
 #endif
 
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -108,6 +109,8 @@ namespace PurrNet
             if (instance)
                 main = instance;
         }
+        
+        static readonly List<NetworkIdentity> _instances = new();
 
         private void Awake()
         {

@@ -11,6 +11,12 @@ namespace PurrNet.Modules
         public GameObject gameObject;
     }
     
+    internal struct GameObjectActive
+    {
+        public NetworkIdentity identity;
+        public bool isActive;
+    }
+    
     public class HierarchyModule : INetworkModule, IFixedUpdate
     {
         private readonly NetworkPrefabs _prefabs;
@@ -88,9 +94,53 @@ namespace PurrNet.Modules
                 case HierarchyActionType.ChangeParent:
                     HandleChangeParent(player, data.changeParentAction, asserver);
                     break;
+                
+                case HierarchyActionType.SetActive:
+                    HandleSetActive(player, data.setActiveAction, asserver);
+                    break;
+                
+                case HierarchyActionType.SetEnabled:
+                    HandleSetEnabled(player, data.setEnabledAction, asserver);
+                    break;
             }
         }
-        
+
+        [UsedImplicitly]
+        private void HandleSetEnabled(PlayerID player, SetEnabledAction dataSetEnabledAction, bool asServer)
+        {
+            if (asServer)
+            {
+                Debug.Log("TODO: Implement client actions with permissions");
+                return;
+            }
+            
+            if (!_identities.TryGetIdentity(dataSetEnabledAction.identityId, out var identity))
+            {
+                PurrLogger.LogError($"Failed to find identity with id {dataSetEnabledAction.identityId}");
+                return;
+            }
+            
+            identity.enabled = dataSetEnabledAction.enabled;
+        }
+
+        [UsedImplicitly]
+        private void HandleSetActive(PlayerID player, SetActiveAction dataSetActiveAction, bool asServer)
+        {
+            if (asServer)
+            {
+                Debug.Log("TODO: Implement client actions with permissions");
+                return;
+            }
+            
+            if (!_identities.TryGetIdentity(dataSetActiveAction.identityId, out var identity))
+            {
+                PurrLogger.LogError($"Failed to find identity with id {dataSetActiveAction.identityId}");
+                return;
+            }
+            
+            identity.gameObject.SetActive(dataSetActiveAction.active);
+        }
+
         [UsedImplicitly]
         private void HandleChangeParent(PlayerID player, ChangeParentAction action, bool asServer)
         {
@@ -177,6 +227,8 @@ namespace PurrNet.Modules
                 _identities.RegisterIdentity(child);
                 
                 child.onRemoved += OnIdentityRemoved;
+                child.onEnabledChanged += OnIdentityEnabledChanged;
+                child.onActivatedChanged += OnIdentityGoActivatedChanged;
 
                 if (child is NetworkTransform transform)
                 {
@@ -293,6 +345,8 @@ namespace PurrNet.Modules
                 _identities.RegisterIdentity(child);
 
                 child.onRemoved += OnIdentityRemoved;
+                child.onEnabledChanged += OnIdentityEnabledChanged;
+                child.onActivatedChanged += OnIdentityGoActivatedChanged;
 
                 if (child is NetworkTransform transform)
                 {
@@ -347,6 +401,13 @@ namespace PurrNet.Modules
         }
         
         readonly List<ComponentGameObjectPair> _removedLastFrame = new ();
+        readonly List<NetworkIdentity> _toggledLastFrame = new ();
+        readonly List<GameObjectActive> _activatedLastFrame = new ();
+        
+        private void OnIdentityEnabledChanged(NetworkIdentity identity, bool enabled)
+        {
+            _toggledLastFrame.Add(identity);
+        }
         
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
@@ -354,6 +415,15 @@ namespace PurrNet.Modules
             {
                 identity = identity,
                 gameObject = identity.gameObject
+            });
+        }
+        
+        private void OnIdentityGoActivatedChanged(NetworkIdentity identity, bool active)
+        {
+            _activatedLastFrame.Add(new GameObjectActive
+            {
+                identity = identity,
+                isActive = active
             });
         }
 
@@ -388,9 +458,56 @@ namespace PurrNet.Modules
                 despawnType = DespawnType.ComponentOnly
             });
         }
+        
+        private void OnToggledComponent(NetworkIdentity identity, bool active)
+        {
+            _history.AddSetEnabledAction(new SetEnabledAction
+            {
+                identityId = identity.id,
+                enabled = active
+            });
+        }
+        
+        private void OnToggledGameObject(NetworkIdentity identity, bool active)
+        {
+            _history.AddSetActiveAction(new SetActiveAction
+            {
+                identityId = identity.id,
+                active = active
+            });
+        }
 
         public void FixedUpdate()
         {
+            if (_toggledLastFrame.Count > 0)
+            {
+                for (int i = 0; i < _toggledLastFrame.Count; i++)
+                {
+                    var identity = _toggledLastFrame[i];
+                    
+                    if (!identity)
+                        continue;
+
+                    OnToggledComponent(identity, identity.enabled);
+                }
+                
+                _toggledLastFrame.Clear();
+            }
+            
+            if (_activatedLastFrame.Count > 0)
+            {
+                for (int i = 0; i < _activatedLastFrame.Count; i++)
+                {
+                    var active = _activatedLastFrame[i];
+                    
+                    if (!active.identity) 
+                        continue;
+                    
+                    OnToggledGameObject(active.identity, active.isActive);
+                }
+                _activatedLastFrame.Clear();
+            }
+            
             if (_removedLastFrame.Count > 0)
             {
                 for (int i = 0; i < _removedLastFrame.Count; i++)

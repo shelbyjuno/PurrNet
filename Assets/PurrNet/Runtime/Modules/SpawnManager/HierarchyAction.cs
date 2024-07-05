@@ -8,7 +8,9 @@ namespace PurrNet
     {
         Spawn,
         Despawn,
-        ChangeParent
+        ChangeParent,
+        SetActive,
+        SetEnabled
     }
 
     public enum DespawnType : byte
@@ -24,6 +26,8 @@ namespace PurrNet
         public DespawnAction despawnAction;
         public SpawnAction spawnAction;
         public ChangeParentAction changeParentAction;
+        public SetActiveAction setActiveAction;
+        public SetEnabledAction setEnabledAction;
 
         public void Serialize(NetworkStream packer)
         {
@@ -40,6 +44,12 @@ namespace PurrNet
                 case HierarchyActionType.ChangeParent:
                     packer.Serialize(ref changeParentAction);
                     break;
+                case HierarchyActionType.SetActive:
+                    packer.Serialize(ref setActiveAction);
+                    break;
+                case HierarchyActionType.SetEnabled:
+                    packer.Serialize(ref setEnabledAction);
+                    break;
             }
         }
     }
@@ -53,6 +63,18 @@ namespace PurrNet
     {
         public int identityId { get; set; }
         public DespawnType despawnType { get; set; }
+    }
+    
+    public partial struct SetActiveAction : IAutoNetworkedData
+    {
+        public int identityId { get; set; }
+        public bool active { get; set; }
+    }
+    
+    public partial struct SetEnabledAction : IAutoNetworkedData
+    {
+        public int identityId { get; set; }
+        public bool enabled { get; set; }
     }
 
     public partial struct SpawnAction : IAutoNetworkedData

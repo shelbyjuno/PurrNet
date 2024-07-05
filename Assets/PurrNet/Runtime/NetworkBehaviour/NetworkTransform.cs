@@ -28,7 +28,7 @@ namespace PurrNet
         public int interpolationTicks;
     }
     
-    public class NetworkTransform : NetworkIdentity
+    public sealed class NetworkTransform : NetworkIdentity
     {
         [FormerlySerializedAs("_syncParentFrom")]
         [Header("Permission Settings")]
@@ -60,13 +60,12 @@ namespace PurrNet
             }
         }
 
-        protected override void Awake()
+        void Awake()
         {
-            base.Awake();
             ValidateParent();
         }
 
-        protected virtual void OnTransformParentChanged()
+        void OnTransformParentChanged()
         {
             if (ApplicationContext.isQuitting)
                 return;

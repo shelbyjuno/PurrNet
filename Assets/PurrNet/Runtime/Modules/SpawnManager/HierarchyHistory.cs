@@ -65,6 +65,28 @@ namespace PurrNet
             hasUnflushedActions = true;
         }
         
+        internal void AddSetActiveAction(SetActiveAction action)
+        {
+            _pending.Add(new HierarchyAction
+            {
+                type = HierarchyActionType.SetActive,
+                setActiveAction = action
+            });
+            
+            hasUnflushedActions = true;
+        }
+        
+        internal void AddSetEnabledAction(SetEnabledAction action)
+        {
+            _pending.Add(new HierarchyAction
+            {
+                type = HierarchyActionType.SetEnabled,
+                setEnabledAction = action
+            });
+            
+            hasUnflushedActions = true;
+        }
+        
         internal void Clear()
         {
             _actions.Clear();
