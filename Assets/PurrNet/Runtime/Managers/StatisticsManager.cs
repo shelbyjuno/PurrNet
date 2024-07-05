@@ -50,6 +50,30 @@ namespace PurrNet
             _networkManager.onClientConnectionState += OnClientConnectionState;
         }
 
+        private void OnDestroy()
+        {
+            if (_networkManager)
+            {
+                _networkManager.transport.transport.onDataReceived -= OnDataReceived;
+                _networkManager.transport.transport.onDataSent -= OnDataSent;
+            }
+            
+            if (_playersServerBroadcaster != null)
+            {
+                _playersServerBroadcaster.Unsubscribe<PingMessage>(ReceivePing);
+                _playersServerBroadcaster.Unsubscribe<PacketMessage>(ReceivePacket);
+            }
+            
+            if (_playersClientBroadcaster != null)
+            {
+                if (_networkManager.TryGetModule(out TickManager tm, false))
+                    tm.onTick -= OnClientTick;
+                
+                _playersClientBroadcaster.Unsubscribe<PingMessage>(ReceivePing);
+                _playersClientBroadcaster.Unsubscribe<PacketMessage>(ReceivePacket);
+            }
+        }
+
         private void Update()
         {
             if (Time.time - _lastDataCheckTime >= 1f)
@@ -87,7 +111,7 @@ namespace PurrNet
             _playersClientBroadcaster = _networkManager.GetModule<PlayersBroadcaster>(false);
             _playersClientBroadcaster.Subscribe<PingMessage>(ReceivePing);
             _playersClientBroadcaster.Subscribe<PacketMessage>(ReceivePacket);
-            _networkManager.GetModule<TickManager>(false).onTick += OnClientTick;
+            _tickManager.onTick += OnClientTick;
 
             if (!connectedServer)
             {
@@ -131,7 +155,7 @@ namespace PurrNet
                 return;
             }
 
-            if(_tickManager.TickToTime((uint)_pingStats.Count) > 0.33f) //0.33f is the time for over we take the average
+            if(_tickManager.TickToTime((uint)_pingStats.Count) > 0.33f) //0.33f is the time for which we take the average
                 _pingStats.Dequeue();
             _pingStats.Enqueue(Mathf.Max(0, Mathf.FloorToInt((Time.time - _pingHistory.Dequeue()) * 1000) - 1000/_tickManager.tickRate * 2));
             
