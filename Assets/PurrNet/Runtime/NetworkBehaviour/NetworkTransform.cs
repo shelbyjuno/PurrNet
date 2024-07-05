@@ -1,4 +1,5 @@
 using System;
+using PurrNet.Utils;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -31,6 +32,7 @@ namespace PurrNet
     {
         [FormerlySerializedAs("_syncParentFrom")]
         [Header("Permission Settings")]
+        [SerializeField] private bool _syncParent = true;
         [SerializeField] private NetworkPermissions _syncParentPermissions = NetworkPermissions.None;
         [SerializeField] private NetworkTarget _syncTransformFrom = NetworkTarget.Server;
         
@@ -66,7 +68,10 @@ namespace PurrNet
 
         protected virtual void OnTransformParentChanged()
         {
-            if (!_isResettingParent)
+            if (ApplicationContext.isQuitting)
+                return;
+            
+            if (!_isResettingParent && _lastValidParent != transform.parent)
                 onParentChanged?.Invoke(this);
         }
 
@@ -109,6 +114,11 @@ namespace PurrNet
         internal void StopIgnoreParentChanged()
         {
             _isResettingParent = false;
+        }
+
+        public bool ShouldSyncParent()
+        {
+            return _syncParent;
         }
     }
 }

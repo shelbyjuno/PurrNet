@@ -53,8 +53,42 @@ namespace PurrNet
             return true;
         }
         
+        public bool TryGetPrefabFromGuid(string guid, out int id)
+        {
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                if (prefabs[i].TryGetComponent<PrefabLink>(out var link) && link.MatchesGUID(guid))
+                {
+                    id = i;
+                    return true;
+                }
+            }
+            
+            id = -1;
+            return false;
+        }
+        
+        public bool TryGetPrefabFromGuid(string guid, out GameObject prefab, out int id)
+        {
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                if (prefabs[i].TryGetComponent<PrefabLink>(out var link) && link.MatchesGUID(guid))
+                {
+                    prefab = prefabs[i];
+                    id = i;
+                    return true;
+                }
+            }
+            
+            prefab = null;
+            id = -1;
+            return false;
+        }
+        
 #if UNITY_EDITOR
         private bool _generating;
+        static readonly List<NetworkIdentity> _identities = new();
+        static readonly List<PrefabLink> _links = new();
 #endif
 
         /// <summary>
@@ -115,30 +149,29 @@ namespace PurrNet
             {
                 var guid = guids[i];
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                GameObject gameObject = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-                if (gameObject != null)
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                
+                if (prefab)
                 {
-                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {gameObject.name}",  0.1f + 0.7f * ((i + 1f) / guids.Length));
-                    NetworkIdentity networkIdentity = gameObject.GetComponent<NetworkIdentity>();
-                    if (!networkIdentity)
-                        networkIdentity = gameObject.GetComponentInChildren<NetworkIdentity>();
+                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}",  0.1f + 0.7f * ((i + 1f) / guids.Length));
+                    
+                    prefab.GetComponentsInChildren(true, _identities);
 
-                    if (!networkIdentity)
-                        continue;
-
-                    foundPrefabs.Add(gameObject);
+                    if (_identities.Count > 0)
+                        foundPrefabs.Add(prefab);
                 }
             }
 
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Sorting...",  0.9f);
+            
             // Order by creation time
             foundPrefabs.Sort((a, b) =>
             {
                 string pathA = AssetDatabase.GetAssetPath(a);
                 string pathB = AssetDatabase.GetAssetPath(b);
 
-                FileInfo fileInfoA = new FileInfo(pathA);
-                FileInfo fileInfoB = new FileInfo(pathB);
+                var fileInfoA = new FileInfo(pathA);
+                var fileInfoB = new FileInfo(pathB);
 
                 return fileInfoA.CreationTime.CompareTo(fileInfoB.CreationTime);
             });
@@ -165,6 +198,8 @@ namespace PurrNet
                     prefabs.Add(foundPrefab);
                 }
             }
+            
+            PostProcess();
 
             EditorUtility.SetDirty(this);
             EditorUtility.ClearProgressBar();
@@ -173,6 +208,51 @@ namespace PurrNet
 
             //PurrLogger.Log($"{prefabs.Count} prefabs found in {folderPath}", new LogStyle( Color.green));
         #endif
+        }
+
+        public void PostProcess()
+        {
+#if UNITY_EDITOR
+            for (int i = 0; i < prefabs.Count; ++i)
+            {
+                if (!prefabs[i])
+                    continue;
+                
+                var assetPath = AssetDatabase.GetAssetPath(prefabs[i]);
+                var guid = AssetDatabase.AssetPathToGUID(assetPath);
+                var prefabContents = PrefabUtility.LoadPrefabContents(assetPath);
+                
+                prefabContents.GetComponentsInChildren(true, _links);
+
+                if (_links.Count > 0)
+                {
+                    if (_links[0].gameObject != prefabContents)
+                    {
+                        for (int j = 0; j < _links.Count; j++)
+                            DestroyImmediate(_links[j]);
+                        var link = prefabContents.AddComponent<PrefabLink>();
+                        link.SetGUID(guid);
+                    }
+                    else
+                    {
+                        for (int j = 1; j < _links.Count; j++)
+                            DestroyImmediate(_links[j]);
+                        _links[0].SetGUID(guid);
+                    }
+                }
+                else
+                {
+                    var link = prefabContents.AddComponent<PrefabLink>();
+                    link.SetGUID(guid);
+                }
+                
+                PrefabUtility.SaveAsPrefabAsset(prefabContents, assetPath);
+                PrefabUtility.UnloadPrefabContents(prefabContents);
+            }
+            
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+#endif
         }
     }
 }

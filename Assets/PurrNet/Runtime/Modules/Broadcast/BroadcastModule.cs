@@ -6,7 +6,6 @@ using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -126,7 +125,7 @@ namespace PurrNet.Modules
             AssertIsServer("Cannot send data to player from client.");
             
             var byteData = GetData(data);
-
+            
             foreach (var connection in conn)
                 _transport.SendToClient(connection, byteData, method);
         }

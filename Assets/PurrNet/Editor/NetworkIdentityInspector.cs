@@ -22,10 +22,9 @@ namespace PurrNet.Editor
                 return;
             }
 
-            if (identity.isValid)
+            if (identity.isSpawned)
             {
                 EditorGUILayout.LabelField("Identity", identity.id.ToString());
-
                 EditorGUILayout.LabelField("Prefab Id", identity.prefabId.ToString());
             }
             else

@@ -44,49 +44,49 @@ namespace PurrNet.Editor
         {
             serializedObject.Update();
 
-            if (!statisticsManager.ConnectedServer && !statisticsManager.ConnectedClient)
+            if (!statisticsManager.connectedServer && !statisticsManager.connectedClient)
             {
                 EditorGUILayout.LabelField("Awaiting connection");  
                 return;
             }
 
-            if (statisticsManager.ConnectedClient)
+            if (statisticsManager.connectedClient)
             {
                 GUILayout.BeginHorizontal();
                 DrawLed(GetPingStatus(statisticsManager));
                 EditorGUILayout.LabelField($"Ping:");
-                EditorGUILayout.LabelField($"{statisticsManager.Ping}ms");
+                EditorGUILayout.LabelField($"{statisticsManager.ping}ms");
                 GUILayout.EndHorizontal();
             
                 GUILayout.BeginHorizontal();
                 DrawLed(GetJitterStatus(statisticsManager));
                 EditorGUILayout.LabelField($"Jitter:");
-                EditorGUILayout.LabelField($"{statisticsManager.Jitter}ms");
+                EditorGUILayout.LabelField($"{statisticsManager.jitter}ms");
                 GUILayout.EndHorizontal();
             
                 GUILayout.BeginHorizontal();
                 DrawLed(GetPacketLossStatus(statisticsManager));
                 EditorGUILayout.LabelField($"Packet Loss:");
-                EditorGUILayout.LabelField($"{statisticsManager.PacketLoss}%");
+                EditorGUILayout.LabelField($"{statisticsManager.packetLoss}%");
                 GUILayout.EndHorizontal();
             }
             
             GUILayout.BeginHorizontal();
             DrawLed(Status.green);
             EditorGUILayout.LabelField($"Upload:");
-            EditorGUILayout.LabelField($"{statisticsManager.Upload}KB/s");
+            EditorGUILayout.LabelField($"{statisticsManager.upload}KB/s");
             GUILayout.EndHorizontal();
             
             GUILayout.BeginHorizontal();
             DrawLed(Status.green);
             EditorGUILayout.LabelField($"Download:");
-            EditorGUILayout.LabelField($"{statisticsManager.Download}KB/s");
+            EditorGUILayout.LabelField($"{statisticsManager.download}KB/s");
             GUILayout.EndHorizontal();
         }
 
         private static Status GetPingStatus(StatisticsManager statisticsManager)
         {
-            return statisticsManager.Ping switch
+            return statisticsManager.ping switch
             {
                 < 50 => Status.green,
                 < 100 => Status.yellow,
@@ -97,22 +97,22 @@ namespace PurrNet.Editor
         
         private Status GetJitterStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.Jitter < 10)
+            if(statisticsManager.jitter < 10)
                 return Status.green;
-            if (statisticsManager.Jitter < 20)
+            if (statisticsManager.jitter < 20)
                 return Status.yellow;
-            if (statisticsManager.Jitter < 40)
+            if (statisticsManager.jitter < 40)
                 return Status.orange;
             return Status.red;
         }
         
         private Status GetPacketLossStatus(StatisticsManager statisticsManager)
         {
-            if(statisticsManager.PacketLoss < 11)
+            if(statisticsManager.packetLoss < 11)
                 return Status.green;
-            if (statisticsManager.PacketLoss < 21)
+            if (statisticsManager.packetLoss < 21)
                 return Status.yellow;
-            if (statisticsManager.PacketLoss < 31)
+            if (statisticsManager.packetLoss < 31)
                 return Status.orange;
             return Status.red;
         }

@@ -24,7 +24,7 @@ namespace PurrNet
     public sealed class NetworkManager : MonoBehaviour
     {
         [UsedImplicitly]
-        public static NetworkManager lastInstance { get; private set; }
+        public static NetworkManager main { get; private set; }
         
         [Header("Auto Start Settings")]
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
@@ -102,13 +102,23 @@ namespace PurrNet
         private ModulesCollection _clientModules;
         
         private bool _subscribed;
+        
+        public static void SetMainInstance(NetworkManager instance)
+        {
+            if (instance)
+                main = instance;
+        }
 
         private void Awake()
         {
-            lastInstance = this;
+            if (!main)
+                main = this;
+            
             Application.runInBackground = true;
+            
             if(_networkPrefabs.autoGenerate)
                 _networkPrefabs.Generate();
+            _networkPrefabs.PostProcess();
 
             if (!_subscribed)
                 transport = _transport;
@@ -149,19 +159,19 @@ namespace PurrNet
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
+            var tickManager = new TickManager(_tickRate);
             var broadcastModule = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
-            var spawnManager = new SpawnManager(playersManager, playersBroadcast, _networkPrefabs);
-            var tickManager = new TickManager(_tickRate);
+            var hierarchyModule = new HierarchyModule(playersManager, playersBroadcast, _networkPrefabs);
             
+            modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
-            modules.AddModule(spawnManager);
-            modules.AddModule(tickManager);
+            modules.AddModule(hierarchyModule);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -266,5 +276,16 @@ namespace PurrNet
         public void StopServer() => _transport.StopServer();
 
         public void StopClient() => _transport.StopClient();
+
+        public GameObject GetPrefabFromGuid(string guid)
+        {
+            for (int i = 0; i < _networkPrefabs.prefabs.Count; i++)
+            {
+                if (_networkPrefabs.prefabs[i].TryGetComponent<PrefabLink>(out var link) && link.MatchesGUID(guid))
+                    return _networkPrefabs.prefabs[i];
+            }
+            
+            return null;
+        }
     }
 }

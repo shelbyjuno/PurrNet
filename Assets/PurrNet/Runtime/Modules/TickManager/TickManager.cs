@@ -8,33 +8,33 @@ namespace PurrNet.Modules
         /// <summary>
         /// Tracks local ticks starting from client connection to the server for synchronization.
         /// </summary>
-        public uint Tick { get; private set; }
+        public uint tick { get; private set; }
         
         /// <summary>
         /// Uses floating point values for ticks to allow fractional updates, allowing to get precise tick timing within update
         /// </summary>
-        public double FloatingPoint { get; private set; }
+        public double floatingPoint { get; private set; }
 
         /// <summary>
         /// Gives the exact step of the tick, including the floating point.
         /// </summary>
-        public double PreciseTick
+        public double preciseTick
         {
-            get => Tick + FloatingPoint;
+            get => tick + floatingPoint;
             private set
             {
                 if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
-                PreciseTick = value;
+                preciseTick = value;
             }
         }
         
-        public int TickRate { get; private set; }
+        public int tickRate { get; private set; }
         
-        public Action OnPreTick, OnTick, OnPostTick;
+        public event Action onPreTick, onTick, onPostTick;
 
         public TickManager(int tickRate)
         {
-            TickRate = tickRate;
+            this.tickRate = tickRate;
         }
 
         public void Enable(bool asServer)
@@ -49,17 +49,17 @@ namespace PurrNet.Modules
 
         public void FixedUpdate()
         {
-            Tick++;
-            FloatingPoint = 0;
+            tick++;
+            floatingPoint = 0;
             
-            OnPreTick?.Invoke();
-            OnTick?.Invoke();
-            OnPostTick?.Invoke();
+            onPreTick?.Invoke();
+            onTick?.Invoke();
+            onPostTick?.Invoke();
         }
 
         public void Update()
         {
-            FloatingPoint += Time.unscaledDeltaTime * TickRate;
+            floatingPoint += Time.unscaledDeltaTime * tickRate;
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace PurrNet.Modules
         /// <param name="tick">The amount of ticks to convert to time</param>
         public float TickToTime(uint tick)
         {
-            return tick / (float)TickRate;
+            return tick / (float)tickRate;
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace PurrNet.Modules
         /// <param name="preciseTick">The precise tick to convert</param>
         public float PreciseTickToTime(double preciseTick)
         {
-            return (float)(preciseTick / TickRate);
+            return (float)(preciseTick / tickRate);
         }
         
         /// <summary>
@@ -86,7 +86,7 @@ namespace PurrNet.Modules
         /// <param name="time">The amount of time to convert</param>
         public uint TimeToTick(float time)
         {
-            return (uint)(time * TickRate);
+            return (uint)(time * tickRate);
         }
         
         /// <summary>
@@ -95,7 +95,7 @@ namespace PurrNet.Modules
         /// <param name="time">And amount of time to convert</param>
         public double TimeToPreciseTick(float time)
         {
-            return time * TickRate;
+            return time * tickRate;
         }
     }
 }
