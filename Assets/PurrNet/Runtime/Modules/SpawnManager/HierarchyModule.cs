@@ -158,8 +158,10 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find identity with id {action.identityId}");
                 return;
             }
+
+            NetworkIdentity parent = null;
             
-            if (!_identities.TryGetIdentity(action.parentId, out var parent))
+            if (action.parentId != -1 && !_identities.TryGetIdentity(action.parentId, out parent))
             {
                 PurrLogger.LogError($"Failed to find identity with id {action.identityId}");
                 return;
@@ -172,7 +174,7 @@ namespace PurrNet.Modules
             }
 
             trs.StartIgnoreParentChanged();
-            identity.transform.SetParent(parent.transform);
+            identity.transform.SetParent(parent ? parent.transform : null);
             trs.StopIgnoreParentChanged();
             trs.ValidateParent();
         }
