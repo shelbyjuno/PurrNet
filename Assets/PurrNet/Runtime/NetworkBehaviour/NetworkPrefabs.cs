@@ -3,6 +3,7 @@ using UnityEngine;
 using System.IO;
 using PurrNet.Logging;
 #if UNITY_EDITOR
+using PurrNet.Utils;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -97,6 +98,9 @@ namespace PurrNet
         public void Generate()
         {
         #if UNITY_EDITOR
+            if (ApplicationContext.isClone)
+                return;
+            
             if (_generating) return;
             
             _generating = true;
@@ -213,6 +217,9 @@ namespace PurrNet
         public void PostProcess()
         {
 #if UNITY_EDITOR
+            if (ApplicationContext.isClone)
+                return;
+            
             for (int i = 0; i < prefabs.Count; ++i)
             {
                 if (!prefabs[i])
