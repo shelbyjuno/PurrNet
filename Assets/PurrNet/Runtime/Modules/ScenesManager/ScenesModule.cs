@@ -453,7 +453,6 @@ namespace PurrNet.Modules
                 }
             }
 
-            Debug.Log("ScenesModule cleanup finished");
             return true;
         }
     }
