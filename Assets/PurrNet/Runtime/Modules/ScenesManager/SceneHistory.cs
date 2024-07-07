@@ -51,19 +51,28 @@ namespace PurrNet.Modules
     internal partial struct LoadSceneAction : IAutoNetworkedData
     {
         public int buildIndex;
-        public int sceneID;
-        public LoadSceneParameters parameters;
+        public SceneID sceneID;
+        public PurrSceneSettings parameters;
+        
+        public LoadSceneParameters GetLoadSceneParameters()
+        {
+            return new LoadSceneParameters
+            {
+                loadSceneMode = parameters.mode,
+                localPhysicsMode = parameters.physicsMode
+            };
+        }
     }
     
     internal partial struct UnloadSceneAction : IAutoNetworkedData
     {
-        public int sceneID;
+        public SceneID sceneID;
         public UnloadSceneOptions options;
     }
     
     internal partial struct SetActiveSceneAction : IAutoNetworkedData
     {
-        public int sceneID;
+        public SceneID sceneID;
     }
     
     internal class SceneHistory
@@ -94,6 +103,48 @@ namespace PurrNet.Modules
             _actions.AddRange(_pending);
             _pending.Clear();
             hasUnflushedActions = false;
+            OptimizeHistory();
+        }
+
+        private readonly List<SceneID> _sceneIds = new();
+
+        private void OptimizeHistory()
+        {
+            _sceneIds.Clear();
+            
+            for (int i = 0; i < _actions.Count; i++)
+            {
+                var action = _actions[i];
+                switch (action.type)
+                {
+                    case SceneActionType.Load:
+                        _sceneIds.Add(action.loadSceneAction.sceneID);
+                        break;
+                    case SceneActionType.Unload:
+                        _sceneIds.Remove(action.unloadSceneAction.sceneID);
+                        break;
+                }
+            }
+            
+            for (int i = _actions.Count - 1; i >= 0; i--)
+            {
+                var action = _actions[i];
+                switch (action.type)
+                {
+                    case SceneActionType.Load:
+                        if (!_sceneIds.Contains(action.loadSceneAction.sceneID))
+                            _actions.RemoveAt(i);
+                        break;
+                    case SceneActionType.Unload:
+                        if (!_sceneIds.Contains(action.unloadSceneAction.sceneID))
+                            _actions.RemoveAt(i);
+                        break;
+                    case SceneActionType.SetActive:
+                        if (!_sceneIds.Contains(action.setActiveSceneAction.sceneID))
+                            _actions.RemoveAt(i);
+                        break;
+                }
+            }
         }
         
         internal void AddLoadAction(LoadSceneAction action)

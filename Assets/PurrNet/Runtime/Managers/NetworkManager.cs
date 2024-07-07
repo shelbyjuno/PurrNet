@@ -20,7 +20,7 @@ namespace PurrNet
         ClientBuild = 4,
         ServerBuild = 8
     }
-
+    
     public sealed class NetworkManager : MonoBehaviour
     {
         [UsedImplicitly]
