@@ -615,7 +615,16 @@ namespace PurrNet.Modules
         {
             if (Input.GetKeyDown(KeyCode.X))
             {
-                Debug.Log($"Actions: {_history.GetFullHistory().actions.Count} | Pending: {_history.GetDelta().actions.Count}");
+                var history = _history.GetFullHistory();
+                string output = $"Actions count: {history.actions.Count}";
+                
+                for (int i = 0; i < history.actions.Count; i++)
+                {
+                    var action = history.actions[i];
+                    output += $"Action {i}: {action.type}\n";
+                }
+                
+                Debug.Log(output);
             }
         }
     }

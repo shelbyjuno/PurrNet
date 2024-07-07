@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.Text;
 using PurrNet.Packets;
 using UnityEngine;
 
-namespace PurrNet
+namespace PurrNet.Modules
 {
-    public enum HierarchyActionType : byte
+    internal enum HierarchyActionType : byte
     {
         Spawn,
         Despawn,
@@ -13,13 +14,13 @@ namespace PurrNet
         SetEnabled
     }
 
-    public enum DespawnType : byte
+    internal enum DespawnType : byte
     {
         ComponentOnly,
         GameObject
     }
     
-    public partial struct HierarchyAction : INetworkedData
+    internal partial struct HierarchyAction : INetworkedData
     {
         public HierarchyActionType type;
 
@@ -28,6 +29,37 @@ namespace PurrNet
         public ChangeParentAction changeParentAction;
         public SetActiveAction setActiveAction;
         public SetEnabledAction setEnabledAction;
+
+        static readonly StringBuilder _sb = new ();
+        
+        public override string ToString()
+        {
+            _sb.Clear();
+            
+            _sb.Append(type);
+            _sb.Append(": ");
+            
+            switch (type)
+            {
+                case HierarchyActionType.Spawn:
+                    _sb.Append(spawnAction);
+                    break;
+                case HierarchyActionType.Despawn:
+                    _sb.Append(despawnAction);
+                    break;
+                case HierarchyActionType.ChangeParent:
+                    _sb.Append(changeParentAction);
+                    break;
+                case HierarchyActionType.SetActive:
+                    _sb.Append(setActiveAction);
+                    break;
+                case HierarchyActionType.SetEnabled:
+                    _sb.Append(setEnabledAction);
+                    break;
+            }
+
+            return _sb.ToString();
+        }
 
         public void Serialize(NetworkStream packer)
         {
@@ -54,30 +86,36 @@ namespace PurrNet
         }
     }
     
-    public partial struct HierarchyActionBatch : IAutoNetworkedData
+    internal partial struct HierarchyActionBatch : IAutoNetworkedData
     {
         public List<HierarchyAction> actions;
     }
 
-    public partial struct DespawnAction : IAutoNetworkedData
+    internal partial struct DespawnAction : IAutoNetworkedData
     {
         public int identityId { get; set; }
         public DespawnType despawnType { get; set; }
+
+        public override string ToString() => $"Despawn: {identityId} ({despawnType})";
     }
     
-    public partial struct SetActiveAction : IAutoNetworkedData
+    internal partial struct SetActiveAction : IAutoNetworkedData
     {
         public int identityId { get; set; }
         public bool active { get; set; }
+        
+        public override string ToString() => $"SetActive: {identityId} ({active})";
     }
     
-    public partial struct SetEnabledAction : IAutoNetworkedData
+    internal partial struct SetEnabledAction : IAutoNetworkedData
     {
         public int identityId { get; set; }
         public bool enabled { get; set; }
+        
+        public override string ToString() => $"SetEnabled: {identityId} ({enabled})";
     }
 
-    public partial struct SpawnAction : IAutoNetworkedData
+    internal partial struct SpawnAction : IAutoNetworkedData
     {
         public int prefabId { get; set; }
         public int identityId { get; set; }
@@ -88,12 +126,16 @@ namespace PurrNet
         /// This avoids the need to spawn the root, get the child and then despawn the root.
         /// </summary>
         public ushort childOffset { get; set; }
+        
+        public override string ToString() => $"Spawn: {identityId} ({prefabId})";
     }
 
     public partial struct ChangeParentAction : IAutoNetworkedData
     {
         public int identityId { get; set; }
         public int parentId { get; set; }
+        
+        public override string ToString() => $"ChangeParent: {identityId} (target parent id: {parentId})";
     }
 
     public partial struct TransformInfo : IAutoNetworkedData

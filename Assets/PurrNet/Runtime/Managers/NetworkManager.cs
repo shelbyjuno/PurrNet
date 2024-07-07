@@ -3,7 +3,6 @@ using UnityEditor;
 #endif
 
 using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -109,8 +108,6 @@ namespace PurrNet
             if (instance)
                 main = instance;
         }
-        
-        static readonly List<NetworkIdentity> _instances = new();
 
         private void Awake()
         {
@@ -167,6 +164,7 @@ namespace PurrNet
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
+            var scenesModule = new ScenesModule(this, playersManager, playersBroadcast);
             var hierarchyModule = new HierarchyModule(playersManager, playersBroadcast, _networkPrefabs);
             
             modules.AddModule(tickManager);
@@ -174,6 +172,7 @@ namespace PurrNet
             modules.AddModule(networkCookies);
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
+            modules.AddModule(scenesModule);
             modules.AddModule(hierarchyModule);
         }
 

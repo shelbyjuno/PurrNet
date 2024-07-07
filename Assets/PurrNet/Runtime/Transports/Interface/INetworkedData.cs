@@ -282,13 +282,23 @@ namespace PurrNet.Packets
     [Preserve]
     internal class NetworkedDataFormatter<T> : MemoryPackFormatter<T> where T : INetworkedData, new()
     {
+        static bool IsNullable(T obj)
+        {
+            if (obj == null) return true; // obvious
+            var type = typeof(T);
+            if (!type.IsValueType) return true; // ref-type
+            return Nullable.GetUnderlyingType(type) != null; // Nullable<T>
+        }
+        
         public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref T value)
         {
-            bool isNull = value == null;
-            
-            writer.WriteUnmanaged(isNull);
-
-            if (isNull) return;
+            if (IsNullable(value))
+            {
+                bool isNull = value == null;
+                writer.WriteUnmanaged(isNull);
+                
+                if (isNull) return;
+            }
             
             var dataStream = ByteBufferPool.Alloc();
             var stream = new NetworkStream(dataStream, false);
@@ -299,13 +309,20 @@ namespace PurrNet.Packets
 
         public override void Deserialize(ref MemoryPackReader reader, ref T value)
         {
-            if (reader.ReadUnmanaged<bool>())
+            if (IsNullable(value))
             {
-                value = default;
-                return;
-            }
+                if (reader.ReadUnmanaged<bool>())
+                {
+                    value = default;
+                    return;
+                }
 
-            value ??= new T();
+                value ??= new T();
+            }
+            else
+            {
+                value = new T();
+            }
             
             var dataStream = ByteBufferPool.Alloc();
             var stream = new NetworkStream(dataStream, true);
