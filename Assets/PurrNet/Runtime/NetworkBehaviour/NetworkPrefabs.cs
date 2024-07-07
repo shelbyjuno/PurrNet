@@ -108,6 +108,7 @@ namespace PurrNet
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Checking existing...",  0f);
             if (folder == null)
             {
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder found...",  0f);
                 if (autoGenerate)
                 {
                     prefabs.Clear();
@@ -118,10 +119,12 @@ namespace PurrNet
                 _generating = false;
                 return;
             }
-
+            
+            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Found folder...",  0f);
             string folderPath = AssetDatabase.GetAssetPath(folder);
             if (string.IsNullOrEmpty(folderPath))
             {
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder path...",  0f);
                 folder = null;
                 
                 if (autoGenerate)
@@ -134,6 +137,7 @@ namespace PurrNet
                 _generating = false;
                 return;
             }
+            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Getting existing paths...",  0f);
 
             // Track paths of existing prefabs for quick lookup
             var existingPaths = new HashSet<string>();
