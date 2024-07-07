@@ -194,7 +194,7 @@ namespace PurrNet.Modules
                     // if the scene is pending, don't do anything for now
                     if (IsScenePending(idx)) break;
 
-                    if (_scenes.TryGetValue(idx, out var sceneState))
+                    if (!_scenes.TryGetValue(idx, out var sceneState))
                     {
                         PurrLogger.LogError($"Couldn't find scene with index {idx} to unload");
                         break;
@@ -212,7 +212,7 @@ namespace PurrNet.Modules
                     // if the scene is pending, don't do anything for now
                     if (IsScenePending(idx)) break;
 
-                    if (_scenes.TryGetValue(idx, out var sceneState))
+                    if (!_scenes.TryGetValue(idx, out var sceneState))
                     {
                         PurrLogger.LogError($"Couldn't find scene with index {idx} to set as active");
                         break;
@@ -337,6 +337,12 @@ namespace PurrNet.Modules
         
         public void UnloadSceneAsync(Scene scene, UnloadSceneOptions options = UnloadSceneOptions.None)
         {
+            if (!_asServer)
+            {
+                PurrLogger.LogError("Only server can unload scenes; for now at least ;)");
+                return;
+            }
+            
             if (!_idToScene.TryGetValue(scene, out var sceneIndex))
             {
                 PurrLogger.LogError($"Scene {scene.name} not found in scenes list");
@@ -350,6 +356,12 @@ namespace PurrNet.Modules
         
         public void SetActiveScene(Scene scene)
         {
+            if (!_asServer)
+            {
+                PurrLogger.LogError("Only server can set active scene; for now at least ;)");
+                return;
+            }
+            
             if (!_idToScene.TryGetValue(scene, out var sceneIndex))
             {
                 PurrLogger.LogError($"Scene {scene.name} not found in scenes list");
