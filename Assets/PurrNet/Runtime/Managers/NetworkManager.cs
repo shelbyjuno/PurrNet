@@ -208,8 +208,8 @@ namespace PurrNet
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
             modules.AddModule(scenesModule);
-            modules.AddModule(hierarchyModule);
             modules.AddModule(scenePlayersModule);
+            modules.AddModule(hierarchyModule);
         }
 
         static bool ShouldStart(StartFlags flags)

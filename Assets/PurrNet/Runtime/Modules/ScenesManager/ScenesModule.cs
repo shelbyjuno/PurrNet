@@ -48,12 +48,15 @@ namespace PurrNet.Modules
 
         private readonly Dictionary<SceneID, SceneState> _scenes = new ();
         private readonly Dictionary<Scene, SceneID> _idToScene = new ();
+        private readonly List<SceneID> _rawScenes = new ();
         
         public event OnSceneActionEvent onSceneLoaded;
         public event OnSceneActionEvent onSceneUnloaded;
         public event OnSceneActionEvent onSceneSetActive;
 
         private ushort _nextSceneID;
+        
+        public IReadOnlyList<SceneID> scenes => _rawScenes;
         
         private SceneID GetNextID() => new(_nextSceneID++);
 
@@ -65,11 +68,16 @@ namespace PurrNet.Modules
             _history = new SceneHistory();
         }
         
+        internal bool TryGetSceneState(SceneID sceneID, out SceneState state)
+        {
+            return _scenes.TryGetValue(sceneID, out state);
+        }
+        
         private void AddScene(Scene scene, PurrSceneSettings settings, SceneID id)
         {
             _scenes.Add(id, new SceneState(scene, settings));
             _idToScene.Add(scene, id);
-            
+            _rawScenes.Add(id);
             onSceneLoaded?.Invoke(id, _asServer);
         }
         
@@ -80,7 +88,7 @@ namespace PurrNet.Modules
             
             _scenes.Remove(id);
             _idToScene.Remove(scene);
-            
+            _rawScenes.Remove(id);
             onSceneUnloaded?.Invoke(id, _asServer);
         }
 

@@ -1,13 +1,21 @@
 using System.Collections.Generic;
+using PurrNet.Logging;
 
 namespace PurrNet.Modules
 {
+    public delegate void OnPlayerSceneEvent(PlayerID player, SceneID scene, bool asserver);
+
     public class ScenePlayersModule : INetworkModule
     {
-        readonly Dictionary<SceneID, HashSet<PlayerID>> _scenePlayers = new ();
+        private readonly Dictionary<SceneID, HashSet<PlayerID>> _scenePlayers = new();
         
         readonly ScenesModule _scenes;
         readonly PlayersManager _players;
+        
+        public event OnPlayerSceneEvent onPlayerJoinedScene;
+        public event OnPlayerSceneEvent onPlayerLeftScene;
+
+        private bool _asServer;
         
         public ScenePlayersModule(ScenesModule scenes, PlayersManager players)
         {
@@ -17,26 +25,136 @@ namespace PurrNet.Modules
         
         public void Enable(bool asServer)
         {
+            _asServer = asServer;
+            
             if (asServer)
             {
+                for (var i = 0; i < _scenes.scenes.Count; i++)
+                {
+                    var scene = _scenes.scenes[i];
+                    OnSceneLoaded(scene, true);
+                }
+
                 _scenes.onSceneLoaded += OnSceneLoaded;
                 _scenes.onSceneUnloaded += OnSceneUnloaded;
+                
+                _players.onPrePlayerJoined += OnPlayerJoined;
+                _players.onPrePlayerLeft += OnPlayerLeft;
+                
+                onPlayerJoinedScene += (player, scene, _) =>
+                {
+                    PurrLogger.Log($"Player '{player}' joined scene '{scene}'");
+                };
+                
+                onPlayerLeftScene += (player, scene, _) =>
+                {
+                    PurrLogger.Log($"Player '{player}' left scene '{scene}'");
+                };
             }
+        }
+
+        private void OnPlayerJoined(PlayerID player, bool asserver)
+        {
+            for (var i = 0; i < _scenes.scenes.Count; i++)
+            {
+                var scene = _scenes.scenes[i];
+                if (!_scenes.TryGetSceneState(scene, out var state))
+                    continue;
+
+                if (!state.settings.isPublic)
+                    continue;
+
+                AddPlayerToScene(player, scene);
+            }
+        }
+        
+        private void OnPlayerLeft(PlayerID player, bool asserver)
+        {
+            foreach (var (scene, players) in _scenePlayers)
+            {
+                if (!players.Contains(player))
+                    continue;
+                
+                RemovePlayerFromScene(player, scene);
+            }
+        }
+
+        public bool IsPlayerInScene(PlayerID player, SceneID scene)
+        {
+            return _scenePlayers.TryGetValue(scene, out var playersInScene) && playersInScene.Contains(player);
+        }
+        
+        public void AddPlayerToScene(PlayerID player, SceneID scene)
+        {
+            if (!_asServer)
+            {
+                PurrLogger.LogError("AddPlayerToScene can only be called on the server; for now ;)");
+                return;
+            }
+            
+            if (!_scenePlayers.TryGetValue(scene, out var playersInScene))
+            {
+                PurrLogger.LogError($"SceneID '{scene}' not found in scenes module; aborting AddPlayerToScene");
+                return;
+            }
+            
+            playersInScene.Add(player);
+            onPlayerJoinedScene?.Invoke(player, scene, _asServer);
+        }
+        
+        public void RemovePlayerFromScene(PlayerID player, SceneID scene)
+        {
+            if (!_asServer)
+            {
+                PurrLogger.LogError("RemovePlayerFromScene can only be called on the server; for now ;)");
+                return;
+            }
+            
+            if (!_scenePlayers.TryGetValue(scene, out var playersInScene))
+            {
+                PurrLogger.LogError($"SceneID '{scene}' not found in scenes module; aborting RemovePlayerFromScene");
+                return;
+            }
+            
+            playersInScene.Remove(player);
+            onPlayerLeftScene?.Invoke(player, scene, _asServer);
         }
 
         private void OnSceneLoaded(SceneID scene, bool asServer)
         {
-            throw new System.NotImplementedException();
-        }
+            if (!_scenes.TryGetSceneState(scene, out var state))
+            {
+                PurrLogger.LogError($"SceneID '{scene}' not found in scenes module");
+                return;
+            }
 
+            var playersInScene = new HashSet<PlayerID>();
+            _scenePlayers.Add(scene, playersInScene);
+
+            if (!state.settings.isPublic) return;
+            
+            // if the scene is public, add all connected players to the scene
+            int connectedPlayersCount = _players.connectedPlayers.Count;
+
+            for (int i = 0; i < connectedPlayersCount; i++)
+            {
+                var player = _players.connectedPlayers[i];
+                playersInScene.Add(player);
+
+                onPlayerJoinedScene?.Invoke(player, scene, asServer);
+            }
+        }
+        
         private void OnSceneUnloaded(SceneID scene, bool asServer)
         {
-            throw new System.NotImplementedException();
-        }
-
-        private void HandleNewPlayer(PlayerID player)
-        {
-            
+            if (_scenePlayers.TryGetValue(scene, out var playersInScene))
+            {
+                // remove all players from the scene
+                foreach (var player in playersInScene)
+                    onPlayerLeftScene?.Invoke(player, scene, asServer);
+                
+                _scenePlayers.Remove(scene);
+            }
         }
         
         public void Disable(bool asServer)
