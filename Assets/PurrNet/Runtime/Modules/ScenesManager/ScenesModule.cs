@@ -52,9 +52,9 @@ namespace PurrNet.Modules
         
         public event OnSceneActionEvent onSceneLoaded;
         public event OnSceneActionEvent onSceneUnloaded;
-        public event OnSceneActionEvent onSceneSetActive;
 
         private ushort _nextSceneID;
+        private ScenePlayersModule _scenePlayers;
         
         public IReadOnlyList<SceneID> scenes => _rawScenes;
         
@@ -64,8 +64,12 @@ namespace PurrNet.Modules
         {
             _networkManager = manager;
             _players = players;
-            
             _history = new SceneHistory();
+        }
+        
+        internal void SetScenePlayers(ScenePlayersModule scenePlayersModule)
+        {
+            _scenePlayers = scenePlayersModule;
         }
         
         internal bool TryGetSceneState(SceneID sceneID, out SceneState state)
@@ -111,17 +115,26 @@ namespace PurrNet.Modules
             }
             else
             {
-                _players.onPlayerJoined += OnPlayerJoined;
+                _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
             }
             
             SceneManager.sceneLoaded += SceneManagerOnsceneLoaded;
         }
-        private void OnPlayerJoined(PlayerID player, bool asserver)
+
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (!asserver)
                 return;
             
-            _players.Send(player, _history.GetFullHistory());
+            var history = _history.GetFullHistory();
+            
+            _playerFilteredActions.Clear();
+            
+            // send all actions for the scene
+            FilterActionsForPlayerBySceneID(player, scene, history.actions, _playerFilteredActions);
+
+            if (_playerFilteredActions.Count > 0)
+                _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
         }
 
         private void SceneManagerOnsceneLoaded(Scene scene, LoadSceneMode mode)
@@ -195,25 +208,6 @@ namespace PurrNet.Modules
                     SceneManager.UnloadSceneAsync(sceneState.scene, action.unloadSceneAction.options);
                     RemoveScene(sceneState.scene);
                     _actionsQueue.Dequeue();
-                    break;
-                }
-                case SceneActionType.SetActive:
-                {
-                    var idx = action.unloadSceneAction.sceneID;
-                    
-                    // if the scene is pending, don't do anything for now
-                    if (IsScenePending(idx)) break;
-
-                    if (!_scenes.TryGetValue(idx, out var sceneState))
-                    {
-                        PurrLogger.LogError($"Couldn't find scene with index {idx} to set as active");
-                        break;
-                    }
-
-                    SceneManager.SetActiveScene(sceneState.scene);
-                    _actionsQueue.Dequeue();
-                    
-                    onSceneSetActive?.Invoke(idx, _asServer);
                     break;
                 }
             }
@@ -371,24 +365,6 @@ namespace PurrNet.Modules
             SceneManager.UnloadSceneAsync(scene, options);
             RemoveScene(scene);
         }
-        
-        public void SetActiveScene(Scene scene)
-        {
-            if (!_asServer)
-            {
-                PurrLogger.LogError("Only server can set active scene; for now at least ;)");
-                return;
-            }
-            
-            if (!_idToScene.TryGetValue(scene, out var sceneIndex))
-            {
-                PurrLogger.LogError($"Scene {scene.name} not found in scenes list");
-                return;
-            }
-            
-            _history.AddSetActiveAction(new SetActiveSceneAction { sceneID = sceneIndex });
-            SceneManager.SetActiveScene(scene);
-        }
 
         public void Disable(bool asServer)
         {
@@ -398,23 +374,78 @@ namespace PurrNet.Modules
             }
             else
             {
-                _players.onPlayerJoined -= OnPlayerJoined;
+                _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
             }
             
             SceneManager.sceneLoaded -= SceneManagerOnsceneLoaded;
 
             DoCleanup();
         }
+        
+        static readonly List<SceneAction> _playerFilteredActions = new();
+
+        private void FilterActionsForPlayer(PlayerID player, IReadOnlyList<SceneAction> actions, ICollection<SceneAction> destination)
+        {
+            for (var i = 0; i < actions.Count; i++)
+            {
+                var action = actions[i];
+                        
+                var target = action.type switch
+                {
+                    SceneActionType.Load => action.loadSceneAction.sceneID,
+                    SceneActionType.Unload => action.unloadSceneAction.sceneID,
+                    _ => default
+                };
+
+                if (_scenePlayers.IsPlayerInScene(player, target))
+                    destination.Add(action);
+            }
+        }
+        
+        private void FilterActionsForPlayerBySceneID(PlayerID player, SceneID id, IReadOnlyList<SceneAction> actions, ICollection<SceneAction> destination)
+        {
+            for (var i = 0; i < actions.Count; i++)
+            {
+                var action = actions[i];
+                        
+                var target = action.type switch
+                {
+                    SceneActionType.Load => action.loadSceneAction.sceneID,
+                    SceneActionType.Unload => action.unloadSceneAction.sceneID,
+                    _ => default
+                };
+                
+                if (target != id)
+                    continue;
+
+                if (_scenePlayers.IsPlayerInScene(player, target))
+                    destination.Add(action);
+            }
+        }
 
         public void FixedUpdate()
         {
             HandleNextSceneAction();
+
+            if (!_history.hasUnflushedActions) return;
             
-            if (_history.hasUnflushedActions)
+            var delta = _history.GetDelta();
+                
+            for (var i = 0; i < _players.connectedPlayers.Count; i++)
             {
-                _players.SendToAll(_history.GetDelta());
-                _history.Flush();
+                var player = _players.connectedPlayers[i];
+                
+                _playerFilteredActions.Clear();
+                
+                FilterActionsForPlayer(player, delta.actions, _playerFilteredActions);
+
+                if (_playerFilteredActions.Count > 0)
+                {
+                    _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
+                }
             }
+                
+            _history.Flush();
         }
 
         private void DoCleanup()
@@ -469,6 +500,18 @@ namespace PurrNet.Modules
                 }
             }
 
+            return true;
+        }
+
+        public bool TryGetSceneID(Scene scene, out SceneID o)
+        {
+            if (!_idToScene.TryGetValue(scene, out var id))
+            {
+                o = default;
+                return false;
+            }
+
+            o = id;
             return true;
         }
     }

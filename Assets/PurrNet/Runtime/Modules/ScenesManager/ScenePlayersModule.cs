@@ -13,8 +13,11 @@ namespace PurrNet.Modules
         readonly PlayersManager _players;
         
         public event OnPlayerSceneEvent onPlayerJoinedScene;
+        public event OnPlayerSceneEvent onPlayerLoadedScene;
+        
         public event OnPlayerSceneEvent onPlayerLeftScene;
-
+        public event OnPlayerSceneEvent onPlayerUnloadedScene;
+        
         private bool _asServer;
         
         public ScenePlayersModule(ScenesModule scenes, PlayersManager players)
@@ -40,16 +43,6 @@ namespace PurrNet.Modules
                 
                 _players.onPrePlayerJoined += OnPlayerJoined;
                 _players.onPrePlayerLeft += OnPlayerLeft;
-                
-                onPlayerJoinedScene += (player, scene, _) =>
-                {
-                    PurrLogger.Log($"Player '{player}' joined scene '{scene}'");
-                };
-                
-                onPlayerLeftScene += (player, scene, _) =>
-                {
-                    PurrLogger.Log($"Player '{player}' left scene '{scene}'");
-                };
             }
         }
 
@@ -117,7 +110,9 @@ namespace PurrNet.Modules
             }
             
             playersInScene.Remove(player);
+            
             onPlayerLeftScene?.Invoke(player, scene, _asServer);
+            onPlayerUnloadedScene?.Invoke(player, scene, _asServer);
         }
 
         private void OnSceneLoaded(SceneID scene, bool asServer)
@@ -151,7 +146,10 @@ namespace PurrNet.Modules
             {
                 // remove all players from the scene
                 foreach (var player in playersInScene)
+                {
                     onPlayerLeftScene?.Invoke(player, scene, asServer);
+                    onPlayerUnloadedScene?.Invoke(player, scene, asServer);
+                }
                 
                 _scenePlayers.Remove(scene);
             }

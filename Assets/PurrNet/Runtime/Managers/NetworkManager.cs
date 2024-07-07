@@ -199,6 +199,7 @@ namespace PurrNet
 
             var scenesModule = new ScenesModule(this, playersManager);
             var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
+            scenesModule.SetScenePlayers(scenePlayersModule);
             
             playersManager.SetBroadcaster(playersBroadcast);
             

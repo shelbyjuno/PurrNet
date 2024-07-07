@@ -7,8 +7,7 @@ namespace PurrNet.Modules
     internal enum SceneActionType : byte
     {
         Load,
-        Unload,
-        SetActive
+        Unload
     }
     
     internal partial struct SceneAction : INetworkedData
@@ -30,9 +29,6 @@ namespace PurrNet.Modules
                     break;
                 case SceneActionType.Unload:
                     packer.Serialize(ref unloadSceneAction);
-                    break;
-                case SceneActionType.SetActive:
-                    packer.Serialize(ref setActiveSceneAction);
                     break;
             }
         }
@@ -139,10 +135,6 @@ namespace PurrNet.Modules
                         if (!_sceneIds.Contains(action.unloadSceneAction.sceneID))
                             _actions.RemoveAt(i);
                         break;
-                    case SceneActionType.SetActive:
-                        if (!_sceneIds.Contains(action.setActiveSceneAction.sceneID))
-                            _actions.RemoveAt(i);
-                        break;
                 }
             }
         }
@@ -164,17 +156,6 @@ namespace PurrNet.Modules
             {
                 type = SceneActionType.Unload,
                 unloadSceneAction = action
-            });
-            
-            hasUnflushedActions = true;
-        }
-        
-        internal void AddSetActiveAction(SetActiveSceneAction action)
-        {
-            _pending.Add(new SceneAction
-            {
-                type = SceneActionType.SetActive,
-                setActiveSceneAction = action
             });
             
             hasUnflushedActions = true;

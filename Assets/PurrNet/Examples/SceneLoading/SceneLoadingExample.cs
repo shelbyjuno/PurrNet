@@ -6,9 +6,27 @@ using UnityEngine.SceneManagement;
 public class SceneLoadingExample : MonoBehaviour
 {
     [SerializeField] private int sceneIndex;
-    [SerializeField] private bool async;
     [SerializeField] private bool load;
+    [SerializeField] private bool isPubic;
     [SerializeField] private LoadSceneMode loadSceneMode;
+
+    [ContextMenu("Add All")]
+    public void AddAllPlayers()
+    {
+        var scenes = NetworkManager.main.GetModule<ScenesModule>(true);
+        var scenesPlayers = NetworkManager.main.GetModule<ScenePlayersModule>(true);
+        var players = NetworkManager.main.GetModule<PlayersManager>(true);
+
+        var scene = SceneManager.GetSceneByBuildIndex(sceneIndex);
+        if (scenes.TryGetSceneID(scene, out var sceneID))
+        {
+            for (var i = 0; i < players.connectedPlayers.Count; i++)
+            {
+                var player = players.connectedPlayers[i];
+                scenesPlayers.AddPlayerToScene(player, sceneID);
+            }
+        }
+    }
     
     [ContextMenu("Execute")]
     public void Execute()
@@ -17,14 +35,11 @@ public class SceneLoadingExample : MonoBehaviour
         
         if (load)
         {
-            if (async)
+            scenes.LoadSceneAsync(sceneIndex, new PurrSceneSettings
             {
-                scenes.LoadSceneAsync(sceneIndex, loadSceneMode);
-            }
-            else
-            {
-                scenes.LoadSceneAsync(sceneIndex, loadSceneMode);
-            }
+                mode = loadSceneMode,
+                isPublic = isPubic
+            });
         }
         else
         {

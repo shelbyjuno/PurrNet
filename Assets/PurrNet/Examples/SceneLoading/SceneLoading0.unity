@@ -535,8 +535,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneIndex: 1
-  async: 1
   load: 1
+  isPubic: 1
   loadSceneMode: 1
 --- !u!1 &1705368124
 GameObject:
