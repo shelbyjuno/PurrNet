@@ -83,14 +83,33 @@ namespace PurrNet
 
         public bool shouldAutoStartServer => transport && ShouldStart(_startServerFlags);
         public bool shouldAutoStartClient => transport && ShouldStart(_startClientFlags);
+
+        private bool _isCleaningClient;
+        private bool _isCleaningServer;
         
-        public ConnectionState serverState => _transport == null ? ConnectionState.Disconnected : _transport.transport.listenerState;
-        
-        public ConnectionState clientState => _transport == null ? ConnectionState.Disconnected : _transport.transport.clientState;
-        
+        public ConnectionState serverState
+        {
+            get
+            {
+                var state = !_transport ? ConnectionState.Disconnected : _transport.transport.listenerState;
+                return state == ConnectionState.Disconnected && _isCleaningServer ? ConnectionState.Disconnecting : state;
+            }
+        }
+
+        public ConnectionState clientState
+        {
+            get
+            {
+                var state = !_transport ? ConnectionState.Disconnected : _transport.transport.clientState;
+                return state == ConnectionState.Disconnected && _isCleaningClient ? ConnectionState.Disconnecting : state;
+            }
+        }
+
         public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
         
         public bool isClient => _transport.transport.clientState == ConnectionState.Connected;
+        
+        public bool isOffline => !isServer && !isClient;
 
         public bool isPlannedHost => ShouldStart(_startServerFlags) && ShouldStart(_startClientFlags);
 
@@ -221,6 +240,18 @@ namespace PurrNet
             
             if (clientState == ConnectionState.Connected)
                 _clientModules.TriggerOnFixedUpdate();
+
+            if (_isCleaningClient && _clientModules.Cleanup())
+            {
+                _clientModules.UnregisterModules();
+                _isCleaningClient = false;
+            }
+
+            if (_isCleaningServer && _serverModules.Cleanup())
+            {
+                _serverModules.UnregisterModules();
+                _isCleaningServer = false;
+            }
         }
 
         private void OnDestroy()
@@ -281,9 +312,15 @@ namespace PurrNet
 
             if (state == ConnectionState.Disconnected)
             {
-                if (asserver)
-                     _serverModules.UnregisterModules();
-                else _clientModules.UnregisterModules();
+                switch (asserver)
+                {
+                    case false:
+                        _isCleaningClient = true;
+                        break;
+                    case true:
+                        _isCleaningServer = true;
+                        break;
+                }
             }
         }
         

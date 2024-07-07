@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using MemoryPack;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Utils;
@@ -29,31 +28,16 @@ namespace PurrNet.Modules
         }
     }
 
-    [MemoryPackable]
-    public partial struct PurrSceneSettings
+    public partial struct PurrSceneSettings : IAutoNetworkedData
     {
         public LoadSceneMode mode;
         public LocalPhysicsMode physicsMode;
         public bool isPublic;
-        
-        [MemoryPackIgnore]
-        public HashSet<PlayerID> whiteList;
-        
-        [MemoryPackIgnore]
-        public HashSet<PlayerID> blackList;
-        
-        public bool CanJoin(PlayerID player)
-        {
-            if (whiteList != null && whiteList.Contains(player)) return true;
-            if (blackList != null && blackList.Contains(player)) return false;
-
-            return isPublic;
-        }
     }
     
     public delegate void OnPlayerSceneDelegate(PlayerID player, SceneID scene, bool asServer);
     
-    public class ScenesModule : INetworkModule, IFixedUpdate
+    public class ScenesModule : INetworkModule, IFixedUpdate, ICleanup
     {
         private readonly NetworkManager _networkManager;
         private readonly PlayersManager _players;
@@ -66,9 +50,6 @@ namespace PurrNet.Modules
 
         private readonly Dictionary<SceneID, SceneState> _scenes = new ();
         private readonly Dictionary<Scene, SceneID> _idToScene = new ();
-
-        public event OnPlayerSceneDelegate onPlayerJoinedScene;
-        public event OnPlayerSceneDelegate onPlayerLeftScene;
 
         private ushort _nextSceneID;
         
@@ -105,8 +86,6 @@ namespace PurrNet.Modules
             {
                 mode = LoadSceneMode.Single,
                 isPublic = true,
-                blackList = null,
-                whiteList = null,
                 physicsMode = LocalPhysicsMode.None
             }, GetNextID());
             
@@ -123,7 +102,6 @@ namespace PurrNet.Modules
             
             SceneManager.sceneLoaded += SceneManagerOnsceneLoaded;
         }
-
         private void OnPlayerJoined(PlayerID player, bool asserver)
         {
             if (!asserver)
@@ -299,9 +277,7 @@ namespace PurrNet.Modules
             {
                 mode = parameters.loadSceneMode,
                 physicsMode = parameters.localPhysicsMode,
-                isPublic = true,
-                blackList = null,
-                whiteList = null
+                isPublic = true
             });
         }
         
@@ -333,6 +309,32 @@ namespace PurrNet.Modules
             });
             
             return op;
+        }
+        
+        public void UnloadSceneAsync(string sceneName, UnloadSceneOptions options = UnloadSceneOptions.None)
+        {
+            var scene = SceneManager.GetSceneByName(sceneName);
+            
+            if (!scene.IsValid())
+            {
+                PurrLogger.LogError($"Scene with name '{sceneName}' not found");
+                return;
+            }
+            
+            UnloadSceneAsync(scene, options);
+        }
+
+        public void UnloadSceneAsync(int buildIndex, UnloadSceneOptions options = UnloadSceneOptions.None)
+        {
+            var scene = SceneManager.GetSceneByBuildIndex(buildIndex);
+            
+            if (!scene.IsValid())
+            {
+                PurrLogger.LogError($"Scene with build index {buildIndex} not found");
+                return;
+            }
+            
+            UnloadSceneAsync(scene, options);
         }
         
         public void UnloadSceneAsync(Scene scene, UnloadSceneOptions options = UnloadSceneOptions.None)
@@ -378,6 +380,10 @@ namespace PurrNet.Modules
             {
                 _players.Unsubscribe<SceneActionsBatch>(OnSceneActionsBatch);
             }
+            else
+            {
+                _players.onPlayerJoined -= OnPlayerJoined;
+            }
             
             SceneManager.sceneLoaded -= SceneManagerOnsceneLoaded;
 
@@ -411,6 +417,44 @@ namespace PurrNet.Modules
                 
                 SceneManager.UnloadSceneAsync(scene.scene);
             }
+        }
+
+        private readonly List<AsyncOperation> _pendingUnloads = new();
+
+        public bool Cleanup()
+        {
+            if (!_networkManager.isOffline)
+                return true;
+
+            if (_pendingOperations.Count > 0)
+                return false;
+
+            if (_scenes.Count > 0)
+            {
+                _pendingUnloads.Clear();
+
+                foreach (var (id, scene) in _scenes)
+                {
+                    if (id == default)
+                        continue;
+
+                    _pendingUnloads.Add(SceneManager.UnloadSceneAsync(scene.scene));
+                }
+
+                _scenes.Clear();
+            }
+            
+            if (_pendingUnloads.Count > 0)
+            {
+                for (int i = 0; i < _pendingUnloads.Count; i++)
+                {
+                    if (!_pendingUnloads[i].isDone)
+                        return false;
+                }
+            }
+
+            Debug.Log("ScenesModule cleanup finished");
+            return true;
         }
     }
 }

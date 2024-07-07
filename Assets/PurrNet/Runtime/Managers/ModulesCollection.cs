@@ -12,6 +12,7 @@ namespace PurrNet
         private readonly List<IDataListener> _dataListeners;
         private readonly List<IFixedUpdate> _fixedUpdatesListeners;
         private readonly List<IUpdate> _updateListeners;
+        private readonly List<ICleanup> _cleanupListeners;
 
         private readonly NetworkManager _manager;
         private readonly bool _asServer;
@@ -24,6 +25,7 @@ namespace PurrNet
             _dataListeners = new List<IDataListener>();
             _updateListeners = new List<IUpdate>();
             _fixedUpdatesListeners = new List<IFixedUpdate>();
+            _cleanupListeners = new List<ICleanup>();
             _manager = manager;
             _asServer = asServer;
         }
@@ -72,6 +74,10 @@ namespace PurrNet
                 // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IUpdate update)
                     _updateListeners.Add(update);
+                
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is ICleanup cleanup)
+                    _cleanupListeners.Add(cleanup);
             }
         }
         
@@ -111,6 +117,21 @@ namespace PurrNet
                 _fixedUpdatesListeners[i].FixedUpdate();
         }
 
+        public bool Cleanup()
+        {
+            bool allTrue = true;
+            
+            for (int i = 0; i < _cleanupListeners.Count; i++)
+            {
+                if (!_cleanupListeners[i].Cleanup())
+                {
+                    allTrue = false;
+                }
+            }
+            
+            return allTrue;
+        }
+
         public void UnregisterModules()
         {
             for (int i = 0; i < _modules.Count; i++)
@@ -120,6 +141,9 @@ namespace PurrNet
             _connectionListeners.Clear();
             _connectionStateListeners.Clear();
             _dataListeners.Clear();
+            _updateListeners.Clear();
+            _fixedUpdatesListeners.Clear();
+            _cleanupListeners.Clear();
         }
 
         public void AddModule(INetworkModule module)

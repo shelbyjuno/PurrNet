@@ -26,6 +26,15 @@ namespace PurrNet.Modules
         void OnDataReceived(Connection conn, ByteData data, bool asServer);
     }
     
+    internal interface ICleanup
+    {
+        /// <summary>
+        /// Clean up the module; gets called every tick until it returns true
+        /// </summary>
+        /// <returns>True if the cleanup is finished, false otherwise</returns>
+        bool Cleanup();
+    }
+    
     internal interface IFixedUpdate
     {
         void FixedUpdate();

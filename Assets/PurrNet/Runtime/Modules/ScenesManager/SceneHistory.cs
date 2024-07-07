@@ -50,7 +50,6 @@ namespace PurrNet.Modules
     
     internal partial struct LoadSceneAction : IAutoNetworkedData
     {
-        
         public int buildIndex;
         public SceneID sceneID;
         public PurrSceneSettings parameters; 

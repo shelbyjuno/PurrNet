@@ -53,9 +53,9 @@ namespace PurrNet.Modules
     {
         public Dictionary<Connection, PlayerID> connectionToPlayerId { get; }
         
-        public PlayerSnapshotEvent(Dictionary<Connection, PlayerID> connectionToPlayerId)
+        public PlayerSnapshotEvent(IDictionary<Connection, PlayerID> connectionToPlayerId)
         {
-            this.connectionToPlayerId = connectionToPlayerId;
+            this.connectionToPlayerId = new Dictionary<Connection, PlayerID>(connectionToPlayerId);
         }
     }
     
