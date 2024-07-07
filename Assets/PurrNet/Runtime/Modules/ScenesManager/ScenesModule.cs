@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using MemoryPack;
 using PurrNet.Logging;
+using PurrNet.Packets;
 using PurrNet.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,12 +29,17 @@ namespace PurrNet.Modules
         }
     }
 
-    public struct PurrSceneSettings
+    [MemoryPackable]
+    public partial struct PurrSceneSettings
     {
         public LoadSceneMode mode;
         public LocalPhysicsMode physicsMode;
         public bool isPublic;
+        
+        [MemoryPackIgnore]
         public HashSet<PlayerID> whiteList;
+        
+        [MemoryPackIgnore]
         public HashSet<PlayerID> blackList;
         
         public bool CanJoin(PlayerID player)

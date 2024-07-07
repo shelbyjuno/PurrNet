@@ -28,7 +28,8 @@ public class SceneLoadingExample : MonoBehaviour
         }
         else
         {
-            scenes.UnloadSceneAsync(sceneIndex);
+            var scene = SceneManager.GetSceneByBuildIndex(sceneIndex);
+            scenes.UnloadSceneAsync(scene);
         }
     }
 }
