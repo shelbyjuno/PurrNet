@@ -50,11 +50,11 @@ namespace PurrNet.Modules
     
     public partial struct PlayerSnapshotEvent : IAutoNetworkedData
     {
-        public Dictionary<Connection, PlayerID> _connectionToPlayerId { get; }
+        public Dictionary<Connection, PlayerID> connectionToPlayerId { get; }
         
         public PlayerSnapshotEvent(Dictionary<Connection, PlayerID> connectionToPlayerId)
         {
-            _connectionToPlayerId = connectionToPlayerId;
+            this.connectionToPlayerId = connectionToPlayerId;
         }
     }
     
@@ -223,7 +223,7 @@ namespace PurrNet.Modules
 
         private void OnPlayerSnapshotEvent(Connection conn, PlayerSnapshotEvent data, bool asserver)
         {
-            foreach (var (key, pid) in _connectionToPlayerId)
+            foreach (var (key, pid) in data.connectionToPlayerId)
                 RegisterPlayer(key, pid);
         }
 

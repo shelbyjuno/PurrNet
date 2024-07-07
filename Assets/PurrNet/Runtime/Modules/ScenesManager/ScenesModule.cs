@@ -22,6 +22,8 @@ namespace PurrNet.Modules
         
         private readonly List<Scene?> _scenes = new ();
         private readonly List<PendingOperation> _pendingOperations = new ();
+        
+        private readonly Queue<SceneAction> _actionsQueue = new ();
 
         public ScenesModule(NetworkManager manager, PlayersManager players)
         {
@@ -83,67 +85,94 @@ namespace PurrNet.Modules
                 }
             }
         }
+        
+        private bool IsScenePending(int sceneId)
+        {
+            for (int i = 0; i < _pendingOperations.Count; i++)
+            {
+                if (_pendingOperations[i].idToAssign == sceneId)
+                    return true;
+            }
+            
+            return false;
+        }
+
+        private void HandleNextSceneAction()
+        {
+            if (_actionsQueue.Count == 0) return;
+            
+            var action = _actionsQueue.Peek();
+            switch (action.type)
+            {
+                case SceneActionType.Load:
+                {
+                    var loadAction = action.loadSceneAction;
+
+                    if (loadAction.buildIndex < 0 || loadAction.buildIndex >= SceneManager.sceneCountInBuildSettings)
+                    {
+                        PurrLogger.LogError($"Invalid build index {loadAction.buildIndex} to load");
+                        break;
+                    }
+                    
+                    SceneManager.LoadSceneAsync(loadAction.buildIndex, loadAction.parameters);
+
+                    _pendingOperations.Add(new PendingOperation
+                    {
+                        buildIndex = loadAction.buildIndex,
+                        mode = loadAction.parameters.loadSceneMode,
+                        idToAssign = loadAction.sceneID
+                    });
+                    
+                    _actionsQueue.Dequeue();
+                    break;
+                }
+                case SceneActionType.Unload:
+                {
+                    var idx = action.unloadSceneAction.sceneID;
+                    
+                    // if the scene is pending, don't do anything for now
+                    if (IsScenePending(idx)) break;
+
+                    if (idx < 0 || idx >= _scenes.Count || !_scenes[idx].HasValue)
+                    {
+                        PurrLogger.LogError($"Couldn't find scene with index {idx} to unload");
+                        break;
+                    }
+
+                    SceneManager.UnloadSceneAsync(_scenes[idx].Value);
+                    _scenes[idx] = null;
+                    _actionsQueue.Dequeue();
+                    break;
+                }
+                case SceneActionType.SetActive:
+                {
+                    var idx = action.unloadSceneAction.sceneID;
+                    
+                    // if the scene is pending, don't do anything for now
+                    if (IsScenePending(idx)) break;
+
+                    if (idx < 0 || idx >= _scenes.Count || !_scenes[idx].HasValue)
+                    {
+                        PurrLogger.LogError($"Couldn't find scene with index {idx} to set as active");
+                        break;
+                    }
+
+                    SceneManager.SetActiveScene(_scenes[idx].Value);
+                    _actionsQueue.Dequeue();
+                    break;
+                }
+            }
+        }
 
         private void OnSceneActionsBatch(PlayerID player, SceneActionsBatch data, bool asserver)
         {
             if (_networkManager.isHost && !asserver)
                 return;
-            
+
             for (var i = 0; i < data.actions.Count; i++)
-            {
-                var action = data.actions[i];
-                switch (action.type)
-                {
-                    case SceneActionType.Load:
-                    {
-                        var loadAction = action.loadSceneAction;
-
-                        if (loadAction.buildIndex < 0 || loadAction.buildIndex >= SceneManager.sceneCountInBuildSettings)
-                        {
-                            PurrLogger.LogError($"Invalid build index {loadAction.buildIndex} to load");
-                            break;
-                        }
-                        
-                        SceneManager.LoadSceneAsync(loadAction.buildIndex, loadAction.parameters);
-
-                        _pendingOperations.Add(new PendingOperation
-                        {
-                            buildIndex = loadAction.buildIndex,
-                            mode = loadAction.parameters.loadSceneMode,
-                            idToAssign = loadAction.sceneID
-                        });
-                        break;
-                    }
-                    case SceneActionType.Unload:
-                    {
-                        var idx = action.unloadSceneAction.sceneID;
-
-                        if (idx < 0 || idx >= _scenes.Count || !_scenes[idx].HasValue)
-                        {
-                            PurrLogger.LogError($"Couldn't find scene with index {idx} to unload");
-                            break;
-                        }
-
-                        SceneManager.UnloadSceneAsync(_scenes[idx].Value);
-                        _scenes[idx] = null;
-
-                        break;
-                    }
-                    case SceneActionType.SetActive:
-                    {
-                        var idx = action.unloadSceneAction.sceneID;
-
-                        if (idx < 0 || idx >= _scenes.Count || !_scenes[idx].HasValue)
-                        {
-                            PurrLogger.LogError($"Couldn't find scene with index {idx} to set as active");
-                            break;
-                        }
-
-                        SceneManager.SetActiveScene(_scenes[idx].Value);
-                        break;
-                    }
-                }
-            }
+                _actionsQueue.Enqueue(data.actions[i]);
+            
+            HandleNextSceneAction();
         }
 
         private int ReserverSceneID()
@@ -312,6 +341,8 @@ namespace PurrNet.Modules
 
         public void FixedUpdate()
         {
+            HandleNextSceneAction();
+            
             if (_history.hasUnflushedActions)
             {
                 _players.SendToAll(_history.GetDelta());
