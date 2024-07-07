@@ -111,7 +111,7 @@ namespace PurrNet
                 _fixedUpdatesListeners[i].FixedUpdate();
         }
 
-        private void UnregisterModules()
+        public void UnregisterModules()
         {
             for (int i = 0; i < _modules.Count; i++)
                 _modules[i].Disable(_asServer);

@@ -36,7 +36,7 @@ namespace PurrNet
         }
     }
     
-    public class PlayersBroadcaster : INetworkModule
+    internal class PlayersBroadcaster : INetworkModule
     {
         private readonly BroadcastModule _broadcastModule;
         private readonly PlayersManager _playersManager;

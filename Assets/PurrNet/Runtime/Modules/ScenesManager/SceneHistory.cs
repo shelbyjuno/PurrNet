@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using PurrNet.Packets;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
@@ -51,11 +52,13 @@ namespace PurrNet.Modules
     {
         public int buildIndex;
         public int sceneID;
+        public LoadSceneParameters parameters;
     }
     
     internal partial struct UnloadSceneAction : IAutoNetworkedData
     {
         public int sceneID;
+        public UnloadSceneOptions options;
     }
     
     internal partial struct SetActiveSceneAction : IAutoNetworkedData

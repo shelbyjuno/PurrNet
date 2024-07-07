@@ -89,6 +89,31 @@ namespace PurrNet.Modules
 
         private bool _asServer;
 
+        private PlayersBroadcaster _playerBroadcaster;
+
+        internal void SetBroadcaster(PlayersBroadcaster broadcaster)
+        {
+            _playerBroadcaster = broadcaster;
+        }
+        
+        public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered) 
+            => _playerBroadcaster.Send(player, data, method);
+
+        public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)
+            => _playerBroadcaster.Send(players, data, method);
+        
+        public void SendToServer<T>(T data, Channel method = Channel.ReliableOrdered) 
+            => _playerBroadcaster.SendToServer(data, method);
+        
+        public void SendToAll<T>(T data, Channel method = Channel.ReliableOrdered)
+            => _playerBroadcaster.SendToAll(data, method);
+        
+        public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
+            => _playerBroadcaster.Unsubscribe(callback);
+        
+        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
+            => _playerBroadcaster.Subscribe(callback);
+
         public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaste)
         {
             _transport = nm.transport.transport;

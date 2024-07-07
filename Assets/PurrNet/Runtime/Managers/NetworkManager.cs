@@ -91,7 +91,9 @@ namespace PurrNet
         public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
         
         public bool isClient => _transport.transport.clientState == ConnectionState.Connected;
-        
+
+        public bool isPlannedHost => ShouldStart(_startServerFlags) && ShouldStart(_startClientFlags);
+
         public bool isHost => isServer && isClient;
         
         public bool isServerOnly => isServer && !isClient;
@@ -152,6 +154,14 @@ namespace PurrNet
 
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
         {
+            switch (asServer)
+            {
+                case true when !isServer:
+                case false when !isClient:
+                    module = default;
+                    return false;
+            }
+
             return asServer ?
                 _serverModules.TryGetModule(out module) :
                 _clientModules.TryGetModule(out module);
@@ -164,8 +174,10 @@ namespace PurrNet
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
-            var scenesModule = new ScenesModule(this, playersManager, playersBroadcast);
-            var hierarchyModule = new HierarchyModule(playersManager, playersBroadcast, _networkPrefabs);
+            var scenesModule = new ScenesModule(this, playersManager);
+            var hierarchyModule = new HierarchyModule(this, playersManager, _networkPrefabs);
+            
+            playersManager.SetBroadcaster(playersBroadcast);
             
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
@@ -266,6 +278,13 @@ namespace PurrNet
             if (asserver)
                  onServerConnectionState?.Invoke(state);
             else onClientConnectionState?.Invoke(state);
+
+            if (state == ConnectionState.Disconnected)
+            {
+                if (asserver)
+                     _serverModules.UnregisterModules();
+                else _clientModules.UnregisterModules();
+            }
         }
         
         public bool TryGetModule<T>(bool asServer, out T module) where T : INetworkModule

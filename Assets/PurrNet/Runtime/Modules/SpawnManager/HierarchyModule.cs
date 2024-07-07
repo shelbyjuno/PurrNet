@@ -19,18 +19,18 @@ namespace PurrNet.Modules
     
     public class HierarchyModule : INetworkModule, IFixedUpdate, IUpdate
     {
+        private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
-        private readonly PlayersManager _playersManager;
-        private readonly PlayersBroadcaster _broadcaster;
+        private readonly PlayersManager _players;
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
-        
+
         private bool _asServer;
         
-        public HierarchyModule(PlayersManager players, PlayersBroadcaster broadcaster, NetworkPrefabs prefabs)
+        public HierarchyModule(NetworkManager manager, PlayersManager players, NetworkPrefabs prefabs)
         {
-            _playersManager = players;
-            _broadcaster = broadcaster;
+            _manager = manager;
+            _players = players;
             _prefabs = prefabs;
             
             _identities = new IdentitiesCollection();
@@ -40,30 +40,32 @@ namespace PurrNet.Modules
         public void Enable(bool asServer)
         {
             _asServer = asServer;
-            _broadcaster.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            _players.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (asServer)
             {
-                _playersManager.onPlayerJoined += OnPlayerJoined;
+                _players.onPlayerJoined += OnPlayerJoined;
             }
         }
 
         public void Disable(bool asServer)
         {
-            _broadcaster.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            _players.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
         }
         
         private void OnPlayerJoined(PlayerID player, bool asserver)
         {
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
-                _broadcaster.Send(player, fullHistory);
+                _players.Send(player, fullHistory);
         }
         
         private readonly HashSet<int> _instancesAboutToBeRemoved = new ();
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
+            if (_manager.isHost && !asserver) return;
+            
             _instancesAboutToBeRemoved.Clear();
             
             for (int i = 0; i < data.actions.Count; i++)
@@ -602,7 +604,7 @@ namespace PurrNet.Modules
             if (_asServer)
             {
                 var delta = _history.GetDelta();
-                _broadcaster.SendToAll(delta);
+                _players.SendToAll(delta);
                 _history.Flush();
             }
             else
@@ -613,10 +615,10 @@ namespace PurrNet.Modules
 
         public void Update()
         {
-            if (Input.GetKeyDown(KeyCode.X))
+            if (Input.GetKeyDown(KeyCode.X) && _asServer)
             {
                 var history = _history.GetFullHistory();
-                string output = $"Actions count: {history.actions.Count}";
+                string output = $"Actions count: {history.actions.Count}\n";
                 
                 for (int i = 0; i < history.actions.Count; i++)
                 {
