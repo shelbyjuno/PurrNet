@@ -18,13 +18,11 @@ namespace PurrNet.Modules
     {
         public Scene scene;
         public PurrSceneSettings settings;
-        public List<PlayerID> players;
 
         public SceneState(Scene scene, PurrSceneSettings settings)
         {
             this.scene = scene;
             this.settings = settings;
-            players = new List<PlayerID>();
         }
     }
 
@@ -35,7 +33,7 @@ namespace PurrNet.Modules
         public bool isPublic;
     }
     
-    public delegate void OnPlayerSceneDelegate(PlayerID player, SceneID scene, bool asServer);
+    public delegate void OnSceneActionEvent(SceneID scene, bool asServer);
     
     public class ScenesModule : INetworkModule, IFixedUpdate, ICleanup
     {
@@ -50,6 +48,10 @@ namespace PurrNet.Modules
 
         private readonly Dictionary<SceneID, SceneState> _scenes = new ();
         private readonly Dictionary<Scene, SceneID> _idToScene = new ();
+        
+        public event OnSceneActionEvent onSceneLoaded;
+        public event OnSceneActionEvent onSceneUnloaded;
+        public event OnSceneActionEvent onSceneSetActive;
 
         private ushort _nextSceneID;
         
@@ -67,6 +69,8 @@ namespace PurrNet.Modules
         {
             _scenes.Add(id, new SceneState(scene, settings));
             _idToScene.Add(scene, id);
+            
+            onSceneLoaded?.Invoke(id, _asServer);
         }
         
         private void RemoveScene(Scene scene)
@@ -76,6 +80,8 @@ namespace PurrNet.Modules
             
             _scenes.Remove(id);
             _idToScene.Remove(scene);
+            
+            onSceneUnloaded?.Invoke(id, _asServer);
         }
 
         public void Enable(bool asServer)
@@ -178,7 +184,7 @@ namespace PurrNet.Modules
                         break;
                     }
 
-                    SceneManager.UnloadSceneAsync(sceneState.scene);
+                    SceneManager.UnloadSceneAsync(sceneState.scene, action.unloadSceneAction.options);
                     RemoveScene(sceneState.scene);
                     _actionsQueue.Dequeue();
                     break;
@@ -198,6 +204,8 @@ namespace PurrNet.Modules
 
                     SceneManager.SetActiveScene(sceneState.scene);
                     _actionsQueue.Dequeue();
+                    
+                    onSceneSetActive?.Invoke(idx, _asServer);
                     break;
                 }
             }

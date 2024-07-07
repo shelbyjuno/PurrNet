@@ -191,10 +191,14 @@ namespace PurrNet
             var tickManager = new TickManager(_tickRate);
             var broadcastModule = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
+            
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
-            var scenesModule = new ScenesModule(this, playersManager);
+            
             var hierarchyModule = new HierarchyModule(this, playersManager, _networkPrefabs);
+
+            var scenesModule = new ScenesModule(this, playersManager);
+            var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
             
             playersManager.SetBroadcaster(playersBroadcast);
             
@@ -205,6 +209,7 @@ namespace PurrNet
             modules.AddModule(playersBroadcast);
             modules.AddModule(scenesModule);
             modules.AddModule(hierarchyModule);
+            modules.AddModule(scenePlayersModule);
         }
 
         static bool ShouldStart(StartFlags flags)

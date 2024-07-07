@@ -119,6 +119,7 @@ namespace PurrNet.Modules
     {
         public int prefabId { get; set; }
         public int identityId { get; set; }
+        public int childCount { get; set; }
         public TransformInfo transformInfo { get; set; }
 
         /// <summary>

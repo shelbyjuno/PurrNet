@@ -379,6 +379,7 @@ namespace PurrNet.Modules
                 prefabId = prefabId,
                 childOffset = 0,
                 identityId = _children[0].id,
+                childCount = _children.Count,
                 transformInfo = new TransformInfo(instance.transform)
             };
 

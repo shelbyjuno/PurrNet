@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
