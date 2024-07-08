@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using PurrNet.Logging;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -10,15 +10,11 @@ namespace PurrNet.Modules
         readonly List<HierarchyAction> _actions = new ();
         readonly List<HierarchyAction> _pending = new ();
         
+        [UsedImplicitly]
         private readonly List<IOptimizationRule> _optimizationRules = new();
         private readonly List<Prefab> _prefabs = new();
         
         public bool hasUnflushedActions { get; private set; }
-        
-        public HierarchyHistory()
-        {
-            //We add all our rules here in order to easily add or remove rules
-        }
         
         internal HierarchyActionBatch GetFullHistory()
         {
@@ -99,15 +95,10 @@ namespace PurrNet.Modules
             hasUnflushedActions = true;
         }
         
-        internal void Clear()
-        {
-            _actions.Clear();
-            _pending.Clear();
-        }
-
         private void OptimizeActions()
         {
             CleanupPrefabs();
+            RemoveIrrelevantActions();
             
             if(_optimizationRules.Count > 0)
                 RunOptimizationRules();
@@ -120,40 +111,89 @@ namespace PurrNet.Modules
             for (var i = 0; i < _actions.Count; i++)
             {
                 var action = _actions[i];
-                if (action.type == HierarchyActionType.Spawn)
+                switch (action.type)
                 {
-                    var prefab = new Prefab
+                    case HierarchyActionType.Spawn:
                     {
-                        childCount = action.spawnAction.childCount,
-                        identityId = action.spawnAction.identityId,
-                        spawnActionIndex = i
-                    };
+                        var prefab = new Prefab
+                        {
+                            childCount = action.spawnAction.childCount,
+                            identityId = action.spawnAction.identityId,
+                            spawnActionIndex = i
+                        };
 
-                    _prefabs.Add(prefab);
-                }
-
-                if (action.type == HierarchyActionType.Despawn)
-                {
-                    int index = -1;
-                    for (int j = 0; j < _prefabs.Count; j++)
+                        _prefabs.Add(prefab);
+                        break;
+                    }
+                    case HierarchyActionType.Despawn:
                     {
-                        if (!_prefabs[j].IsChild(action.despawnAction.identityId))
+                        int index = -1;
+                        for (int j = 0; j < _prefabs.Count; j++)
+                        {
+                            if (!_prefabs[j].IsChild(action.despawnAction.identityId))
+                                continue;
+                            index = j;
+                        }
+
+                        if (index == -1)
+                        {
+                            PurrLogger.LogError($"Despawn action for object {action.despawnAction.identityId} has no corresponding spawn action");
                             continue;
-                        index = j;
-                    }
+                        }
 
-                    if (index == -1)
+                        var prefab = _prefabs[index];
+                        prefab.despawnedChildren++;
+                        _prefabs[index] = prefab;
+
+                        if (prefab.despawnedChildren >= prefab.childCount)
+                            i -= RemoveRelevantActions(prefab.spawnActionIndex, i);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        private void RemoveIrrelevantActions()
+        {
+            for (int i = _actions.Count - 1; i >= 0; i--)
+            {
+                var action = _actions[i];
+                switch (action.type)
+                {
+                    case HierarchyActionType.SetActive:
                     {
-                        PurrLogger.LogError($"Despawn action for object {action.despawnAction.identityId} has no corresponding spawn action");
-                        continue;
+                        var identityId = action.setActiveAction.identityId;
+                        
+                        for (int j = i - 1; j >= 0; j--)
+                        {
+                            var previousAction = _actions[j];
+                            if (previousAction.type == HierarchyActionType.SetActive &&
+                                previousAction.setActiveAction.identityId == identityId)
+                            {
+                                _actions.RemoveAt(j);
+                                i--;
+                            }
+                        }
+                        
+                        break;
                     }
+                    case HierarchyActionType.SetEnabled:
+                    {
+                        var identityId = action.setEnabledAction.identityId;
 
-                    var prefab = _prefabs[index];
-                    prefab.despawnedChildren++;
-                    _prefabs[index] = prefab;
-
-                    if (prefab.despawnedChildren >= prefab.childCount)
-                        i -= RemoveRelevantActions(prefab.spawnActionIndex, i);
+                        for (int j = i - 1; j >= 0; j--)
+                        {
+                            var previousAction = _actions[j];
+                            if (previousAction.type == HierarchyActionType.SetEnabled &&
+                                previousAction.setEnabledAction.identityId == identityId)
+                            {
+                                _actions.RemoveAt(j);
+                                i--;
+                            }
+                        }
+                        
+                        break;
+                    }
                 }
             }
         }
@@ -162,54 +202,21 @@ namespace PurrNet.Modules
         {
             int removed = 0;
             var spawnAction = _actions[spawnActionIndex];
+            
             for (int i = spawnActionIndex + 1; i <= lastIndex; i++)
             {
-                switch (_actions[i].type)
-                {
-                    case HierarchyActionType.Spawn:
-                        if(_actions[i].spawnAction.identityId >= spawnAction.spawnAction.identityId + spawnAction.spawnAction.childCount || _actions[i].spawnAction.identityId < spawnAction.spawnAction.identityId)
-                            break;
-                        _actions.RemoveAt(i);
-                        removed++;
-                        lastIndex--;
-                        i--;
-                        break;
-                    case HierarchyActionType.Despawn:
-                        if(_actions[i].despawnAction.identityId >= spawnAction.spawnAction.identityId + spawnAction.spawnAction.childCount || _actions[i].despawnAction.identityId < spawnAction.spawnAction.identityId)
-                            break;
-                        _actions.RemoveAt(i);
-                        removed++;
-                        lastIndex--;
-                        i--;
-                        break;
-                    case HierarchyActionType.ChangeParent:
-                        if(_actions[i].changeParentAction.identityId >= spawnAction.spawnAction.identityId + spawnAction.spawnAction.childCount || _actions[i].changeParentAction.identityId < spawnAction.spawnAction.identityId)
-                            break;
-                        _actions.RemoveAt(i);
-                        removed++;
-                        lastIndex--;
-                        i--;
-                        break;
-                    case HierarchyActionType.SetActive:
-                        if(_actions[i].setActiveAction.identityId >= spawnAction.spawnAction.identityId + spawnAction.spawnAction.childCount || _actions[i].setActiveAction.identityId < spawnAction.spawnAction.identityId)
-                            break;
-                        _actions.RemoveAt(i);
-                        removed++;
-                        lastIndex--;
-                        i--;
-                        break;
-                    case HierarchyActionType.SetEnabled:
-                        if(_actions[i].setEnabledAction.identityId >= spawnAction.spawnAction.identityId + spawnAction.spawnAction.childCount || _actions[i].setEnabledAction.identityId < spawnAction.spawnAction.identityId)
-                            break;
-                        _actions.RemoveAt(i);
-                        removed++;
-                        lastIndex--;
-                        i--;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                var spawnIdentityId = spawnAction.spawnAction.identityId;
+                var identityId = GetObjectId(_actions[i]);
+                
+                if (identityId >= spawnIdentityId + spawnAction.spawnAction.childCount || identityId < spawnIdentityId)
+                    continue;
+                
+                _actions.RemoveAt(i);
+                removed++;
+                lastIndex--;
+                i--;
             }
+            
             _actions.RemoveAt(spawnActionIndex);
             removed++;
             return removed;
@@ -290,9 +297,9 @@ namespace PurrNet.Modules
             public int despawnedChildren;
             public int spawnActionIndex;
 
-            public bool IsChild(int identityId)
+            public bool IsChild(int id)
             {
-                return identityId >= this.identityId && identityId < this.identityId + childCount;
+                return id >= identityId && id < identityId + childCount;
             }
         }
     }
