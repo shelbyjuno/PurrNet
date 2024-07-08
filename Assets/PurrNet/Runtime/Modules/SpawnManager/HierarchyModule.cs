@@ -58,7 +58,7 @@ namespace PurrNet
         {
             if (!_sceneToHierarchy.ContainsKey(scene))
             {
-                var hierarchy = new HierarchyScene(scene, _manager, _players, _scenePlayers, _prefabs);
+                var hierarchy = new HierarchyScene(scene, _scenes, _manager, _players, _scenePlayers, _prefabs);
                 
                 _hierarchies.Add(hierarchy);
                 _sceneToHierarchy.Add(scene, hierarchy);
@@ -70,19 +70,13 @@ namespace PurrNet
         public void FixedUpdate()
         {
             for (var i = 0; i < _hierarchies.Count; i++)
-            {
-                var hierarchy = _hierarchies[i];
-                hierarchy.FixedUpdate();
-            }
+                _hierarchies[i].FixedUpdate();
         }
 
         public void Update()
         {
             for (var i = 0; i < _hierarchies.Count; i++)
-            {
-                var hierarchy = _hierarchies[i];
-                hierarchy.Update();
-            }
+                _hierarchies[i].Update();
         }
 
         public void Spawn(GameObject gameObject)
@@ -99,6 +93,7 @@ namespace PurrNet
                 return;
             }
             
+            Debug.Log($"Spawning {gameObject.name} in scene {sceneID}");
             hierarchy.Spawn(gameObject);
         }
     }

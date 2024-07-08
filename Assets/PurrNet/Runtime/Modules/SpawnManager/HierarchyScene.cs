@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
@@ -22,6 +23,7 @@ namespace PurrNet.Modules
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
         private readonly PlayersManager _players;
+        private readonly ScenesModule _scenes;
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
         private readonly ScenePlayersModule _scenePlayers;
@@ -29,12 +31,13 @@ namespace PurrNet.Modules
         private SceneID _sceneID;
         private bool _asServer;
         
-        public HierarchyScene(SceneID sceneId, NetworkManager manager, PlayersManager players, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
+        public HierarchyScene(SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager players, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
         {
             _manager = manager;
             _players = players;
             _prefabs = prefabs;
             _scenePlayers = scenePlayers;
+            _scenes = scenes;
             
             _identities = new IdentitiesCollection();
             _history = new HierarchyHistory(sceneId);
@@ -73,6 +76,8 @@ namespace PurrNet.Modules
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
+            Debug.Log($"Batch for scene {data.sceneId}, count: {data.actions.Count}");
+            
             if (_manager.isHost && !asserver) return;
             
             if (_sceneID != data.sceneId)
@@ -233,9 +238,22 @@ namespace PurrNet.Modules
             
             PrefabLink.IgnoreNextAutoSpawnAttempt();
 
+            var oldActive = prefab.gameObject.activeInHierarchy;
+
+            if (oldActive && parent == null)
+            {
+                prefab.gameObject.SetActive(false);
+            }
+
             var go = Object.Instantiate(prefab.gameObject, parent);
             go.transform.SetLocalPositionAndRotation(trsInfo.localPos, trsInfo.localRot);
             go.transform.localScale = trsInfo.localScale;
+
+            if (parent == null && _scenes.TryGetSceneState(_sceneID, out var state))
+            {
+                SceneManager.MoveGameObjectToScene(go, state.scene);
+                if (oldActive) prefab.gameObject.SetActive(true);
+            }
             
             MakeSureAwakeIsCalled(go);
             
