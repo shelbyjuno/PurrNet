@@ -28,14 +28,32 @@ namespace PurrNet
 
         public void Enable(bool asServer)
         {
+            var scenes = _scenes.scenes;
+            var sceneCount = scenes.Count;
+            
+            for (var i = 0; i < sceneCount; i++)
+                OnSceneLoaded(scenes[i], asServer);
+            
             _scenes.onSceneLoaded += OnSceneLoaded;
+            _scenes.onSceneUnloaded += OnSceneUnloaded;
         }
 
         public void Disable(bool asServer)
         {
             _scenes.onSceneLoaded -= OnSceneLoaded;
+            _scenes.onSceneUnloaded -= OnSceneUnloaded;
         }
-        
+
+        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        {
+            if (_sceneToHierarchy.TryGetValue(scene, out var hierarchy))
+            {
+                hierarchy.Disable(asserver);
+                _hierarchies.Remove(hierarchy);
+                _sceneToHierarchy.Remove(scene);
+            }
+        }
+
         private void OnSceneLoaded(SceneID scene, bool asserver)
         {
             if (!_sceneToHierarchy.ContainsKey(scene))
