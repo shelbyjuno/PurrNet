@@ -88,6 +88,7 @@ namespace PurrNet.Modules
     
     internal partial struct HierarchyActionBatch : IAutoNetworkedData
     {
+        public SceneID sceneId;
         public List<HierarchyAction> actions;
     }
 

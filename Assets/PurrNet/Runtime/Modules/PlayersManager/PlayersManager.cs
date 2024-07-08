@@ -62,7 +62,7 @@ namespace PurrNet.Modules
     
     public delegate void OnPlayerLeftEvent(PlayerID player, bool asserver);
     
-    public class PlayersManager : INetworkModule, IConnectionListener
+    public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
     {
         private readonly CookiesModule _cookiesModule;
         private readonly BroadcastModule _broadcastModule;
@@ -73,12 +73,11 @@ namespace PurrNet.Modules
         
         private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new();
         private readonly Dictionary<PlayerID, Connection> _playerToConnection = new();
-        private readonly List<PlayerID> _connectedPlayers = new();
-        private PlayerID? _localPlayerId;
-        
-        public List<PlayerID> connectedPlayers => _connectedPlayers;
-        public PlayerID? localPlayerId => _localPlayerId;
-        
+
+        public List<PlayerID> players { get; } = new();
+
+        public PlayerID? localPlayerId { get; private set; }
+
         public event OnPlayerJoinedEvent onPrePlayerJoined;
         public event OnPlayerJoinedEvent onPlayerJoined;
         public event OnPlayerJoinedEvent onPostPlayerJoined;
@@ -99,8 +98,8 @@ namespace PurrNet.Modules
         public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered) 
             => _playerBroadcaster.Send(player, data, method);
 
-        public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)
-            => _playerBroadcaster.Send(players, data, method);
+        public void Send<T>(IEnumerable<PlayerID> collection, T data, Channel method = Channel.ReliableOrdered)
+            => _playerBroadcaster.Send(collection, data, method);
         
         public void SendToServer<T>(T data, Channel method = Channel.ReliableOrdered) 
             => _playerBroadcaster.SendToServer(data, method);
@@ -152,7 +151,7 @@ namespace PurrNet.Modules
         /// </summary>
         public bool IsLocalPlayer(PlayerID playerId)
         {
-            return _localPlayerId == playerId;
+            return localPlayerId == playerId;
         }
 
         /// <summary>
@@ -161,7 +160,7 @@ namespace PurrNet.Modules
         /// </summary>
         public bool IsValidPlayer(PlayerID playerId)
         {
-            return _connectedPlayers.Contains(playerId);
+            return players.Contains(playerId);
         }
         
         /// <summary>
@@ -229,7 +228,7 @@ namespace PurrNet.Modules
 
         private void OnClientLoginResponse(Connection conn, ServerLoginResponse data, bool asServer)
         {
-            _localPlayerId = data.playerId;
+            localPlayerId = data.playerId;
         }
 
         private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asserver)
@@ -240,7 +239,7 @@ namespace PurrNet.Modules
                 _cookieToPlayerId.Add(data.join, playerId);
             }
             
-            if (_connectedPlayers.Contains(playerId))
+            if (players.Contains(playerId))
             {
                 // Player is already connected?
                 _transport.CloseConnection(conn);
@@ -272,7 +271,7 @@ namespace PurrNet.Modules
 
         private void RegisterPlayer(Connection conn, PlayerID player)
         {
-            _connectedPlayers.Add(player);
+            players.Add(player);
 
             if (conn.isValid)
             {
@@ -290,7 +289,7 @@ namespace PurrNet.Modules
             if (!_connectionToPlayerId.TryGetValue(conn, out var player))
                 return;
             
-            _connectedPlayers.Remove(player);
+            players.Remove(player);
             _playerToConnection.Remove(player);
             _connectionToPlayerId.Remove(conn);
             
@@ -303,7 +302,7 @@ namespace PurrNet.Modules
         {
             if (_playerToConnection.TryGetValue(playerId, out var conn))
                 _connectionToPlayerId.Remove(conn);
-            _connectedPlayers.Remove(playerId);
+            players.Remove(playerId);
             _playerToConnection.Remove(playerId);
             
             onPrePlayerLeft?.Invoke(playerId, _asServer);

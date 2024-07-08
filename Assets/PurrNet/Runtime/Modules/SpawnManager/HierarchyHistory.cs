@@ -10,16 +10,24 @@ namespace PurrNet.Modules
         readonly List<HierarchyAction> _actions = new ();
         readonly List<HierarchyAction> _pending = new ();
         
+        readonly SceneID _sceneId;
+        
         [UsedImplicitly]
         private readonly List<IOptimizationRule> _optimizationRules = new();
         private readonly List<Prefab> _prefabs = new();
         
         public bool hasUnflushedActions { get; private set; }
+
+        public HierarchyHistory(SceneID sceneId)
+        {
+            _sceneId = sceneId;
+        }
         
         internal HierarchyActionBatch GetFullHistory()
         {
             return new HierarchyActionBatch
             {
+                sceneId = _sceneId,
                 actions = _actions
             };
         }
@@ -28,6 +36,7 @@ namespace PurrNet.Modules
         {
             return new HierarchyActionBatch
             {
+                sceneId = _sceneId,
                 actions = _pending
             };
         }

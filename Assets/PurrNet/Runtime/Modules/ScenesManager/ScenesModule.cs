@@ -196,6 +196,13 @@ namespace PurrNet.Modules
             {
                 case SceneActionType.Load:
                 {
+                    if (_networkManager.isHost && !_asServer)
+                    {
+                        onSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
+                        _actionsQueue.Dequeue();
+                        break;
+                    }
+                    
                     var loadAction = action.loadSceneAction;
 
                     if (loadAction.buildIndex < 0 || loadAction.buildIndex >= SceneManager.sceneCountInBuildSettings)
@@ -220,6 +227,13 @@ namespace PurrNet.Modules
                 {
                     var idx = action.unloadSceneAction.sceneID;
                     
+                    if (_networkManager.isHost && !_asServer)
+                    {
+                        _scenesToTriggerUnloadEvent.Add(idx);
+                        _actionsQueue.Dequeue();
+                        break;
+                    }
+                    
                     // if the scene is pending, don't do anything for now
                     if (IsScenePending(idx)) break;
 
@@ -239,9 +253,6 @@ namespace PurrNet.Modules
 
         private void OnSceneActionsBatch(PlayerID player, SceneActionsBatch data, bool asserver)
         {
-            if (_networkManager.isHost && !asserver)
-                return;
-
             for (var i = 0; i < data.actions.Count; i++)
                 _actionsQueue.Enqueue(data.actions[i]);
             
@@ -457,16 +468,27 @@ namespace PurrNet.Modules
         {
             HandleNextSceneAction();
 
-            if (!_history.hasUnflushedActions) return;
-            
-            var delta = _history.GetDelta();
-                
-            for (var i = 0; i < _players.connectedPlayers.Count; i++)
+            if (_history.hasUnflushedActions)
+                FlushActions();
+
+            if (_scenesToTriggerUnloadEvent.Count > 0)
             {
-                var player = _players.connectedPlayers[i];
-                
+                for (var i = 0; i < _scenesToTriggerUnloadEvent.Count; i++)
+                    onSceneUnloaded?.Invoke(_scenesToTriggerUnloadEvent[i], _asServer);
+                _scenesToTriggerUnloadEvent.Clear();
+            }
+        }
+
+        private void FlushActions()
+        {
+            var delta = _history.GetDelta();
+
+            for (var i = 0; i < _players.players.Count; i++)
+            {
+                var player = _players.players[i];
+
                 _playerFilteredActions.Clear();
-                
+
                 FilterActionsForPlayer(player, delta.actions, _playerFilteredActions);
 
                 if (_playerFilteredActions.Count > 0)
@@ -474,11 +496,8 @@ namespace PurrNet.Modules
                     _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
                 }
             }
-                
+
             _history.Flush();
-            
-            for (var i = 0; i < _scenesToTriggerUnloadEvent.Count; i++)
-                onSceneUnloaded?.Invoke(_scenesToTriggerUnloadEvent[i], _asServer);
         }
 
         private void DoCleanup()

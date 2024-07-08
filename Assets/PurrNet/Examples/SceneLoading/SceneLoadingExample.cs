@@ -20,9 +20,9 @@ public class SceneLoadingExample : MonoBehaviour
         var scene = SceneManager.GetSceneByBuildIndex(sceneIndex);
         if (scenes.TryGetSceneID(scene, out var sceneID))
         {
-            for (var i = 0; i < players.connectedPlayers.Count; i++)
+            for (var i = 0; i < players.players.Count; i++)
             {
-                var player = players.connectedPlayers[i];
+                var player = players.players[i];
                 scenesPlayers.AddPlayerToScene(player, sceneID);
             }
         }

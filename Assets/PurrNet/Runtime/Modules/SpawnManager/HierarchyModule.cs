@@ -24,17 +24,20 @@ namespace PurrNet.Modules
         private readonly PlayersManager _players;
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
+        private readonly ScenePlayersModule _scenePlayers;
 
+        private SceneID _sceneID;
         private bool _asServer;
         
-        public HierarchyModule(NetworkManager manager, PlayersManager players, NetworkPrefabs prefabs)
+        public HierarchyModule(SceneID sceneId, NetworkManager manager, PlayersManager players, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
         {
             _manager = manager;
             _players = players;
             _prefabs = prefabs;
+            _scenePlayers = scenePlayers;
             
             _identities = new IdentitiesCollection();
-            _history = new HierarchyHistory();
+            _history = new HierarchyHistory(sceneId);
         }
         
         public void Enable(bool asServer)
@@ -43,18 +46,24 @@ namespace PurrNet.Modules
             _players.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (asServer)
-            {
-                _players.onPlayerJoined += OnPlayerJoined;
-            }
+                _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
         }
 
         public void Disable(bool asServer)
         {
             _players.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            
+            if (asServer)
+                _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
         }
         
-        private void OnPlayerJoined(PlayerID player, bool asserver)
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
+            if (scene != _sceneID)
+                return;
+
+            if (!asserver) return;
+            
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
                 _players.Send(player, fullHistory);
@@ -65,6 +74,9 @@ namespace PurrNet.Modules
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
             if (_manager.isHost && !asserver) return;
+            
+            if (_sceneID != data.sceneId)
+                return;
             
             _instancesAboutToBeRemoved.Clear();
             
