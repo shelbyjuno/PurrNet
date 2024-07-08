@@ -194,23 +194,26 @@ namespace PurrNet
             
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
-            
-            //var hierarchyModule = new HierarchyModule(this, playersManager, _networkPrefabs);
 
             var scenesModule = new ScenesModule(this, playersManager);
             var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
-            scenesModule.SetScenePlayers(scenePlayersModule);
             
+            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
+
+            scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
+            
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
+            
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
-            //modules.AddModule(hierarchyModule);
+            
+            modules.AddModule(hierarchyModule);
         }
 
         static bool ShouldStart(StartFlags flags)

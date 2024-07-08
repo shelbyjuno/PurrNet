@@ -85,7 +85,8 @@ namespace PurrNet
         
         protected virtual void OnDestroy()
         {
-            _events.Unregister(this);
+            if (_events)
+                _events.Unregister(this);
             
             if (_ignoreNextDestroy)
             {
