@@ -85,6 +85,8 @@ namespace PurrNet.Modules
             onSceneLoaded?.Invoke(id, _asServer);
         }
         
+        private readonly List<SceneID> _scenesToTriggerUnloadEvent = new();
+        
         private void RemoveScene(Scene scene)
         {
             if (!_idToScene.TryGetValue(scene, out var id))
@@ -93,7 +95,7 @@ namespace PurrNet.Modules
             _scenes.Remove(id);
             _idToScene.Remove(scene);
             _rawScenes.Remove(id);
-            onSceneUnloaded?.Invoke(id, _asServer);
+            _scenesToTriggerUnloadEvent.Add(id);
         }
 
         public void Enable(bool asServer)
@@ -446,6 +448,9 @@ namespace PurrNet.Modules
             }
                 
             _history.Flush();
+            
+            for (var i = 0; i < _scenesToTriggerUnloadEvent.Count; i++)
+                onSceneUnloaded?.Invoke(_scenesToTriggerUnloadEvent[i], _asServer);
         }
 
         private void DoCleanup()
