@@ -108,9 +108,20 @@ namespace PurrNet.Modules
             onPlayerLoadedScene?.Invoke(player, data.scene, asserver);
         }
 
+        /// <summary>
+        /// Get all players that are both part of the scene and have finished loading the scene
+        /// </summary>
         public bool TryGetPlayersInScene(SceneID scene, out HashSet<PlayerID> players)
         {
             return _sceneLoadedPlayers.TryGetValue(scene, out players);
+        }
+        
+        /// <summary>
+        /// Get all players attached to a scene, regardless of whether they have finished loading the scene or not
+        /// </summary>
+        public bool TryGetPlayersAttachedToScene(SceneID scene, out HashSet<PlayerID> players)
+        {
+            return _scenePlayers.TryGetValue(scene, out players);
         }
 
         private void OnSceneVisibilityChanged(SceneID scene, bool isPublic, bool asServer)
