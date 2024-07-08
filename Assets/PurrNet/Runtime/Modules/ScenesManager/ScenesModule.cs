@@ -379,6 +379,12 @@ namespace PurrNet.Modules
                 return;
             }
             
+            if (_networkManager.gameObject.scene == scene)
+            {
+                PurrLogger.LogError("Can't unload the network manager scene");
+                return;
+            }
+            
             if (!_idToScene.TryGetValue(scene, out var sceneIndex))
             {
                 PurrLogger.LogError($"Scene {scene.name} not found in scenes list");
