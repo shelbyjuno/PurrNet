@@ -40,9 +40,42 @@ namespace PurrNet.Modules
 
                 _scenes.onSceneLoaded += OnSceneLoaded;
                 _scenes.onSceneUnloaded += OnSceneUnloaded;
+                _scenes.onSceneVisibilityChanged += OnSceneVisibilityChanged;
                 
                 _players.onPrePlayerJoined += OnPlayerJoined;
                 _players.onPrePlayerLeft += OnPlayerLeft;
+            }
+        }
+        
+        public void Disable(bool asServer)
+        {
+            if (asServer)
+            {
+                _scenes.onSceneLoaded -= OnSceneLoaded;
+                _scenes.onSceneUnloaded -= OnSceneUnloaded;
+                _scenes.onSceneVisibilityChanged -= OnSceneVisibilityChanged;
+                
+                _players.onPrePlayerJoined -= OnPlayerJoined;
+                _players.onPrePlayerLeft -= OnPlayerLeft;
+            }
+        }
+
+        private void OnSceneVisibilityChanged(SceneID scene, bool isPublic, bool asServer)
+        {
+            if (!isPublic) return;
+            
+            if (!_scenePlayers.TryGetValue(scene, out var playersInScene))
+                return;
+            
+            // if the scene is public, add all connected players to the scene
+            int connectedPlayersCount = _players.connectedPlayers.Count;
+
+            for (int i = 0; i < connectedPlayersCount; i++)
+            {
+                var player = _players.connectedPlayers[i];
+                playersInScene.Add(player);
+
+                onPlayerJoinedScene?.Invoke(player, scene, asServer);
             }
         }
 
@@ -125,19 +158,8 @@ namespace PurrNet.Modules
 
             var playersInScene = new HashSet<PlayerID>();
             _scenePlayers.Add(scene, playersInScene);
-
-            if (!state.settings.isPublic) return;
             
-            // if the scene is public, add all connected players to the scene
-            int connectedPlayersCount = _players.connectedPlayers.Count;
-
-            for (int i = 0; i < connectedPlayersCount; i++)
-            {
-                var player = _players.connectedPlayers[i];
-                playersInScene.Add(player);
-
-                onPlayerJoinedScene?.Invoke(player, scene, asServer);
-            }
+            OnSceneVisibilityChanged(scene, state.settings.isPublic, asServer);
         }
         
         private void OnSceneUnloaded(SceneID scene, bool asServer)
@@ -152,15 +174,6 @@ namespace PurrNet.Modules
                 }
                 
                 _scenePlayers.Remove(scene);
-            }
-        }
-        
-        public void Disable(bool asServer)
-        {
-            if (asServer)
-            {
-                _scenes.onSceneLoaded -= OnSceneLoaded;
-                _scenes.onSceneUnloaded -= OnSceneUnloaded;
             }
         }
     }

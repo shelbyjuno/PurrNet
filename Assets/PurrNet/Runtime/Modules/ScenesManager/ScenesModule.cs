@@ -34,6 +34,7 @@ namespace PurrNet.Modules
     }
     
     public delegate void OnSceneActionEvent(SceneID scene, bool asServer);
+    public delegate void OnSceneVisibilityEvent(SceneID scene, bool isVisible, bool asServer);
     
     public class ScenesModule : INetworkModule, IFixedUpdate, ICleanup
     {
@@ -52,6 +53,7 @@ namespace PurrNet.Modules
         
         public event OnSceneActionEvent onSceneLoaded;
         public event OnSceneActionEvent onSceneUnloaded;
+        public event OnSceneVisibilityEvent onSceneVisibilityChanged;
 
         private ushort _nextSceneID;
         private ScenePlayersModule _scenePlayers;
@@ -83,6 +85,26 @@ namespace PurrNet.Modules
             _idToScene.Add(scene, id);
             _rawScenes.Add(id);
             onSceneLoaded?.Invoke(id, _asServer);
+        }
+        
+        public void UpdateSceneVisibility(SceneID scene, bool isPublic)
+        {
+            if (_asServer)
+            {
+                PurrLogger.LogError("Only clients can change scene visibility; for now at least ;)");
+                return;
+            }
+            
+            if (!_scenes.TryGetValue(scene, out var state))
+            {
+                PurrLogger.LogError($"Scene with ID {scene} not found");
+                return;
+            }
+
+            state.settings.isPublic = isPublic;
+            _scenes[scene] = state;
+            
+            onSceneVisibilityChanged?.Invoke(scene, isPublic, _asServer);
         }
         
         private readonly List<SceneID> _scenesToTriggerUnloadEvent = new();
