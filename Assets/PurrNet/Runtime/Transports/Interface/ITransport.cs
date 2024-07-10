@@ -75,9 +75,9 @@ namespace PurrNet.Transports
         
         void RaiseDataSent(Connection conn, ByteData data, bool asServer);
         
-        void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable);
+        void SendToClient(Connection target, ByteData data, Channel method = Channel.ReliableOrdered);
         
-        void SendToServer(ByteData data, Channel method = Channel.Unreliable);
+        void SendToServer(ByteData data, Channel method = Channel.ReliableOrdered);
         
         void CloseConnection(Connection conn);
     }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -26,6 +27,17 @@ namespace PurrNet
         public int GetNextId()
         {
             return _nextId++;
+        }
+
+        public void DestroyAll()
+        {
+            foreach (var identity in _identities.Values)
+            {
+                if (identity && identity.gameObject)
+                    Object.Destroy(identity.gameObject);
+            }
+            
+            _identities.Clear();
         }
     }
 }

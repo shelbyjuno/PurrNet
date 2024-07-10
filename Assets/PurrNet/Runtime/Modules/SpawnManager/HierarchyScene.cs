@@ -28,7 +28,7 @@ namespace PurrNet.Modules
         private readonly HierarchyHistory _history;
         private readonly ScenePlayersModule _scenePlayers;
 
-        private SceneID _sceneID;
+        private readonly SceneID _sceneID;
         private bool _asServer;
         
         public HierarchyScene(SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager players, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
@@ -38,6 +38,7 @@ namespace PurrNet.Modules
             _prefabs = prefabs;
             _scenePlayers = scenePlayers;
             _scenes = scenes;
+            _sceneID = sceneId;
             
             _identities = new IdentitiesCollection();
             _history = new HierarchyHistory(sceneId);
@@ -46,26 +47,36 @@ namespace PurrNet.Modules
         public void Enable(bool asServer)
         {
             _asServer = asServer;
-            _players.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (asServer)
-                _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
+            {
+                if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
+                {
+                    foreach (var player in players)
+                        OnPlayerJoinedScene(player, _sceneID, true);
+                }
+                
+                _scenePlayers.onPlayerLoadedScene += OnPlayerJoinedScene;
+            }
+            else _players.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
         }
 
         public void Disable(bool asServer)
         {
-            _players.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
-            
             if (asServer)
-                _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
+                 _scenePlayers.onPlayerLoadedScene -= OnPlayerJoinedScene;
+            else _players.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+
+            _identities.DestroyAll();
         }
         
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneID)
                 return;
-
+            
             if (!asserver) return;
+            
             
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
@@ -76,8 +87,6 @@ namespace PurrNet.Modules
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
-            Debug.Log($"Batch for scene {data.sceneId}, count: {data.actions.Count}");
-            
             if (_manager.isHost && !asserver) return;
             
             if (_sceneID != data.sceneId)
@@ -635,7 +644,10 @@ namespace PurrNet.Modules
             if (_asServer)
             {
                 var delta = _history.GetDelta();
-                _players.SendToAll(delta);
+                
+                if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
+                    _players.Send(players, delta);
+                
                 _history.Flush();
             }
             else

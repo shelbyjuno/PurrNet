@@ -52,15 +52,16 @@ namespace PurrNet.Modules
     {
         public Dictionary<Connection, PlayerID> connectionToPlayerId { get; }
         
-        public PlayerSnapshotEvent(IDictionary<Connection, PlayerID> connectionToPlayerId)
+        public PlayerSnapshotEvent(Dictionary<Connection, PlayerID> connectionToPlayerId)
         {
-            this.connectionToPlayerId = new Dictionary<Connection, PlayerID>(connectionToPlayerId);
+            this.connectionToPlayerId = connectionToPlayerId;
         }
     }
     
     public delegate void OnPlayerJoinedEvent(PlayerID player, bool asserver);
     
     public delegate void OnPlayerLeftEvent(PlayerID player, bool asserver);
+    public delegate void OnPlayerEvent(PlayerID player);
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
     {
@@ -85,6 +86,8 @@ namespace PurrNet.Modules
         public event OnPlayerLeftEvent onPrePlayerLeft;
         public event OnPlayerLeftEvent onPlayerLeft;
         public event OnPlayerLeftEvent onPostPlayerLeft;
+        
+        public event OnPlayerEvent onLocalPlayerReceivedID;
 
         private bool _asServer;
 
@@ -229,6 +232,7 @@ namespace PurrNet.Modules
         private void OnClientLoginResponse(Connection conn, ServerLoginResponse data, bool asServer)
         {
             localPlayerId = data.playerId;
+            onLocalPlayerReceivedID?.Invoke(data.playerId);
         }
 
         private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asserver)
@@ -268,9 +272,12 @@ namespace PurrNet.Modules
         {
             _broadcastModule.Send(conn, new PlayerSnapshotEvent(_connectionToPlayerId));
         }
-
+ 
         private void RegisterPlayer(Connection conn, PlayerID player)
         {
+            if (_connectionToPlayerId.ContainsKey(conn))
+                return;
+
             players.Add(player);
 
             if (conn.isValid)

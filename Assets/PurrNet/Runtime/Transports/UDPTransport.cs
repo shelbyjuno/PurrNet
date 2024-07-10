@@ -242,7 +242,6 @@ namespace PurrNet.Transports
             
             var deliveryMethod = (DeliveryMethod)(byte)method;
             var peer = _server.GetPeerById(target.connectionId);
-            
             peer?.Send(data.data, data.offset, data.length, deliveryMethod);
             RaiseDataSent(target, data, true);
         }

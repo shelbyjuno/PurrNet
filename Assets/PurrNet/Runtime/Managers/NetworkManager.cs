@@ -203,6 +203,8 @@ namespace PurrNet
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
+            modules.AddModule(hierarchyModule);
+
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
@@ -213,7 +215,6 @@ namespace PurrNet
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
             
-            modules.AddModule(hierarchyModule);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -228,7 +229,7 @@ namespace PurrNet
         {
             bool shouldStartServer = transport && ShouldStart(_startServerFlags);
             bool shouldStartClient = transport && ShouldStart(_startClientFlags);
-
+            
             if (shouldStartServer)
                 StartServer();
             

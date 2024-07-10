@@ -51,7 +51,9 @@ namespace PurrNet.Modules
         private readonly Dictionary<Scene, SceneID> _idToScene = new ();
         private readonly List<SceneID> _rawScenes = new ();
         
+        public event OnSceneActionEvent onPreSceneLoaded;
         public event OnSceneActionEvent onSceneLoaded;
+        
         public event OnSceneActionEvent onSceneUnloaded;
         public event OnSceneVisibilityEvent onSceneVisibilityChanged;
 
@@ -84,6 +86,7 @@ namespace PurrNet.Modules
             _scenes.Add(id, new SceneState(scene, settings));
             _idToScene.Add(scene, id);
             _rawScenes.Add(id);
+            onPreSceneLoaded?.Invoke(id, _asServer);
             onSceneLoaded?.Invoke(id, _asServer);
         }
         
@@ -122,6 +125,8 @@ namespace PurrNet.Modules
 
         public void Enable(bool asServer)
         {
+            _asServer = asServer;
+
             var nmScene = _networkManager.gameObject.scene;
             
             AddScene(nmScene, new PurrSceneSettings
@@ -130,8 +135,6 @@ namespace PurrNet.Modules
                 isPublic = true,
                 physicsMode = LocalPhysicsMode.None
             }, GetNextID());
-            
-            _asServer = asServer;
 
             if (!asServer)
             {
@@ -198,6 +201,7 @@ namespace PurrNet.Modules
                 {
                     if (_networkManager.isHost && !_asServer)
                     {
+                        onPreSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
                         onSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
                         _actionsQueue.Dequeue();
                         break;

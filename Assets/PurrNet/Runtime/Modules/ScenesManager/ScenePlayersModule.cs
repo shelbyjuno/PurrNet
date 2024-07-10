@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -42,9 +43,9 @@ namespace PurrNet.Modules
                 for (var i = 0; i < _scenes.scenes.Count; i++)
                 {
                     var scene = _scenes.scenes[i];
-                    OnSceneLoaded(scene, true);
+                    OnSceneLoaded(scene, _asServer);
                 }
-
+                
                 _scenes.onSceneLoaded += OnSceneLoaded;
                 _scenes.onSceneUnloaded += OnSceneUnloaded;
                 _scenes.onSceneVisibilityChanged += OnSceneVisibilityChanged;
@@ -56,8 +57,27 @@ namespace PurrNet.Modules
             }
             else
             {
+                if (_players.localPlayerId.HasValue)
+                {
+                    OnLocalPlayerReady(_players.localPlayerId.Value);
+                }
+                else
+                {
+                    _players.onLocalPlayerReceivedID += OnLocalPlayerReady;
+                }
+
                 _scenes.onSceneLoaded += OnClientSceneLoaded;
             }
+        }
+
+        private void OnLocalPlayerReady(PlayerID player)
+        {
+            for (var i = 0; i < _scenes.scenes.Count; i++)
+            {
+                OnClientSceneLoaded(_scenes.scenes[i], _asServer);
+            }
+            
+            _players.onLocalPlayerReceivedID -= OnLocalPlayerReady;
         }
 
         public void Disable(bool asServer)
@@ -75,6 +95,7 @@ namespace PurrNet.Modules
             }
             else
             {
+                _players.onLocalPlayerReceivedID -= OnLocalPlayerReady;
                 _scenes.onSceneUnloaded -= OnClientSceneLoaded;
             }
         }
@@ -82,7 +103,10 @@ namespace PurrNet.Modules
         private void OnClientSceneLoaded(SceneID scene, bool asserver)
         {
             if (!_players.localPlayerId.HasValue)
+            {
+                Debug.LogError("Local player ID not set; aborting OnClientSceneLoaded");
                 return;
+            }
             
             onPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
             _players.SendToServer(new ClientFinishedLoadingScene { scene = scene });
@@ -189,6 +213,7 @@ namespace PurrNet.Modules
             }
             
             playersInScene.Add(player);
+            
             onPlayerJoinedScene?.Invoke(player, scene, _asServer);
         }
         

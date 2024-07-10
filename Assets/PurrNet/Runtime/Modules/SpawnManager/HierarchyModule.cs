@@ -34,13 +34,16 @@ namespace PurrNet
             for (var i = 0; i < sceneCount; i++)
                 OnSceneLoaded(scenes[i], asServer);
             
-            _scenes.onSceneLoaded += OnSceneLoaded;
+            _scenes.onPreSceneLoaded += OnSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
         }
 
         public void Disable(bool asServer)
         {
-            _scenes.onSceneLoaded -= OnSceneLoaded;
+            for (var i = 0; i < _hierarchies.Count; i++)
+                _hierarchies[i].Disable(asServer);
+            
+            _scenes.onPreSceneLoaded -= OnSceneLoaded;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
         }
 
@@ -93,7 +96,6 @@ namespace PurrNet
                 return;
             }
             
-            Debug.Log($"Spawning {gameObject.name} in scene {sceneID}");
             hierarchy.Spawn(gameObject);
         }
     }
