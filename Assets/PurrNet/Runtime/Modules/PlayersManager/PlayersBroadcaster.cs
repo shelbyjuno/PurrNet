@@ -3,6 +3,7 @@ using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -127,6 +128,8 @@ namespace PurrNet
         
         public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)
         {
+            _connections.Clear();
+            
             foreach (var player in players)
             {
                 if (player.isBot)

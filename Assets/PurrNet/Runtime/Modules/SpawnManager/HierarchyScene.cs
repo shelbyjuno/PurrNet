@@ -644,7 +644,7 @@ namespace PurrNet.Modules
             if (_asServer)
             {
                 var delta = _history.GetDelta();
-                
+
                 if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
                     _players.Send(players, delta);
                 
