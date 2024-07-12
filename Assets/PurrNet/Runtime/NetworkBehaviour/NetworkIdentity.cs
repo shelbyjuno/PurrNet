@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -15,8 +13,6 @@ namespace PurrNet
 
         public bool isSpawned => id != -1;
 
-        internal static readonly Dictionary<int, List<NetworkIdentity>> sceneIdentities = new(); 
-        
         internal event Action<NetworkIdentity> onRemoved;
         internal event Action<NetworkIdentity, bool> onEnabledChanged;
         internal event Action<NetworkIdentity, bool> onActivatedChanged;
@@ -25,18 +21,11 @@ namespace PurrNet
         private GameObjectEvents _events;
         private GameObject _gameObject;
 
-        protected virtual void Awake()
-        {
-            _gameObject = gameObject;
-            var sceneHandle = _gameObject.scene.handle;
-            if(!sceneIdentities.ContainsKey(sceneHandle))
-                sceneIdentities.Add(sceneHandle, SceneObjectsModule.GetSceneIdentities(_gameObject.scene));
-        }
-
         void InternalAwake()
         {
             Hasher.PrepareType(GetType());
             _lastEnabledState = enabled;
+            _gameObject = gameObject;
 
             if (!_gameObject.TryGetComponent(out _events))
             {

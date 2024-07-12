@@ -59,7 +59,7 @@ namespace PurrNet
                 return parentIdentity ? parentIdentity.id : -1;
             }
         }
-
+        
         void Awake()
         {
             ValidateParent();

@@ -28,6 +28,11 @@ namespace PurrNet
         {
             return _nextId++;
         }
+        
+        public int PeekNextId()
+        {
+            return _nextId;
+        }
 
         public void DestroyAll()
         {

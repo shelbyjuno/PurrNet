@@ -145,10 +145,7 @@ namespace PurrNet.Modules
                         }
 
                         if (index == -1)
-                        {
-                            PurrLogger.LogError($"Despawn action for object {action.despawnAction.identityId} has no corresponding spawn action");
                             continue;
-                        }
 
                         var prefab = _prefabs[index];
                         prefab.despawnedChildren++;

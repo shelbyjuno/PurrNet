@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
+using PurrNet.Packets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -18,11 +19,17 @@ namespace PurrNet.Modules
         public bool isActive;
     }
     
+    internal partial struct SetSceneIds : IAutoNetworkedData
+    {
+        public SceneID sceneId;
+        public int startingId;
+    }
+    
     internal class HierarchyScene : INetworkModule, IFixedUpdate, IUpdate
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
-        private readonly PlayersManager _players;
+        private readonly PlayersManager _playersManager;
         private readonly ScenesModule _scenes;
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
@@ -30,11 +37,14 @@ namespace PurrNet.Modules
 
         private readonly SceneID _sceneID;
         private bool _asServer;
+
+        // the id of the first network identity in the scene
+        private int _sceneFirstNetworkID;
         
-        public HierarchyScene(SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager players, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
+        public HierarchyScene(SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
         {
             _manager = manager;
-            _players = players;
+            _playersManager = playersManager;
             _prefabs = prefabs;
             _scenePlayers = scenePlayers;
             _scenes = scenes;
@@ -50,6 +60,11 @@ namespace PurrNet.Modules
 
             if (asServer)
             {
+                _sceneFirstNetworkID = _identities.PeekNextId();
+                
+                if (_scenes.TryGetSceneState(_sceneID, out var sceneState))
+                    SpawnSceneObjectsServer(SceneObjectsModule.GetSceneIdentities(sceneState.scene));
+                
                 if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
                 {
                     foreach (var player in players)
@@ -58,14 +73,62 @@ namespace PurrNet.Modules
                 
                 _scenePlayers.onPlayerLoadedScene += OnPlayerJoinedScene;
             }
-            else _players.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            else
+            {
+                _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+                _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
+            }
+        }
+
+        private void OnSetSceneIds(PlayerID player, SetSceneIds data, bool asserver)
+        {
+            if (_manager.isHost)
+                return;
+            
+            if (_sceneID != data.sceneId)
+                return;
+            
+            _sceneFirstNetworkID = data.startingId;
+            
+            if (_scenes.TryGetSceneState(_sceneID, out var sceneState))
+                SpawnSceneObjectsClient(SceneObjectsModule.GetSceneIdentities(sceneState.scene), _sceneFirstNetworkID);
+        }
+
+        private void SpawnSceneObjectsServer(IReadOnlyList<NetworkIdentity> sceneObjects)
+        {
+            for (int i = 0; i < sceneObjects.Count; i++)
+            {
+                SpawnIdentity(new SpawnAction
+                {
+                    prefabId = -1,
+                    identityId = _identities.GetNextId(),
+                    childCount = -1,
+                    childOffset = 0,
+                    transformInfo = default
+                }, sceneObjects[i], 0);
+            }
+        }
+        
+        private void SpawnSceneObjectsClient(IReadOnlyList<NetworkIdentity> sceneObjects, int id)
+        {
+            for (int i = 0; i < sceneObjects.Count; i++)
+            {
+                SpawnIdentity(new SpawnAction
+                {
+                    prefabId = -1,
+                    identityId = id,
+                    childCount = -1,
+                    childOffset = 0,
+                    transformInfo = default
+                }, sceneObjects[i], i);
+            }
         }
 
         public void Disable(bool asServer)
         {
             if (asServer)
                  _scenePlayers.onPlayerLoadedScene -= OnPlayerJoinedScene;
-            else _players.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            else _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             _identities.DestroyAll();
         }
@@ -77,11 +140,16 @@ namespace PurrNet.Modules
             
             if (!asserver) return;
             
+            _playersManager.Send(player, new SetSceneIds
+            {
+                sceneId = _sceneID,
+                startingId = _sceneFirstNetworkID
+            });
             
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
-                _players.Send(player, fullHistory);
-        }
+                _playersManager.Send(player, fullHistory);
+        } 
         
         private readonly HashSet<int> _instancesAboutToBeRemoved = new ();
         
@@ -271,23 +339,28 @@ namespace PurrNet.Modules
             for (int i = 0; i < _children.Count; i++)
             {
                 var child = _children[i];
-                child.SetIdentity(action.prefabId, action.identityId + i);
-                _identities.RegisterIdentity(child);
-                
-                child.onRemoved += OnIdentityRemoved;
-                child.onEnabledChanged += OnIdentityEnabledChanged;
-                child.onActivatedChanged += OnIdentityGoActivatedChanged;
-
-                if (child is NetworkTransform transform)
-                {
-                    if (_asServer)
-                         transform.onParentChanged += OnIdentityParentChangedServer;
-                    else transform.onParentChanged += OnIdentityParentChangedClient;
-                }
+                SpawnIdentity(action, child, i);
             }
 
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
+        }
+
+        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, int i)
+        {
+            component.SetIdentity(action.prefabId, action.identityId + i);
+            _identities.RegisterIdentity(component);
+
+            component.onRemoved += OnIdentityRemoved;
+            component.onEnabledChanged += OnIdentityEnabledChanged;
+            component.onActivatedChanged += OnIdentityGoActivatedChanged;
+
+            if (component is NetworkTransform transform)
+            {
+                if (_asServer)
+                    transform.onParentChanged += OnIdentityParentChangedServer;
+                else transform.onParentChanged += OnIdentityParentChangedClient;
+            }
         }
 
         static readonly List<NetworkIdentity> _children = new ();
@@ -646,7 +719,7 @@ namespace PurrNet.Modules
                 var delta = _history.GetDelta();
 
                 if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
-                    _players.Send(players, delta);
+                    _playersManager.Send(players, delta);
                 
                 _history.Flush();
             }

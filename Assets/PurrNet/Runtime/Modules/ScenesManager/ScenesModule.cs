@@ -86,6 +86,7 @@ namespace PurrNet.Modules
             _scenes.Add(id, new SceneState(scene, settings));
             _idToScene.Add(scene, id);
             _rawScenes.Add(id);
+            
             onPreSceneLoaded?.Invoke(id, _asServer);
             onSceneLoaded?.Invoke(id, _asServer);
         }
@@ -120,8 +121,6 @@ namespace PurrNet.Modules
             _scenes.Remove(id);
             _idToScene.Remove(scene);
             _rawScenes.Remove(id);
-            if(NetworkIdentity.sceneIdentities.ContainsKey(scene.handle))
-                NetworkIdentity.sceneIdentities.Remove(scene.handle);
             _scenesToTriggerUnloadEvent.Add(id);
         }
 
