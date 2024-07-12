@@ -120,6 +120,8 @@ namespace PurrNet.Modules
             _scenes.Remove(id);
             _idToScene.Remove(scene);
             _rawScenes.Remove(id);
+            if(NetworkIdentity.sceneIdentities.ContainsKey(scene.handle))
+                NetworkIdentity.sceneIdentities.Remove(scene.handle);
             _scenesToTriggerUnloadEvent.Add(id);
         }
 
@@ -236,7 +238,7 @@ namespace PurrNet.Modules
                         _scenesToTriggerUnloadEvent.Add(idx);
                         _actionsQueue.Dequeue();
                         break;
-                    }
+                    } 
                     
                     // if the scene is pending, don't do anything for now
                     if (IsScenePending(idx)) break;
