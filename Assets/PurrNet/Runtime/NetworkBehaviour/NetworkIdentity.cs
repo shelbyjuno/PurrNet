@@ -1,4 +1,5 @@
 using System;
+using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -7,10 +8,66 @@ namespace PurrNet
     [DefaultExecutionOrder(-1000)]
     public class NetworkIdentity : MonoBehaviour
     {
+        /// <summary>
+        /// The prefab id of this object;
+        /// Is -1 if scene object.
+        /// </summary>
         public int prefabId { get; private set; } = -1;
         
+        /// <summary>
+        /// Network id of this object.
+        /// </summary>
         public int id { get; private set; } = -1;
+        
+        /// <summary>
+        /// Scene id of this object.
+        /// </summary>
+        public SceneID sceneId { get; private set; }
 
+        internal PlayerID? internalOwner;
+        
+        /// <summary>
+        /// Returns the owner of this object.
+        /// It will return the owner of the closest parent object.
+        /// If you can, cache this value for performance.
+        /// </summary>
+        public PlayerID? owner
+        {
+            get
+            {
+                if (internalOwner.HasValue)
+                    return internalOwner;
+
+                GetComponents(HierarchyScene.CACHE);
+                
+                for (int i = 0; i < HierarchyScene.CACHE.Count; i++)
+                {
+                    var sibling = HierarchyScene.CACHE[i];
+                    
+                    if (!sibling.propagateOwner) continue;
+                    
+                    if (sibling.internalOwner.HasValue)
+                        return sibling.internalOwner;
+                }
+
+                var parent = GetComponentInParent<NetworkIdentity>();
+                return parent.owner;
+            }
+        }
+        
+        public NetworkManager networkManager { get; private set; }
+
+        /// <summary>
+        /// True if the owner is propagated to children automatically.
+        /// False if the owner is only set to this identity.
+        /// </summary>
+        [Header("Ownership Settings")]
+        [Tooltip("True if the owner is propagated to children automatically.\nFalse if the owner is only set to this identity.")]
+        [SerializeField] private bool propagateOwner = true;
+
+        /// <summary>
+        /// True if this object is spawned and has valid id.
+        /// </summary>
         public bool isSpawned => id != -1;
 
         internal event Action<NetworkIdentity> onRemoved;
@@ -21,21 +78,13 @@ namespace PurrNet
         private GameObjectEvents _events;
         private GameObject _gameObject;
 
-        void InternalAwake()
-        {
-            Hasher.PrepareType(GetType());
-            _lastEnabledState = enabled;
-            _gameObject = gameObject;
-
-            if (!_gameObject.TryGetComponent(out _events))
-            {
-                _events = _gameObject.AddComponent<GameObjectEvents>();
-                _events.InternalAwake();
-                _events.hideFlags = HideFlags.HideInInspector;
-                _events.onActivatedChanged += OnActivated;
-                _events.Register(this);
-            }
-        }
+        protected virtual void OnSpawned(bool asServer) { }
+        
+        protected virtual void OnDespawned(bool asServer) { }
+        
+        protected virtual void OnSpawned() { }
+        
+        protected virtual void OnDespawned() { }
 
         private void OnActivated(bool active)
         {
@@ -48,7 +97,7 @@ namespace PurrNet
             onActivatedChanged?.Invoke(this, active);
         }
 
-        private void OnEnable()
+        public virtual void OnEnable()
         {
             UpdateEnabledState();
         }
@@ -65,17 +114,48 @@ namespace PurrNet
             }
         }
 
-        private void OnDisable()
+        public virtual void OnDisable()
         {
             UpdateEnabledState();
         }
 
-        internal void SetIdentity(int pid, int identityId)
+        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int identityId, bool asServer)
         {
+            Hasher.PrepareType(GetType());
+
+            sceneId = scene;
             prefabId = pid;
             id = identityId;
             
-            InternalAwake();
+            internalOwner = null;
+            _lastEnabledState = enabled;
+            _gameObject = gameObject;
+
+            if (!_gameObject.TryGetComponent(out _events))
+            {
+                _events = _gameObject.AddComponent<GameObjectEvents>();
+                _events.InternalAwake();
+                _events.hideFlags = HideFlags.HideInInspector;
+                _events.onActivatedChanged += OnActivated;
+                _events.Register(this);
+            }
+            
+            networkManager = manager;
+
+            if (manager.isHost)
+            {
+                if (asServer)
+                {
+                    OnSpawned(true);
+                    OnSpawned(false);
+                    OnSpawned();
+                }
+            }
+            else
+            {
+                OnSpawned(asServer);
+                OnSpawned();
+            }
         }
 
         private bool _ignoreNextDestroy;
@@ -98,6 +178,21 @@ namespace PurrNet
             
             if (ApplicationContext.isQuitting)
                 return;
+
+            if (isSpawned)
+            {
+                if (networkManager.isHost)
+                {
+                    OnDespawned(true);
+                    OnDespawned(false);
+                    OnDespawned();
+                }
+                else
+                {
+                    OnDespawned(networkManager.isServer);
+                    OnDespawned();
+                }
+            }
             
             onRemoved?.Invoke(this);
         }

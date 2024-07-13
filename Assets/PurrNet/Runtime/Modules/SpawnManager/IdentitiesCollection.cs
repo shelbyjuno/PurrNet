@@ -7,7 +7,7 @@ namespace PurrNet
     {
         readonly Dictionary<int, NetworkIdentity> _identities = new ();
         
-        private int _nextId = 0;
+        private int _nextId;
         
         public bool TryGetIdentity(int id, out NetworkIdentity identity)
         {

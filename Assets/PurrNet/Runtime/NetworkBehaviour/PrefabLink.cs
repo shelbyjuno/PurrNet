@@ -1,4 +1,3 @@
-using PurrNet.Modules;
 using UnityEngine;
 
 namespace PurrNet

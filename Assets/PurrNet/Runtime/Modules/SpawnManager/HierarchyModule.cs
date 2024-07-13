@@ -81,6 +81,18 @@ namespace PurrNet
             for (var i = 0; i < _hierarchies.Count; i++)
                 _hierarchies[i].Update();
         }
+        
+        public bool TryGetIdentity(SceneID sceneID, int id, out NetworkIdentity identity)
+        {
+            if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
+            {
+                PurrLogger.LogError($"Failed to find hierarchy for scene '{sceneID}'.");
+                identity = null;
+                return false;
+            }
+            
+            return hierarchy.TryGetIdentity(id, out identity);
+        }
 
         public void Spawn(GameObject gameObject)
         {

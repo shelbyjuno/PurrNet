@@ -51,7 +51,7 @@ namespace PurrNet.Modules
         private readonly Dictionary<Scene, SceneID> _idToScene = new ();
         private readonly List<SceneID> _rawScenes = new ();
         
-        public event OnSceneActionEvent onPreSceneLoaded;
+        internal event OnSceneActionEvent onPreSceneLoaded;
         public event OnSceneActionEvent onSceneLoaded;
         
         public event OnSceneActionEvent onSceneUnloaded;

@@ -105,7 +105,7 @@ namespace PurrNet.Modules
                     childCount = -1,
                     childOffset = 0,
                     transformInfo = default
-                }, sceneObjects[i], 0);
+                }, sceneObjects[i], 0, true);
             }
         }
         
@@ -120,7 +120,7 @@ namespace PurrNet.Modules
                     childCount = -1,
                     childOffset = 0,
                     transformInfo = default
-                }, sceneObjects[i], i);
+                }, sceneObjects[i], i, false);
             }
         }
 
@@ -334,21 +334,21 @@ namespace PurrNet.Modules
             
             MakeSureAwakeIsCalled(go);
             
-            go.GetComponentsInChildren(true, _children);
+            go.GetComponentsInChildren(true, CACHE);
             
-            for (int i = 0; i < _children.Count; i++)
+            for (int i = 0; i < CACHE.Count; i++)
             {
-                var child = _children[i];
-                SpawnIdentity(action, child, i);
+                var child = CACHE[i];
+                SpawnIdentity(action, child, i, asServer);
             }
 
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
         }
 
-        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, int i)
+        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, int i, bool asServer)
         {
-            component.SetIdentity(action.prefabId, action.identityId + i);
+            component.SetIdentity(_manager, _sceneID, action.prefabId, action.identityId + i, asServer);
             _identities.RegisterIdentity(component);
 
             component.onRemoved += OnIdentityRemoved;
@@ -363,28 +363,28 @@ namespace PurrNet.Modules
             }
         }
 
-        static readonly List<NetworkIdentity> _children = new ();
+        internal static readonly List<NetworkIdentity> CACHE = new ();
         
         private static GameObject GetChildPrefab(GameObject root, int child)
         {
-            root.GetComponentsInChildren(true, _children);
+            root.GetComponentsInChildren(true, CACHE);
             
-            if (child >= _children.Count)
+            if (child >= CACHE.Count)
             {
                 PurrLogger.LogError($"Failed to find child with index {child}");
                 return null;
             }
             
-            return _children[child].gameObject;
+            return CACHE[child].gameObject;
         }
         
         private static void RemoveChildren(Transform childTrs, int childIdx)
         {
-            for (int i = childIdx + 1; i < _children.Count; i++)
+            for (int i = childIdx + 1; i < CACHE.Count; i++)
             {
-                var child = _children[i];
+                var child = CACHE[i];
                 if (child.transform.IsChildOf(childTrs))
-                    _children.RemoveAt(i--);
+                    CACHE.RemoveAt(i--);
             }
         }
 
@@ -403,11 +403,11 @@ namespace PurrNet.Modules
             if (action.despawnType == DespawnType.GameObject)
             {
                 var safeParent = identity.transform.parent;
-                identity.gameObject.GetComponentsInChildren(true, _children);
+                identity.gameObject.GetComponentsInChildren(true, CACHE);
 
-                for (int i = 0; i < _children.Count; i++)
+                for (int i = 0; i < CACHE.Count; i++)
                 {
-                    var child = _children[i];
+                    var child = CACHE[i];
 
                     if (!_instancesAboutToBeRemoved.Contains(child.id))
                     {
@@ -453,17 +453,17 @@ namespace PurrNet.Modules
                 return;
             }
 
-            instance.GetComponentsInChildren(true, _children);
+            instance.GetComponentsInChildren(true, CACHE);
 
-            if (_children.Count == 0)
+            if (CACHE.Count == 0)
             {
                 PurrLogger.LogError($"Failed to find networked components for '{instance.name}'");
                 return;
             }
 
-            for (int i = 0; i < _children.Count; i++)
+            for (int i = 0; i < CACHE.Count; i++)
             {
-                var child = _children[i];
+                var child = CACHE[i];
 
                 if (child.isSpawned)
                 {
@@ -471,7 +471,7 @@ namespace PurrNet.Modules
                     return;
                 }
                 
-                child.SetIdentity(prefabId, _identities.GetNextId());
+                child.SetIdentity(_manager, _sceneID, prefabId, _identities.GetNextId(), true);
                 _identities.RegisterIdentity(child);
 
                 child.onRemoved += OnIdentityRemoved;
@@ -490,8 +490,8 @@ namespace PurrNet.Modules
             {
                 prefabId = prefabId,
                 childOffset = 0,
-                identityId = _children[0].id,
-                childCount = _children.Count,
+                identityId = CACHE[0].id,
+                childCount = CACHE.Count,
                 transformInfo = new TransformInfo(instance.transform)
             };
 
@@ -744,6 +744,11 @@ namespace PurrNet.Modules
                 
                 Debug.Log(output);
             }
+        }
+
+        public bool TryGetIdentity(int id, out NetworkIdentity identity)
+        {
+            return _identities.TryGetIdentity(id, out identity);
         }
     }
 }
