@@ -4,22 +4,47 @@ namespace PurrNet.Modules
 {
     public class GlobalOwnershipModule : INetworkModule
     {
+        readonly NetworkManager _manager;
         readonly ScenesModule _scenes;
         readonly Dictionary<SceneID, SceneOwnership> _sceneOwnerships = new ();
         
-        public GlobalOwnershipModule(ScenesModule scenes)
+        public GlobalOwnershipModule(NetworkManager manager, ScenesModule scenes)
         {
             _scenes = scenes;
+            _manager = manager;
         }
         
         public void Enable(bool asServer)
         {
             _scenes.onPreSceneLoaded += OnSceneLoaded;
+            _scenes.onSceneUnloaded += OnSceneUnloaded;
         }
 
         public void Disable(bool asServer)
         {
             _scenes.onPreSceneLoaded -= OnSceneLoaded;
+            _scenes.onSceneUnloaded -= OnSceneUnloaded;
+        }
+
+        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        {
+            if (_sceneOwnerships.TryGetValue(scene, out var module))
+            {
+                module.Disable(asserver);
+                _sceneOwnerships.Remove(scene);
+            }
+        }
+        
+        public void GiveOwnership(NetworkIdentity id, PlayerID player)
+        {
+            if (_sceneOwnerships.TryGetValue(id.sceneId, out var module))
+                module.GiveOwnership(id, player);
+        }
+        
+        public void RemoveOwnership(NetworkIdentity id)
+        {
+            if (_sceneOwnerships.TryGetValue(id.sceneId, out var module))
+                module.RemoveOwnership(id);
         }
 
         public bool TryGetOwner(NetworkIdentity id, out PlayerID player)
@@ -33,12 +58,6 @@ namespace PurrNet.Modules
 
         private void OnSceneLoaded(SceneID scene, bool asServer)
         {
-            if (_sceneOwnerships.TryGetValue(scene, out var module))
-            {
-                module.Enable(asServer);
-                return;
-            }
-            
             _sceneOwnerships[scene] = new SceneOwnership();
             _sceneOwnerships[scene].Enable(asServer);
         }
@@ -46,6 +65,8 @@ namespace PurrNet.Modules
 
     internal class SceneOwnership : INetworkModule
     {
+        Dictionary<int, PlayerID> _owners = new ();
+        
         public void Enable(bool asServer)
         {
             
@@ -58,6 +79,17 @@ namespace PurrNet.Modules
         }
 
         public void Disable(bool asServer)
+        {
+            
+        }
+
+        public void GiveOwnership(NetworkIdentity id, PlayerID player)
+        {
+            
+            
+        }
+
+        public void RemoveOwnership(NetworkIdentity id)
         {
             
         }
