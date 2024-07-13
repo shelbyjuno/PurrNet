@@ -199,6 +199,7 @@ namespace PurrNet
             var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
+            var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
 
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
@@ -215,6 +216,7 @@ namespace PurrNet
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
             
+            modules.AddModule(ownershipModule);
         }
 
         static bool ShouldStart(StartFlags flags)
