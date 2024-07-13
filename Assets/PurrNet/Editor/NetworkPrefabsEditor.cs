@@ -28,7 +28,7 @@ namespace PurrNet
             const string description = "This asset is used to store any prefabs containing a Network Behaviour. " +
                                        "You can add prefabs to this asset manually or auto generate the references. " +
                                        "This list is used by the NetworkManager to spawn network prefabs.";
-            
+
             GUILayout.Label(description, DescriptionStyle());
 
             GUILayout.Space(10);
@@ -44,24 +44,35 @@ namespace PurrNet
             GUILayout.BeginHorizontal();
 
             if (networkPrefabs.autoGenerate)
+            {
                 GUI.color = Color.green;
-            
+            }
+
             if (GUILayout.Button(networkPrefabs.autoGenerate ? "Auto generate: Enabled" : "Auto generate: Disabled",
-                    GUILayout.Width(1), GUILayout.ExpandWidth(true)))
+                GUILayout.Width(1), GUILayout.ExpandWidth(true)))
             {
                 networkPrefabs.autoGenerate = !networkPrefabs.autoGenerate;
-                
-                if(networkPrefabs.autoGenerate)
+
+                if (networkPrefabs.autoGenerate)
+                {
                     networkPrefabs.Generate();
-                
+                    serializedObject.ApplyModifiedProperties(); // Update the serialized object after generating
+                    prefabs = serializedObject.FindProperty("prefabs");
+                }
+
                 EditorUtility.SetDirty(networkPrefabs);
             }
-            
+
             GUI.color = Color.white;
 
             if (GUILayout.Button("Generate", GUILayout.Width(1), GUILayout.ExpandWidth(true)))
+            {
+                //serializedObject.Update(); // Update the serialized object after generating
                 networkPrefabs.Generate();
-            
+                serializedObject.ApplyModifiedProperties();
+                prefabs = serializedObject.FindProperty("prefabs");
+            }
+
             GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
@@ -73,8 +84,11 @@ namespace PurrNet
             serializedObject.ApplyModifiedProperties();
 
             if (GUI.changed)
+            {
                 EditorUtility.SetDirty(networkPrefabs);
+            }
         }
+
 
         private static GUIStyle DescriptionStyle()
         {
