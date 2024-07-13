@@ -120,6 +120,8 @@ namespace PurrNet
         
         public bool isClientOnly => !isServer && isClient;
         
+        public NetworkRules networkRules => _networkRules;
+        
         private ModulesCollection _serverModules;
         private ModulesCollection _clientModules;
         

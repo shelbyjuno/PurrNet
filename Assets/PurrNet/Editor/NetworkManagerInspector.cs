@@ -38,6 +38,22 @@ namespace PurrNet.Editor
         {
             var networkManager = (NetworkManager)target;
 
+            if (networkManager.networkRules == null)
+            {
+                GUILayout.Label("Network Rules", EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
+                const string description = "Set the network rules of your network manager. " +
+                                           "This can be changed later. ";
+
+                GUILayout.Label(description, new GUIStyle(GUI.skin.label) { wordWrap = true });
+                
+                GUILayout.Space(10);
+                
+                GUI.backgroundColor = Color.yellow;
+                EditorGUILayout.PropertyField(_networkRules, new GUIContent("Network Rules"));
+                serializedObject.ApplyModifiedProperties();
+                return;
+            }
+                
             bool willStartServer = networkManager.shouldAutoStartServer;
             bool willStartClient = networkManager.shouldAutoStartClient;
             string status = willStartClient && willStartServer ? "HOST" : willStartClient ? "CLIENT" : willStartServer ? "SERVER" : "NONE";

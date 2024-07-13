@@ -23,8 +23,7 @@ namespace PurrNet.Editor
         {
             GUILayout.Label("Network Rules", EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
             const string description = "This asset is used to set the default rules of a Network manager. " +
-                                       "Modifying these rules will change how things act over the network. " +
-                                       "Default.";
+                                       "Modifying these rules will change how things act over the network. ";
 
             GUILayout.Label(description, DescriptionStyle());
     
