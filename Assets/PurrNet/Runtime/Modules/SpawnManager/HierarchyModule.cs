@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -15,6 +16,9 @@ namespace PurrNet
         
         private readonly List<HierarchyScene> _hierarchies = new ();
         private readonly Dictionary<SceneID, HierarchyScene> _sceneToHierarchy = new ();
+        
+        public event Action<NetworkIdentity> onIdentityRemoved;
+        public event Action<NetworkIdentity> onIdentityAdded;
 
         public HierarchyModule(NetworkManager manager, ScenesModule scenes, PlayersManager players,
             ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
@@ -51,6 +55,9 @@ namespace PurrNet
         {
             if (_sceneToHierarchy.TryGetValue(scene, out var hierarchy))
             {
+                hierarchy.onIdentityAdded -= TriggerOnEntityAdded;
+                hierarchy.onIdentityRemoved -= TriggerOnEntityRemoved;
+                
                 hierarchy.Disable(asserver);
                 _hierarchies.Remove(hierarchy);
                 _sceneToHierarchy.Remove(scene);
@@ -63,12 +70,19 @@ namespace PurrNet
             {
                 var hierarchy = new HierarchyScene(scene, _scenes, _manager, _players, _scenePlayers, _prefabs);
                 
+                hierarchy.onIdentityAdded += TriggerOnEntityAdded;
+                hierarchy.onIdentityRemoved += TriggerOnEntityRemoved;
+                
                 _hierarchies.Add(hierarchy);
                 _sceneToHierarchy.Add(scene, hierarchy);
                 
                 hierarchy.Enable(asserver);
             }
         }
+
+        private void TriggerOnEntityAdded(NetworkIdentity obj) => onIdentityAdded?.Invoke(obj);
+
+        private void TriggerOnEntityRemoved(NetworkIdentity obj) => onIdentityRemoved?.Invoke(obj);
 
         public void FixedUpdate()
         {

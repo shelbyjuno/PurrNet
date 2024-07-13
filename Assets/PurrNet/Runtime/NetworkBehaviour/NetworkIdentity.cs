@@ -50,9 +50,25 @@ namespace PurrNet
                         return sibling.internalOwner;
                 }
 
-                var parent = GetComponentInParent<NetworkIdentity>();
-                return parent.owner;
+                var parentTrs = transform.parent;
+                
+                if (!parentTrs)
+                    return null;
+
+                var parent = GetParentThatPropagatesOwner();
+                return parent ? parent.owner : null;
             }
+        }
+        
+        private NetworkIdentity GetParentThatPropagatesOwner()
+        {
+            var parentTrs = transform.parent;
+                
+            if (!parentTrs)
+                return null;
+
+            var parent = parentTrs.GetComponentInParent<NetworkIdentity>(true);
+            return parent.propagateOwner ? parent : parent.GetParentThatPropagatesOwner();
         }
         
         public NetworkManager networkManager { get; private set; }
@@ -163,6 +179,18 @@ namespace PurrNet
         public void IgnoreNextDestroyCallback()
         {
             _ignoreNextDestroy = true;
+        }
+        
+        public void GiveOwnership(PlayerID player)
+        {
+            if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
+                module.GiveOwnership(this, player);
+        }
+        
+        public void RemoveOwnership()
+        {
+            if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
+                module.RemoveOwnership(this);
         }
         
         protected virtual void OnDestroy()

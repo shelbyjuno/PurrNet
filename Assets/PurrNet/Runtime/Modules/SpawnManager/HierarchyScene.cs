@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
@@ -34,6 +36,9 @@ namespace PurrNet.Modules
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
         private readonly ScenePlayersModule _scenePlayers;
+        
+        public event Action<NetworkIdentity> onIdentityRemoved;
+        public event Action<NetworkIdentity> onIdentityAdded;
 
         private readonly SceneID _sceneID;
         private bool _asServer;
@@ -350,6 +355,7 @@ namespace PurrNet.Modules
         {
             component.SetIdentity(_manager, _sceneID, action.prefabId, action.identityId + i, asServer);
             _identities.RegisterIdentity(component);
+            onIdentityAdded?.Invoke(component);
 
             component.onRemoved += OnIdentityRemoved;
             component.onEnabledChanged += OnIdentityEnabledChanged;
@@ -417,7 +423,8 @@ namespace PurrNet.Modules
                         continue;
                     }
                     
-                    _identities.UnregisterIdentity(child);
+                    if (_identities.UnregisterIdentity(child))
+                        onIdentityRemoved?.Invoke(child);
                     child.IgnoreNextDestroyCallback();
                 }
                 
@@ -426,7 +433,8 @@ namespace PurrNet.Modules
             else
             {
                 identity.IgnoreNextDestroyCallback();
-                _identities.UnregisterIdentity(identity);
+                if (_identities.UnregisterIdentity(identity))
+                    onIdentityRemoved?.Invoke(identity);
                 Object.Destroy(identity);
             }
         }
@@ -473,6 +481,7 @@ namespace PurrNet.Modules
                 
                 child.SetIdentity(_manager, _sceneID, prefabId, _identities.GetNextId(), true);
                 _identities.RegisterIdentity(child);
+                onIdentityAdded?.Invoke(child);
 
                 child.onRemoved += OnIdentityRemoved;
                 child.onEnabledChanged += OnIdentityEnabledChanged;
@@ -615,7 +624,8 @@ namespace PurrNet.Modules
         {
             if (!asServer)
             {
-                _identities.UnregisterIdentity(pair.identity);
+                if (_identities.UnregisterIdentity(pair.identity))
+                    onIdentityRemoved?.Invoke(pair.identity);
                 PurrLogger.LogError("TODO: Implement client despawn logic.");
                 return;
             }
