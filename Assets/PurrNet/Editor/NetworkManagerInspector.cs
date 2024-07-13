@@ -15,6 +15,7 @@ namespace PurrNet.Editor
         private SerializedProperty _cookieScope;
         
         private SerializedProperty _networkPrefabs;
+        private SerializedProperty _networkRules;
         private SerializedProperty _transport;
         private SerializedProperty _tickRate;
         
@@ -28,6 +29,7 @@ namespace PurrNet.Editor
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
+            _networkRules = serializedObject.FindProperty("_networkRules");
             _transport = serializedObject.FindProperty("_transport");
             _tickRate = serializedObject.FindProperty("_tickRate");
         }
@@ -63,6 +65,7 @@ namespace PurrNet.Editor
             
             EditorGUILayout.PropertyField(_transport);
             EditorGUILayout.PropertyField(_networkPrefabs);
+            EditorGUILayout.PropertyField(_networkRules);
             
             GUI.enabled = true;
 

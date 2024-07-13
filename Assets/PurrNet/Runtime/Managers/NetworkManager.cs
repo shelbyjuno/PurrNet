@@ -36,6 +36,7 @@ namespace PurrNet
         [Header("Network Settings")]
         [SerializeField] private GenericTransport _transport;
         [SerializeField] private NetworkPrefabs _networkPrefabs;
+        [SerializeField] private NetworkRules _networkRules;
         [SerializeField] private int _tickRate = 20;
         
         /// <summary>
