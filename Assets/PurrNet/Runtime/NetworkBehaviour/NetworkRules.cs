@@ -9,6 +9,8 @@ namespace PurrNet
     {
         public ConnectionAuth spawnAuth;
         public DefaultOwner defaultOwner;
+        public ConnectionAuth syncVarAuth;
+        public ConnectionAuth observersRpcAuth;
         public ConnectionAuth ownershipTransferAuth;
         public ActionAuth syncParentAuth;
         

@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnAuth: 1
   defaultOwner: 2
+  syncVarAuth: 1
   ownershipTransferAuth: 1
   syncParentAuth: -1

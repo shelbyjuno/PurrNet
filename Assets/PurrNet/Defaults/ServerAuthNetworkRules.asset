@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28e93bf2b6064364aa5fd430134916ac, type: 3}
   m_Name: ServerAuthNetworkRules
   m_EditorClassIdentifier: 
-  spawnAuth: 1
-  defaultOwner: 2
-  ownershipTransferAuth: 1
-  syncParentAuth: -1
+  spawnAuth: 0
+  defaultOwner: 0
+  SyncVar: 0
+  ownershipTransferAuth: 0
+  syncParentAuth: 1
