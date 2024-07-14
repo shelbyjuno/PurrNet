@@ -11,14 +11,14 @@ namespace PurrNet.Editor
         private SerializedProperty ownershipTransfer;
         private SerializedProperty syncParentAuth;
         private SerializedProperty syncVarAuth;
-        private SerializedProperty observersRpcAuth;
+        private SerializedProperty clientRpcAuth;
         
         private void OnEnable()
         {
             spawnAuth = serializedObject.FindProperty("spawnAuth");
             defaultOwner = serializedObject.FindProperty("defaultOwner");
             ownershipTransfer = serializedObject.FindProperty("ownershipTransferAuth");
-            observersRpcAuth = serializedObject.FindProperty("observersRpcAuth");
+            clientRpcAuth = serializedObject.FindProperty("clientRpcAuth");
             syncParentAuth = serializedObject.FindProperty("syncParentAuth");
             syncVarAuth = serializedObject.FindProperty("syncVarAuth");
         }
@@ -48,7 +48,7 @@ namespace PurrNet.Editor
             
             EditorGUILayout.PropertyField(syncVarAuth, new GUIContent("Sync Var"));
             
-            EditorGUILayout.PropertyField(observersRpcAuth, new GUIContent("Observers Rpc"));
+            EditorGUILayout.PropertyField(clientRpcAuth, new GUIContent("Client Rpcs"));
             
             EditorGUILayout.PropertyField(ownershipTransfer, new GUIContent("Ownership Transfer"));
             

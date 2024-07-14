@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -10,7 +9,7 @@ namespace PurrNet
         public ConnectionAuth spawnAuth;
         public DefaultOwner defaultOwner;
         public ConnectionAuth syncVarAuth;
-        public ConnectionAuth observersRpcAuth;
+        public ConnectionAuth clientRpcAuth;
         public ConnectionAuth ownershipTransferAuth;
         public ActionAuth syncParentAuth;
         
