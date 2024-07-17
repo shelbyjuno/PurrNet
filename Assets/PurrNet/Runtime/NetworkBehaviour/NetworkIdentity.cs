@@ -1,5 +1,6 @@
 using System;
 using PurrNet.Modules;
+using PurrNet.Packets;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -101,6 +102,13 @@ namespace PurrNet
         protected virtual void OnSpawned() { }
         
         protected virtual void OnDespawned() { }
+        
+        internal void SendRPC()
+        {
+            const int id = 2;
+            
+            
+        }
 
         private void OnActivated(bool active)
         {

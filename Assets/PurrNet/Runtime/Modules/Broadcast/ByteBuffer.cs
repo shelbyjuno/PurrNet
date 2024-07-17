@@ -8,7 +8,11 @@ namespace PurrNet.Packets
     {
         int pointer { get; }
 
+        void Write(ByteData data);
+
         void Write(byte data);
+        
+        ByteData Read(int length);
     }
     
     public class ByteBuffer : IByteBuffer
@@ -58,6 +62,13 @@ namespace PurrNet.Packets
             EnsureCapacity(1);
             _buffer[pointer] = data;
             pointer++;
+        }
+
+        public ByteData Read(int length)
+        {
+            var data = new ByteData(_buffer, pointer, length);
+            pointer += length;
+            return data;
         }
 
         public void Advance(int count)

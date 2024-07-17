@@ -74,7 +74,7 @@ namespace PurrNet.Codegen
             }
         }
         
-        private void HandleRPC(MethodDefinition method, [UsedImplicitly] List<DiagnosticMessage> messages)
+        private void HandleRPC(int id, MethodDefinition method, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             if (method.ReturnType.FullName != typeof(void).FullName)
             {
@@ -88,7 +88,7 @@ namespace PurrNet.Codegen
             var fakeReturn = Instruction.Create(OpCodes.Ret);
             code.InsertBefore(first, fakeReturn);
             
-            InsertLog(method, code, fakeReturn, "ServerRPC called: " + method.Name);
+            InsertLog(method, code, fakeReturn, "ServerRPC called: " + id);
         }
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
@@ -123,6 +123,8 @@ namespace PurrNet.Codegen
                         var idFullName = typeof(NetworkIdentity).FullName;
                         if (type.FullName != idFullName && !InheritsFrom(type, typeof(NetworkIdentity).FullName))
                             continue;
+                        
+                        List<MethodDefinition> rpcMethods = new();
 
                         for (var i = 0; i < type.Methods.Count; i++)
                         {
@@ -130,13 +132,17 @@ namespace PurrNet.Codegen
 
                             if (HasCustomAttribute(method, typeof(ServerRPCAttribute).FullName))
                             {
-                                HandleRPC(method, messages);
-                                /*messages.Add(new DiagnosticMessage
-                                {
-                                    DiagnosticType = DiagnosticType.Warning,
-                                    MessageData = "ServerRPC found: " + type.FullName + "." + method.Name,
-                                });*/
+                                rpcMethods.Add(method);
+                                // HandleRPC(method, messages);
                             }
+                        }
+                        
+                        rpcMethods.Sort((a, b) => string.CompareOrdinal(a.Name, b.Name));
+
+                        for (var i = 0; i < rpcMethods.Count; i++)
+                        {
+                            var method = rpcMethods[i];
+                            HandleRPC(i, method, messages);
                         }
 
                         // messages.Add(new DiagnosticMessage

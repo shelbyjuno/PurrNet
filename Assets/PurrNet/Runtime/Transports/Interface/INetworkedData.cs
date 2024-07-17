@@ -2,6 +2,8 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
+using PurrNet.Logging;
+using PurrNet.Transports;
 using UnityEngine.Scripting;
 
 namespace PurrNet.Packets
@@ -20,10 +22,22 @@ namespace PurrNet.Packets
         
         public readonly bool isReading;
         
+        public int pointer => _stream.pointer;
+        
         public NetworkStream(IByteBuffer stream, bool isReading)
         {
             _stream = stream;
             this.isReading = isReading;
+        }
+        
+        public ByteData Read(int length)
+        {
+            return _stream.Read(length);
+        }
+        
+        public void Write(ByteData data)
+        {
+            _stream.Write(data);
         }
         
         public void Serialize(ref INetworkedData data)
@@ -296,6 +310,8 @@ namespace PurrNet.Packets
             {
                 bool isNull = value == null;
                 writer.WriteUnmanaged(isNull);
+                
+                PurrLogger.Log($"Serializing {typeof(T).Name} with isNull: {isNull}");
                 
                 if (isNull) return;
             }

@@ -203,23 +203,22 @@ namespace PurrNet
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
+            
+            var rpcModule = new RPCModule(playersManager);
 
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
             modules.AddModule(hierarchyModule);
-
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
-            
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
-            
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
-            
             modules.AddModule(ownershipModule);
+            modules.AddModule(rpcModule);
         }
 
         static bool ShouldStart(StartFlags flags)
