@@ -151,6 +151,13 @@ namespace PurrNet
             _clientModules = new ModulesCollection(this, false);
         }
 
+        private void Reset()
+        {
+            if (TryGetComponent(out GenericTransport t) || transport)
+                return;
+            transport = gameObject.AddComponent<UDPTransport>();
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
