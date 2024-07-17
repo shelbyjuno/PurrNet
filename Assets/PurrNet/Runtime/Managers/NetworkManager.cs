@@ -153,7 +153,7 @@ namespace PurrNet
 
         private void Reset()
         {
-            if (TryGetComponent(out GenericTransport t) || transport)
+            if (TryGetComponent(out GenericTransport _) || transport)
                 return;
             transport = gameObject.AddComponent<UDPTransport>();
         }

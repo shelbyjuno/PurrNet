@@ -52,37 +52,53 @@ namespace PurrNet
         {
             _playersManager.Unsubscribe<RPCPacket>(ReceiveRPC);
         }
+        
+        public static NetworkStream AllocStream(bool reading)
+        {
+            return new NetworkStream(ByteBufferPool.Alloc(), reading);
+        }
+        
+        public static void FreeStream(NetworkStream stream)
+        {
+            ByteBufferPool.Free(stream.buffer);
+        }
+
+        public static RPCPacket BuildRawRPC(int networkId, byte rpcId, NetworkStream data)
+        {
+            var rpc = new RPCPacket
+            {
+                networkId = networkId,
+                rpcId = rpcId,
+                data = data.buffer.ToByteData()
+            };
+            
+            return rpc;
+        }
 
         public void BuildRPC()
         {
-            var byteStream = ByteBufferPool.Alloc();
-            var stream = new NetworkStream(byteStream, false);
+            var stream = AllocStream(false);
 
             int test = 52;
             stream.Serialize(ref test, false);
             
-            var data = new RPCPacket
-            {
-                networkId = 11,
-                rpcId = 22,
-                data = byteStream.ToByteData()
-            };
+            var data = BuildRawRPC(11, 22, stream);
             
             _playersManager.SendToAll(data);
-            ByteBufferPool.Free(byteStream);
+            FreeStream(stream);
         }
         
         public void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
-            var buffer = ByteBufferPool.Alloc();
-            buffer.Write(packet.data);
-            buffer.ResetPointer();
-            var stream = new NetworkStream(buffer, true);
+            var stream = AllocStream(true);
+            
+            stream.Write(packet.data);
+            stream.ResetPointer();
             
             int test = 0;
             stream.Serialize(ref test, false);
             
-            ByteBufferPool.Free(buffer);
+            FreeStream(stream);
             
             PurrLogger.Log($"Received RPC with data: {test}, length: {packet.data.offset}:{packet.data.length} ({packet.networkId}, {packet.rpcId})");
         }

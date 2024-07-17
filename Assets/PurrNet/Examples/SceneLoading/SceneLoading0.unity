@@ -666,7 +666,7 @@ MonoBehaviour:
   _cookieScope: 1
   _transport: {fileID: 1386555453}
   _networkPrefabs: {fileID: 11400000, guid: d5daa8c5cd9771a4da0c623682b0c9a3, type: 2}
-  _networkRules: {fileID: 11400000, guid: d8799083b96579a42b8b2d03e4ceae98, type: 2}
+  _networkRules: {fileID: 11400000, guid: 57ad4cc976c21074181652c4f7179d44, type: 2}
   _tickRate: 20
 --- !u!114 &1386555453
 MonoBehaviour:

@@ -1,13 +1,12 @@
 using System;
 using PurrNet.Modules;
-using PurrNet.Packets;
 using PurrNet.Utils;
 using UnityEngine;
 
 namespace PurrNet
 {
     [DefaultExecutionOrder(-1000)]
-    public class NetworkIdentity : MonoBehaviour
+    public partial class NetworkIdentity : MonoBehaviour
     {
         /// <summary>
         /// The prefab id of this object;
@@ -102,13 +101,6 @@ namespace PurrNet
         protected virtual void OnSpawned() { }
         
         protected virtual void OnDespawned() { }
-        
-        internal void SendRPC()
-        {
-            const int id = 2;
-            
-            
-        }
 
         private void OnActivated(bool active)
         {
@@ -165,6 +157,8 @@ namespace PurrNet
             }
             
             networkManager = manager;
+
+            OnSpawnedBroadcasting(asServer);
 
             if (manager.isHost)
             {

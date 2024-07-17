@@ -18,13 +18,15 @@ namespace PurrNet.Packets
     
     public readonly ref struct NetworkStream
     {
-        readonly IByteBuffer _stream;
+        readonly ByteBuffer _stream;
         
         public readonly bool isReading;
         
+        public ByteBuffer buffer => _stream;
+        
         public int pointer => _stream.pointer;
         
-        public NetworkStream(IByteBuffer stream, bool isReading)
+        public NetworkStream(ByteBuffer stream, bool isReading)
         {
             _stream = stream;
             this.isReading = isReading;
@@ -288,6 +290,11 @@ namespace PurrNet.Packets
             if (value >> 63 > 0)
                 return ~(value << 1) | 1;
             return value << 1;
+        }
+
+        public void ResetPointer()
+        {
+            _stream.ResetPointer();
         }
     }
 
