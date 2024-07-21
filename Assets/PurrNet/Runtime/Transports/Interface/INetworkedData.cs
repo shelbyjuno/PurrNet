@@ -128,6 +128,17 @@ namespace PurrNet.Packets
             else MemoryPackSerializer.Serialize(_stream, data);
         }
         
+        public void SerializeWithType(Type type, [CanBeNull] ref object data)
+        {
+            if (isReading)
+            {
+                var span = _stream.GetSpan();
+                int consumed = MemoryPackSerializer.Deserialize(type, span, ref data);
+                _stream.Advance(consumed);
+            }
+            else MemoryPackSerializer.Serialize(_stream, data);
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void WriteSignedPackedWhole(long value) => WriteUnsignedPackedWhole(ZigZagEncode((ulong)value));
         

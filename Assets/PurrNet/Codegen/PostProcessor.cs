@@ -6,7 +6,9 @@ using System.Linq;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using NUnit.Framework.Constraints;
 using PurrNet.Packets;
+using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
@@ -89,8 +91,17 @@ namespace PurrNet.Codegen
                     MethodAttributes.Public | MethodAttributes.HideBySig,
                     module.TypeSystem.Void);
 
+                var identityType = module.GetTypeReference<NetworkIdentity>();
                 var streamType = module.GetTypeReference<NetworkStream>();
                 var packetType = module.GetTypeReference<RPCPacket>();
+                
+                var readHeaderMethod = identityType.GetMethod("ReadGenericHeader").Import(module);
+                var callGenericMethod = identityType.GetMethod("CallGeneric").Import(module);
+                
+                var genericRpcHeaderType = module.GetTypeReference<GenericRPCHeader>();
+                
+                var readGeneric = genericRpcHeaderType.GetMethod("Read").Import(module);
+                var readT = genericRpcHeaderType.GetMethod("Read", true).Import(module);
 
                 var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType);
                 var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType);
@@ -109,32 +120,79 @@ namespace PurrNet.Codegen
                 var rpc = originalRpcs[i];
 
                 var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
-
-                foreach (var param in rpc.Parameters)
+                
+                if (rpc.HasGenericParameters)
                 {
-                    var variable = new VariableDefinition(param.ParameterType);
-                    newMethod.Body.Variables.Add(variable);
+                    int genericParamCount = rpc.GenericParameters.Count;
+                    int paramCount = rpc.Parameters.Count;
                     
-                    var serialize = new GenericInstanceMethod(serializeMethod);
-                    serialize.GenericArguments.Add(param.ParameterType);
+                    var headerValue = new VariableDefinition(genericRpcHeaderType);
+                    newMethod.Body.Variables.Add(headerValue);
+
+                    var serializeUint = new GenericInstanceMethod(serializeMethod);
+                    serializeUint.GenericArguments.Add(module.TypeSystem.UInt32);
                     
-                    code.Append(Instruction.Create(OpCodes.Ldarga, stream));
-                    code.Append(Instruction.Create(OpCodes.Ldloca, variable));
-                    code.Append(Instruction.Create(OpCodes.Call, serialize));
+                    code.Append(Instruction.Create(OpCodes.Ldarg, stream));
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, genericParamCount));
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, paramCount));
+                    code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
+                    code.Append(Instruction.Create(OpCodes.Call, readHeaderMethod));
+
+                    for (var p = 0; p < rpc.Parameters.Count; p++)
+                    {
+                        var param = rpc.Parameters[p];
+                        if (param.ParameterType.IsGenericParameter)
+                        {
+                            var genericIdx = rpc.GenericParameters.IndexOf((GenericParameter)param.ParameterType);
+
+                            code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
+                            code.Append(Instruction.Create(OpCodes.Ldc_I4, genericIdx));
+                            code.Append(Instruction.Create(OpCodes.Ldc_I4, p));
+                            code.Append(Instruction.Create(OpCodes.Call, readGeneric));
+                        }
+                        else
+                        {
+                            var readAny = new GenericInstanceMethod(readT);
+                            readAny.GenericArguments.Add(param.ParameterType);
+
+                            code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
+                            code.Append(Instruction.Create(OpCodes.Ldc_I4, p));
+                            code.Append(Instruction.Create(OpCodes.Call, readAny));
+                        }
+                    }
+
+                    // call 'CallGeneric'
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Ldstr, rpc.Name)); // methodName
+                    code.Append(Instruction.Create(OpCodes.Ldloc, headerValue)); // rpcHeader
+                    code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
+                }
+                else
+                {
+                    foreach (var param in rpc.Parameters)
+                    {
+                        var variable = new VariableDefinition(param.ParameterType);
+                        newMethod.Body.Variables.Add(variable);
+
+                        var serialize = new GenericInstanceMethod(serializeMethod);
+                        serialize.GenericArguments.Add(param.ParameterType);
+
+                        code.Append(Instruction.Create(OpCodes.Ldarga, stream));
+                        code.Append(Instruction.Create(OpCodes.Ldloca, variable));
+                        code.Append(Instruction.Create(OpCodes.Call, serialize));
+                    }
+                    
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                
+                    var vars = newMethod.Body.Variables;
+
+                    for (var j = 0; j < vars.Count; j++)
+                        code.Append(Instruction.Create(OpCodes.Ldloc, vars[j]));
+                
+                    code.Append(Instruction.Create(OpCodes.Call, rpc));
                 }
                 
-
-                // load this
-                code.Append(Instruction.Create(OpCodes.Ldarg_0));
-                
-                var vars = newMethod.Body.Variables;
-
-                for (var j = 0; j < vars.Count; j++)
-                    code.Append(Instruction.Create(OpCodes.Ldloc, vars[j]));
-                
-                code.Append(Instruction.Create(OpCodes.Call, rpc));
                 code.Append(Instruction.Create(OpCodes.Ret));
-                
                 type.Methods.Add(newMethod);
             }
         }
@@ -148,9 +206,12 @@ namespace PurrNet.Codegen
             }
             
             string ogName = method.Name;
-            method.Name = ogName + "_Original";
+            method.Name = ogName + "_Original_" + id;
             
             var newMethod = new MethodDefinition(ogName, MethodAttributes.Public | MethodAttributes.HideBySig, method.ReturnType);
+            
+            foreach (var t in method.GenericParameters)
+                newMethod.GenericParameters.Add(new GenericParameter(t.Name, newMethod));
             
             foreach (var param in method.CustomAttributes)
                 newMethod.CustomAttributes.Add(param);
@@ -167,7 +228,8 @@ namespace PurrNet.Codegen
             var rpcType = method.Module.GetTypeReference<RPCModule>();
             var identityType = method.Module.GetTypeReference<NetworkIdentity>();
             var packetType = method.Module.GetTypeReference<RPCPacket>();
-            
+            var hahserType = method.Module.GetTypeReference<Hasher>();
+
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             var buildRawRPCMethod = rpcType.GetMethod("BuildRawRPC").Import(module);
@@ -175,27 +237,50 @@ namespace PurrNet.Codegen
             var sendToServerMethod = identityType.GetMethod("SendToServer", true).Import(module);
             var getId = identityType.GetProperty("id");
             var getSceneId = identityType.GetProperty("sceneId");
+            var getStableHashU32 = hahserType.GetMethod("GetStableHashU32", true).Import(module);
             
             // Declare local variables
             newMethod.Body.InitLocals = true;
             
             var streamVariable = new VariableDefinition(streamType);
             var rpcDataVariable = new VariableDefinition(packetType);
+            var typeHash = new VariableDefinition(module.TypeSystem.UInt32);
             
             newMethod.Body.Variables.Add(streamVariable);
             newMethod.Body.Variables.Add(rpcDataVariable);
+            newMethod.Body.Variables.Add(typeHash);
             
             code.Append(Instruction.Create(OpCodes.Ldc_I4, 0));
             code.Append(Instruction.Create(OpCodes.Call, allocStreamMethod));
             code.Append(Instruction.Create(OpCodes.Stloc, streamVariable));
 
+            for (var i = 0; i < newMethod.GenericParameters.Count; i++)
+            {
+                var param = newMethod.GenericParameters[i];
+                
+                var getStableHashU32Generic = new GenericInstanceMethod(getStableHashU32);
+                getStableHashU32Generic.GenericArguments.Add(param);
+                
+                code.Append(Instruction.Create(OpCodes.Call, getStableHashU32Generic));
+                code.Append(Instruction.Create(OpCodes.Stloc, typeHash));
+                
+                var serializeGenericMethod = new GenericInstanceMethod(serializeMethod);
+                serializeGenericMethod.GenericArguments.Add(module.TypeSystem.UInt32);
+                    
+                code.Append(Instruction.Create(OpCodes.Ldloca, streamVariable));
+                code.Append(Instruction.Create(OpCodes.Ldloca, typeHash));
+                code.Append(Instruction.Create(OpCodes.Call, serializeGenericMethod));
+            }
+            
             for (var i = 0; i < newMethod.Parameters.Count; i++)
             {
+                var param = newMethod.Parameters[i];
+                
                 var serializeGenericMethod = new GenericInstanceMethod(serializeMethod);
-                serializeGenericMethod.GenericArguments.Add(newMethod.Parameters[i].ParameterType);
+                serializeGenericMethod.GenericArguments.Add(param.ParameterType);
                 
                 code.Append(Instruction.Create(OpCodes.Ldloca, streamVariable));
-                code.Append(Instruction.Create(OpCodes.Ldarga, newMethod.Parameters[i]));
+                code.Append(Instruction.Create(OpCodes.Ldarga, param));
                 code.Append(Instruction.Create(OpCodes.Call, serializeGenericMethod));
             }
 
@@ -237,10 +322,24 @@ namespace PurrNet.Codegen
                     for (var i = 0; i < method.Body.Instructions.Count; i++)
                     {
                         var instruction = method.Body.Instructions[i];
-
+                        
                         if (instruction.OpCode == OpCodes.Call &&
-                            instruction.Operand is MethodReference methodReference && methodReference == old)
-                            processor.Replace(instruction, Instruction.Create(OpCodes.Call, @new));
+                            instruction.Operand is MethodReference methodReference && methodReference.GetElementMethod() == old)
+                        {
+                            if (methodReference is GenericInstanceMethod genericInstanceMethod)
+                            {
+                                var newGenericInstanceMethod = new GenericInstanceMethod(@new);
+        
+                                foreach (var argument in genericInstanceMethod.GenericArguments)
+                                    newGenericInstanceMethod.GenericArguments.Add(argument);
+
+                                processor.Replace(instruction, Instruction.Create(OpCodes.Call, newGenericInstanceMethod));
+                            }
+                            else
+                            {
+                                processor.Replace(instruction, Instruction.Create(OpCodes.Call, @new));
+                            }
+                        }
                     }
                 }
             }

@@ -125,7 +125,7 @@ namespace PurrNet
             var stream = AllocStream(true);
             stream.Write(packet.data);
             stream.ResetPointer();
-
+            
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity))
             {
                 var rpcHandlerPtr = GetRPCHandler(identity.GetType(), packet.rpcId);

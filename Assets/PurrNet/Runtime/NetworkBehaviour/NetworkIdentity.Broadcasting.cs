@@ -1,12 +1,89 @@
+using System;
 using System.Collections.Generic;
+using System.Reflection;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Packets;
 using PurrNet.Transports;
+using PurrNet.Utils;
+using UnityEngine;
 
 namespace PurrNet
 {
+    public struct GenericRPCHeader
+    {
+        public NetworkStream stream;
+        public uint hash;
+        public Type[] types;
+        public object[] values;
+        
+        [UsedImplicitly]
+        public void Read(int genericIndex, int index)
+        {
+            object value = default;
+            stream.Serialize(types[genericIndex], ref value);
+            values[index] = value;
+        }
+        
+        [UsedImplicitly]
+        public void Read<T>(int index)
+        {
+            T value = default;
+            stream.Serialize(ref value);
+            values[index] = value;
+        }
+    }
+    
     public partial class NetworkIdentity : IPlayerBroadcaster
     {
+        static readonly Dictionary<uint, MethodInfo> _rpcMethods = new ();
+        
+        [UsedImplicitly]
+        protected static void ReadGenericHeader(NetworkStream stream, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
+        {
+            uint hash = 0;
+
+            rpcHeader = new GenericRPCHeader
+            {
+                stream = stream,
+                types = new Type[genericCount],
+                values = new object[paramCount],
+                hash = 0
+            };
+            
+            for (int i = 0; i < genericCount; i++)
+            {
+                stream.Serialize<uint>(ref hash);
+                var type = Hasher.ResolveType(hash);
+
+                rpcHeader.hash ^= hash;
+                rpcHeader.types[i] = type;
+            }
+        }
+    
+        [UsedImplicitly]
+        protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
+        {
+            if (_rpcMethods.TryGetValue(rpcHeader.hash, out var genericMethod))
+            {
+                genericMethod.Invoke(this, rpcHeader.values);
+                return;
+            }
+            
+            var method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+        
+            if (method == null)
+            {
+                PurrLogger.LogError("Calling generic RPC failed. Method not found.");
+                return;
+            }
+
+            var gmethod = method.MakeGenericMethod(rpcHeader.types);
+            _rpcMethods.Add(rpcHeader.hash, gmethod);
+            gmethod.Invoke(this, rpcHeader.values);
+        }
+        
         public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
         {
             if (networkManager.isClient)

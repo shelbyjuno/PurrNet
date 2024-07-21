@@ -1,18 +1,23 @@
 using PurrNet;
+using PurrNet.Utils;
 using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
     protected override void OnSpawned(bool asServer)
     {
+        Hasher.PrepareType<int>();
+        Hasher.PrepareType<uint>();
+        Hasher.PrepareType<string>();
+        
         if (!asServer)
         {
             ServerRPCMethod(42, 69);
             ServerRPCMethod2();
-            ServerRPCMethod3();
             
             ServerRPCMethodGeneric(4269);
-            ServerRPCMethodGeneric("4269WTF");
+            var path = System.IO.Directory.GetCurrentDirectory();
+            ServerRPCMethodGeneric(path);
         }
     }
     

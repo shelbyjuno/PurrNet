@@ -707,7 +707,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _startServerFlags: 9
-  _startClientFlags: 7
+  _startClientFlags: 6
   _cookieScope: 1
   _transport: {fileID: 1386555453}
   _networkPrefabs: {fileID: 11400000, guid: d5daa8c5cd9771a4da0c623682b0c9a3, type: 2}

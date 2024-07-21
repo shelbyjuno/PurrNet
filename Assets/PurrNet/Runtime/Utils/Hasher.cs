@@ -4,7 +4,7 @@ using PurrNet.Logging;
 
 namespace PurrNet.Utils
 {
-    public static class Hasher
+    public class Hasher
     {
         private const uint FNV_offset_basis32 = 2166136261;
         private const uint FNV_prime32 = 16777619;
@@ -17,6 +17,16 @@ namespace PurrNet.Utils
         
         static readonly Dictionary<Type, ulong> _hashes_64 = new ();
         static readonly Dictionary<ulong, Type> _decoder_64 = new ();
+        
+        public static Type ResolveType(uint hash)
+        {
+            if (_decoder.TryGetValue(hash, out var type))
+                return type;
+            
+            throw new InvalidOperationException(
+                PurrLogger.FormatMessage($"Type with hash '{hash}' not found.")
+            );
+        }
         
         public static bool TryGetType(uint hash, out Type type)
         {
@@ -72,6 +82,12 @@ namespace PurrNet.Utils
 
         public static uint GetStableHashU32(Type type)
         {
+            return _hashes.TryGetValue(type, out var hash) ? hash : PrepareType(type);
+        }
+        
+        public static uint GetStableHashU32<T>()
+        {
+            var type = typeof(T);
             return _hashes.TryGetValue(type, out var hash) ? hash : PrepareType(type);
         }
         
