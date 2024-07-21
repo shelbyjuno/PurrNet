@@ -12,6 +12,7 @@ namespace PurrNet.Editor
         private SerializedProperty syncParentAuth;
         private SerializedProperty syncVarAuth;
         private SerializedProperty clientRpcAuth;
+        private SerializedProperty fullObjectOwnership;
         
         private void OnEnable()
         {
@@ -21,6 +22,7 @@ namespace PurrNet.Editor
             clientRpcAuth = serializedObject.FindProperty("clientRpcAuth");
             syncParentAuth = serializedObject.FindProperty("syncParentAuth");
             syncVarAuth = serializedObject.FindProperty("syncVarAuth");
+            fullObjectOwnership = serializedObject.FindProperty("fullObjectOwnership");
         }
 
         public override void OnInspectorGUI()
@@ -45,6 +47,8 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(spawnAuth, new GUIContent("Spawn"));
             
             EditorGUILayout.PropertyField(defaultOwner, new GUIContent("Default owner"));
+
+            EditorGUILayout.PropertyField(fullObjectOwnership);
             
             EditorGUILayout.PropertyField(syncVarAuth, new GUIContent("Sync Var"));
             
