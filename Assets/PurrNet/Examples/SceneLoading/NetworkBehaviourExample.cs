@@ -10,9 +10,20 @@ public class NetworkBehaviourExample : NetworkBehaviour
             ServerRPCMethod(42, 69);
             ServerRPCMethod2();
             ServerRPCMethod3();
+            
+            ServerRPCMethodGeneric(4269);
+            ServerRPCMethodGeneric("4269WTF");
         }
     }
+    
+    [ServerRPC]
+    private void ServerRPCMethodGeneric<T>(T a)
+    {
+        // This method will be called on the server
+        Debug.Log("ServerRPCMethodGeneric " + a); 
+    }
 
+    [ServerRPC]
     private void ServerRPCMethod(int a, int b)
     {
         // This method will be called on the server
