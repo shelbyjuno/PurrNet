@@ -2,19 +2,24 @@ using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
-using UnityEngine;
 
 namespace PurrNet
 {
     public partial struct RPCPacket : INetworkedData
     {
+        public const string GET_ID_METHOD = nameof(GetID);
+        
         public int networkId;
+        public SceneID sceneId;
         public byte rpcId;
         public ByteData data;
+        
+        public int GetID() => rpcId;
 
         public void Serialize(NetworkStream packer)
         {
             packer.Serialize(ref networkId, false);
+            packer.Serialize(ref sceneId);
             packer.Serialize(ref rpcId);
             
             if (packer.isReading)
@@ -32,14 +37,16 @@ namespace PurrNet
         }
     }
     
-    public class RPCModule : INetworkModule, IUpdate
+    public class RPCModule : INetworkModule
     {
+        readonly HierarchyModule _hierarchyModule;
         readonly PlayersManager _playersManager;
         private bool _asServer;
         
-        public RPCModule(PlayersManager playersManager)
+        public RPCModule(PlayersManager playersManager, HierarchyModule hierarchyModule)
         {
             _playersManager = playersManager;
+            _hierarchyModule = hierarchyModule;
         }
         
         public void Enable(bool asServer)
@@ -63,50 +70,30 @@ namespace PurrNet
             ByteBufferPool.Free(stream.buffer);
         }
 
-        public static RPCPacket BuildRawRPC(int networkId, byte rpcId, NetworkStream data)
+        public static RPCPacket BuildRawRPC(int networkId, SceneID id, byte rpcId, NetworkStream data)
         {
             var rpc = new RPCPacket
             {
                 networkId = networkId,
                 rpcId = rpcId,
+                sceneId = id,
                 data = data.buffer.ToByteData()
             };
             
             return rpc;
         }
-
-        public void BuildRPC()
-        {
-            var stream = AllocStream(false);
-
-            int test = 52;
-            stream.Serialize(ref test, false);
-            
-            var data = BuildRawRPC(11, 22, stream);
-            
-            _playersManager.SendToAll(data);
-            FreeStream(stream);
-        }
         
-        public void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
+        void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
             var stream = AllocStream(true);
-            
             stream.Write(packet.data);
             stream.ResetPointer();
             
-            int test = 0;
-            stream.Serialize(ref test, false);
+            if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity))
+                 identity.HandleRPCGenerated(packet, stream);
+            else PurrLogger.LogError($"Can't find identity with id {packet.networkId} in scene {packet.sceneId}.");
             
             FreeStream(stream);
-            
-            PurrLogger.Log($"Received RPC with data: {test}, length: {packet.data.offset}:{packet.data.length} ({packet.networkId}, {packet.rpcId})");
-        }
-
-        public void Update()
-        {
-            if (_asServer && Input.GetKeyDown(KeyCode.Space))
-                BuildRPC();
         }
     }
 }

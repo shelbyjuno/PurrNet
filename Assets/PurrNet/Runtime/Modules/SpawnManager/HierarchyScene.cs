@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
+using PurrNet.Transports;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -27,7 +28,7 @@ namespace PurrNet.Modules
         public int startingId;
     }
     
-    internal class HierarchyScene : INetworkModule, IFixedUpdate, IUpdate
+    internal class HierarchyScene : INetworkModule, IFixedUpdate, IUpdate, IConnectionStateListener
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -39,7 +40,7 @@ namespace PurrNet.Modules
         
         public event Action<NetworkIdentity> onIdentityRemoved;
         public event Action<NetworkIdentity> onIdentityAdded;
-
+        
         private readonly SceneID _sceneID;
         private bool _asServer;
 
@@ -63,7 +64,29 @@ namespace PurrNet.Modules
         {
             _asServer = asServer;
 
-            if (asServer)
+            if (!asServer)
+            {
+                _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+                _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
+            }
+        }
+
+        internal void TriggerSpawnEventOnClient()
+        {
+            foreach (var identity in _identities.collection)
+                identity.TriggetClientSpawnEvent();
+        }
+        
+        public void OnConnectionState(ConnectionState state, bool asServer)
+        {
+            if (!asServer)
+            {
+                if (state == ConnectionState.Connected && _manager.isHost)
+                    _manager.GetModule<HierarchyModule>(true).TriggerOnSpawnedEventForClient();
+                return;
+            }
+            
+            if (state == ConnectionState.Connected)
             {
                 _sceneFirstNetworkID = _identities.PeekNextId();
                 
@@ -77,11 +100,6 @@ namespace PurrNet.Modules
                 }
                 
                 _scenePlayers.onPlayerLoadedScene += OnPlayerJoinedScene;
-            }
-            else
-            {
-                _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
-                _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
             }
         }
 
@@ -133,7 +151,13 @@ namespace PurrNet.Modules
         {
             if (asServer)
                  _scenePlayers.onPlayerLoadedScene -= OnPlayerJoinedScene;
-            else _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            else
+            {
+                foreach (var identity in _identities.collection)
+                    identity.TriggetClientDespawnEvent();
+                
+                _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
+            }
 
             _identities.DestroyAll();
         }

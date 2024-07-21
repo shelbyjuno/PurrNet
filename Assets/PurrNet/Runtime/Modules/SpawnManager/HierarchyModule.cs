@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet
 {
-    public class HierarchyModule : INetworkModule, IFixedUpdate, IUpdate
+    public class HierarchyModule : INetworkModule, IFixedUpdate, IUpdate, IConnectionStateListener
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -96,6 +97,12 @@ namespace PurrNet
                 _hierarchies[i].Update();
         }
         
+        internal void TriggerOnSpawnedEventForClient()
+        {
+            foreach (var hierarchy in _sceneToHierarchy.Values)
+                hierarchy.TriggerSpawnEventOnClient();
+        }
+        
         public bool TryGetIdentity(SceneID sceneID, int id, out NetworkIdentity identity)
         {
             if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
@@ -123,6 +130,12 @@ namespace PurrNet
             }
             
             hierarchy.Spawn(gameObject);
+        }
+
+        public void OnConnectionState(ConnectionState state, bool asServer)
+        {
+            for (var i = 0; i < _hierarchies.Count; i++)
+                _hierarchies[i].OnConnectionState(state, asServer);
         }
     }
 }

@@ -1,72 +1,53 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Packets;
 using PurrNet.Transports;
 
 namespace PurrNet
 {
     public partial class NetworkIdentity : IPlayerBroadcaster
     {
-        PlayersManager _playersManagerServer;
-        ScenePlayersModule _scenePlayersModuleServer;
-        
-        PlayersManager _playersManagerClient;
-        ScenePlayersModule _scenePlayersModuleClient;
-
-        private void OnSpawnedBroadcasting(bool asServer)
-        {
-            if (asServer)
-            {
-                _playersManagerServer = networkManager.GetModule<PlayersManager>(true);
-                _scenePlayersModuleServer = networkManager.GetModule<ScenePlayersModule>(true);
-
-                if (networkManager.isClient)
-                {
-                    _playersManagerClient = networkManager.GetModule<PlayersManager>(false);
-                    _scenePlayersModuleClient = networkManager.GetModule<ScenePlayersModule>(false);
-                }
-            }
-            else
-            {
-                _playersManagerClient = networkManager.GetModule<PlayersManager>(false);
-                _scenePlayersModuleClient = networkManager.GetModule<ScenePlayersModule>(false);
-            }
-        }
+        [UsedImplicitly]
+        public virtual void HandleRPCGenerated(RPCPacket packet, NetworkStream stream) { }
         
         public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
         {
-            _playersManagerServer?.Unsubscribe(callback);
-            _playersManagerClient?.Unsubscribe(callback);
+            if (networkManager.isClient)
+            {
+                networkManager.GetModule<PlayersManager>(false).Unsubscribe(callback);
+            }
+            
+            if (networkManager.isServer)
+            {
+                networkManager.GetModule<PlayersManager>(true).Unsubscribe(callback);
+            }
         }
 
         public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
         {
-            _playersManagerServer?.Subscribe(callback);
-            _playersManagerClient?.Subscribe(callback);
+            if (networkManager.isClient)
+            {
+                networkManager.GetModule<PlayersManager>(false).Subscribe(callback);
+            }
+            
+            if (networkManager.isServer)
+            {
+                networkManager.GetModule<PlayersManager>(true).Subscribe(callback);
+            }
         }
 
         public void SendToAll<T>(T packet, Channel method = Channel.ReliableOrdered)
         {
-            if (_playersManagerServer != null)
-                SendToAll(_playersManagerServer, _scenePlayersModuleServer, packet, method);
-            
-            if (_playersManagerClient != null)
-                SendToAll(_playersManagerClient, _scenePlayersModuleClient, packet, method);
-        }
-        
-        private void SendToAll<T>(IPlayerBroadcaster players, ScenePlayersModule scene, T packet, Channel method = Channel.ReliableOrdered)
-        {
-            if (scene.TryGetPlayersInScene(sceneId, out var playersInScene))
-                players.Send(playersInScene, packet, method);
+            if (networkManager.isServer)
+                networkManager.GetModule<PlayersManager>(true).SendToAll(packet, method);
         }
 
-        public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered)
+        public void Send<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
         {
-            if (_playersManagerServer != null)
-                Send(_playersManagerServer, _scenePlayersModuleServer, player, data, method);
-            
-            if (_playersManagerClient != null)
-                Send(_playersManagerClient, _scenePlayersModuleClient, player, data, method);
+            if (networkManager.isServer)
+                networkManager.GetModule<PlayersManager>(true).Send(player, packet, method);
         }
         
         private void Send<T>(IPlayerBroadcaster players, ScenePlayersModule scene, PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
@@ -81,17 +62,8 @@ namespace PurrNet
 
         public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)
         {
-            if (_playersManagerServer != null)
-            {
-                // ReSharper disable once PossibleMultipleEnumeration
-                Send(_playersManagerServer, _scenePlayersModuleServer, players, data, method);
-            }
-
-            if (_playersManagerClient != null)
-            {
-                // ReSharper disable once PossibleMultipleEnumeration
-                Send(_playersManagerClient, _scenePlayersModuleClient, players, data, method);
-            }
+            if (networkManager.isServer)
+                networkManager.GetModule<PlayersManager>(true).Send(players, data, method);
         }
         
         static readonly List<PlayerID> _playersList = new ();
@@ -116,7 +88,8 @@ namespace PurrNet
 
         public void SendToServer<T>(T packet, Channel method = Channel.ReliableOrdered)
         {
-            _playersManagerClient?.SendToServer(packet, method);
+            if (networkManager.isClient)
+                networkManager.GetModule<PlayersManager>(false).SendToServer(packet, method);
         }
     }
 }

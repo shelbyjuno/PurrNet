@@ -178,7 +178,7 @@ namespace PurrNet
             if (TryGetModule(out T module, asServer))
                 return module;
             
-            throw new InvalidOperationException(PurrLogger.FormatMessage($"Module {typeof(T).Name} not found."));
+            throw new InvalidOperationException(PurrLogger.FormatMessage($"Module {typeof(T).Name} not found - asServer : {asServer}."));
         }
 
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
@@ -211,12 +211,11 @@ namespace PurrNet
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
-            var rpcModule = new RPCModule(playersManager);
+            var rpcModule = new RPCModule(playersManager, hierarchyModule);
 
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
-            modules.AddModule(hierarchyModule);
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
@@ -226,6 +225,7 @@ namespace PurrNet
             modules.AddModule(scenePlayersModule);
             modules.AddModule(ownershipModule);
             modules.AddModule(rpcModule);
+            modules.AddModule(hierarchyModule);
         }
 
         static bool ShouldStart(StartFlags flags)

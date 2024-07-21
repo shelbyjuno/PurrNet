@@ -16,7 +16,7 @@ namespace PurrNet.Packets
         void Serialize(NetworkStream packer);
     }
     
-    public readonly ref struct NetworkStream
+    public readonly struct NetworkStream
     {
         readonly ByteBuffer _stream;
         
