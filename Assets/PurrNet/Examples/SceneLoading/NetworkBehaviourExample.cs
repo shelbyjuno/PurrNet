@@ -1,25 +1,25 @@
 using PurrNet;
 using UnityEngine;
 
-public class NetworkBehaviourExample : NetworkIdentity
+public class NetworkBehaviourExample : NetworkBehaviour
 {
     protected override void OnSpawned(bool asServer)
     {
         if (!asServer)
         {
-            ServerRPCMethod();
+            ServerRPCMethod(42, 69);
             ServerRPCMethod2();
+            ServerRPCMethod3();
         }
     }
 
-    [ServerRPC]
-    private void ServerRPCMethod()
+    private void ServerRPCMethod(int a, int b)
     {
         // This method will be called on the server
-        Debug.Log("NOPOOO"); 
+        Debug.Log("NOPOOO " + a + " " + b); 
     }
     
-    [ServerRPC]
+    [ServerRPC, ContextMenu("ServerRPCMethod2")]
     private void ServerRPCMethod2()
     {
         // This method will be called on the server

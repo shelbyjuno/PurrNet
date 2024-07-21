@@ -1,17 +1,12 @@
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
-using PurrNet.Packets;
 using PurrNet.Transports;
 
 namespace PurrNet
 {
     public partial class NetworkIdentity : IPlayerBroadcaster
     {
-        [UsedImplicitly]
-        public virtual void HandleRPCGenerated(RPCPacket packet, NetworkStream stream) { }
-        
         public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
         {
             if (networkManager.isClient)

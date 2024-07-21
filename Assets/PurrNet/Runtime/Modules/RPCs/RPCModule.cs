@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
@@ -41,7 +44,6 @@ namespace PurrNet
     {
         readonly HierarchyModule _hierarchyModule;
         readonly PlayersManager _playersManager;
-        private bool _asServer;
         
         public RPCModule(PlayersManager playersManager, HierarchyModule hierarchyModule)
         {
@@ -51,7 +53,6 @@ namespace PurrNet
         
         public void Enable(bool asServer)
         {
-            _asServer = asServer;
             _playersManager.Subscribe<RPCPacket>(ReceiveRPC);
         }
         
@@ -83,14 +84,59 @@ namespace PurrNet
             return rpc;
         }
         
-        void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
+        readonly struct RPCKey
+        {
+            public readonly IReflect type;
+            public readonly byte rpcId;
+            
+            public override int GetHashCode()
+            {
+                return type.GetHashCode() ^ rpcId.GetHashCode();
+            }
+            
+            public RPCKey(IReflect type, byte rpcId)
+            {
+                this.type = type;
+                this.rpcId = rpcId;
+            }
+        }
+        
+        static readonly Dictionary<RPCKey, IntPtr> _rpcHandlers = new();
+
+        static IntPtr GetRPCHandler(IReflect type, byte rpcId)
+        {
+            var rpcKey = new RPCKey(type, rpcId);
+            
+            if (_rpcHandlers.TryGetValue(rpcKey, out var handler))
+                return handler;
+            
+            string methodName = $"HandleRPCGenerated_{rpcId}";
+            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
+            var ptr = method != null ? method.MethodHandle.GetFunctionPointer() : IntPtr.Zero;
+            
+            if (ptr != IntPtr.Zero)
+                _rpcHandlers[rpcKey] = ptr;
+            
+            return ptr;
+        }
+        
+        unsafe void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
             var stream = AllocStream(true);
             stream.Write(packet.data);
             stream.ResetPointer();
-            
+
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity))
-                 identity.HandleRPCGenerated(packet, stream);
+            {
+                var rpcHandlerPtr = GetRPCHandler(identity.GetType(), packet.rpcId);
+
+                if (rpcHandlerPtr != IntPtr.Zero)
+                {
+                    // Call the RPC handler
+                    ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, void>)rpcHandlerPtr)(identity, stream, packet);
+                }
+                else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
+            }
             else PurrLogger.LogError($"Can't find identity with id {packet.networkId} in scene {packet.sceneId}.");
             
             FreeStream(stream);

@@ -81,101 +81,62 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static MethodDefinition GetOverrideMethod(ModuleDefinition module, TypeDefinition type)
+        private static void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, IReadOnlyList<MethodDefinition> originalRpcs, int offset)
         {
-            if (type == null)
-                return null;
-
-            // Check if the method already exists
-            foreach (var method in type.Methods)
-            {
-                if (method.Name == "HandleRPCGenerated")
-                    return method;
-            }
-            
-            // Create the new method
-            var newMethod = new MethodDefinition("HandleRPCGenerated",
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
-                module.TypeSystem.Void);
-
-            var streamType = module.GetTypeReference<NetworkStream>();
-            var packetType = module.GetTypeReference<RPCPacket>();
-
-            newMethod.Parameters.Add(new ParameterDefinition("stream", ParameterAttributes.None, streamType));
-            newMethod.Parameters.Add(new ParameterDefinition("packet", ParameterAttributes.None, packetType));
-
-            newMethod.Body.InitLocals = true;
-
-            // Get the base method
-            var baseType = type.BaseType.Resolve();
-            var baseMethod = GetOverrideMethod(module, baseType);
-            var baseMethodReference = module.ImportReference(baseMethod);
-
-            newMethod.Overrides.Add(baseMethodReference);
-
-            // Generate IL for the new method
-            var ilProcessor = newMethod.Body.GetILProcessor();
-
-            // Load 'this' onto the stack
-            ilProcessor.Append(ilProcessor.Create(OpCodes.Ldarg_0));
-
-            // Load parameters onto the stack
-            ilProcessor.Append(ilProcessor.Create(OpCodes.Ldarg_1)); // packet
-            ilProcessor.Append(ilProcessor.Create(OpCodes.Ldarg_2)); // stream
-
-            // Call the base method
-            ilProcessor.Append(ilProcessor.Create(OpCodes.Call, baseMethodReference));
-
-            // Return
-            ilProcessor.Append(ilProcessor.Create(OpCodes.Ret));
-
-            // Add the method to the type
-            type.Methods.Add(newMethod);
-
-            return newMethod;
-        }
-
-        private void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, List<MethodDefinition> originalRpcs, int offset)
-        {
-            var handleRpc = GetOverrideMethod(module, type);
-            var code = handleRpc.Body.GetILProcessor();
-            var first = handleRpc.Body.Instructions[0];
-            
-            var packetType = module.GetTypeReference<RPCPacket>();
-            var getId = packetType.GetMethod(RPCPacket.GET_ID_METHOD);
-            
-            if (getId == null)
-                throw new Exception("Failed to resolve GetID method.");
-
-            var allCases = new Instruction[originalRpcs.Count];
-            var defaultCase = Instruction.Create(OpCodes.Nop);
-            
-            for (var i = 0; i < originalRpcs.Count; i++)
-                allCases[i] = Instruction.Create(OpCodes.Nop);
-            
-            // code.InsertBefore(first, Instruction.Create(OpCodes.Ldc_I4, 0));
-            
-            code.InsertBefore(first, Instruction.Create(OpCodes.Ldarga_S, handleRpc.Parameters[0]));
-            code.InsertBefore(first, Instruction.Create(OpCodes.Call, module.ImportReference(getId)));
-            code.InsertBefore(first, Instruction.Create(OpCodes.Ldc_I4, offset));
-            code.InsertBefore(first, Instruction.Create(OpCodes.Sub));
-            code.InsertBefore(first, code.Create(OpCodes.Switch, allCases));
-            code.InsertBefore(first, defaultCase);
-
             for (var i = 0; i < originalRpcs.Count; i++)
             {
+                var newMethod = new MethodDefinition($"HandleRPCGenerated_{offset + i}",
+                    MethodAttributes.Public | MethodAttributes.HideBySig,
+                    module.TypeSystem.Void);
+
+                var streamType = module.GetTypeReference<NetworkStream>();
+                var packetType = module.GetTypeReference<RPCPacket>();
+
+                var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType);
+                var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType);
+                
+                newMethod.Parameters.Add(stream);
+                newMethod.Parameters.Add(packet);
+
+                newMethod.Body.InitLocals = true;
+                
+                var code = newMethod.Body.GetILProcessor();
+                var getId = packetType.GetMethod(RPCPacket.GET_ID_METHOD);
+                
+                if (getId == null)
+                    throw new Exception("Failed to resolve GetID method.");
+
                 var rpc = originalRpcs[i];
-                var caseInstruction = allCases[i];
+
+                var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
+
+                foreach (var param in rpc.Parameters)
+                {
+                    var variable = new VariableDefinition(param.ParameterType);
+                    newMethod.Body.Variables.Add(variable);
+                    
+                    var serialize = new GenericInstanceMethod(serializeMethod);
+                    serialize.GenericArguments.Add(param.ParameterType);
+                    
+                    code.Append(Instruction.Create(OpCodes.Ldarga, stream));
+                    code.Append(Instruction.Create(OpCodes.Ldloca, variable));
+                    code.Append(Instruction.Create(OpCodes.Call, serialize));
+                }
                 
-                code.InsertBefore(first, caseInstruction);
-                
+
                 // load this
-                code.InsertBefore(first, Instruction.Create(OpCodes.Ldarg_0));
-                code.InsertBefore(first, Instruction.Create(OpCodes.Call, rpc));
-                code.InsertBefore(first, Instruction.Create(OpCodes.Ret));
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                
+                var vars = newMethod.Body.Variables;
+
+                for (var j = 0; j < vars.Count; j++)
+                    code.Append(Instruction.Create(OpCodes.Ldloc, vars[j]));
+                
+                code.Append(Instruction.Create(OpCodes.Call, rpc));
+                code.Append(Instruction.Create(OpCodes.Ret));
+                
+                type.Methods.Add(newMethod);
             }
-            
-            code.InsertBefore(first, defaultCase);
         }
 
         private MethodDefinition HandleRPC(int id, MethodDefinition method, [UsedImplicitly] List<DiagnosticMessage> messages)
@@ -190,6 +151,11 @@ namespace PurrNet.Codegen
             method.Name = ogName + "_Original";
             
             var newMethod = new MethodDefinition(ogName, MethodAttributes.Public | MethodAttributes.HideBySig, method.ReturnType);
+            
+            foreach (var param in method.CustomAttributes)
+                newMethod.CustomAttributes.Add(param);
+            
+            method.CustomAttributes.Clear();
             
             foreach (var param in method.Parameters)
                 newMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
