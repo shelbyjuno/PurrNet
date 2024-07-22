@@ -18,8 +18,18 @@ public class NetworkBehaviourExample : NetworkBehaviour
             ServerRPCMethodGeneric(4269);
             var path = System.IO.Directory.GetCurrentDirectory();
             ServerRPCMethodGeneric(path);
+            
+            ServerRPCMethodGeneric(42, "69STR", 4269);
         }
     }
+    
+        
+    [ServerRPC]
+    private void ServerRPCMethodGeneric<T, B>(B a, T test, long bro)
+    {
+        // This method will be called on the server
+        Debug.Log("ServerRPCMethodGeneric " + a + " " + test + " " + bro); 
+    } 
     
     [ServerRPC]
     private void ServerRPCMethodGeneric<T>(T a)
