@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using LiteNetLib;
 using UnityEngine;
 
@@ -76,7 +78,7 @@ namespace PurrNet.Transports
             _serverListener.PeerDisconnectedEvent += OnServerDisconnected;
             _serverListener.NetworkReceiveEvent += OnServerData;
         }
-        
+
         public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
         {
             onDataReceived?.Invoke(conn, data, asServer);
@@ -120,12 +122,9 @@ namespace PurrNet.Transports
 
         private void OnClientDisconnected(NetPeer peer, DisconnectInfo disconnectinfo)
         {
-            if (clientState is not ConnectionState.Connected)
-                return;
-            
             clientState = ConnectionState.Disconnected;
             TriggerConnectionStateEvent(false);
-            onDisconnected?.Invoke(new Connection(peer.Id), false);
+            onDisconnected?.Invoke(new Connection(peer.Id),DisconnectReason.Timeout, false);
         }
 
         private Connection? _clientToServerConn;
@@ -152,7 +151,7 @@ namespace PurrNet.Transports
                 }
             }
             
-            onDisconnected?.Invoke(conn, true);
+            onDisconnected?.Invoke(conn, DisconnectReason.Timeout, true);
             _clientToServerConn = null;
         }
 
@@ -191,7 +190,7 @@ namespace PurrNet.Transports
 
             if (_clientToServerConn.HasValue)
             {
-                onDisconnected?.Invoke(_clientToServerConn.Value, false);
+                onDisconnected?.Invoke(_clientToServerConn.Value, DisconnectReason.ClientRequest, false);
                 _clientToServerConn = null;
             }
 

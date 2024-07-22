@@ -309,7 +309,7 @@ namespace PurrNet
             else _clientModules.OnNewConnection(conn, false);
         }
 
-        private void OnLostConnection(Connection conn, bool asserver)
+        private void OnLostConnection(Connection conn, DisconnectReason reason, bool asserver)
         {
             if (asserver)
                  _serverModules.OnLostConnection(conn, true);

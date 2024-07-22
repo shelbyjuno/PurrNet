@@ -7,7 +7,7 @@ namespace PurrNet.Transports
     public delegate void OnDataReceived(Connection conn, ByteData data, bool asServer);
     public delegate void OnDataSent(Connection conn, ByteData data, bool asServer); //Cannot send from clients
     public delegate void OnConnected(Connection conn, bool asServer);
-    public delegate void OnDisconnected(Connection conn, bool asServer);
+    public delegate void OnDisconnected(Connection conn, DisconnectReason reason, bool asServer);
     
     public enum ConnectionState
     {
@@ -80,5 +80,12 @@ namespace PurrNet.Transports
         void SendToServer(ByteData data, Channel method = Channel.ReliableOrdered);
         
         void CloseConnection(Connection conn);
+    }
+
+    public enum DisconnectReason
+    {
+        Timeout,
+        ClientRequest,
+        ServerRequest,
     }
 }

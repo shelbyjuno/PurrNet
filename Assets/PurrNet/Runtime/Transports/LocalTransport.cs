@@ -108,8 +108,8 @@ namespace PurrNet.Transports
 
             var conn = new Connection(0);
 
-            onDisconnected?.Invoke(conn, true);
-            onDisconnected?.Invoke(conn, false);
+            onDisconnected?.Invoke(conn, DisconnectReason.ServerRequest,true);
+            onDisconnected?.Invoke(conn, DisconnectReason.ClientRequest, false);
         }
         
         public void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable)
