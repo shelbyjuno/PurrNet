@@ -7,7 +7,7 @@ using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace PurrNet
 {
@@ -120,6 +120,12 @@ namespace PurrNet
         {
             if (networkManager.isServer)
                 networkManager.GetModule<PlayersManager>(true).Send(player, packet, method);
+        }
+        
+        [Preserve]
+        public void SendToTarget<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
+        {
+            Send(player, packet, method);
         }
         
         private void Send<T>(IPlayerBroadcaster players, ScenePlayersModule scene, PlayerID player, T packet, Channel method = Channel.ReliableOrdered)

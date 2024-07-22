@@ -6,7 +6,6 @@ using System.Linq;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using NUnit.Framework.Constraints;
 using PurrNet.Packets;
 using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
@@ -83,7 +82,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, IReadOnlyList<MethodDefinition> originalRpcs, int offset)
+        private static void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, IReadOnlyList<RPCMethod> originalRpcs, int offset)
         {
             for (var i = 0; i < originalRpcs.Count; i++)
             {
@@ -117,7 +116,7 @@ namespace PurrNet.Codegen
                 if (getId == null)
                     throw new Exception("Failed to resolve GetID method.");
 
-                var rpc = originalRpcs[i];
+                var rpc = originalRpcs[i].originalMethod;
 
                 var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
                 
@@ -197,8 +196,10 @@ namespace PurrNet.Codegen
             }
         }
 
-        private MethodDefinition HandleRPC(int id, MethodDefinition method, [UsedImplicitly] List<DiagnosticMessage> messages)
+        private MethodDefinition HandleRPC(int id, RPCMethod methodRpc, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
+            var method = methodRpc.originalMethod;
+            
             if (method.ReturnType.FullName != typeof(void).FullName)
             {
                 Error(messages, "ServerRPC method must return void", method);
@@ -234,7 +235,7 @@ namespace PurrNet.Codegen
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             var buildRawRPCMethod = rpcType.GetMethod("BuildRawRPC").Import(module);
             var freeStreamMethod = rpcType.GetMethod("FreeStream").Import(module);
-            var sendToServerMethod = identityType.GetMethod("SendToServer", true).Import(module);
+            
             var getId = identityType.GetProperty("id");
             var getSceneId = identityType.GetProperty("sceneId");
             var getStableHashU32 = hahserType.GetMethod("GetStableHashU32", true).Import(module);
@@ -276,6 +277,16 @@ namespace PurrNet.Codegen
             {
                 var param = newMethod.Parameters[i];
                 
+                if (methodRpc.type == RPCType.TargetRPC && i == 0)
+                {
+                    if (param.ParameterType.IsGenericParameter || param.ParameterType.FullName != typeof(PlayerID).FullName)
+                    {
+                        Error(messages, "TargetRPC method must have a 'PlayerID' as the first parameter", method);
+                        return null;
+                    }
+                    continue;
+                }
+                
                 var serializeGenericMethod = new GenericInstanceMethod(serializeMethod);
                 serializeGenericMethod.GenericArguments.Add(param.ParameterType);
                 
@@ -293,13 +304,48 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Call, buildRawRPCMethod));
             code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcData
 
-            var sendToServerMethodGeneric = new GenericInstanceMethod(sendToServerMethod);
-            sendToServerMethodGeneric.GenericArguments.Add(packetType);
+            switch (methodRpc.type)
+            {
+                case RPCType.ServerRPC:
+                {
+                    var sendMethod = identityType.GetMethod("SendToServer", true).Import(module);
+                    var sendToServerMethodGeneric = new GenericInstanceMethod(sendMethod);
+                    sendToServerMethodGeneric.GenericArguments.Add(packetType);
 
-            code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-            code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
-            code.Append(Instruction.Create(OpCodes.Call, sendToServerMethodGeneric));
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
+                    code.Append(Instruction.Create(OpCodes.Call, sendToServerMethodGeneric));
+                    break;
+                }
+
+                case RPCType.ObserversRPC:
+                {
+                    var sendMethod = identityType.GetMethod("SendToAll", true).Import(module);
+                    var sendToAllMethodGeneric = new GenericInstanceMethod(sendMethod);
+                    sendToAllMethodGeneric.GenericArguments.Add(packetType);
+                    
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
+                    code.Append(Instruction.Create(OpCodes.Call, sendToAllMethodGeneric));
+                    break;
+                }
+                
+                case RPCType.TargetRPC:
+                {
+                    var sendMethod = identityType.GetMethod("SendToTarget", true).Import(module);
+                    
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Ldarg_1)); // player
+                    code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
+                    code.Append(Instruction.Create(OpCodes.Call, sendMethod));
+                    break;
+                }
+                
+                default: throw new InvalidOperationException($"Invalid RPC type: {methodRpc.type}");
+            }
 
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
             code.Append(Instruction.Create(OpCodes.Call, freeStreamMethod));
@@ -344,6 +390,19 @@ namespace PurrNet.Codegen
                 }
             }
         }
+        
+        public enum RPCType
+        {
+            ServerRPC,
+            ObserversRPC,
+            TargetRPC
+        }
+
+        public struct RPCMethod
+        {
+            public RPCType type;
+            public MethodDefinition originalMethod;
+        }
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
@@ -378,7 +437,7 @@ namespace PurrNet.Codegen
                         if (!InheritsFrom(type, idFullName) && type.FullName != idFullName)
                             continue;
                         
-                        List<MethodDefinition> rpcMethods = new();
+                        List<RPCMethod> rpcMethods = new();
 
                         int idOffset = GetIDOffset(type);
 
@@ -387,7 +446,13 @@ namespace PurrNet.Codegen
                             var method = type.Methods[i];
 
                             if (HasCustomAttribute(method, typeof(ServerRPCAttribute).FullName))
-                                rpcMethods.Add(method);
+                                rpcMethods.Add(new RPCMethod {type = RPCType.ServerRPC, originalMethod = method});
+                            
+                            if (HasCustomAttribute(method, typeof(ObserversRPCAttribute).FullName))
+                                rpcMethods.Add(new RPCMethod {type = RPCType.ObserversRPC, originalMethod = method});
+                            
+                            if (HasCustomAttribute(method, typeof(TargetRPCAttribute).FullName))
+                                rpcMethods.Add(new RPCMethod {type = RPCType.TargetRPC, originalMethod = method});
                         }
 
                         int index = 0;
@@ -395,8 +460,8 @@ namespace PurrNet.Codegen
                         {
                             for (index = 0; index < rpcMethods.Count; index++)
                             {
-                                var method = rpcMethods[index];
-                                var newMethod = HandleRPC(idOffset + index, method, messages);
+                                var method = rpcMethods[index].originalMethod;
+                                var newMethod = HandleRPC(idOffset + index, rpcMethods[index], messages);
 
                                 if (newMethod != null)
                                 {
@@ -407,7 +472,7 @@ namespace PurrNet.Codegen
                         }
                         catch (Exception e)
                         {
-                            Error(messages, e.Message, rpcMethods[index]);
+                            Error(messages, e.Message, rpcMethods[index].originalMethod);
                         }
 
                         try
