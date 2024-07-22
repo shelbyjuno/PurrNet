@@ -135,7 +135,7 @@ namespace PurrNet.Modules
                  _scenePlayers.onPlayerLoadedScene -= OnPlayerJoinedScene;
             else _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
-            _identities.DestroyAll();
+            _identities.DestroyAllNonSceneObjects();
         }
         
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)

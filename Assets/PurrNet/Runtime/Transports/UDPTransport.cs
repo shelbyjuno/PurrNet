@@ -104,7 +104,7 @@ namespace PurrNet.Transports
         private void OnServerConnectionRequest(ConnectionRequest request)
         {
             if (_server.ConnectedPeersCount < _maxConnections)
-                 request.AcceptIfKey("Rabsi");
+                 request.AcceptIfKey("PurrNet");
             else request.Reject();
         }
 
@@ -175,8 +175,9 @@ namespace PurrNet.Transports
                 return;
             
             clientState = ConnectionState.Connecting;
+            
             TriggerConnectionStateEvent(false);
-            _client.Connect(ip, port, "Rabsi");
+            _client.Connect(ip, port, "PurrNet");
             TriggerConnectionStateEvent(false);
         }
 

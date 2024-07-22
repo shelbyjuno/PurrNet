@@ -21,6 +21,7 @@ namespace PurrNet
         ServerBuild = 8
     }
     
+    [DefaultExecutionOrder(-999)]
     public sealed class NetworkManager : MonoBehaviour
     {
         [UsedImplicitly]
