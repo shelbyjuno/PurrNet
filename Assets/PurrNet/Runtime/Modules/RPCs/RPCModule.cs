@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
@@ -8,6 +9,11 @@ using PurrNet.Transports;
 
 namespace PurrNet
 {
+    public struct RPCInfo
+    {
+        public PlayerID sender;
+    }
+    
     public partial struct RPCPacket : INetworkedData
     {
         public const string GET_ID_METHOD = nameof(GetID);
@@ -71,6 +77,7 @@ namespace PurrNet
             ByteBufferPool.Free(stream.buffer);
         }
 
+        [UsedImplicitly]
         public static RPCPacket BuildRawRPC(int networkId, SceneID id, byte rpcId, NetworkStream data)
         {
             var rpc = new RPCPacket
@@ -132,8 +139,10 @@ namespace PurrNet
 
                 if (rpcHandlerPtr != IntPtr.Zero)
                 {
+                    var info = new RPCInfo { sender = player };
+                    
                     // Call the RPC handler
-                    ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, void>)rpcHandlerPtr)(identity, stream, packet);
+                    ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, void>)rpcHandlerPtr)(identity, stream, packet, info);
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }

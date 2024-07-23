@@ -21,6 +21,9 @@ namespace PurrNet
         public event Action<NetworkIdentity> onIdentityRemoved;
         public event Action<NetworkIdentity> onIdentityAdded;
 
+        private HierarchyModule _serverModule;
+        private bool _asServer;
+        
         public HierarchyModule(NetworkManager manager, ScenesModule scenes, PlayersManager players,
             ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
         {
@@ -33,6 +36,8 @@ namespace PurrNet
 
         public void Enable(bool asServer)
         {
+            _asServer = asServer;
+            
             var scenes = _scenes.scenes;
             var sceneCount = scenes.Count;
             
@@ -105,6 +110,12 @@ namespace PurrNet
         
         public bool TryGetIdentity(SceneID sceneID, int id, out NetworkIdentity identity)
         {
+            if (!_asServer && _manager.isServer)
+            {
+                _serverModule ??= _manager.GetModule<HierarchyModule>(true);
+                return _serverModule.TryGetIdentity(sceneID, id, out identity);
+            }
+            
             if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
             {
                 PurrLogger.LogError($"Failed to find hierarchy for scene '{sceneID}'.");

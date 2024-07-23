@@ -72,6 +72,9 @@ namespace PurrNet
         }
         
         public NetworkManager networkManager { get; private set; }
+        
+        public PlayerID localPlayer => networkManager.TryGetModule<PlayersManager>(networkManager.isServer, out var module) && module.localPlayerId.HasValue 
+            ? module.localPlayerId.Value : default;
 
         /// <summary>
         /// True if the owner is propagated to children automatically.

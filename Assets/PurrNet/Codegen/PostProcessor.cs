@@ -10,6 +10,7 @@ using PurrNet.Packets;
 using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+using UnityEngine.Scripting;
 
 namespace PurrNet.Codegen
 {
@@ -81,7 +82,25 @@ namespace PurrNet.Codegen
                 });
             }
         }
+        
+        static bool ShouldIgnore(RPCType rpcType, ParameterReference param, int index, int count, out SpecialParamType type)
+        {
+            if (index == count - 1 && param.ParameterType.FullName == typeof(RPCInfo).FullName)
+            {
+                type = SpecialParamType.RPCInfo;
+                return true;
+            }
 
+            if (index == 0 && rpcType == RPCType.TargetRPC && param.ParameterType.FullName == typeof(PlayerID).FullName)
+            {
+                type = SpecialParamType.SenderId;
+                return true;
+            }
+
+            type = default;
+            return false;
+        }
+        
         private static void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, IReadOnlyList<RPCMethod> originalRpcs, int offset)
         {
             for (var i = 0; i < originalRpcs.Count; i++)
@@ -90,23 +109,34 @@ namespace PurrNet.Codegen
                     MethodAttributes.Public | MethodAttributes.HideBySig,
                     module.TypeSystem.Void);
 
+                var preserveAttribute = module.GetTypeReference<PreserveAttribute>().Import(module);
+                var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
+                newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
+                
                 var identityType = module.GetTypeReference<NetworkIdentity>();
                 var streamType = module.GetTypeReference<NetworkStream>();
                 var packetType = module.GetTypeReference<RPCPacket>();
-                
+                var rpcInfo = module.GetTypeReference<RPCInfo>();
+
                 var readHeaderMethod = identityType.GetMethod("ReadGenericHeader").Import(module);
                 var callGenericMethod = identityType.GetMethod("CallGeneric").Import(module);
+                var localPlayerProp = identityType.GetProperty("localPlayer");
+                var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
                 
                 var genericRpcHeaderType = module.GetTypeReference<GenericRPCHeader>();
                 
+                var setInfo = genericRpcHeaderType.GetMethod("SetInfo").Import(module);
                 var readGeneric = genericRpcHeaderType.GetMethod("Read").Import(module);
                 var readT = genericRpcHeaderType.GetMethod("Read", true).Import(module);
-
+                var setPlayerId = genericRpcHeaderType.GetMethod("SetPlayerId").Import(module);
+                
                 var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType);
                 var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType);
+                var info = new ParameterDefinition("info", ParameterAttributes.None, rpcInfo);
                 
                 newMethod.Parameters.Add(stream);
                 newMethod.Parameters.Add(packet);
+                newMethod.Parameters.Add(info);
 
                 newMethod.Body.InitLocals = true;
                 
@@ -120,10 +150,11 @@ namespace PurrNet.Codegen
 
                 var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
                 
+                int paramCount = rpc.Parameters.Count;
+
                 if (rpc.HasGenericParameters)
                 {
                     int genericParamCount = rpc.GenericParameters.Count;
-                    int paramCount = rpc.Parameters.Count;
                     
                     var headerValue = new VariableDefinition(genericRpcHeaderType);
                     newMethod.Body.Variables.Add(headerValue);
@@ -132,14 +163,39 @@ namespace PurrNet.Codegen
                     serializeUint.GenericArguments.Add(module.TypeSystem.UInt32);
                     
                     code.Append(Instruction.Create(OpCodes.Ldarg, stream));
+                    code.Append(Instruction.Create(OpCodes.Ldarg, info));
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, genericParamCount));
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, paramCount));
                     code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
                     code.Append(Instruction.Create(OpCodes.Call, readHeaderMethod));
-
-                    for (var p = 0; p < rpc.Parameters.Count; p++)
+                    
+                    for (var p = 0; p < paramCount; p++)
                     {
                         var param = rpc.Parameters[p];
+
+                        if (ShouldIgnore(originalRpcs[i].type, param, p, paramCount, out var specialType))
+                        {
+                            switch (specialType)
+                            {
+                                case SpecialParamType.RPCInfo:
+                                    code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
+                                    code.Append(Instruction.Create(OpCodes.Ldc_I4, p));
+                                    code.Append(Instruction.Create(OpCodes.Call, setInfo));
+                                    break;
+                                case SpecialParamType.SenderId:
+                                    code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
+                                    
+                                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                                    code.Append(Instruction.Create(OpCodes.Call, localPlayerGetter));
+                                    
+                                    code.Append(Instruction.Create(OpCodes.Ldc_I4, p));
+                                    code.Append(Instruction.Create(OpCodes.Call, setPlayerId));
+                                    break;
+                            }
+
+                            continue;
+                        }
+
                         if (param.ParameterType.IsGenericParameter)
                         {
                             var genericIdx = rpc.GenericParameters.IndexOf((GenericParameter)param.ParameterType);
@@ -168,10 +224,29 @@ namespace PurrNet.Codegen
                 }
                 else
                 {
-                    foreach (var param in rpc.Parameters)
+                    for (var p = 0; p < rpc.Parameters.Count; p++)
                     {
+                        var param = rpc.Parameters[p];
+                        
                         var variable = new VariableDefinition(param.ParameterType);
                         newMethod.Body.Variables.Add(variable);
+
+                        if (ShouldIgnore(originalRpcs[i].type, param, p, paramCount, out var specialType))
+                        {
+                            switch (specialType)
+                            {
+                                case SpecialParamType.RPCInfo:
+                                    code.Append(Instruction.Create(OpCodes.Ldarg, info));
+                                    code.Append(Instruction.Create(OpCodes.Stloc, variable));
+                                    break;
+                                case SpecialParamType.SenderId:
+                                    code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                                    code.Append(Instruction.Create(OpCodes.Call, localPlayerGetter));
+                                    code.Append(Instruction.Create(OpCodes.Stloc, variable));
+                                    break;
+                            }
+                            continue;
+                        }
 
                         var serialize = new GenericInstanceMethod(serializeMethod);
                         serialize.GenericArguments.Add(param.ParameterType);
@@ -180,7 +255,7 @@ namespace PurrNet.Codegen
                         code.Append(Instruction.Create(OpCodes.Ldloca, variable));
                         code.Append(Instruction.Create(OpCodes.Call, serialize));
                     }
-                    
+
                     code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 
                     var vars = newMethod.Body.Variables;
@@ -272,8 +347,10 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Ldloca, typeHash));
                 code.Append(Instruction.Create(OpCodes.Call, serializeGenericMethod));
             }
+
+            int paramCount = newMethod.Parameters.Count;
             
-            for (var i = 0; i < newMethod.Parameters.Count; i++)
+            for (var i = 0; i < paramCount; i++)
             {
                 var param = newMethod.Parameters[i];
                 
@@ -286,6 +363,9 @@ namespace PurrNet.Codegen
                     }
                     continue;
                 }
+
+                if (ShouldIgnore(methodRpc.type, param, i, paramCount, out _))
+                    continue;
                 
                 var serializeGenericMethod = new GenericInstanceMethod(serializeMethod);
                 serializeGenericMethod.GenericArguments.Add(param.ParameterType);
@@ -335,12 +415,14 @@ namespace PurrNet.Codegen
                 case RPCType.TargetRPC:
                 {
                     var sendMethod = identityType.GetMethod("SendToTarget", true).Import(module);
+                    var sendMethodGeneric = new GenericInstanceMethod(sendMethod);
+                    sendMethodGeneric.GenericArguments.Add(packetType);
                     
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldarg_1)); // player
                     code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
-                    code.Append(Instruction.Create(OpCodes.Call, sendMethod));
+                    code.Append(Instruction.Create(OpCodes.Call, sendMethodGeneric));
                     break;
                 }
                 
@@ -396,6 +478,12 @@ namespace PurrNet.Codegen
             ServerRPC,
             ObserversRPC,
             TargetRPC
+        }
+        
+        public enum SpecialParamType
+        {
+            SenderId,
+            RPCInfo
         }
 
         public struct RPCMethod

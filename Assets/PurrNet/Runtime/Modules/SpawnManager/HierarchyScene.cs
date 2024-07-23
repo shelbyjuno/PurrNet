@@ -81,8 +81,8 @@ namespace PurrNet.Modules
         {
             if (!asServer)
             {
-                if (state == ConnectionState.Connected && _manager.isHost)
-                    _manager.GetModule<HierarchyModule>(true).TriggerOnSpawnedEventForClient();
+                /*if (state == ConnectionState.Connected && _manager.isHost)
+                    _manager.GetModule<HierarchyModule>(true).TriggerOnSpawnedEventForClient();*/
                 return;
             }
             
@@ -103,10 +103,20 @@ namespace PurrNet.Modules
             }
         }
 
+        private bool _initiatedHostOnce;
+
         private void OnSetSceneIds(PlayerID player, SetSceneIds data, bool asserver)
         {
             if (_manager.isHost)
+            {
+                if (!_initiatedHostOnce)
+                {
+                    _initiatedHostOnce = true;
+                    _manager.GetModule<HierarchyModule>(true).TriggerOnSpawnedEventForClient();
+                }
+
                 return;
+            }
             
             if (_sceneID != data.sceneId)
                 return;

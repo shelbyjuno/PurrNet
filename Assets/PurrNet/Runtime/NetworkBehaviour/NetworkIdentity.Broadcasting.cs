@@ -17,6 +17,19 @@ namespace PurrNet
         public uint hash;
         public Type[] types;
         public object[] values;
+        public RPCInfo info;
+        
+        [UsedImplicitly]
+        public void SetPlayerId(PlayerID player, int index)
+        {
+            values[index] = player;
+        }
+        
+        [UsedImplicitly]
+        public void SetInfo(int index)
+        {
+            values[index] = info;
+        }
         
         [UsedImplicitly]
         public void Read(int genericIndex, int index)
@@ -37,10 +50,10 @@ namespace PurrNet
     
     public partial class NetworkIdentity : IPlayerBroadcaster
     {
-        static readonly Dictionary<uint, MethodInfo> _rpcMethods = new ();
+        static readonly Dictionary<string, MethodInfo> _rpcMethods = new ();
         
         [UsedImplicitly]
-        protected static void ReadGenericHeader(NetworkStream stream, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
+        protected static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
         {
             uint hash = 0;
 
@@ -49,7 +62,7 @@ namespace PurrNet
                 stream = stream,
                 types = new Type[genericCount],
                 values = new object[paramCount],
-                hash = 0
+                info = info
             };
             
             for (int i = 0; i < genericCount; i++)
@@ -57,15 +70,14 @@ namespace PurrNet
                 stream.Serialize<uint>(ref hash);
                 var type = Hasher.ResolveType(hash);
 
-                rpcHeader.hash ^= hash;
                 rpcHeader.types[i] = type;
             }
         }
     
         [UsedImplicitly]
         protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
-        {
-            if (_rpcMethods.TryGetValue(rpcHeader.hash, out var genericMethod))
+        { 
+            if (_rpcMethods.TryGetValue(methodName, out var genericMethod))
             {
                 genericMethod.Invoke(this, rpcHeader.values);
                 return;
@@ -80,7 +92,7 @@ namespace PurrNet
             }
 
             var gmethod = method.MakeGenericMethod(rpcHeader.types);
-            _rpcMethods.Add(rpcHeader.hash, gmethod);
+            _rpcMethods.Add(methodName, gmethod);
             gmethod.Invoke(this, rpcHeader.values);
         }
         

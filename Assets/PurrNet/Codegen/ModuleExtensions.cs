@@ -66,6 +66,22 @@ namespace PurrNet.Codegen
             return GetMethod(type.Resolve(), name, isGeneric);
         }
         
+        public static FieldDefinition GetField(this TypeDefinition type, string name)
+        {
+            for (var i = 0; i < type.Fields.Count; i++)
+            {
+                if (type.Fields[i].Name == name)
+                    return type.Fields[i];
+            }
+            
+            throw new Exception($"Field {name} not found on type {type.FullName}");
+        }
+
+        public static FieldDefinition GetField(this TypeReference type, string name)
+        {
+            return GetField(type.Resolve(), name);
+        }
+        
         public static MethodDefinition GetMethod(this TypeDefinition type, string name, bool isGeneric = false)
         {
             for (var i = 0; i < type.Methods.Count; i++)

@@ -216,11 +216,11 @@ namespace PurrNet
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
+            modules.AddModule(playersManager);
+            modules.AddModule(playersBroadcast);
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
-            modules.AddModule(playersManager);
-            modules.AddModule(playersBroadcast);
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
             modules.AddModule(ownershipModule);
