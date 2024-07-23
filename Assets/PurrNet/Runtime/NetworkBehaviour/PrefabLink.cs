@@ -1,3 +1,5 @@
+using PurrNet.Logging;
+using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet
@@ -15,7 +17,7 @@ namespace PurrNet
             _muteAutoSpawn = true;
         }
 
-        void Awake()
+        void Start()
         {
             if (_muteAutoSpawn)
             {
@@ -26,18 +28,12 @@ namespace PurrNet
             var networkManager = NetworkManager.main;
             
             if (!networkManager)
-            {
-                gameObject.SetActive(false);
                 return;
-            }
             
             bool anyConnected = networkManager.isClient || networkManager.isServer;
             
             if (!anyConnected)
-            {
-                gameObject.SetActive(false);
                 return;
-            }
 
             var prefab = networkManager.GetPrefabFromGuid(_guid);
 

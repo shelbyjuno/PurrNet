@@ -117,7 +117,7 @@ namespace PurrNet.Transports
             TriggerConnectionStateEvent(false);
 
             if (wasConnected)
-                onDisconnected?.Invoke(new Connection(0), false);
+                onDisconnected?.Invoke(new Connection(0), DisconnectReason.ClientRequest, false);
             
             clientState = ConnectionState.Disconnected;
             TriggerConnectionStateEvent(false);
@@ -186,7 +186,7 @@ namespace PurrNet.Transports
                 }
             }
             
-            onDisconnected?.Invoke(conn, true);
+            onDisconnected?.Invoke(conn, DisconnectReason.ClientRequest,true);
         }
 
         private void OnClientConnectedToServer(int clientId)

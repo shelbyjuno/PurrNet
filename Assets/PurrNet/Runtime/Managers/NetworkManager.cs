@@ -21,6 +21,7 @@ namespace PurrNet
         ServerBuild = 8
     }
     
+    [DefaultExecutionOrder(-999)]
     public sealed class NetworkManager : MonoBehaviour
     {
         [UsedImplicitly]
@@ -307,7 +308,7 @@ namespace PurrNet
             else _clientModules.OnNewConnection(conn, false);
         }
 
-        private void OnLostConnection(Connection conn, bool asserver)
+        private void OnLostConnection(Connection conn, DisconnectReason reason, bool asserver)
         {
             if (asserver)
                  _serverModules.OnLostConnection(conn, true);

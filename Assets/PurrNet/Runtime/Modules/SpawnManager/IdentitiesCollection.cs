@@ -46,5 +46,16 @@ namespace PurrNet
             
             _identities.Clear();
         }
+
+        public void DestroyAllNonSceneObjects()
+        {
+            foreach (var identity in _identities.Values)
+            {
+                if (identity && identity.gameObject && identity.prefabId != -1)
+                    Object.Destroy(identity.gameObject);
+            }
+            
+            _identities.Clear();
+        }
     }
 }

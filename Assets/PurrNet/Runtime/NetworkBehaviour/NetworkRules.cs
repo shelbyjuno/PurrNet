@@ -6,11 +6,19 @@ namespace PurrNet
     [CreateAssetMenu(fileName = "NetworkRules", menuName = "PurrNet/Network Rules", order = -201)]
     public class NetworkRules : ScriptableObject
     {
+        [Tooltip("Who can spawn identities")]
         public ConnectionAuth spawnAuth;
+        [Tooltip("Who gains ownership upon spawning of the identity")]
         public DefaultOwner defaultOwner;
+        [Tooltip("If ownership should transfer to all identities of the GameObject")]
+        public bool fullObjectOwnership;
+        [Tooltip("Who can modify syncvars")]
         public ConnectionAuth syncVarAuth;
+        [Tooltip("Who can send ObserversRpc and TargetRpc")]
         public ConnectionAuth clientRpcAuth;
+        [Tooltip("Who can transfer ownership of objects")]
         public ConnectionAuth ownershipTransferAuth;
+        [Tooltip("Who can synchronize parent nesting of objects")]
         public ActionAuth syncParentAuth;
         
         [Flags]

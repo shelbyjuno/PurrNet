@@ -44,7 +44,7 @@ namespace PurrNet.Transports
             onDataReceived?.Invoke(index, conn, data, asserver);
         }
 
-        private void OnDisconnected(Connection conn, bool asserver)
+        private void OnDisconnected(Connection conn, DisconnectReason reason, bool asserver)
         {
             onDisconnected?.Invoke(index, conn, asserver);
         }
@@ -247,13 +247,13 @@ namespace PurrNet.Transports
                     _router.Remove(pair);
                     _connections.Remove(target);
 
-                    onDisconnected?.Invoke(target, true);
+                    onDisconnected?.Invoke(target, DisconnectReason.Timeout, true);
                 }
                 else Debug.LogError($"Connection {conn} coming from transport {transportidx} is not routed.");
             }
             else
             {
-                onDisconnected?.Invoke(conn, false);
+                onDisconnected?.Invoke(conn, DisconnectReason.Timeout,false);
             }
         }
 
