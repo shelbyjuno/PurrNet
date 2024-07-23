@@ -1,17 +1,40 @@
+using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Utils;
 using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
-    protected override void OnSpawned()
+    protected override void OnSpawned(bool asServer)
     {
-        ServerRPCMethod();
+        Hasher.PrepareType<int>();
+        Hasher.PrepareType<uint>();
+        Hasher.PrepareType<double>();
+        Hasher.PrepareType<string>();
+        
+        if (!asServer)
+        {
+            ServerRPCMethodGeneric(5.6969);
+        }
+    }
+    
+        
+    [ServerRPC]
+    private void ServerRPCMethodGeneric<T>(T data, RPCInfo info = default)
+    {
+        SendToObservers("FOR ALL: " + data);
+        SendToTarget(info.sender, data);
     }
 
-    [ServerRPC]
-    private void ServerRPCMethod()
+    [ObserversRPC]
+    private void SendToObservers(string message)
     {
-        // This method will be called on the server
-        Debug.Log("ServerRPCMethod called on server"); 
+        Debug.Log("All: " + message);
+    }
+    
+    [TargetRPC]
+    private void SendToTarget<T>([UsedImplicitly] PlayerID target, T message)
+    {
+        Debug.Log("Targeted: " + message + " " + typeof(T).Name);
     }
 }

@@ -9,6 +9,8 @@ namespace PurrNet
         
         private int _nextId;
         
+        public IEnumerable<NetworkIdentity> collection => _identities.Values;
+
         public bool TryGetIdentity(int id, out NetworkIdentity identity)
         {
             return _identities.TryGetValue(id, out identity);

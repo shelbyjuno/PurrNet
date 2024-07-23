@@ -154,7 +154,7 @@ namespace PurrNet
 
         private void Reset()
         {
-            if (TryGetComponent(out GenericTransport t) || transport)
+            if (TryGetComponent(out GenericTransport _) || transport)
                 return;
             transport = gameObject.AddComponent<UDPTransport>();
         }
@@ -179,7 +179,7 @@ namespace PurrNet
             if (TryGetModule(out T module, asServer))
                 return module;
             
-            throw new InvalidOperationException(PurrLogger.FormatMessage($"Module {typeof(T).Name} not found."));
+            throw new InvalidOperationException(PurrLogger.FormatMessage($"Module {typeof(T).Name} not found - asServer : {asServer}."));
         }
 
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
@@ -211,23 +211,22 @@ namespace PurrNet
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
+            
+            var rpcModule = new RPCModule(playersManager, hierarchyModule);
 
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
-            modules.AddModule(hierarchyModule);
-
+            modules.AddModule(playersManager);
+            modules.AddModule(playersBroadcast);
             modules.AddModule(tickManager);
             modules.AddModule(broadcastModule);
             modules.AddModule(networkCookies);
-            
-            modules.AddModule(playersManager);
-            modules.AddModule(playersBroadcast);
-            
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
-            
             modules.AddModule(ownershipModule);
+            modules.AddModule(rpcModule);
+            modules.AddModule(hierarchyModule);
         }
 
         static bool ShouldStart(StartFlags flags)

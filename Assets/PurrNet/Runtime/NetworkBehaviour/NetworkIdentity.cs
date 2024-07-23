@@ -6,7 +6,7 @@ using UnityEngine;
 namespace PurrNet
 {
     [DefaultExecutionOrder(-1000)]
-    public class NetworkIdentity : MonoBehaviour
+    public partial class NetworkIdentity : MonoBehaviour
     {
         /// <summary>
         /// The prefab id of this object;
@@ -72,6 +72,9 @@ namespace PurrNet
         }
         
         public NetworkManager networkManager { get; private set; }
+        
+        public PlayerID localPlayer => networkManager.TryGetModule<PlayersManager>(networkManager.isServer, out var module) && module.localPlayerId.HasValue 
+            ? module.localPlayerId.Value : default;
 
         /// <summary>
         /// True if the owner is propagated to children automatically.
@@ -98,10 +101,6 @@ namespace PurrNet
         
         protected virtual void OnDespawned(bool asServer) { }
         
-        protected virtual void OnSpawned() { }
-        
-        protected virtual void OnDespawned() { }
-
         private void OnActivated(bool active)
         {
             if (_ignoreNextActivation)
@@ -157,20 +156,15 @@ namespace PurrNet
             }
             
             networkManager = manager;
-
-            if (manager.isHost)
+            
+            if (networkManager.isHost)
             {
-                if (asServer)
-                {
-                    OnSpawned(true);
-                    OnSpawned(false);
-                    OnSpawned();
-                }
+                OnSpawned(true);
+                OnSpawned(false);
             }
             else
             {
                 OnSpawned(asServer);
-                OnSpawned();
             }
         }
 
@@ -213,12 +207,10 @@ namespace PurrNet
                 {
                     OnDespawned(true);
                     OnDespawned(false);
-                    OnDespawned();
                 }
                 else
                 {
                     OnDespawned(networkManager.isServer);
-                    OnDespawned();
                 }
             }
             
@@ -236,6 +228,16 @@ namespace PurrNet
         internal void IgnoreNextEnableCallback()
         {
             _ignoreNextEnable = true;
+        }
+
+        internal void TriggetClientSpawnEvent()
+        {
+            OnSpawned(false);
+        }
+        
+        internal void TriggetClientDespawnEvent()
+        {
+            OnDespawned(false);
         }
     }
 }

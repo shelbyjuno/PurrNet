@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PurrNet.Packets;
 
 namespace PurrNet.Transports
 {

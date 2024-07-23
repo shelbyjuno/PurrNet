@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using PurrNet.Modules;
 using PurrNet.Transports;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -32,6 +33,12 @@ namespace PurrNet
         
         public bool TryGetModule<T>(out T module) where T : INetworkModule
         {
+            if (_modules == null)
+            {
+                module = default;
+                return false;
+            }
+            
             for (int i = 0; i < _modules.Count; i++)
             {
                 if (_modules[i] is T mod)

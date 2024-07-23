@@ -2,6 +2,8 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
+using PurrNet.Logging;
+using PurrNet.Transports;
 using UnityEngine.Scripting;
 
 namespace PurrNet.Packets
@@ -14,16 +16,30 @@ namespace PurrNet.Packets
         void Serialize(NetworkStream packer);
     }
     
-    public readonly ref struct NetworkStream
+    public readonly struct NetworkStream
     {
-        readonly IByteBuffer _stream;
+        readonly ByteBuffer _stream;
         
         public readonly bool isReading;
         
-        public NetworkStream(IByteBuffer stream, bool isReading)
+        public ByteBuffer buffer => _stream;
+        
+        public int pointer => _stream.pointer;
+        
+        public NetworkStream(ByteBuffer stream, bool isReading)
         {
             _stream = stream;
             this.isReading = isReading;
+        }
+        
+        public ByteData Read(int length)
+        {
+            return _stream.Read(length);
+        }
+        
+        public void Write(ByteData data)
+        {
+            _stream.Write(data);
         }
         
         public void Serialize(ref INetworkedData data)
@@ -102,6 +118,17 @@ namespace PurrNet.Packets
         }
         
         public void Serialize(Type type, [CanBeNull] ref object data)
+        {
+            if (isReading)
+            {
+                var span = _stream.GetSpan();
+                int consumed = MemoryPackSerializer.Deserialize(type, span, ref data);
+                _stream.Advance(consumed);
+            }
+            else MemoryPackSerializer.Serialize(_stream, data);
+        }
+        
+        public void SerializeWithType(Type type, [CanBeNull] ref object data)
         {
             if (isReading)
             {
@@ -275,6 +302,11 @@ namespace PurrNet.Packets
                 return ~(value << 1) | 1;
             return value << 1;
         }
+
+        public void ResetPointer()
+        {
+            _stream.ResetPointer();
+        }
     }
 
 #pragma warning disable CS9074
@@ -296,6 +328,8 @@ namespace PurrNet.Packets
             {
                 bool isNull = value == null;
                 writer.WriteUnmanaged(isNull);
+                
+                PurrLogger.Log($"Serializing {typeof(T).Name} with isNull: {isNull}");
                 
                 if (isNull) return;
             }
