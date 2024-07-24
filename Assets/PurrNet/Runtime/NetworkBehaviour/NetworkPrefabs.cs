@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using PurrNet.Logging;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using PurrNet.Utils;
 using UnityEditor;
@@ -18,6 +19,7 @@ namespace PurrNet
 #endif
     {
         public bool autoGenerate = true;
+        public bool networkOnly = true;
         public Object folder;
         public List<GameObject> prefabs = new();
 
@@ -160,19 +162,25 @@ namespace PurrNet
             string[] guids = AssetDatabase.FindAssets("t:GameObject", new[] { folderPath });
             for (var i = 0; i < guids.Length; i++)
             {
-              var guid = guids[i];
-              string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-              var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                var guid = guids[i];
+                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+              
+                if (prefab)
+                {
+                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}", 0.1f + 0.7f * ((i + 1f) / guids.Length));
 
-              if (prefab)
-              {
-                  EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}", 0.1f + 0.7f * ((i + 1f) / guids.Length));
+                    if (!networkOnly)
+                    {
+                        foundPrefabs.Add(prefab);
+                        continue;
+                    }
+                    
+                    prefab.GetComponentsInChildren(true, _identities);
 
-                  prefab.GetComponentsInChildren(true, _identities);
-
-                  if (_identities.Count > 0)
-                      foundPrefabs.Add(prefab);
-              }
+                    if (_identities.Count > 0)
+                        foundPrefabs.Add(prefab);
+                }
             }
 
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Sorting...", 0.9f);

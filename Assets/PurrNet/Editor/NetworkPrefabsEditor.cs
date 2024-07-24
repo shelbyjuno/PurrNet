@@ -62,6 +62,28 @@ namespace PurrNet
 
                 EditorUtility.SetDirty(networkPrefabs);
             }
+            
+            GUI.color = Color.white;
+            if (networkPrefabs.networkOnly)
+            {
+                GUI.color = Color.green;
+            }
+
+            if (GUILayout.Button(networkPrefabs.networkOnly ? "Networked only: Enabled" : "Networked only: Disabled",
+                    GUILayout.Width(1), GUILayout.ExpandWidth(true)))
+            {
+                networkPrefabs.networkOnly = !networkPrefabs.networkOnly;
+                
+                if (networkPrefabs.autoGenerate)
+                {
+                    networkPrefabs.Generate();
+                    serializedObject.ApplyModifiedProperties(); // Update the serialized object after generating
+                    prefabs = serializedObject.FindProperty("prefabs");
+                }
+                EditorUtility.SetDirty(networkPrefabs);
+            }
+
+            GUILayout.EndHorizontal();
 
             GUI.color = Color.white;
 
@@ -72,9 +94,7 @@ namespace PurrNet
                 serializedObject.ApplyModifiedProperties();
                 prefabs = serializedObject.FindProperty("prefabs");
             }
-
-            GUILayout.EndHorizontal();
-
+            
             GUILayout.Space(10);
 
             EditorGUI.BeginDisabledGroup(networkPrefabs.autoGenerate);
