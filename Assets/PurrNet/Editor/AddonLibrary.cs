@@ -1,10 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using PurrNet.Logging;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Serialization;
 
 namespace PurrNet.Editor
 {
@@ -82,7 +86,7 @@ namespace PurrNet.Editor
         {
             if (_request == null)
             {
-                _request = UnityWebRequest.Get("https://pebblesgames.com/wp-content/PurrNetAddons.json");
+                _request = UnityWebRequest.Get("https://pebblesgames.com/wp-content/PurrNet/PurrNetAddons.json");
                 _request.SendWebRequest();
             }
             else if (_request.isDone)
@@ -157,10 +161,23 @@ namespace PurrNet.Editor
 
                         EditorGUILayout.EndHorizontal();
 
-                        if (GUILayout.Button("Install"))
+                        if (ExistsInProject(addon))
                         {
-                            AddAddon(addon);
+                            GUIStyle redButtonStyle = new GUIStyle(GUI.skin.button);
+                            redButtonStyle.normal.textColor = Color.red;
+                            if (GUILayout.Button("Remove", redButtonStyle))
+                            {
+                                RemoveAddon(addon);
+                            }
                         }
+                        else
+                        {
+                            if (GUILayout.Button("Install"))
+                            {
+                                AddAddon(addon);
+                            }
+                        }
+                        
 
                         EditorGUILayout.EndVertical();
 
@@ -176,10 +193,15 @@ namespace PurrNet.Editor
         private void AddAddon(Addon addon)
         {
             // Implement the logic to update the manifest file with the given gitUrl
-            if(addon.asManifest)
-                Debug.Log($"Added {addon.name} to the manifest file");
+            if (addon.asManifest)
+                AddAddon_Manifest(addon);
             else
-                Debug.Log($"Added {addon.name} to the assets folder");
+                AddAddon_Assets(addon);
+        }
+
+        private void RemoveAddon(Addon addon)
+        {
+            
         }
 
         private void HandleWaiting(string message)
@@ -194,6 +216,43 @@ namespace PurrNet.Editor
             EditorGUILayout.HelpBox("Failed to fetch addons: " + error, MessageType.Error);
         }
 
+        private bool ExistsInProject(Addon addon)
+        {
+            return false;
+        }
+        
+        private void AddAddon_Manifest(Addon addon)
+        {
+            string manifestPath = "Packages/manifest.json";
+            var manifest = JObject.Parse(File.ReadAllText(manifestPath));
+            var dependencies = manifest["dependencies"] as JObject;
+
+            string parsedName = addon.name.Replace(" ", "").ToLower();
+            dependencies["com.purrnet."+parsedName] = addon.projectUrl;
+            File.WriteAllText(manifestPath, manifest.ToString());
+        }
+        
+        private void AddAddon_Assets(Addon addon)
+        {
+            string parsedName = addon.name.Replace(" ", "").ToLower();
+            string tempPath = Path.Combine(Path.GetTempPath(), parsedName + ".unitypackage");
+
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFile(addon.projectUrl, tempPath);
+            }
+
+            if (File.Exists(tempPath))
+            {
+                AssetDatabase.ImportPackage(tempPath, false);
+                File.Delete(tempPath);
+            }
+            else
+            {
+                PurrLogger.LogError($"Couldn't get the {addon.name} package and install it."); 
+            }
+        }
+
         [System.Serializable]
         private class Addon
         {
@@ -202,7 +261,7 @@ namespace PurrNet.Editor
             public string version;
             public string author;
             public bool asManifest;
-            public string gitUrl;
+            public string projectUrl;
             public string imageUrl;
             public Texture2D icon;
         }
