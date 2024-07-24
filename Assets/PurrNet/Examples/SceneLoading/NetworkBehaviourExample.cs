@@ -1,5 +1,6 @@
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -19,8 +20,15 @@ public class NetworkBehaviourExample : NetworkBehaviour
     }
     
         
-    [ServerRPC]
+    [ServerRPC(Channel.Unreliable, true)]
     private void ServerRPCMethodGeneric<T>(T data, RPCInfo info = default)
+    {
+        SendToObservers("FOR ALL: " + data);
+        SendToTarget(info.sender, data);
+    }
+            
+    [ServerRPC(runLocally: true)]
+    private void ServerRPCMethodGeneric2<T>(T data, RPCInfo info = default)
     {
         SendToObservers("FOR ALL: " + data);
         SendToTarget(info.sender, data);
