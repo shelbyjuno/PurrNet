@@ -25,13 +25,15 @@ namespace PurrNet.Editor
         private static int imageWidth = 100;
         private static int sectionOneWidth = 250;
         private static int sectionTwoWidth = 100;
+
+        private GUIStyle wrapStyle;
         
         [MenuItem("Window/PurrNet Addon Library")]
         public static void ShowWindow()
         {
             _fetchedAddons = false;
             _imageRequests.Clear();
-            
+         
             int width = (imageWidth + sectionOneWidth + sectionTwoWidth) * 2;
             var window = GetWindow<AddonLibrary>("PurrNet Addon Library");
             window.minSize = new Vector2(width, 300);
@@ -41,6 +43,8 @@ namespace PurrNet.Editor
 
         private void OnGUI()
         {
+            wrapStyle = new GUIStyle(GUI.skin.label);
+            wrapStyle.wordWrap = true;
             if (_addons.Count <= 0 && !_fetchedAddons)
             {
                 HandleGettingAddons();
@@ -150,34 +154,18 @@ namespace PurrNet.Editor
 
                         EditorGUILayout.BeginVertical(GUILayout.MaxWidth(sectionOneWidth));
                         EditorGUILayout.LabelField(addon.name, EditorStyles.boldLabel, GUILayout.MaxWidth(sectionOneWidth));
-                        EditorGUILayout.LabelField(addon.description, GUILayout.MaxWidth(sectionOneWidth));
+                        EditorGUILayout.LabelField(addon.description, wrapStyle, GUILayout.MaxWidth(sectionOneWidth));
                         EditorGUILayout.EndVertical();
 
                         EditorGUILayout.BeginVertical(GUILayout.MaxWidth(sectionTwoWidth));
                         EditorGUILayout.LabelField($"Version {addon.version}", GUILayout.MaxWidth(sectionTwoWidth));
-                        EditorGUILayout.LabelField("Author:", GUILayout.MaxWidth(sectionTwoWidth));
+                        EditorGUILayout.LabelField("Author:", wrapStyle, GUILayout.MaxWidth(sectionTwoWidth));
                         EditorGUILayout.LabelField(addon.author, GUILayout.MaxWidth(sectionTwoWidth));
                         EditorGUILayout.EndVertical();
 
                         EditorGUILayout.EndHorizontal();
 
-                        if (ExistsInProject(addon))
-                        {
-                            GUIStyle redButtonStyle = new GUIStyle(GUI.skin.button);
-                            redButtonStyle.normal.textColor = Color.red;
-                            if (GUILayout.Button("Remove", redButtonStyle))
-                            {
-                                RemoveAddon(addon);
-                            }
-                        }
-                        else
-                        {
-                            if (GUILayout.Button("Install"))
-                            {
-                                AddAddon(addon);
-                            }
-                        }
-                        
+                        HandleInstallButton(addon);
 
                         EditorGUILayout.EndVertical();
 
@@ -190,6 +178,31 @@ namespace PurrNet.Editor
             }
         }
 
+        private void HandleInstallButton(Addon addon)
+        {
+            if (!ExistsInProject(addon))
+            {
+                if (GUILayout.Button("Install"))
+                    AddAddon(addon);
+                return;
+            }
+            
+            if (addon.asManifest)
+            {
+                GUIStyle redButtonStyle = new GUIStyle(GUI.skin.button);
+                redButtonStyle.normal.textColor = Color.red;
+                if (GUILayout.Button("Remove", redButtonStyle))
+                    RemoveFromManifest(addon);
+            }
+            else
+            {
+                GUI.enabled = false;
+                if (GUILayout.Button("Already installed"))
+                    AddAddon(addon);
+                GUI.enabled = true;
+            }
+        }
+
         private void AddAddon(Addon addon)
         {
             // Implement the logic to update the manifest file with the given gitUrl
@@ -197,11 +210,6 @@ namespace PurrNet.Editor
                 AddAddon_Manifest(addon);
             else
                 AddAddon_Assets(addon);
-        }
-
-        private void RemoveAddon(Addon addon)
-        {
-            
         }
 
         private void HandleWaiting(string message)
@@ -218,7 +226,33 @@ namespace PurrNet.Editor
 
         private bool ExistsInProject(Addon addon)
         {
+            if (addon.asManifest)
+            {
+                string manifestPath = "Packages/manifest.json";
+                var manifest = JObject.Parse(File.ReadAllText(manifestPath));
+                var dependencies = manifest["dependencies"] as JObject;
+
+                string parsedName = "com.purrnet." + addon.name.Replace(" ", "").ToLower();
+                return dependencies.ContainsKey(parsedName) && dependencies[parsedName].ToString() == addon.projectUrl;
+            }
+
             return false;
+        }
+        
+        private void RemoveFromManifest(Addon addon)
+        {
+            string manifestPath = "Packages/manifest.json";
+            var manifest = JObject.Parse(File.ReadAllText(manifestPath));
+            var dependencies = manifest["dependencies"] as JObject;
+
+            string parsedName = "com.purrnet." + addon.name.Replace(" ", "").ToLower();
+    
+            if (dependencies.ContainsKey(parsedName))
+            {
+                dependencies.Remove(parsedName);
+                File.WriteAllText(manifestPath, manifest.ToString());
+                AssetDatabase.Refresh(); 
+            }
         }
         
         private void AddAddon_Manifest(Addon addon)
@@ -230,6 +264,7 @@ namespace PurrNet.Editor
             string parsedName = addon.name.Replace(" ", "").ToLower();
             dependencies["com.purrnet."+parsedName] = addon.projectUrl;
             File.WriteAllText(manifestPath, manifest.ToString());
+            AssetDatabase.Refresh();
         }
         
         private void AddAddon_Assets(Addon addon)
@@ -244,12 +279,15 @@ namespace PurrNet.Editor
 
             if (File.Exists(tempPath))
             {
-                AssetDatabase.ImportPackage(tempPath, false);
+                AssetDatabase.ImportPackage(tempPath, true);
                 File.Delete(tempPath);
+                
+                EditorUtility.FocusProjectWindow();
+                Selection.activeObject = AssetDatabase.LoadMainAssetAtPath("Assets");
             }
             else
             {
-                PurrLogger.LogError($"Couldn't get the {addon.name} package and install it."); 
+                PurrLogger.LogError($"Couldn't get the {addon.name} package and install it or delete the temp file."); 
             }
         }
 
