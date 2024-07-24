@@ -17,6 +17,10 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             ServerRPCMethodGeneric(5.6969);
         }
+        else
+        {
+            SendToObservers("Server is ready");
+        }
     }
     
         
@@ -34,7 +38,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         SendToTarget(info.sender, data);
     }
 
-    [ObserversRPC]
+    [ObserversRPC(Channel.Unreliable, bufferLast: true)]
     private void SendToObservers(string message)
     {
         Debug.Log("All: " + message);

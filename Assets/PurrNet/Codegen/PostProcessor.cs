@@ -24,13 +24,6 @@ namespace PurrNet.Codegen
         public bool bufferLast;
         public bool requireServer;
     }
-    
-    public enum RPCType
-    {
-        ServerRPC,
-        ObserversRPC,
-        TargetRPC
-    }
         
     public enum SpecialParamType
     {
@@ -450,8 +443,10 @@ namespace PurrNet.Codegen
 
             var paramCount = newMethod.Parameters.Count;
             
-            /*if (methodRpc.details.runLocally)
+            if (methodRpc.details.runLocally)
             {
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+
                 for (int i = 0; i < paramCount; ++i)
                 {
                     var param = newMethod.Parameters[i];
@@ -459,8 +454,7 @@ namespace PurrNet.Codegen
                 }
                 
                 code.Append(Instruction.Create(OpCodes.Call, method));
-                return newMethod;
-            }*/
+            }
             
             code.Append(Instruction.Create(OpCodes.Ldc_I4, 0));
             code.Append(Instruction.Create(OpCodes.Call, allocStreamMethod));
@@ -515,8 +509,12 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Call, getSceneId.GetMethod.Import(module))); // sceneId
             code.Append(Instruction.Create(OpCodes.Ldc_I4, id)); // rpcId
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable)); // stream
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.details.type));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.bufferLast ? 1 : 0));
             code.Append(Instruction.Create(OpCodes.Call, buildRawRPCMethod));
             code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcData
+            
+            int rpcChannel = (int)methodRpc.details.channel;
 
             switch (methodRpc.details.type)
             {
@@ -528,7 +526,7 @@ namespace PurrNet.Codegen
 
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-                    code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, rpcChannel));
                     code.Append(Instruction.Create(OpCodes.Call, sendToServerMethodGeneric));
                     break;
                 }
@@ -541,7 +539,7 @@ namespace PurrNet.Codegen
                     
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-                    code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, rpcChannel));
                     code.Append(Instruction.Create(OpCodes.Call, sendToAllMethodGeneric));
                     break;
                 }
@@ -555,7 +553,7 @@ namespace PurrNet.Codegen
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldarg_1)); // player
                     code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-                    code.Append(Instruction.Create(OpCodes.Ldc_I4, 2)); // default channel
+                    code.Append(Instruction.Create(OpCodes.Ldc_I4, rpcChannel));
                     code.Append(Instruction.Create(OpCodes.Call, sendMethodGeneric));
                     break;
                 }
@@ -577,6 +575,8 @@ namespace PurrNet.Codegen
             {
                 foreach (var method in type.Methods)
                 {
+                    if (method == @new || method.GetElementMethod() == @new) continue;
+                    
                     if (method.Body == null) continue;
                     
                     var processor = method.Body.GetILProcessor();
