@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -8,19 +7,23 @@ using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.Serialization;
 
 namespace PurrNet.Editor
 {
     public class AddonLibrary : EditorWindow
     {
         private static List<Addon> _addons = new();
+        private static List<Addon> _exampleAddons = new();
+        private static List<Addon> _transportAddons = new();
+        private static List<Addon> _toolAddons = new();
+        private static List<Addon> _systemAddons = new();
         private static List<UnityWebRequest> _imageRequests = new();
 
         private static bool _fetchedAddons;
         private UnityWebRequest _request;
         private Vector2 scrollViewPosition;
         private Texture2D defaultIcon;
+        private int selectedTab = 0;
 
         private static int imageWidth = 100;
         private static int sectionOneWidth = 250;
@@ -73,8 +76,38 @@ namespace PurrNet.Editor
                 }
             }
             
+            List<string> availableTabs = new List<string>();
+
+            if (_exampleAddons.Count > 0) availableTabs.Add("Examples");
+            if (_transportAddons.Count > 0) availableTabs.Add("Transports");
+            if (_toolAddons.Count > 0) availableTabs.Add("Tools");
+            if (_systemAddons.Count > 0) availableTabs.Add("Systems");
+            availableTabs.Add("All");
+
+            selectedTab = GUILayout.Toolbar(selectedTab, availableTabs.ToArray());
+
             scrollViewPosition = EditorGUILayout.BeginScrollView(scrollViewPosition);
-            HandleAddons();
+
+            //Debug.Log($"example count: {_exampleAddons.Count} | transport count: {_transportAddons.Count} | tool count: {_toolAddons.Count} | system count: {_systemAddons.Count} | all count: {_addons.Count}");
+            switch (availableTabs[selectedTab])
+            {
+                case "Examples":
+                    HandleAddons(_exampleAddons);
+                    break;
+                case "Transports":
+                    HandleAddons(_transportAddons);
+                    break;
+                case "Tools":
+                    HandleAddons(_toolAddons);
+                    break;
+                case "Systems":
+                    HandleAddons(_systemAddons);
+                    break;
+                case "All":
+                    HandleAddons(_addons);
+                    break;
+            }
+
             EditorGUILayout.EndScrollView();
         }
 
@@ -119,12 +152,29 @@ namespace PurrNet.Editor
 
                     foreach (var addon in wrapper.addons)
                     {
+                        
                         // Synchronously download the image
-                        var imageRequest = UnityWebRequestTexture.GetTexture(addon.imageUrl);
+                        var imageRequest = UnityWebRequestTexture.GetTexture(addon.imageUrl); 
                         imageRequest.SendWebRequest();
                         _imageRequests.Add(imageRequest);
                         addon.icon = defaultIcon;
                         _addons.Add(addon);
+
+                        switch (addon.category)
+                        {
+                            case "Example":
+                                _exampleAddons.Add(addon);
+                                break;
+                            case "Transport":
+                                _transportAddons.Add(addon);
+                                break;
+                            case "Tool":
+                                _toolAddons.Add(addon);
+                                break;
+                            case "System":
+                                _systemAddons.Add(addon);
+                                break;
+                        }
                     }
 
                     _fetchedAddons = true;
@@ -132,17 +182,17 @@ namespace PurrNet.Editor
             }
         }
 
-        private void HandleAddons()
+        private void HandleAddons(List<Addon> addonsToHandle)
         {
-            for (var i = 0; i < _addons.Count; i += 2)
+            for (var i = 0; i < addonsToHandle.Count; i += 2)
             {
                 EditorGUILayout.BeginHorizontal(); // Begin a new row
 
                 for (var j = 0; j < 2; j++)
                 {
-                    if (i + j < _addons.Count)
+                    if (i + j < addonsToHandle.Count)
                     {
-                        var addon = _addons[i + j]; 
+                        var addon = addonsToHandle[i + j]; 
                         EditorGUILayout.BeginVertical("box");
 
                         EditorGUILayout.BeginHorizontal();
@@ -300,6 +350,7 @@ namespace PurrNet.Editor
             public string author;
             public bool asManifest;
             public string projectUrl;
+            public string category;
             public string imageUrl;
             public Texture2D icon;
         }
