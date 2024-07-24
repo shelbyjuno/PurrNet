@@ -14,6 +14,13 @@ namespace PurrNet
         public PlayerID sender;
     }
     
+    public enum RPCType
+    {
+        ServerRPC,
+        ObserversRPC,
+        TargetRPC
+    }
+    
     public partial struct RPCPacket : INetworkedData
     {
         public const string GET_ID_METHOD = nameof(GetID);
@@ -78,7 +85,7 @@ namespace PurrNet
         }
 
         [UsedImplicitly]
-        public static RPCPacket BuildRawRPC(int networkId, SceneID id, byte rpcId, NetworkStream data)
+        public static RPCPacket BuildRawRPC(int networkId, SceneID id, byte rpcId, NetworkStream data, RPCType type, bool bufferLast)
         {
             var rpc = new RPCPacket
             {
@@ -88,13 +95,15 @@ namespace PurrNet
                 data = data.buffer.ToByteData()
             };
             
+            PurrLogger.Log($"Built RPC {type}, buffer = {bufferLast}.");
+            
             return rpc;
         }
         
         readonly struct RPCKey
         {
-            public readonly IReflect type;
-            public readonly byte rpcId;
+            private readonly IReflect type;
+            private readonly byte rpcId;
             
             public override int GetHashCode()
             {
