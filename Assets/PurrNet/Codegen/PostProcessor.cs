@@ -6,6 +6,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -15,16 +16,6 @@ using UnityEngine.Scripting;
 
 namespace PurrNet.Codegen
 {
-    public struct RPCDetails
-    {
-        public RPCType type;
-        public Channel channel;
-        public bool runLocally;
-        public bool requireOwnership;
-        public bool bufferLast;
-        public bool requireServer;
-    }
-        
     public enum SpecialParamType
     {
         SenderId,
@@ -98,15 +89,16 @@ namespace PurrNet.Codegen
                         runLocally = runLocally,
                         requireOwnership = requireOwnership,
                         requireServer = false,
-                        bufferLast = false
+                        bufferLast = false,
+                        excludeOwner = false
                     };
                     rpcCount++;
                 }
                 else if (attribute.AttributeType.FullName == typeof(ObserversRPCAttribute).FullName)
                 {
-                    if (attribute.ConstructorArguments.Count != 4)
+                    if (attribute.ConstructorArguments.Count != 5)
                     {
-                        Error(messages, "ObserversRPC attribute must have 4 arguments", method);
+                        Error(messages, "ObserversRPC attribute must have 5 arguments", method);
                         return null;
                     }
                     
@@ -114,6 +106,7 @@ namespace PurrNet.Codegen
                     var runLocally = (bool)attribute.ConstructorArguments[1].Value;
                     var bufferLast = (bool)attribute.ConstructorArguments[2].Value;
                     var requireServer = (bool)attribute.ConstructorArguments[3].Value;
+                    var excludeOwner = (bool)attribute.ConstructorArguments[4].Value;
                     
                     data = new RPCDetails
                     {
@@ -122,7 +115,8 @@ namespace PurrNet.Codegen
                         runLocally = runLocally,
                         bufferLast = bufferLast,
                         requireServer = requireServer,
-                        requireOwnership = false
+                        requireOwnership = false,
+                        excludeOwner = excludeOwner
                     };
                     rpcCount++;
                 }
@@ -146,7 +140,8 @@ namespace PurrNet.Codegen
                         runLocally = runLocally,
                         bufferLast = bufferLast,
                         requireServer = requireServer,
-                        requireOwnership = false
+                        requireOwnership = false,
+                        excludeOwner = false
                     };
                     rpcCount++;
                 }
@@ -420,11 +415,15 @@ namespace PurrNet.Codegen
             var identityType = method.Module.GetTypeReference<NetworkIdentity>();
             var packetType = method.Module.GetTypeReference<RPCPacket>();
             var hahserType = method.Module.GetTypeReference<Hasher>();
+            var rpcDetails = method.Module.GetTypeReference<RPCDetails>();
 
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             var buildRawRPCMethod = rpcType.GetMethod("BuildRawRPC").Import(module);
             var freeStreamMethod = rpcType.GetMethod("FreeStream").Import(module);
+            var makeRpcDetails = rpcDetails.GetMethod("Make").Import(module);
+            var makeRpcDetailsTarget = rpcDetails.GetMethod("MakeWithTarget").Import(module);
+            var onRPCSentInternal = identityType.GetMethod("OnRPCSentInternal").Import(module);
             
             var getId = identityType.GetProperty("id");
             var getSceneId = identityType.GetProperty("sceneId");
@@ -435,25 +434,39 @@ namespace PurrNet.Codegen
             
             var streamVariable = new VariableDefinition(streamType);
             var rpcDataVariable = new VariableDefinition(packetType);
+            var rpcDetailsVariable = new VariableDefinition(rpcDetails);
             var typeHash = new VariableDefinition(module.TypeSystem.UInt32);
             
             newMethod.Body.Variables.Add(streamVariable);
             newMethod.Body.Variables.Add(rpcDataVariable);
+            newMethod.Body.Variables.Add(rpcDetailsVariable);
             newMethod.Body.Variables.Add(typeHash);
 
             var paramCount = newMethod.Parameters.Count;
             
             if (methodRpc.details.runLocally)
             {
-                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                MethodReference callMethod = method;
+                
+                if (method.HasGenericParameters)
+                {
+                    var genericInstanceMethod = new GenericInstanceMethod(method);
+                    
+                    for (var i = 0; i < method.GenericParameters.Count; i++)
+                        genericInstanceMethod.GenericArguments.Add(newMethod.GenericParameters[i]);
+                    
+                    callMethod = genericInstanceMethod;
+                }
+                
+                code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
 
                 for (int i = 0; i < paramCount; ++i)
                 {
                     var param = newMethod.Parameters[i];
-                    code.Append(Instruction.Create(OpCodes.Ldarg, param));
+                    code.Append(Instruction.Create(OpCodes.Ldarg, param)); // param
                 }
-                
-                code.Append(Instruction.Create(OpCodes.Call, method));
+
+                code.Append(Instruction.Create(OpCodes.Call, callMethod)); // Call original method
             }
             
             code.Append(Instruction.Create(OpCodes.Ldc_I4, 0));
@@ -503,16 +516,43 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Call, serializeGenericMethod));
             }
 
+            // NetworkStream stream, RPCDetails details, int rpcId, NetworkIdentity identity
             code.Append(Instruction.Create(OpCodes.Ldarg_0));
             code.Append(Instruction.Create(OpCodes.Call, getId.GetMethod.Import(module))); // id
             code.Append(Instruction.Create(OpCodes.Ldarg_0));
             code.Append(Instruction.Create(OpCodes.Call, getSceneId.GetMethod.Import(module))); // sceneId
             code.Append(Instruction.Create(OpCodes.Ldc_I4, id)); // rpcId
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable)); // stream
+            
+            // RPCDetails Make(RPCType type, Channel channel, bool runLocally, bool bufferLast, bool requireServer, bool excludeOwner)
             code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.details.type));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.details.channel));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.runLocally ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.requireOwnership ? 1 : 0));
             code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.bufferLast ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.requireServer ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.excludeOwner ? 1 : 0));
+            
+            if (methodRpc.details.type == RPCType.TargetRPC)
+            {
+                code.Append(Instruction.Create(OpCodes.Ldarg_1));
+                code.Append(Instruction.Create(OpCodes.Call, makeRpcDetailsTarget));
+            }
+            else
+            {
+                code.Append(Instruction.Create(OpCodes.Call, makeRpcDetails));
+            }
+            
+            code.Append(Instruction.Create(OpCodes.Stloc, rpcDetailsVariable));
+            
+            // BuildRawRPC(int networkId, SceneID sceneId, byte rpcId, NetworkStream stream, RPCDetails details)
             code.Append(Instruction.Create(OpCodes.Call, buildRawRPCMethod));
-            code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcData
+            code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
+            
+            code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+            code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcPacket
+            code.Append(Instruction.Create(OpCodes.Ldloc, rpcDetailsVariable)); // rpcDetails
+            code.Append(Instruction.Create(OpCodes.Call, onRPCSentInternal));
             
             int rpcChannel = (int)methodRpc.details.channel;
 

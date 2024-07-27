@@ -114,6 +114,16 @@ namespace PurrNet
             }
         }
         
+        public void SendRaw(PlayerID player, ByteData data, Channel method = Channel.ReliableOrdered)
+        {
+            if (player.isBot)
+                return;
+
+            if (_playersManager.TryGetConnection(player, out var conn))
+                _broadcastModule.SendRaw(conn, data, method);
+            else PurrLogger.LogWarning($"Player {player} is not connected. Can't send data '{data.GetType().FullName}'.");
+        }
+        
         public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered)
         {
             if (player.isBot)

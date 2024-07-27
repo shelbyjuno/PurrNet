@@ -23,6 +23,12 @@ namespace PurrNet
         /// Scene id of this object.
         /// </summary>
         public SceneID sceneId { get; private set; }
+        
+        public bool isServer => networkManager.isServer;
+        
+        public bool isClient => networkManager.isClient;
+        
+        public bool isHost => networkManager.isHost;
 
         internal PlayerID? internalOwner;
         
@@ -100,6 +106,15 @@ namespace PurrNet
         protected virtual void OnSpawned(bool asServer) { }
         
         protected virtual void OnDespawned(bool asServer) { }
+
+        [UsedByIL]
+        protected void OnRPCSentInternal(RPCPacket packet, RPCDetails details)
+        {
+            if (!networkManager.TryGetModule<RPCModule>(networkManager.isServer, out var module))
+                return;
+            
+            module.OnRPCSent(packet, details);
+        }
         
         private void OnActivated(bool active)
         {

@@ -92,14 +92,13 @@ namespace PurrNet.Modules
                 
                 if (_scenes.TryGetSceneState(_sceneID, out var sceneState))
                     SpawnSceneObjectsServer(SceneObjectsModule.GetSceneIdentities(sceneState.scene));
-                
                 if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
                 {
                     foreach (var player in players)
                         OnPlayerJoinedScene(player, _sceneID, true);
                 }
                 
-                _scenePlayers.onPlayerLoadedScene += OnPlayerJoinedScene;
+                _scenePlayers.onPlayerPreloadedScene += OnPlayerJoinedScene;
             }
         }
 
@@ -561,7 +560,7 @@ namespace PurrNet.Modules
         /// <summary>
         /// Awake is not called on disabled game objects, so we need to ensure it's called for all components.
         /// </summary>
-        private static void MakeSureAwakeIsCalled(GameObject root)
+        internal static void MakeSureAwakeIsCalled(GameObject root)
         {
             _cache.Clear();
             
@@ -638,6 +637,7 @@ namespace PurrNet.Modules
         
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
+            onIdentityRemoved?.Invoke(identity);
             _removedLastFrame.Add(new ComponentGameObjectPair
             {
                 identity = identity,

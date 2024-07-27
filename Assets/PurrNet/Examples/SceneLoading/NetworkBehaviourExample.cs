@@ -1,3 +1,4 @@
+using System;
 using JetBrains.Annotations;
 using PurrNet;
 using PurrNet.Transports;
@@ -12,39 +13,38 @@ public class NetworkBehaviourExample : NetworkBehaviour
         Hasher.PrepareType<uint>();
         Hasher.PrepareType<double>();
         Hasher.PrepareType<string>();
+        Hasher.PrepareType<float>();
         
-        if (!asServer)
+        if (asServer)
+            ObserversRPCTest(Time.time);
+    }
+
+    private void Update()
+    {
+        if (isSpawned && isServer)
         {
-            ServerRPCMethodGeneric(5.6969);
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                ObserversRPCTest(Time.time);
+            }
         }
-        else
-        {
-            SendToObservers("Server is ready");
-        }
+    }
+
+
+    [ObserversRPC(bufferLast: true)]
+    private void ObserversRPCTest<T>(T data, RPCInfo info = default)
+    {
+        Debug.Log("Observers: " + data + " " + typeof(T).Name + " " + info.sender);
     }
     
-        
-    [ServerRPC(Channel.Unreliable, true)]
+    [ServerRPC(Channel.Unreliable)]
     private void ServerRPCMethodGeneric<T>(T data, RPCInfo info = default)
     {
-        SendToObservers("FOR ALL: " + data);
-        SendToTarget(info.sender, data);
-    }
-            
-    [ServerRPC(runLocally: true)]
-    private void ServerRPCMethodGeneric2<T>(T data, RPCInfo info = default)
-    {
-        SendToObservers("FOR ALL: " + data);
         SendToTarget(info.sender, data);
     }
 
-    [ObserversRPC(Channel.Unreliable, bufferLast: true)]
-    private void SendToObservers(string message)
-    {
-        Debug.Log("All: " + message);
-    }
     
-    [TargetRPC]
+    [TargetRPC(bufferLast: true)]
     private void SendToTarget<T>([UsedImplicitly] PlayerID target, T message)
     {
         Debug.Log("Targeted: " + message + " " + typeof(T).Name);

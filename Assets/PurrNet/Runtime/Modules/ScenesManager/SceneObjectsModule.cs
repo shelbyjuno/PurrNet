@@ -15,6 +15,10 @@ namespace PurrNet.Modules
             foreach (var rootObject in rootGameObjects)
             {
                 rootObject.GetComponentsInChildren(true, _sceneIdentities);
+                
+                if (_sceneIdentities.Count == 0) continue;
+                
+                HierarchyScene.MakeSureAwakeIsCalled(rootObject);
                 networkIdentities.AddRange(_sceneIdentities);
             }
 

@@ -99,6 +99,9 @@ namespace PurrNet.Modules
             _playerBroadcaster = broadcaster;
         }
         
+        public void SendRaw(PlayerID player, ByteData data, Channel method = Channel.ReliableOrdered)
+            => _playerBroadcaster.SendRaw(player, data, method);
+        
         public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered) 
             => _playerBroadcaster.Send(player, data, method);
 

@@ -212,7 +212,7 @@ namespace PurrNet
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
-            var rpcModule = new RPCModule(playersManager, hierarchyModule);
+            var rpcModule = new RPCModule(playersManager, hierarchyModule, ownershipModule, scenesModule, scenePlayersModule);
 
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);

@@ -21,6 +21,7 @@ namespace PurrNet.Modules
         readonly PlayersManager _players;
         
         public event OnPlayerSceneEvent onPlayerJoinedScene;
+        public event OnPlayerSceneEvent onPlayerPreloadedScene;
         public event OnPlayerSceneEvent onPlayerLoadedScene;
         
         public event OnPlayerSceneEvent onPlayerLeftScene;
@@ -108,6 +109,7 @@ namespace PurrNet.Modules
                 return;
             }
             
+            onPlayerPreloadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
             onPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
             _players.SendToServer(new ClientFinishedLoadingScene { scene = scene });
         }
@@ -129,6 +131,7 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"SceneID '{data.scene}' not found in scene loaded players dictionary");
             }
             
+            onPlayerPreloadedScene?.Invoke(player, data.scene, asserver);
             onPlayerLoadedScene?.Invoke(player, data.scene, asserver);
         }
 

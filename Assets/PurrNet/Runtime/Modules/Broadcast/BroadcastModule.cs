@@ -112,6 +112,12 @@ namespace PurrNet.Modules
             }
         }
         
+        public void SendRaw(Connection conn, ByteData data, Channel method = Channel.ReliableOrdered)
+        {
+            AssertIsServer("Cannot send data to player from client.");
+            _transport.SendToClient(conn, data, method);
+        }
+        
         public void Send<T>(Connection conn, T data, Channel method = Channel.ReliableOrdered)
         {
             AssertIsServer("Cannot send data to player from client.");
