@@ -1,13 +1,17 @@
-using System;
 using PurrNet;
 using PurrNet.Logging;
 using UnityEngine;
 
 public class PlayerMovement : NetworkIdentity
 {
-    [SerializeField] private float moveSpeed;
-
+    [SerializeField] private float moveSpeed = 4f;
+    [SerializeField] private float acceleration = 4f;
+    [SerializeField] private float gravity = 9.81f;
+    
     private CharacterController _controller;
+    private float rotationSpeed;
+    private float _verticalVelocity;
+    private Vector3 currentMove;
 
     private void Awake()
     {
@@ -25,8 +29,26 @@ public class PlayerMovement : NetworkIdentity
         if (!_controller)
             return;
         
-        Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-        Vector3 move = new Vector3(input.x, 0, input.y);
-        _controller.Move(move * (moveSpeed * Time.deltaTime));
+        Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        Vector3 targetMove = new Vector3(input.x, 0, input.y).normalized;
+
+        currentMove = Vector3.Lerp(currentMove, targetMove, acceleration * Time.deltaTime);
+
+        if (_controller.isGrounded)
+            _verticalVelocity = -gravity * Time.deltaTime; 
+        else
+            _verticalVelocity -= gravity * Time.deltaTime;
+
+        currentMove.y = _verticalVelocity;
+
+        _controller.Move(currentMove * (moveSpeed * Time.deltaTime));
+
+        
+        if (input != Vector2.zero)
+        {
+            float targetAngle = Mathf.Atan2(currentMove.x, currentMove.z) * Mathf.Rad2Deg;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref rotationSpeed, 0.1f);
+            transform.rotation = Quaternion.Euler(0, angle, 0);
+        }
     }
 }
