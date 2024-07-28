@@ -17,7 +17,6 @@ namespace PurrNet
 
         void Awake()
         {
-            Debug.Log($"Yo bitch");
             if (_muteAutoSpawn)
             {
                 _muteAutoSpawn = false;
