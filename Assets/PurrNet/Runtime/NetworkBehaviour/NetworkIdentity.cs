@@ -84,7 +84,7 @@ namespace PurrNet
         
         public NetworkManager networkManager { get; private set; }
         
-        public PlayerID localPlayer => networkManager.TryGetModule<PlayersManager>(networkManager.isServer, out var module) && module.localPlayerId.HasValue 
+        public PlayerID localPlayer => networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
             ? module.localPlayerId.Value : default;
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace PurrNet
             internalOwner = null;
             _lastEnabledState = enabled;
             _gameObject = gameObject;
-
+            
             if (!_gameObject.TryGetComponent(out _events))
             {
                 _events = _gameObject.AddComponent<GameObjectEvents>();

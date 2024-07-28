@@ -182,7 +182,7 @@ namespace PurrNet.Modules
             if (_sceneOwnerships.TryGetValue(id.sceneId, out var module))
             {
                 module.GiveOwnership(id, player);
-                
+                 
                 onOwnershipChanged?.Invoke(id.id, player, _asServer);
 
                 if (_asServer)

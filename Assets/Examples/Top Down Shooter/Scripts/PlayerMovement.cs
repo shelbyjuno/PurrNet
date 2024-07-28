@@ -18,7 +18,6 @@ public class PlayerMovement : NetworkIdentity
     protected override void OnSpawned(bool asServer)
     {
         enabled = isOwner;
-        Debug.Log($"Is owner: {isOwner} | AsServer: {asServer}");
     }
 
     private void Update()

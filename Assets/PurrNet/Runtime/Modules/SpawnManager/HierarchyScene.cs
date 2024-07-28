@@ -90,16 +90,19 @@ namespace PurrNet.Modules
         internal void TriggerSpawnEventOnClient()
         {
             foreach (var identity in _identities.collection)
-                identity.TriggetClientSpawnEvent();
+            {
+                if (identity.isSpawned)
+                    identity.TriggetClientSpawnEvent();
+            }
         }
 
-        private bool _initiatedHostOnce;
+        //private bool _initiatedHostOnce;
 
         private void OnSetSceneIds(PlayerID player, SetSceneIds data, bool asserver)
         {
             _isReady = true;
             
-            if (_manager.isHost)
+            /*if (_manager.isHost)
             {
                 if (!_initiatedHostOnce)
                 {
@@ -108,7 +111,7 @@ namespace PurrNet.Modules
                 }
 
                 return;
-            }
+            }*/
             
             if (_sceneID != data.sceneId)
                 return;
@@ -378,10 +381,12 @@ namespace PurrNet.Modules
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
         }
-
+        
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, int i, bool asServer)
         {
             component.SetIdentity(_manager, _sceneID, action.prefabId, action.identityId + i, asServer);
+            _spawnedThisFrame.Add(component);
+            
             _identities.RegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
 

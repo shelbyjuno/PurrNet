@@ -121,7 +121,7 @@ namespace PurrNet
             {
                 _serverModule ??= _manager.GetModule<HierarchyModule>(true);
                 return _serverModule.TryGetIdentity(sceneID, id, out identity);
-            }
+            } 
             
             if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
             {
