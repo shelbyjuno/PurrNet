@@ -467,6 +467,8 @@ namespace PurrNet.Modules
             }
         }
 
+        readonly List<NetworkIdentity> _spawnedThisFrame = new ();
+        
         public void Spawn(GameObject instance)
         {
             MakeSureAwakeIsCalled(instance);
@@ -508,7 +510,10 @@ namespace PurrNet.Modules
                 }
                 
                 child.SetIdentity(_manager, _sceneID, prefabId, _identities.GetNextId(), true);
+                
+                _spawnedThisFrame.Add(child);
                 _identities.RegisterIdentity(child);
+                
                 onIdentityAdded?.Invoke(child);
 
                 child.onRemoved += OnIdentityRemoved;
@@ -770,19 +775,9 @@ namespace PurrNet.Modules
 
         public void Update()
         {
-            if (Input.GetKeyDown(KeyCode.X) && _asServer)
-            {
-                var history = _history.GetFullHistory();
-                string output = $"Actions count: {history.actions.Count}\n";
-                
-                for (int i = 0; i < history.actions.Count; i++)
-                {
-                    var action = history.actions[i];
-                    output += $"Action {i}: {action.type}\n";
-                }
-                
-                Debug.Log(output);
-            }
+            for (int i = 0; i < _spawnedThisFrame.Count; i++)
+                _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
+            _spawnedThisFrame.Clear();
         }
 
         public bool TryGetIdentity(int id, out NetworkIdentity identity)

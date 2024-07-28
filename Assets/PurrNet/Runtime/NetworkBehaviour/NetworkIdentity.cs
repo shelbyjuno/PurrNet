@@ -153,7 +153,7 @@ namespace PurrNet
         {
             UpdateEnabledState();
         }
-
+        
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int identityId, bool asServer)
         {
             Hasher.PrepareType(GetType());
@@ -176,16 +176,6 @@ namespace PurrNet
             }
             
             networkManager = manager;
-            
-            if (networkManager.isHost)
-            {
-                OnSpawned(true);
-                OnSpawned(false);
-            }
-            else
-            {
-                OnSpawned(asServer);
-            }
         }
 
         private bool _ignoreNextDestroy;
@@ -248,6 +238,19 @@ namespace PurrNet
         internal void IgnoreNextEnableCallback()
         {
             _ignoreNextEnable = true;
+        }
+        
+        internal void TriggetSpawnEvent(bool asServer)
+        {
+            if (networkManager.isHost)
+            {
+                OnSpawned(true);
+                OnSpawned(false);
+            }
+            else
+            {
+                OnSpawned(asServer);
+            }
         }
 
         internal void TriggetClientSpawnEvent()

@@ -7,7 +7,7 @@ namespace PurrNet
     
     public class Interpolated<T>
     {
-        private LerpFunction<T> _lerp;
+        private readonly LerpFunction<T> _lerp;
         
         public int maxBufferSize { get; set; }
         
@@ -19,7 +19,7 @@ namespace PurrNet
 
         private float _timer;
         
-        public Interpolated(LerpFunction<T> lerp, float tickDelta, T initialValue = default, int maxBufferSize = 5)
+        public Interpolated(LerpFunction<T> lerp, float tickDelta, T initialValue = default, int maxBufferSize = 2)
         {
             _lerp = lerp;
             _lastValue = initialValue;
@@ -40,7 +40,7 @@ namespace PurrNet
             if (_buffer.Count <= 0)
                 return _lastValue;
         
-            float lerp = Mathf.Clamp01(_timer / deltaTime);
+            float lerp = Mathf.Clamp01(_timer / tickDelta);
 
             _timer += deltaTime;
         
@@ -48,14 +48,14 @@ namespace PurrNet
             var next = _buffer.Count > 0 ?  _buffer[0] : prev;
             var lerped = _lerp(prev, next, lerp);
         
-            if (_timer >= Time.fixedDeltaTime)
+            if (_timer >= tickDelta)
             {
                 if (_buffer.Count > maxBufferSize)
                      _buffer.RemoveRange(0, _buffer.Count - maxBufferSize);
                 else _buffer.RemoveAt(0);
             
                 _lastValue = lerped;
-                _timer -= Time.fixedDeltaTime;
+                _timer -= tickDelta;
             }
             
             return lerped;
