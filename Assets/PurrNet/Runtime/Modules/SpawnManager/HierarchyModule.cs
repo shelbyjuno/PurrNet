@@ -32,6 +32,14 @@ namespace PurrNet
             _scenePlayers = scenePlayers;
             _prefabs = prefabs;
         }
+        
+        public bool IsSceneReady(SceneID sceneID)
+        {
+            if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
+                return false;
+            
+            return hierarchy.IsSceneReady();
+        }
 
         public void Enable(bool asServer)
         {
@@ -123,6 +131,26 @@ namespace PurrNet
             }
             
             return hierarchy.TryGetIdentity(id, out identity);
+        }
+        
+        internal void AutoSpawn(GameObject gameObject)
+        {
+            if (!_scenes.TryGetSceneID(gameObject.scene, out var sceneID))
+            {
+                PurrLogger.LogError($"Failed to find scene id for '{gameObject.scene.name}'.");
+                return;
+            }
+            
+            if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
+            {
+                PurrLogger.LogError($"Failed to find hierarchy for scene '{sceneID}'.");
+                return;
+            }
+            
+            if (!hierarchy.IsSceneReady())
+                return;
+            
+            hierarchy.Spawn(gameObject);
         }
 
         public void Spawn(GameObject gameObject)

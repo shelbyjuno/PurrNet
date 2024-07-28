@@ -24,6 +24,7 @@ namespace PurrNet
         /// </summary>
         public SceneID sceneId { get; private set; }
         
+        public bool isSceneObject { get; private set; }
         public bool isServer => networkManager.isServer;
         
         public bool isClient => networkManager.isClient;

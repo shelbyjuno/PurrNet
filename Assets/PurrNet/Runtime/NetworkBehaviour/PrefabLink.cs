@@ -45,7 +45,7 @@ namespace PurrNet
             }
 
             var spawnModule = manager.GetModule<HierarchyModule>(manager.isServer);
-            spawnModule.Spawn(gameObject);
+            spawnModule.AutoSpawn(gameObject);
         }
 
         internal void SetGUID(string guid) => _guid = guid;

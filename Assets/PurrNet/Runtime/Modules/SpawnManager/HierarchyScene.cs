@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
-using PurrNet.Transports;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -43,6 +42,7 @@ namespace PurrNet.Modules
         
         private readonly SceneID _sceneID;
         private bool _asServer;
+        private bool _isReady;
 
         // the id of the first network identity in the scene
         private int _sceneFirstNetworkID;
@@ -85,6 +85,8 @@ namespace PurrNet.Modules
             }
         }
 
+        public bool IsSceneReady() => _isReady;
+
         internal void TriggerSpawnEventOnClient()
         {
             foreach (var identity in _identities.collection)
@@ -95,6 +97,8 @@ namespace PurrNet.Modules
 
         private void OnSetSceneIds(PlayerID player, SetSceneIds data, bool asserver)
         {
+            _isReady = true;
+            
             if (_manager.isHost)
             {
                 if (!_initiatedHostOnce)
@@ -117,6 +121,8 @@ namespace PurrNet.Modules
 
         private void SpawnSceneObjectsServer(IReadOnlyList<NetworkIdentity> sceneObjects)
         {
+            _isReady = true;
+
             for (int i = 0; i < sceneObjects.Count; i++)
             {
                 SpawnIdentity(new SpawnAction
@@ -143,8 +149,6 @@ namespace PurrNet.Modules
                     transformInfo = default
                 }, sceneObjects[i], i, false);
             }
-            
-            Debug.Log($"Spawned {sceneObjects.Count} scene objects: CLIENT");
         }
 
         public void Disable(bool asServer)
