@@ -20,8 +20,15 @@ namespace PurrNet.Modules
         readonly ScenesModule _scenes;
         readonly PlayersManager _players;
         
+        /// <summary>
+        /// Called once the player has started joining the scene (before loading)
+        /// </summary>
         public event OnPlayerSceneEvent onPlayerJoinedScene;
         public event OnPlayerSceneEvent onPlayerPreloadedScene;
+        
+        /// <summary>
+        /// Called once the player has finished loading the scene
+        /// </summary>
         public event OnPlayerSceneEvent onPlayerLoadedScene;
         
         public event OnPlayerSceneEvent onPlayerLeftScene;
