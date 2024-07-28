@@ -29,6 +29,10 @@ namespace PurrNet
         public bool isClient => networkManager.isClient;
         
         public bool isHost => networkManager.isHost;
+        
+        public bool isOwner => owner == localPlayer;
+        
+        public bool hasOwner => owner.HasValue;
 
         internal PlayerID? internalOwner;
         
