@@ -15,13 +15,16 @@ namespace PurrNet
             _muteAutoSpawn = true;
         }
 
-        void Awake()
+        void Start()
         {
             if (_muteAutoSpawn)
             {
                 _muteAutoSpawn = false;
                 return;
             }
+
+            if (isSpawned)
+                return;
             
             var manager = NetworkManager.main;
             

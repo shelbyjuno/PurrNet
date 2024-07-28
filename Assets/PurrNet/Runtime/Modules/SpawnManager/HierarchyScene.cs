@@ -28,7 +28,7 @@ namespace PurrNet.Modules
         public int startingId;
     }
     
-    internal class HierarchyScene : INetworkModule, IFixedUpdate, IUpdate, IConnectionStateListener
+    internal class HierarchyScene : INetworkModule, IFixedUpdate, IUpdate
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -69,24 +69,7 @@ namespace PurrNet.Modules
                 _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
                 _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
             }
-        }
-
-        internal void TriggerSpawnEventOnClient()
-        {
-            foreach (var identity in _identities.collection)
-                identity.TriggetClientSpawnEvent();
-        }
-        
-        public void OnConnectionState(ConnectionState state, bool asServer)
-        {
-            if (!asServer)
-            {
-                /*if (state == ConnectionState.Connected && _manager.isHost)
-                    _manager.GetModule<HierarchyModule>(true).TriggerOnSpawnedEventForClient();*/
-                return;
-            }
-            
-            if (state == ConnectionState.Connected)
+            else
             {
                 _sceneFirstNetworkID = _identities.PeekNextId();
                 
@@ -100,6 +83,12 @@ namespace PurrNet.Modules
                 
                 _scenePlayers.onPlayerPreloadedScene += OnPlayerJoinedScene;
             }
+        }
+
+        internal void TriggerSpawnEventOnClient()
+        {
+            foreach (var identity in _identities.collection)
+                identity.TriggetClientSpawnEvent();
         }
 
         private bool _initiatedHostOnce;
@@ -154,6 +143,8 @@ namespace PurrNet.Modules
                     transformInfo = default
                 }, sceneObjects[i], i, false);
             }
+            
+            Debug.Log($"Spawned {sceneObjects.Count} scene objects: CLIENT");
         }
 
         public void Disable(bool asServer)

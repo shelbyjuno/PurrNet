@@ -146,7 +146,7 @@ namespace PurrNet.Modules
                 _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
             }
             
-            SceneManager.sceneLoaded += SceneManagerOnsceneLoaded;
+            SceneManager.sceneLoaded += SceneManagerOnSceneLoaded;
         }
 
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
@@ -165,7 +165,7 @@ namespace PurrNet.Modules
                 _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
         }
 
-        private void SceneManagerOnsceneLoaded(Scene scene, LoadSceneMode mode)
+        private void SceneManagerOnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             for (int i = 0; i < _pendingOperations.Count; i++)
             {
@@ -350,13 +350,20 @@ namespace PurrNet.Modules
             });
             
             var op = SceneManager.LoadSceneAsync(sceneIndex, parameters);
-            
-            _pendingOperations.Add(new PendingOperation
+            var operation = new PendingOperation
             {
                 buildIndex = sceneIndex,
                 settings = settings,
                 idToAssign = idToAssign
-            });
+            };
+            
+            _pendingOperations.Add(operation);
+            
+            if (_asServer && _networkManager.isHost)
+            {
+                var clientModule = _networkManager.GetModule<ScenesModule>(false);
+                clientModule._pendingOperations.Add(operation);
+            }
             
             return op;
         }
@@ -423,7 +430,7 @@ namespace PurrNet.Modules
                 _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
             }
             
-            SceneManager.sceneLoaded -= SceneManagerOnsceneLoaded;
+            SceneManager.sceneLoaded -= SceneManagerOnSceneLoaded;
 
             DoCleanup();
         }
@@ -555,21 +562,14 @@ namespace PurrNet.Modules
                     if (!_pendingUnloads[i].isDone)
                         return false;
                 }
-            }
+            } 
 
             return true;
         }
 
         public bool TryGetSceneID(Scene scene, out SceneID o)
         {
-            if (!_idToScene.TryGetValue(scene, out var id))
-            {
-                o = default;
-                return false;
-            }
-
-            o = id;
-            return true;
+            return _idToScene.TryGetValue(scene, out o);
         }
     }
 }
