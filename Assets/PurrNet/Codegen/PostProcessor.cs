@@ -209,10 +209,10 @@ namespace PurrNet.Codegen
                 var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
                 newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
                 
-                var identityType = module.GetTypeReference<NetworkIdentity>();
-                var streamType = module.GetTypeReference<NetworkStream>();
-                var packetType = module.GetTypeReference<RPCPacket>();
-                var rpcInfo = module.GetTypeReference<RPCInfo>();
+                var identityType = module.GetTypeReference<NetworkIdentity>().Import(module);
+                var streamType = module.GetTypeReference<NetworkStream>().Import(module);
+                var packetType = module.GetTypeReference<RPCPacket>().Import(module);
+                var rpcInfo = module.GetTypeReference<RPCInfo>().Import(module);
 
                 var readHeaderMethod = identityType.GetMethod("ReadGenericHeader").Import(module);
                 var callGenericMethod = identityType.GetMethod("CallGeneric").Import(module);
@@ -410,12 +410,12 @@ namespace PurrNet.Codegen
             var code = newMethod.Body.GetILProcessor();
             
             var module = method.Module;
-            var streamType = method.Module.GetTypeReference<NetworkStream>();
-            var rpcType = method.Module.GetTypeReference<RPCModule>();
-            var identityType = method.Module.GetTypeReference<NetworkIdentity>();
-            var packetType = method.Module.GetTypeReference<RPCPacket>();
-            var hahserType = method.Module.GetTypeReference<Hasher>();
-            var rpcDetails = method.Module.GetTypeReference<RPCDetails>();
+            var streamType = method.Module.GetTypeReference<NetworkStream>().Import(module);
+            var rpcType = method.Module.GetTypeReference<RPCModule>().Import(module);
+            var identityType = method.Module.GetTypeReference<NetworkIdentity>().Import(module);
+            var packetType = method.Module.GetTypeReference<RPCPacket>().Import(module);
+            var hahserType = method.Module.GetTypeReference<Hasher>().Import(module);
+            var rpcDetails = method.Module.GetTypeReference<RPCDetails>().Import(module);
 
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
