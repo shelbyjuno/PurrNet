@@ -385,6 +385,7 @@ namespace PurrNet.Modules
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, int i, bool asServer)
         {
             component.SetIdentity(_manager, _sceneID, action.prefabId, action.identityId + i, asServer);
+
             _spawnedThisFrame.Add(component);
             
             _identities.RegisterIdentity(component);
@@ -611,9 +612,15 @@ namespace PurrNet.Modules
         
         private void OnIdentityParentChanged(NetworkTransform trs, bool asServer)
         {
-            if (!asServer)
+            if (!trs.HasParentSyncAuthority(asServer))
             {
-                Debug.Log("TODO: Implement client parent change logic.");
+                bool isOwner = trs.isOwner;
+                string parentName = trs.transform.parent ? trs.transform.parent.name : "null";
+                
+                PurrLogger.LogError($"Parent change failed for '{trs.name}' to '{parentName}' due to lack of permissions.\n" +
+                                    $"You called this as {(asServer ? "server" : "client")} and you are {(isOwner ? "the owner" : "not the owner")}.\n" +
+                                    "The parent will be reset to the last known one.", trs);
+                
                 trs.ResetToLastValidParent();
                 return;
             }

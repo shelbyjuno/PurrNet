@@ -46,20 +46,6 @@ namespace PurrNet
         internal event Action<NetworkTransform> onParentChanged;
         private bool _isResettingParent;
         
-        public int parentId
-        {
-            get
-            {
-                var parent = transform.parent;
-                
-                if (!parent)
-                    return -1;
-                
-                var parentIdentity = parent.GetComponent<NetworkIdentity>();
-                return parentIdentity ? parentIdentity.id : -1;
-            }
-        }
-        
         void Awake()
         {
             ValidateParent();
@@ -90,19 +76,19 @@ namespace PurrNet
         {
             if (_syncParentPermissions.HasFlag(NetworkPermissions.Everyone))
                 return true;
-            
-            return _syncParentPermissions.HasFlag(NetworkPermissions.Server) && asServer;
+
+            if (_syncParentPermissions.HasFlag(NetworkPermissions.Server) && asServer)
+                return true;
+
+            return _syncParentPermissions.HasFlag(NetworkPermissions.Owner) && owner == localPlayer;
         }
         
         public bool HasParentSyncAuthority(PlayerID playerId)
         {
             if (_syncParentPermissions.HasFlag(NetworkPermissions.Everyone))
                 return true;
-            
-            /*if (_syncParentFrom.HasFlag(NetworkPermissions.Owner) && playersManagerLocalPlayerId == PlayerID.LocalPlayer)
-                return true;*/
 
-            return false;
+            return _syncParentPermissions.HasFlag(NetworkPermissions.Owner) && owner == playerId;
         }
 
         internal void StartIgnoreParentChanged()
