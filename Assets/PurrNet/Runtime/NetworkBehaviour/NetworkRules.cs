@@ -20,6 +20,10 @@ namespace PurrNet
         public ConnectionAuth ownershipTransferAuth;
         [Tooltip("Who can synchronize parent nesting of objects")]
         public ActionAuth syncParentAuth;
+
+        public bool despawnOnDisconnect = true;
+        public bool syncComponentActive = true;
+        public bool syncGameObjectActive = true;
         
         [Flags]
         public enum ActionAuth

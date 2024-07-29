@@ -13,6 +13,9 @@ namespace PurrNet.Editor
         private SerializedProperty syncVarAuth;
         private SerializedProperty clientRpcAuth;
         private SerializedProperty fullObjectOwnership;
+        private SerializedProperty despawnOnDisconnect;
+        private SerializedProperty syncComponentActive;
+        private SerializedProperty syncGameObjectActive;
         
         private void OnEnable()
         {
@@ -23,6 +26,9 @@ namespace PurrNet.Editor
             syncParentAuth = serializedObject.FindProperty("syncParentAuth");
             syncVarAuth = serializedObject.FindProperty("syncVarAuth");
             fullObjectOwnership = serializedObject.FindProperty("fullObjectOwnership");
+            despawnOnDisconnect = serializedObject.FindProperty("despawnOnDisconnect");
+            syncComponentActive = serializedObject.FindProperty("syncComponentActive");
+            syncGameObjectActive = serializedObject.FindProperty("syncGameObjectActive");
         }
 
         public override void OnInspectorGUI()
@@ -44,11 +50,13 @@ namespace PurrNet.Editor
 
         private void DrawSettings()
         {
+            serializedObject.Update();
+            
             EditorGUILayout.PropertyField(spawnAuth, new GUIContent("Spawn"));
             
             EditorGUILayout.PropertyField(defaultOwner, new GUIContent("Default owner"));
 
-            EditorGUILayout.PropertyField(fullObjectOwnership);
+            DrawBoolRight(fullObjectOwnership, "Full object ownership");
             
             EditorGUILayout.PropertyField(syncVarAuth, new GUIContent("Sync Var"));
             
@@ -57,6 +65,20 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(ownershipTransfer, new GUIContent("Ownership Transfer"));
             
             EditorGUILayout.PropertyField(syncParentAuth, new GUIContent("Sync Parent"));
+            
+            DrawBoolRight(despawnOnDisconnect, "Despawn owner objects on disconnect");
+            DrawBoolRight(syncComponentActive, "Sync component active state");
+            DrawBoolRight(syncGameObjectActive, "Sync gameobject active state");
+
+            serializedObject.ApplyModifiedProperties();
+        }
+        
+        void DrawBoolRight(SerializedProperty property, string label)
+        {
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Label(label, GUILayout.ExpandWidth(true));
+            property.boolValue = EditorGUILayout.Toggle(property.boolValue, GUILayout.Width(20));
+            EditorGUILayout.EndHorizontal();
         }
         
         private static GUIStyle DescriptionStyle()
