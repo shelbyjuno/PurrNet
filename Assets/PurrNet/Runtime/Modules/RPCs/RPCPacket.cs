@@ -10,6 +10,7 @@ namespace PurrNet
         public RPCPacket packet;
         public RPCInfo info;
         public NetworkStream stream;
+        public float addedTime;
 
         public void Dispose()
         {
