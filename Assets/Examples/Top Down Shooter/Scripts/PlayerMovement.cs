@@ -36,7 +36,7 @@ public class PlayerMovement : NetworkIdentity
         currentMove = Vector3.Lerp(currentMove, targetMove, acceleration * Time.deltaTime);
         
         if (_controller.isGrounded)
-            _verticalVelocity = -gravity * Time.deltaTime; 
+            _verticalVelocity = -gravity * Time.deltaTime;
         else
             _verticalVelocity -= gravity * Time.deltaTime;
         
