@@ -81,6 +81,8 @@ namespace PurrNet.Transports
         void SendToServer(ByteData data, Channel method = Channel.ReliableOrdered);
         
         void CloseConnection(Connection conn);
+
+        void UpdateEvents();
     }
 
     public enum DisconnectReason

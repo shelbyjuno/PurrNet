@@ -27,7 +27,7 @@ namespace PurrNet.Modules
         public int startingId;
     }
     
-    internal class HierarchyScene : INetworkModule, IFixedUpdate, IUpdate
+    internal class HierarchyScene : INetworkModule, IFixedUpdate
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -375,7 +375,7 @@ namespace PurrNet.Modules
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
-                SpawnIdentity(action, child, i, asServer);
+                SpawnIdentity(action, child, i, _asServer);
             }
 
             if (!trsInfo.activeInHierarchy)
@@ -514,7 +514,7 @@ namespace PurrNet.Modules
                     return;
                 }
                 
-                child.SetIdentity(_manager, _sceneID, prefabId, _identities.GetNextId(), true);
+                child.SetIdentity(_manager, _sceneID, prefabId, _identities.GetNextId(), _asServer);
                 
                 _spawnedThisFrame.Add(child);
                 _identities.RegisterIdentity(child);
@@ -760,6 +760,15 @@ namespace PurrNet.Modules
                 _removedLastFrame.Clear();
             }
             
+            var spawnedThisFrameCount = _spawnedThisFrame.Count;
+
+            if (spawnedThisFrameCount > 0)
+            {
+                for (int i = 0; i < spawnedThisFrameCount; i++)
+                    _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
+                _spawnedThisFrame.Clear();
+            }
+            
             if (!_history.hasUnflushedActions) 
                 return;
 
@@ -776,13 +785,6 @@ namespace PurrNet.Modules
             {
                 Debug.Log("TODO: Implement client flush logic.");
             }
-        }
-
-        public void Update()
-        {
-            for (int i = 0; i < _spawnedThisFrame.Count; i++)
-                _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
-            _spawnedThisFrame.Clear();
         }
 
         public bool TryGetIdentity(int id, out NetworkIdentity identity)

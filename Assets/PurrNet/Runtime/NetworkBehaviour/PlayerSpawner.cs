@@ -25,7 +25,7 @@ namespace PurrNet
             if(NetworkManager.main && NetworkManager.main.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
                 scenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
         }
-
+ 
         private void OnDestroy()
         {
             if(NetworkManager.main && NetworkManager.main.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
@@ -34,12 +34,18 @@ namespace PurrNet
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer)
         {
-            var newPlayer = Instantiate(playerPrefab);
+            NetworkIdentity newPlayer;
+            
             if (spawnPoints.Count > 0)
             {
                 var spawnPoint = spawnPoints[_currentSpawnPoint];
                 _currentSpawnPoint = (_currentSpawnPoint + 1) % spawnPoints.Count;
-                newPlayer.transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
+                newPlayer = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+
+            }
+            else
+            {
+                newPlayer = Instantiate(playerPrefab);
             }
             
             newPlayer.GiveOwnership(player);

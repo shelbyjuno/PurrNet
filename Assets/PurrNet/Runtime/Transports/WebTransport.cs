@@ -135,8 +135,8 @@ namespace PurrNet.Transports
             
             onConnected?.Invoke(new Connection(0), false);
         }
-
-        private void FixedUpdate()
+        
+        public void UpdateEvents()
         {
             _server.ProcessMessageQueue();
             _client.ProcessMessageQueue();

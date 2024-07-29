@@ -181,8 +181,14 @@ namespace PurrNet.Transports
             SetupEvents();
         }
 
-        private void FixedUpdate()
+        public void UpdateEvents()
         {
+            for (int i = 0; i < _transports.Length; i++)
+            {
+                if (_transports[i])
+                    _transports[i].transport.UpdateEvents();
+            }
+
             TriggerConnectionStateEvent(true);
             TriggerConnectionStateEvent(false);
         }

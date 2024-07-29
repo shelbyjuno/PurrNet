@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace PurrNet
 {
-    public class HierarchyModule : INetworkModule, IFixedUpdate, IUpdate
+    public class HierarchyModule : INetworkModule, IFixedUpdate
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -103,12 +103,6 @@ namespace PurrNet
                 _hierarchies[i].FixedUpdate();
         }
 
-        public void Update()
-        {
-            for (var i = 0; i < _hierarchies.Count; i++)
-                _hierarchies[i].Update();
-        }
-        
         internal void TriggerOnSpawnedEventForClient()
         {
             foreach (var hierarchy in _sceneToHierarchy.Values)
@@ -146,9 +140,12 @@ namespace PurrNet
                 PurrLogger.LogError($"Failed to find hierarchy for scene '{sceneID}'.");
                 return;
             }
-            
+
             if (!hierarchy.IsSceneReady())
+            {
+                Debug.LogError($"Scene '{sceneID}' is not ready.");
                 return;
+            }
             
             hierarchy.Spawn(gameObject);
         }

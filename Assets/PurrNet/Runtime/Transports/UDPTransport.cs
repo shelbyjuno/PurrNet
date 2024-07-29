@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
 using LiteNetLib;
 using UnityEngine;
 
@@ -162,7 +160,7 @@ namespace PurrNet.Transports
             onConnected?.Invoke(conn, true);
         }
 
-        private void FixedUpdate()
+        public void UpdateEvents()
         {
             _server.PollEvents();
             _client.PollEvents();

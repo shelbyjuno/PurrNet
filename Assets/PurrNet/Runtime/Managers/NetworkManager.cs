@@ -257,6 +257,8 @@ namespace PurrNet
 
         private void FixedUpdate()
         {
+            _transport.transport.UpdateEvents();
+            
             if (serverState == ConnectionState.Connected)
                 _serverModules.TriggerOnFixedUpdate();
             

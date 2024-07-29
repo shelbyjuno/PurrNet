@@ -31,6 +31,8 @@ namespace PurrNet.Modules
         public int tickRate { get; private set; }
         
         public event Action onPreTick, onTick, onPostTick;
+        
+        private bool _asServer;
 
         public TickManager(int tickRate)
         {
@@ -39,7 +41,7 @@ namespace PurrNet.Modules
 
         public void Enable(bool asServer)
         {
-            
+            _asServer = asServer;
         }
 
         public void Disable(bool asServer)

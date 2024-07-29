@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
-using UnityEngine.Networking.PlayerConnection;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -72,7 +72,7 @@ namespace PurrNet.Modules
 
             if (asServer)
                 _scenePlayers.onPlayerLoadedScene += OnPlayerJoined;
-            
+
             _playersManager.Subscribe<OwnershipChangeBatch>(OnOwnershipChange);
             _playersManager.Subscribe<OwnershipChange>(OnOwnershipChange);
         }
@@ -242,15 +242,22 @@ namespace PurrNet.Modules
 
         private void OnSceneLoaded(SceneID scene, bool asServer)
         {
-            _sceneOwnerships[scene] = new SceneOwnership();
+            _sceneOwnerships[scene] = new SceneOwnership(asServer);
         }
     }
 
     internal class SceneOwnership
     {
         static readonly List<OwnershipInfo> _cache = new ();
-
+        
         readonly Dictionary<int, PlayerID> _owners = new ();
+
+        private readonly bool _asServer;
+        
+        public SceneOwnership(bool asServer)
+        {
+            _asServer = asServer;
+        }
         
         public List<OwnershipInfo> GetState()
         {
@@ -270,14 +277,19 @@ namespace PurrNet.Modules
         public void GiveOwnership(NetworkIdentity identity, PlayerID player)
         {
             _owners[identity.id] = player;
-            identity.internalOwner = player;
+            
+            if (_asServer)
+                 identity.internalOwnerServer = player;
+            else identity.internalOwnerClient = player;
         }
 
         public bool RemoveOwnership(NetworkIdentity identity)
         {
             if (_owners.Remove(identity.id))
             {
-                identity.internalOwner = null;
+                if (_asServer)
+                     identity.internalOwnerServer = null;
+                else identity.internalOwnerClient = null;
                 return true;
             }
             

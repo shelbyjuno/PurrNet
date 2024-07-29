@@ -35,7 +35,10 @@ namespace PurrNet
         
         public bool hasOwner => owner.HasValue;
 
-        internal PlayerID? internalOwner;
+        internal PlayerID? internalOwnerServer;
+        internal PlayerID? internalOwnerClient;
+        
+        internal PlayerID? internalOwner => internalOwnerServer ?? internalOwnerClient;
         
         /// <summary>
         /// Returns the owner of this object.
@@ -156,13 +159,18 @@ namespace PurrNet
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int identityId, bool asServer)
         {
+            networkManager = manager;
+
             Hasher.PrepareType(GetType());
 
             sceneId = scene;
             prefabId = pid;
             id = identityId;
+
+            if (asServer)
+                 internalOwnerServer = null;
+            else internalOwnerClient = null;
             
-            internalOwner = null;
             _lastEnabledState = enabled;
             _gameObject = gameObject;
             
@@ -174,8 +182,6 @@ namespace PurrNet
                 _events.onActivatedChanged += OnActivated;
                 _events.Register(this);
             }
-            
-            networkManager = manager;
         }
 
         private bool _ignoreNextDestroy;
@@ -188,13 +194,19 @@ namespace PurrNet
         public void GiveOwnership(PlayerID player)
         {
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
+            {
                 module.GiveOwnership(this, player);
+            }
+            else Debug.LogError("Failed to get ownership module.");
         }
         
         public void RemoveOwnership()
         {
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
+            {
                 module.RemoveOwnership(this);
+            }
+            else Debug.LogError("Failed to get ownership module.");
         }
         
         protected virtual void OnDestroy()
@@ -242,20 +254,12 @@ namespace PurrNet
         
         internal void TriggetSpawnEvent(bool asServer)
         {
-            if (networkManager.isHost)
-            {
-                OnSpawned(true);
-                OnSpawned(false);
-            }
-            else
-            {
-                OnSpawned(asServer);
-            }
+            OnSpawned(asServer);
         }
 
         internal void TriggetClientSpawnEvent()
         {
-            OnSpawned(false);
+            TriggetSpawnEvent(false);
         }
         
         internal void TriggetClientDespawnEvent()

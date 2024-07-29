@@ -138,6 +138,8 @@ namespace PurrNet.Transports
             StopClient();
         }
 
+        public void UpdateEvents() { }
+
         ConnectionState _prevClientState = ConnectionState.Disconnected;
         ConnectionState _prevServerState = ConnectionState.Disconnected;
         
