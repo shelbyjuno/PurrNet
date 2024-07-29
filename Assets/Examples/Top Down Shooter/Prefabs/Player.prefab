@@ -50,6 +50,7 @@ MonoBehaviour:
   propagateOwner: 1
   moveSpeed: 4
   acceleration: 4
+  jumpForce: 10
   gravity: 4
 --- !u!143 &4393774338475174367
 CharacterController:

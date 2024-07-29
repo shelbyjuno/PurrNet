@@ -6,6 +6,7 @@ public class PlayerMovement : NetworkIdentity
 {
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float acceleration = 4f;
+    [SerializeField] private float jumpForce = 10f;
     [SerializeField] private float gravity = 9.81f;
     
     private CharacterController _controller;
@@ -33,16 +34,18 @@ public class PlayerMovement : NetworkIdentity
         Vector3 targetMove = new Vector3(input.x, 0, input.y).normalized;
 
         currentMove = Vector3.Lerp(currentMove, targetMove, acceleration * Time.deltaTime);
-
+        
         if (_controller.isGrounded)
             _verticalVelocity = -gravity * Time.deltaTime; 
         else
             _verticalVelocity -= gravity * Time.deltaTime;
+        
+        if (Input.GetKeyDown(KeyCode.Space) && _controller.isGrounded)
+            _verticalVelocity = jumpForce * 100 * Time.deltaTime;
 
         currentMove.y = _verticalVelocity;
 
         _controller.Move(currentMove * (moveSpeed * Time.deltaTime));
-
         
         if (input != Vector2.zero)
         {
