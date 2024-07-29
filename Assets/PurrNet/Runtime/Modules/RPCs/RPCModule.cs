@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Packets;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -265,10 +266,13 @@ namespace PurrNet.Modules
                 {
                     packet = packet,
                     info = info,
-                    stream = stream
+                    stream = stream,
+                    addedTime = Time.time
                 });
             }
         }
+        
+        const float RPC_CLEANUP_TIME = 5f;
 
         public unsafe void FixedUpdate()
         {
@@ -277,6 +281,14 @@ namespace PurrNet.Modules
                 var data = _rpcPackets[i];
                 var packet = data.packet;
                 var stream = data.stream;
+                
+                if (Time.time - data.addedTime > RPC_CLEANUP_TIME)
+                {
+                    PurrLogger.LogError($"RPC packet {packet.rpcId} for identity {packet.networkId} in scene {packet.sceneId} was not handled in time.");
+                    FreeStream(stream);
+                    _rpcPackets.RemoveAt(i--);
+                    continue;
+                }
                 
                 if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity))
                 {
