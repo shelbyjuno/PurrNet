@@ -39,7 +39,7 @@ public class PlayerHealth : NetworkIdentity
     }
     
     [ObserversRPC(bufferLast:true)]
-    private void SetHealth_Observers(int health)
+    private void SetHealth_Observers(int health) 
     {
         _health = health;
         healthText.text = $"{health}hp";
