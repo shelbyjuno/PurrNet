@@ -81,7 +81,7 @@ namespace PurrNet.Modules
                         OnPlayerJoinedScene(player, _sceneID, true);
                 }
                 
-                _scenePlayers.onPlayerPreloadedScene += OnPlayerJoinedScene;
+                _scenePlayers.onPrePlayerloadedScene += OnPlayerJoinedScene;
             }
         }
 

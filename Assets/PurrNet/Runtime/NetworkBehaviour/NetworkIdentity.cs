@@ -1,4 +1,5 @@
 using System;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
@@ -24,7 +25,6 @@ namespace PurrNet
         /// </summary>
         public SceneID sceneId { get; private set; }
         
-        public bool isSceneObject { get; private set; }
         public bool isServer => networkManager.isServer;
         
         public bool isClient => networkManager.isClient;
@@ -142,14 +142,15 @@ namespace PurrNet
 
         internal void UpdateEnabledState()
         {
-            if (_lastEnabledState != enabled)
+            // TODO: add rules whether we should or not update the enabled state
+            /*if (_lastEnabledState != enabled)
             {
                 if (_ignoreNextEnable)
                      _ignoreNextEnable = false;
                 else onEnabledChanged?.Invoke(this, enabled);
 
                 _lastEnabledState = enabled;
-            }
+            }*/
         }
 
         public virtual void OnDisable()
@@ -197,7 +198,7 @@ namespace PurrNet
             {
                 module.GiveOwnership(this, player);
             }
-            else Debug.LogError("Failed to get ownership module.");
+            else PurrLogger.LogError("Failed to get ownership module.");
         }
         
         public void RemoveOwnership()
@@ -206,7 +207,7 @@ namespace PurrNet
             {
                 module.RemoveOwnership(this);
             }
-            else Debug.LogError("Failed to get ownership module.");
+            else PurrLogger.LogError("Failed to get ownership module.");
         }
         
         protected virtual void OnDestroy()

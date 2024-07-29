@@ -24,12 +24,21 @@ namespace PurrNet.Modules
         /// Called once the player has started joining the scene (before loading)
         /// </summary>
         public event OnPlayerSceneEvent onPlayerJoinedScene;
-        public event OnPlayerSceneEvent onPlayerPreloadedScene;
+        
+        /// <summary>
+        /// Called once the player has finished loading the scene
+        /// </summary>
+        public event OnPlayerSceneEvent onPrePlayerloadedScene;
         
         /// <summary>
         /// Called once the player has finished loading the scene
         /// </summary>
         public event OnPlayerSceneEvent onPlayerLoadedScene;
+        
+        /// <summary>
+        /// Called once the player has finished loading the scene
+        /// </summary>
+        public event OnPlayerSceneEvent onPostPlayerLoadedScene;
         
         public event OnPlayerSceneEvent onPlayerLeftScene;
         public event OnPlayerSceneEvent onPlayerUnloadedScene;
@@ -116,8 +125,10 @@ namespace PurrNet.Modules
                 return;
             }
             
-            onPlayerPreloadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
+            onPrePlayerloadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
             onPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
+            onPostPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
+            
             _players.SendToServer(new ClientFinishedLoadingScene { scene = scene });
         }
         
@@ -138,8 +149,9 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"SceneID '{data.scene}' not found in scene loaded players dictionary");
             }
             
-            onPlayerPreloadedScene?.Invoke(player, data.scene, asserver);
+            onPrePlayerloadedScene?.Invoke(player, data.scene, asserver);
             onPlayerLoadedScene?.Invoke(player, data.scene, asserver);
+            onPostPlayerLoadedScene?.Invoke(player, data.scene, asserver);
         }
 
         /// <summary>

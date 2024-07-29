@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -37,7 +36,7 @@ namespace PurrNet.Modules
     
     public delegate void OwnershipChanged(int identity, PlayerID? player, bool asServer);
     
-    public class GlobalOwnershipModule : INetworkModule
+    public class GlobalOwnershipModule : INetworkModule, IFixedUpdate
     {
         readonly PlayersManager _playersManager;
         readonly ScenePlayersModule _scenePlayers;
@@ -58,6 +57,9 @@ namespace PurrNet.Modules
             _scenePlayers = scenePlayers;
         }
         
+        readonly List<OwnershipChange> _ownershipChanges = new ();
+        readonly List<OwnershipChangeBatch> _ownershipBatches = new ();
+        
         public void Enable(bool asServer)
         {
             _asServer = asServer;
@@ -71,7 +73,7 @@ namespace PurrNet.Modules
             _hierarchy.onIdentityRemoved += OnIdentityDespawned;
 
             if (asServer)
-                _scenePlayers.onPlayerLoadedScene += OnPlayerJoined;
+                _scenePlayers.onPostPlayerLoadedScene += OnPlayerJoined;
 
             _playersManager.Subscribe<OwnershipChangeBatch>(OnOwnershipChange);
             _playersManager.Subscribe<OwnershipChange>(OnOwnershipChange);
@@ -122,24 +124,8 @@ namespace PurrNet.Modules
                 PurrLogger.LogError("TODO: Implement ownership changes on server from client");
                 return;
             }
-
-            for (var i = 0; i < data.state.Count; i++)
-            {
-                var change = data.state[i];
-
-                if (!_hierarchy.TryGetIdentity(data.scene, change.identity, out var identity))
-                {
-                    PurrLogger.LogError($"Failed to find scene {data.scene} when applying ownership change for identity {change.identity}");
-                    continue;
-                }
-
-                if (_sceneOwnerships.TryGetValue(data.scene, out var module))
-                {
-                    module.GiveOwnership(identity, change.player);
-                    onOwnershipChanged?.Invoke(identity.id, change.player, _asServer);
-                }
-                else PurrLogger.LogError($"Failed to find ownership module for scene {data.scene} when applying ownership change for identity {change.identity}");
-            }
+            
+            _ownershipBatches.Add(data);
         }
 
         private void OnOwnershipChange(PlayerID player, OwnershipChange change, bool asserver)
@@ -150,20 +136,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (_hierarchy.TryGetIdentity(change.sceneId, change.identity, out var identity) &&
-                _sceneOwnerships.TryGetValue(change.sceneId, out var module))
-            {
-                if (change.isAdding)
-                {
-                    module.GiveOwnership(identity, change.player);
-                    onOwnershipChanged?.Invoke(identity.id, change.player, _asServer);
-                }
-                else
-                {
-                    if (module.RemoveOwnership(identity))
-                        onOwnershipChanged?.Invoke(identity.id, null, _asServer);
-                }
-            }
+            _ownershipChanges.Add(change);
         }
         
         private void OnSceneUnloaded(SceneID scene, bool asserver)
@@ -243,6 +216,79 @@ namespace PurrNet.Modules
         private void OnSceneLoaded(SceneID scene, bool asServer)
         {
             _sceneOwnerships[scene] = new SceneOwnership(asServer);
+        }
+        
+        public void FixedUpdate()
+        {
+            HandleBatches();
+            HandleChanges();
+        }
+
+        private void HandleBatches()
+        {
+            int count = _ownershipBatches.Count;
+
+            if (count == 0)
+                return;
+
+            for (var i = 0; i < count; i++)
+            {
+                var data = _ownershipBatches[i];
+                var stateCount = data.state.Count;
+                
+                for (var j = 0; j < stateCount; j++)
+                {
+                    var change = data.state[j];
+
+                    if (!_hierarchy.TryGetIdentity(data.scene, change.identity, out var identity))
+                    {
+                        PurrLogger.LogError(
+                            $"Failed to find scene {data.scene} when applying ownership change for identity {change.identity}");
+                        continue;
+                    }
+
+                    if (_sceneOwnerships.TryGetValue(data.scene, out var module))
+                    {
+                        module.GiveOwnership(identity, change.player);
+                        onOwnershipChanged?.Invoke(identity.id, change.player, _asServer);
+                    }
+                    else
+                        PurrLogger.LogError(
+                            $"Failed to find ownership module for scene {data.scene} when applying ownership change for identity {change.identity}");
+                }
+            }
+            
+            _ownershipBatches.Clear();
+        }
+
+        private void HandleChanges()
+        {
+            int count = _ownershipChanges.Count;
+
+            if (count == 0)
+                return;
+
+            for (var i = 0; i < count; i++)
+            {
+                var change = _ownershipChanges[i];
+
+                if (_hierarchy.TryGetIdentity(change.sceneId, change.identity, out var identity) &&
+                    _sceneOwnerships.TryGetValue(change.sceneId, out var module))
+                {
+                    if (change.isAdding)
+                    {
+                        module.GiveOwnership(identity, change.player);
+                        onOwnershipChanged?.Invoke(identity.id, change.player, _asServer);
+                    }
+                    else
+                    {
+                        if (module.RemoveOwnership(identity))
+                            onOwnershipChanged?.Invoke(identity.id, null, _asServer);
+                    }
+                }
+            }
+
+            _ownershipChanges.Clear();
         }
     }
 
