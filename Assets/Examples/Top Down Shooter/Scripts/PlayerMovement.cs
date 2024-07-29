@@ -6,7 +6,7 @@ public class PlayerMovement : NetworkIdentity
 {
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float acceleration = 4f;
-    [SerializeField] private float jumpForce = 10f;
+    [SerializeField] private float jumpForce = 1.5f;
     [SerializeField] private float gravity = 9.81f;
     
     private CharacterController _controller;
@@ -41,7 +41,7 @@ public class PlayerMovement : NetworkIdentity
             _verticalVelocity -= gravity * Time.deltaTime;
         
         if (Input.GetKeyDown(KeyCode.Space) && _controller.isGrounded)
-            _verticalVelocity = jumpForce * 100 * Time.deltaTime;
+            _verticalVelocity = jumpForce;
 
         currentMove.y = _verticalVelocity;
 
