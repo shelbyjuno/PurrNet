@@ -25,11 +25,11 @@ namespace PurrNet
         /// </summary>
         public SceneID sceneId { get; private set; }
         
-        public bool isServer => networkManager.isServer;
+        public bool isServer => isSpawned && networkManager.isServer;
         
-        public bool isClient => networkManager.isClient;
+        public bool isClient => isSpawned && networkManager.isClient;
         
-        public bool isHost => networkManager.isHost;
+        public bool isHost => isSpawned && networkManager.isHost;
         
         public bool isOwner => owner == localPlayer;
         
@@ -87,7 +87,7 @@ namespace PurrNet
         
         public NetworkManager networkManager { get; private set; }
         
-        public PlayerID localPlayer => networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
+        public PlayerID localPlayer => isSpawned && networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
             ? module.localPlayerId.Value : default;
 
         /// <summary>
@@ -118,6 +118,12 @@ namespace PurrNet
         [UsedByIL]
         protected void OnRPCSentInternal(RPCPacket packet, RPCDetails details)
         {
+            if (!isSpawned)
+            {
+                PurrLogger.LogError($"Trying to send RPC from '{name}' which is not spawned.", this);
+                return;
+            }
+            
             if (!networkManager.TryGetModule<RPCModule>(networkManager.isServer, out var module))
                 return;
             
@@ -194,11 +200,17 @@ namespace PurrNet
         
         public void GiveOwnership(PlayerID player)
         {
+            if (!networkManager)
+            {
+                PurrLogger.LogError($"Trying to give ownership to '{name}' which is not spawned.", this);
+                return;
+            }
+            
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
             {
                 module.GiveOwnership(this, player);
             }
-            else PurrLogger.LogError("Failed to get ownership module.");
+            else PurrLogger.LogError("Failed to get ownership module.", this);
         }
         
         public void RemoveOwnership()
