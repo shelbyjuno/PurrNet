@@ -51,26 +51,47 @@ namespace PurrNet.Codegen
         
         private static int GetIDOffset(TypeDefinition type, ICollection<DiagnosticMessage> messages)
         {
-            var baseType = type.BaseType?.Resolve();
-            
-            if (baseType == null)
+            try
+            {
+                var baseType = type.BaseType?.Resolve();
+
+                if (baseType == null)
+                    return 0;
+
+                return GetIDOffset(baseType, messages) +
+                       baseType.Methods.Count(m => GetMethodRPCType(m, messages).HasValue);
+            }
+            catch (Exception e)
+            {
+                messages.Add(new DiagnosticMessage
+                {
+                    DiagnosticType = DiagnosticType.Error,
+                    MessageData = "Failed to get ID offset: " + e.Message
+                });
+                
                 return 0;
-            
-            return GetIDOffset(baseType, messages) + baseType.Methods.Count(m => GetMethodRPCType(m, messages).HasValue);
+            }
         }
         
         private static bool InheritsFrom(TypeDefinition type, string baseTypeName)
         {
-            if (type.BaseType == null)
-                return false;
-
-            if (type.BaseType.FullName == baseTypeName)
+            try
             {
-                return true;
+                if (type.BaseType == null)
+                    return false;
+
+                if (type.BaseType.FullName == baseTypeName)
+                {
+                    return true;
+                }
+
+                var btype = type.BaseType.Resolve();
+                return btype != null && InheritsFrom(btype, baseTypeName);
             }
-    
-            var btype = type.BaseType.Resolve();
-            return btype != null && InheritsFrom(btype, baseTypeName);
+            catch (Exception e)
+            {
+                throw new Exception($"InheritsFrom : Failed to resolve base type of {type.FullName}, {e.Message}");
+            }
         }
         
         private static RPCDetails? GetMethodRPCType(MethodDefinition method, ICollection<DiagnosticMessage> messages)
@@ -214,15 +235,15 @@ namespace PurrNet.Codegen
                 var newMethod = new MethodDefinition($"HandleRPCGenerated_{offset + i}",
                     MethodAttributes.Public | MethodAttributes.HideBySig,
                     module.TypeSystem.Void);
-
+                
                 var preserveAttribute = module.GetTypeReference<PreserveAttribute>().Import(module);
                 var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
                 newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
                 
-                var identityType = module.GetTypeReference<NetworkIdentity>();
-                var streamType = module.GetTypeReference<NetworkStream>();
-                var packetType = module.GetTypeReference<RPCPacket>();
-                var rpcInfo = module.GetTypeReference<RPCInfo>();
+                var identityType = module.GetTypeReference<NetworkIdentity>().Import(module);
+                var streamType = module.GetTypeReference<NetworkStream>().Import(module);
+                var packetType = module.GetTypeReference<RPCPacket>().Import(module);
+                var rpcInfo = module.GetTypeReference<RPCInfo>().Import(module);
 
                 var readHeaderMethod = identityType.GetMethod("ReadGenericHeader").Import(module);
                 var callGenericMethod = identityType.GetMethod("CallGeneric").Import(module);
@@ -418,14 +439,14 @@ namespace PurrNet.Codegen
                 newMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
             
             var code = newMethod.Body.GetILProcessor();
-            
+             
             var module = method.Module;
-            var streamType = method.Module.GetTypeReference<NetworkStream>();
-            var rpcType = method.Module.GetTypeReference<RPCModule>();
-            var identityType = method.Module.GetTypeReference<NetworkIdentity>();
-            var packetType = method.Module.GetTypeReference<RPCPacket>();
-            var hahserType = method.Module.GetTypeReference<Hasher>();
-            var rpcDetails = method.Module.GetTypeReference<RPCDetails>();
+            var streamType = method.Module.GetTypeReference<NetworkStream>().Import(module);
+            var rpcType = method.Module.GetTypeReference<RPCModule>().Import(module);
+            var identityType = method.Module.GetTypeReference<NetworkIdentity>().Import(module);
+            var packetType = method.Module.GetTypeReference<RPCPacket>().Import(module);
+            var hahserType = method.Module.GetTypeReference<Hasher>().Import(module);
+            var rpcDetails = method.Module.GetTypeReference<RPCDetails>().Import(module);
 
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
@@ -688,34 +709,43 @@ namespace PurrNet.Codegen
                     for (var t = 0; t < module.Types.Count; t++)
                     {
                         var type = module.Types[t];
+
                         if (!type.IsClass)
                             continue;
 
                         var idFullName = typeof(NetworkIdentity).FullName;
+
                         if (!InheritsFrom(type, idFullName) && type.FullName != idFullName)
                             continue;
-                        
+
                         _rpcMethods.Clear();
 
                         int idOffset = GetIDOffset(type, messages);
 
                         for (var i = 0; i < type.Methods.Count; i++)
                         {
-                            var method = type.Methods[i];
-                            var rpcType = GetMethodRPCType(method, messages);
-                            
-                            if (rpcType == null)
-                                continue;
-                            
-                            _rpcMethods.Add(new RPCMethod {details = rpcType.Value, originalMethod = method});
+                            try
+                            {
+                                var method = type.Methods[i];
+                                var rpcType = GetMethodRPCType(method, messages);
+
+                                if (rpcType == null)
+                                    continue;
+
+                                _rpcMethods.Add(new RPCMethod { details = rpcType.Value, originalMethod = method });
+                            }
+                            catch (Exception e)
+                            {
+                                Error(messages, e.Message + "\n" + e.StackTrace, type.Methods[i]);
+                            }
                         }
 
-                        int index = 0;
-                        try
+                        for (var index = 0; index < _rpcMethods.Count; index++)
                         {
-                            for (index = 0; index < _rpcMethods.Count; index++)
+                            var method = _rpcMethods[index].originalMethod;
+
+                            try
                             {
-                                var method = _rpcMethods[index].originalMethod;
                                 var newMethod = HandleRPC(idOffset + index, _rpcMethods[index], messages);
 
                                 if (newMethod != null)
@@ -724,23 +754,25 @@ namespace PurrNet.Codegen
                                     UpdateMethodReferences(module, method, newMethod, messages);
                                 }
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Error(messages, e.Message + "\n" + e.StackTrace, _rpcMethods[index].originalMethod);
+                            catch (Exception e)
+                            {
+                                Error(messages, e.Message + "\n" + e.StackTrace, method);
+                            }
                         }
 
                         try
                         {
-                            if (_rpcMethods.Count > 0)     
+                            if (_rpcMethods.Count > 0)
+                            {
                                 HandleRPCReceiver(module, type, _rpcMethods, idOffset);
+                            }
                         }
                         catch (Exception e)
                         {
                             messages.Add(new DiagnosticMessage
                             {
                                 DiagnosticType = DiagnosticType.Error,
-                                MessageData = $"[{type.Name}]: {e.Message}"
+                                MessageData = $"HandleRPCReceiver [{type.Name}]: {e.Message}"
                             });
                         }
                     }
@@ -756,7 +788,18 @@ namespace PurrNet.Codegen
                     SymbolWriterProvider = new PortablePdbWriterProvider()
                 };
 
-                assemblyDefinition.Write(pe, writerParameters);
+                try
+                {
+                    assemblyDefinition.Write(pe, writerParameters);
+                }
+                catch (Exception e)
+                {
+                    messages.Add(new DiagnosticMessage
+                    {
+                        DiagnosticType = DiagnosticType.Error,
+                        MessageData = $"Failed to write assembly: {e.Message}",
+                    });
+                }
 
                 return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), messages);
             }
@@ -767,7 +810,7 @@ namespace PurrNet.Codegen
                     new()
                     {
                         DiagnosticType = DiagnosticType.Error,
-                        MessageData = e.Message,
+                        MessageData = $"Unhandled exception {e.Message}\n{e.StackTrace}",
                     }
                 };
                 

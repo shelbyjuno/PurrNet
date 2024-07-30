@@ -13,22 +13,27 @@ namespace PurrNet.Codegen
 
             switch (type.FullName)
             {
-                case "System.Int32": return module.TypeSystem.Int32;
-                case "System.Single": return module.TypeSystem.Single;
-                case "System.String": return module.TypeSystem.String;
-                case "System.Boolean": return module.TypeSystem.Boolean;
-                case "System.Void": return module.TypeSystem.Void;
+                case "System.Int32":
+                    return module.TypeSystem.Int32;
+                case "System.Single":
+                    return module.TypeSystem.Single;
+                case "System.String":
+                    return module.TypeSystem.String;
+                case "System.Boolean":
+                    return module.TypeSystem.Boolean;
+                case "System.Void":
+                    return module.TypeSystem.Void;
+                default:
+                    var fullName = type.FullName;
+
+                    for (var i = 0; i < module.Types.Count; i++)
+                    {
+                        if (module.Types[i].FullName == fullName)
+                            return module.Types[i];
+                    }
+                    
+                    return module.ImportReference(typeof(T));
             }
-            
-            var fullName = type.FullName;
-            
-            for (var i = 0; i < module.Types.Count; i++)
-            {
-                if (module.Types[i].FullName == fullName)
-                    return module.Types[i];
-            }
-            
-            return module.ImportReference(typeof(T));
         }
         
         public static TypeReference Import(this ModuleDefinition module, TypeReference member)
