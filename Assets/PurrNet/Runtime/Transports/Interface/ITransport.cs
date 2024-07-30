@@ -37,10 +37,29 @@ namespace PurrNet.Transports
     
     public enum Channel : byte
     {
+        /// <summary>
+        /// It ensures that the data is received but the order is not guaranteed.
+        /// </summary>
         ReliableUnordered,
-        Sequenced,
+        
+        /// <summary>
+        /// Packets are guaranteed to be in order but not guaranteed to be received.
+        /// </summary>
+        UnreliableSequenced,
+        
+        /// <summary>
+        /// Packets are guaranteed to be received in order.
+        /// </summary>
         ReliableOrdered,
+        
+        /// <summary>
+        /// Only the last sent packet is guaranteed to be received.
+        /// </summary>
         ReliableSequenced,
+        
+        /// <summary>
+        /// Packets are not guaranteed to be received nor in order.
+        /// </summary>
         Unreliable
     }
     

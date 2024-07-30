@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Packets;
-using PurrNet.Transports;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -27,7 +25,7 @@ namespace PurrNet.Modules
         }
     }
 
-    public class RPCModule : INetworkModule, IFixedUpdate
+    public class RPCModule : INetworkModule
     {
         readonly HierarchyModule _hierarchyModule;
         readonly PlayersManager _playersManager;
@@ -238,8 +236,6 @@ namespace PurrNet.Modules
             return ptr;
         }
         
-        readonly List<SaturatedRPCPacket> _rpcPackets = new();
-        
         unsafe void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
             var stream = AllocStream(true);
@@ -260,51 +256,6 @@ namespace PurrNet.Modules
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
                 
                 FreeStream(stream);
-            }
-            else
-            {
-                _rpcPackets.Add(new SaturatedRPCPacket
-                {
-                    packet = packet,
-                    info = info,
-                    stream = stream,
-                    addedTime = Time.time
-                });
-            }
-        }
-        
-        const float RPC_CLEANUP_TIME = 5f;
-
-        public unsafe void FixedUpdate()
-        {
-            for (int i = 0; i < _rpcPackets.Count; ++i)
-            {
-                var data = _rpcPackets[i];
-                var packet = data.packet;
-                var stream = data.stream;
-                
-                if (Time.time - data.addedTime > RPC_CLEANUP_TIME)
-                {
-                    PurrLogger.LogError($"RPC packet {packet.rpcId} for identity {packet.networkId} in scene {packet.sceneId} was not handled in time.");
-                    FreeStream(stream);
-                    _rpcPackets.RemoveAt(i--);
-                    continue;
-                }
-                
-                if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity))
-                {
-                    var rpcHandlerPtr = GetRPCHandler(identity.GetType(), packet.rpcId);
-
-                    if (rpcHandlerPtr != IntPtr.Zero)
-                    {
-                        // Call the RPC handler
-                        ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, void>)rpcHandlerPtr)(identity, stream, packet, data.info);
-                    }
-                    else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
-                
-                    FreeStream(stream);
-                    _rpcPackets.RemoveAt(i--);
-                }
             }
         }
     }

@@ -650,6 +650,7 @@ namespace PurrNet.Modules
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
             onIdentityRemoved?.Invoke(identity);
+            PurrLogger.LogError($"Identity with id {identity.id} ('{identity.name}') was removed", identity);
             _removedLastFrame.Add(new ComponentGameObjectPair
             {
                 identity = identity,
@@ -767,6 +768,23 @@ namespace PurrNet.Modules
                 _removedLastFrame.Clear();
             }
             
+            if (_history.hasUnflushedActions)
+            {
+                if (_asServer)
+                {
+                    var delta = _history.GetDelta();
+
+                    if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
+                        _playersManager.Send(players, delta);
+
+                    _history.Flush();
+                }
+                else
+                {
+                    Debug.Log("TODO: Implement client flush logic.");
+                }
+            }
+            
             var spawnedThisFrameCount = _spawnedThisFrame.Count;
 
             if (spawnedThisFrameCount > 0)
@@ -775,23 +793,7 @@ namespace PurrNet.Modules
                     _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
                 _spawnedThisFrame.Clear();
             }
-            
-            if (!_history.hasUnflushedActions) 
-                return;
 
-            if (_asServer)
-            {
-                var delta = _history.GetDelta();
-
-                if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
-                    _playersManager.Send(players, delta);
-                
-                _history.Flush();
-            }
-            else
-            {
-                Debug.Log("TODO: Implement client flush logic.");
-            }
         }
 
         public bool TryGetIdentity(int id, out NetworkIdentity identity)
