@@ -125,7 +125,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        public void AddAssemblyDefinitionBeingOperatedOn(AssemblyDefinition assemblyDefinition)
+        public void SetSelf(AssemblyDefinition assemblyDefinition)
         {
             m_SelfAssembly = assemblyDefinition;
         }

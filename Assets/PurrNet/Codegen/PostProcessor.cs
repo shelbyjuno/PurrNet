@@ -35,8 +35,18 @@ namespace PurrNet.Codegen
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly)
         {
-            var isEditorDll = compiledAssembly.Name.EndsWith(".Editor");
-            return !isEditorDll;
+            var name = compiledAssembly.Name;
+            
+            if (name.StartsWith("Unity."))
+                return false;
+            
+            if (name.StartsWith("UnityEngine."))
+                return false;
+            
+            if (name.StartsWith("UnityEditor."))
+                return false;
+            
+            return !name.Contains("Editor");
         }
         
         private static int GetIDOffset(TypeDefinition type, ICollection<DiagnosticMessage> messages)
@@ -660,14 +670,17 @@ namespace PurrNet.Codegen
 
                 using var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData);
                 using var pdbStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData);
-
+                var resolver = new AssemblyResolver(compiledAssembly);
+                
                 var assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, new ReaderParameters
                 {
                     ReadSymbols = true,
                     SymbolStream = pdbStream,
                     SymbolReaderProvider = new PortablePdbReaderProvider(),
-                    AssemblyResolver = new AssemblyResolver(compiledAssembly)
+                    AssemblyResolver = resolver
                 });
+                
+                resolver.SetSelf(assemblyDefinition);
 
                 for (var m = 0; m < assemblyDefinition.Modules.Count; m++)
                 {
