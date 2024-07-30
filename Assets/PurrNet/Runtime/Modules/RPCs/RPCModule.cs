@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Packets;
+using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet.Modules
@@ -82,7 +83,7 @@ namespace PurrNet.Modules
                     {
                         var packet = data.packet;
                         packet.data = data.stream.buffer.ToByteData();
-                        _playersManager.Send(player, packet, data.details.channel);
+                        _playersManager.Send(player, packet);
                         break;
                     }
 
@@ -92,7 +93,7 @@ namespace PurrNet.Modules
                         {
                             var packet = data.packet;
                             packet.data = data.stream.buffer.ToByteData();
-                            _playersManager.Send(player, packet, data.details.channel);
+                            _playersManager.Send(player, packet);
                         }
                         break;
                     }
