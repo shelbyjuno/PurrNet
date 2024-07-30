@@ -650,7 +650,6 @@ namespace PurrNet.Modules
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
             onIdentityRemoved?.Invoke(identity);
-            PurrLogger.LogError($"Identity with id {identity.id} ('{identity.name}') was removed", identity);
             _removedLastFrame.Add(new ComponentGameObjectPair
             {
                 identity = identity,

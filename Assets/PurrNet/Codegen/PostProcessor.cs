@@ -727,7 +727,7 @@ namespace PurrNet.Codegen
                         }
                         catch (Exception e)
                         {
-                            Error(messages, e.Message, _rpcMethods[index].originalMethod);
+                            Error(messages, e.Message + "\n" + e.StackTrace, _rpcMethods[index].originalMethod);
                         }
 
                         try

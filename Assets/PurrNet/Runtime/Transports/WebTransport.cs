@@ -136,7 +136,7 @@ namespace PurrNet.Transports
             onConnected?.Invoke(new Connection(0), false);
         }
         
-        public void UpdateEvents()
+        public void UpdateEvents(float delta)
         {
             _server.ProcessMessageQueue();
             _client.ProcessMessageQueue();

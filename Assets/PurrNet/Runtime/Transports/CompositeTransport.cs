@@ -181,12 +181,12 @@ namespace PurrNet.Transports
             SetupEvents();
         }
 
-        public void UpdateEvents()
+        public void UpdateEvents(float delta)
         {
             for (int i = 0; i < _transports.Length; i++)
             {
                 if (_transports[i])
-                    _transports[i].transport.UpdateEvents();
+                    _transports[i].transport.UpdateEvents(delta);
             }
 
             TriggerConnectionStateEvent(true);

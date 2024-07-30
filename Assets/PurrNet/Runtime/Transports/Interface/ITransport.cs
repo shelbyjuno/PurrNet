@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using PurrNet.Packets;
 
 namespace PurrNet.Transports
 {
@@ -101,7 +100,7 @@ namespace PurrNet.Transports
         
         void CloseConnection(Connection conn);
 
-        void UpdateEvents();
+        void UpdateEvents(float delta);
     }
 
     public enum DisconnectReason

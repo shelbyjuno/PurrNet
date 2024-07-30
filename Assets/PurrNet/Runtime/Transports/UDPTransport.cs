@@ -160,10 +160,21 @@ namespace PurrNet.Transports
             onConnected?.Invoke(conn, true);
         }
 
-        public void UpdateEvents()
+        public void UpdateEvents(float delta)
         {
-            _server.PollEvents();
-            _client.PollEvents();
+            var dInMs = Mathf.FloorToInt(delta * 1000);
+            
+            if (_server.IsRunning)
+            {
+                _server.ManualUpdate(dInMs);
+                _server.PollEvents();
+            }
+
+            if (_client.IsRunning)
+            {
+                _client.ManualUpdate(dInMs);
+                _client.PollEvents();
+            }
         }
 
         public void Connect(string ip, ushort port)
