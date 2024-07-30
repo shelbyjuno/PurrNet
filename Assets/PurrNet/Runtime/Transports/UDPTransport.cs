@@ -65,8 +65,6 @@ namespace PurrNet.Transports
                 PingInterval = 900
             };
 
-            _client.Start();
-
             _clientListener.PeerConnectedEvent += OnClientConnected;
             _clientListener.PeerDisconnectedEvent += OnClientDisconnected;
             _clientListener.NetworkReceiveEvent += OnClientData;
@@ -185,6 +183,8 @@ namespace PurrNet.Transports
             clientState = ConnectionState.Connecting;
             
             TriggerConnectionStateEvent(false);
+
+            _client.StartInManualMode(0);
             _client.Connect(ip, port, "PurrNet");
             TriggerConnectionStateEvent(false);
         }
@@ -204,6 +204,7 @@ namespace PurrNet.Transports
             }
 
             _client.DisconnectAll();
+            _client.Stop();
             
             clientState = ConnectionState.Disconnected;
             TriggerConnectionStateEvent(false);
@@ -218,7 +219,7 @@ namespace PurrNet.Transports
                 listenerState = ConnectionState.Connecting;
                 TriggerConnectionStateEvent(true);
 
-                _server.Start(port);
+                _server.StartInManualMode(port);
                 
                 listenerState = ConnectionState.Connected;
                 TriggerConnectionStateEvent(true);

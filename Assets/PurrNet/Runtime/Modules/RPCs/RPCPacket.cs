@@ -1,23 +1,8 @@
-﻿using System;
-using PurrNet.Modules;
-using PurrNet.Packets;
+﻿using PurrNet.Packets;
 using PurrNet.Transports;
 
 namespace PurrNet
 {
-    public struct SaturatedRPCPacket : IDisposable
-    {
-        public RPCPacket packet;
-        public RPCInfo info;
-        public NetworkStream stream;
-        public float addedTime;
-
-        public void Dispose()
-        {
-            RPCModule.FreeStream(stream);
-        }
-    }
-    
     public partial struct RPCPacket : INetworkedData
     {
         public const string GET_ID_METHOD = nameof(GetID);

@@ -244,7 +244,7 @@ namespace PurrNet.Modules
             
             var info = new RPCInfo { sender = player };
 
-            if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity))
+            if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
             {
                 var rpcHandlerPtr = GetRPCHandler(identity.GetType(), packet.rpcId);
 
@@ -254,9 +254,9 @@ namespace PurrNet.Modules
                     ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, void>)rpcHandlerPtr)(identity, stream, packet, info);
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
-                
-                FreeStream(stream);
             }
+            
+            FreeStream(stream);
         }
     }
 }
