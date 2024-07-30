@@ -279,10 +279,21 @@ namespace PurrNet.Codegen
                 
                 int paramCount = rpc.Parameters.Count;
 
-                if (rpc.HasGenericParameters)
-                     HandleGenericRPC(module, originalRpcs, rpc, genericRpcHeaderType, newMethod, serializeMethod, code, stream, info, paramCount, readHeaderMethod, i, setInfo, localPlayerGetter, setPlayerId, readGeneric, readT, callGenericMethod);
-                else HandleNonGenericRPC(originalRpcs, rpc, newMethod, i, paramCount, code, info, localPlayerGetter, serializeMethod, stream);
-                
+                try
+                {
+                    if (rpc.HasGenericParameters)
+                        HandleGenericRPC(module, originalRpcs, rpc, genericRpcHeaderType, newMethod, serializeMethod,
+                            code, stream, info, paramCount, readHeaderMethod, i, setInfo, localPlayerGetter,
+                            setPlayerId, readGeneric, readT, callGenericMethod);
+                    else
+                        HandleNonGenericRPC(originalRpcs, rpc, newMethod, i, paramCount, code, info, localPlayerGetter,
+                            serializeMethod, stream);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to handle RPC: {e.Message}\n{e.StackTrace}");
+                }
+
                 code.Append(Instruction.Create(OpCodes.Ret));
                 type.Methods.Add(newMethod);
             }
@@ -772,7 +783,7 @@ namespace PurrNet.Codegen
                             messages.Add(new DiagnosticMessage
                             {
                                 DiagnosticType = DiagnosticType.Error,
-                                MessageData = $"HandleRPCReceiver [{type.Name}]: {e.Message}"
+                                MessageData = $"HandleRPCReceiver [{type.Name}]: {e.Message}\n{e.StackTrace}"
                             });
                         }
                     }

@@ -439,6 +439,9 @@ namespace PurrNet.Modules
             
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
                 return;
+            
+            if (!identity)
+                return;
 
             if (action.despawnType == DespawnType.GameObject)
             {
