@@ -236,30 +236,30 @@ namespace PurrNet.Codegen
                     MethodAttributes.Public | MethodAttributes.HideBySig,
                     module.TypeSystem.Void);
                 
-                var preserveAttribute = module.GetTypeReference<PreserveAttribute>().Import(module);
+                var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
                 var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
                 newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
                 
-                var identityType = module.GetTypeReference<NetworkIdentity>().Import(module);
-                var streamType = module.GetTypeReference<NetworkStream>().Import(module);
-                var packetType = module.GetTypeReference<RPCPacket>().Import(module);
-                var rpcInfo = module.GetTypeReference<RPCInfo>().Import(module);
+                var identityType = module.GetTypeDefinition<NetworkIdentity>();
+                var streamType = module.GetTypeDefinition<NetworkStream>();
+                var packetType = module.GetTypeDefinition<RPCPacket>();
+                var rpcInfo = module.GetTypeDefinition<RPCInfo>();
 
                 var readHeaderMethod = identityType.GetMethod("ReadGenericHeader").Import(module);
                 var callGenericMethod = identityType.GetMethod("CallGeneric").Import(module);
                 var localPlayerProp = identityType.GetProperty("localPlayer");
                 var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
                 
-                var genericRpcHeaderType = module.GetTypeReference<GenericRPCHeader>();
+                var genericRpcHeaderType = module.GetTypeDefinition<GenericRPCHeader>();
                 
                 var setInfo = genericRpcHeaderType.GetMethod("SetInfo").Import(module);
                 var readGeneric = genericRpcHeaderType.GetMethod("Read").Import(module);
                 var readT = genericRpcHeaderType.GetMethod("Read", true).Import(module);
                 var setPlayerId = genericRpcHeaderType.GetMethod("SetPlayerId").Import(module);
                 
-                var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType);
-                var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType);
-                var info = new ParameterDefinition("info", ParameterAttributes.None, rpcInfo);
+                var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType.Import(module));
+                var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType.Import(module));
+                var info = new ParameterDefinition("info", ParameterAttributes.None, rpcInfo.Import(module));
                 
                 newMethod.Parameters.Add(stream);
                 newMethod.Parameters.Add(packet);
@@ -354,7 +354,7 @@ namespace PurrNet.Codegen
         {
             int genericParamCount = rpc.GenericParameters.Count;
 
-            var headerValue = new VariableDefinition(genericRpcHeaderType);
+            var headerValue = new VariableDefinition(genericRpcHeaderType.Import(module));
             newMethod.Body.Variables.Add(headerValue);
 
             var serializeUint = new GenericInstanceMethod(serializeMethod);
@@ -423,7 +423,7 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
         }
 
-        private MethodDefinition HandleRPC(int id, RPCMethod methodRpc, [UsedImplicitly] List<DiagnosticMessage> messages)
+        private MethodDefinition HandleRPC(ModuleDefinition module, int id, RPCMethod methodRpc, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             var method = methodRpc.originalMethod;
             
@@ -451,13 +451,12 @@ namespace PurrNet.Codegen
             
             var code = newMethod.Body.GetILProcessor();
              
-            var module = method.Module;
-            var streamType = method.Module.GetTypeReference<NetworkStream>().Import(module);
-            var rpcType = method.Module.GetTypeReference<RPCModule>().Import(module);
-            var identityType = method.Module.GetTypeReference<NetworkIdentity>().Import(module);
-            var packetType = method.Module.GetTypeReference<RPCPacket>().Import(module);
-            var hahserType = method.Module.GetTypeReference<Hasher>().Import(module);
-            var rpcDetails = method.Module.GetTypeReference<RPCDetails>().Import(module);
+            var streamType = module.GetTypeDefinition<NetworkStream>();
+            var rpcType = module.GetTypeDefinition<RPCModule>();
+            var identityType = module.GetTypeDefinition<NetworkIdentity>();
+            var packetType = module.GetTypeDefinition<RPCPacket>();
+            var hahserType = module.GetTypeDefinition<Hasher>();
+            var rpcDetails = module.GetTypeDefinition<RPCDetails>();
 
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
@@ -474,9 +473,9 @@ namespace PurrNet.Codegen
             // Declare local variables
             newMethod.Body.InitLocals = true;
             
-            var streamVariable = new VariableDefinition(streamType);
-            var rpcDataVariable = new VariableDefinition(packetType);
-            var rpcDetailsVariable = new VariableDefinition(rpcDetails);
+            var streamVariable = new VariableDefinition(streamType.Import(module));
+            var rpcDataVariable = new VariableDefinition(packetType.Import(module));
+            var rpcDetailsVariable = new VariableDefinition(rpcDetails.Import(module));
             var typeHash = new VariableDefinition(module.TypeSystem.UInt32);
             
             newMethod.Body.Variables.Add(streamVariable);
@@ -604,7 +603,7 @@ namespace PurrNet.Codegen
                 {
                     var sendMethod = identityType.GetMethod("SendToServer", true).Import(module);
                     var sendToServerMethodGeneric = new GenericInstanceMethod(sendMethod);
-                    sendToServerMethodGeneric.GenericArguments.Add(packetType);
+                    sendToServerMethodGeneric.GenericArguments.Add(packetType.Import(module));
 
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
@@ -617,7 +616,7 @@ namespace PurrNet.Codegen
                 {
                     var sendMethod = identityType.GetMethod("SendToAll", true).Import(module);
                     var sendToAllMethodGeneric = new GenericInstanceMethod(sendMethod);
-                    sendToAllMethodGeneric.GenericArguments.Add(packetType);
+                    sendToAllMethodGeneric.GenericArguments.Add(packetType.Import(module));
                     
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
@@ -630,7 +629,7 @@ namespace PurrNet.Codegen
                 {
                     var sendMethod = identityType.GetMethod("SendToTarget", true).Import(module);
                     var sendMethodGeneric = new GenericInstanceMethod(sendMethod);
-                    sendMethodGeneric.GenericArguments.Add(packetType);
+                    sendMethodGeneric.GenericArguments.Add(packetType.Import(module));
                     
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     code.Append(Instruction.Create(OpCodes.Ldarg_1)); // player
@@ -757,7 +756,7 @@ namespace PurrNet.Codegen
 
                             try
                             {
-                                var newMethod = HandleRPC(idOffset + index, _rpcMethods[index], messages);
+                                var newMethod = HandleRPC(module, idOffset + index, _rpcMethods[index], messages);
 
                                 if (newMethod != null)
                                 {

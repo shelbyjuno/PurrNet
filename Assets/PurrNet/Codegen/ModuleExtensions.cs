@@ -36,6 +36,11 @@ namespace PurrNet.Codegen
             }
         }
         
+        public static TypeDefinition GetTypeDefinition<T>(this ModuleDefinition module)
+        {
+            return GetTypeReference<T>(module).Resolve();
+        }
+        
         public static TypeReference Import(this ModuleDefinition module, TypeReference member)
         {
             return module.ImportReference(member);
