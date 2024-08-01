@@ -26,6 +26,7 @@ MonoBehaviour:
     syncComponentActive: 1
     syncComponentAuth: -1
     syncGameObjectActive: 1
-    syncGameObjectActiveAuth: -1
+    syncGameObjectActiveAuth: 1
   _defaultTransformRules:
+    syncParent: 1
     changeParentAuth: -1
