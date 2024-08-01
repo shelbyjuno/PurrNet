@@ -3,19 +3,19 @@ using UnityEditor;
 
 namespace PurrNet.Utils
 {
-    public class HelpLinkAttribute : PropertyAttribute
+    public class PurrDocsAttribute : PropertyAttribute
     {
         public readonly string url;
 
-        public HelpLinkAttribute(string docsExtension)
+        public PurrDocsAttribute(string docsExtension)
         {
             url = docsExtension;
         }
     }
 
 #if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(HelpLinkAttribute))]
-    public class HelpLinkDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(PurrDocsAttribute))]
+    public class PurrDocsDrawer : PropertyDrawer
     {
         private const float IconWidth = 20f;
         private static GUIContent iconContent;
@@ -32,7 +32,7 @@ namespace PurrNet.Utils
 
             if (GUI.Button(iconRect, iconContent, GUIStyle.none))
             {
-                HelpLinkAttribute helpLink = attribute as HelpLinkAttribute;
+                PurrDocsAttribute helpLink = attribute as PurrDocsAttribute;
                 Application.OpenURL("https://purrnet.gitbook.io/docs/" + helpLink.url);
             }
 
