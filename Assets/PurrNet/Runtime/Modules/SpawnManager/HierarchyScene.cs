@@ -253,7 +253,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (_asServer && !identity.HasSetEnabledAuthority(player))
+            if (!identity.HasSetEnabledAuthority(player, !_asServer))
             {
                 PurrLogger.LogError($"SetEnabled failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
@@ -271,7 +271,10 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (_asServer && !identity.HasSetActiveAuthority(player))
+            if (!identity.ShouldSyncSetActive(!_asServer))
+                return;
+            
+            if (!identity.HasSetActiveAuthority(player, !_asServer))
             {
                 PurrLogger.LogError($"SetActive failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
@@ -297,7 +300,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (_asServer && !_manager.networkRules.HasChangeParentAuthority(trs, player))
+            if (!_manager.networkRules.HasChangeParentAuthority(trs, player, !_asServer))
             {
                 PurrLogger.LogError($"Parent change from '{player}' failed for '{trs.name}' due to lack of permissions.", trs);
                 return;
@@ -331,7 +334,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (_asServer && !link.HasSpawnAuthority())
+            if (!link.HasSpawnAuthority(!_asServer))
             {
                 PurrLogger.LogError($"Spawn failed from '{player}' for prefab '{prefab.name}' due to lack of permissions.");
                 return;
@@ -441,7 +444,7 @@ namespace PurrNet.Modules
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
                 return;
 
-            if (_asServer && !identity.HasDespawnAuthority(player))
+            if (_asServer && !identity.HasDespawnAuthority(player, !_asServer))
             {
                 PurrLogger.LogError($"Despawn failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
@@ -608,13 +611,13 @@ namespace PurrNet.Modules
 
         private void OnIdentityParentChanged(NetworkTransform trs)
         {
-            if (!trs.ShouldSyncParent())
+            if (!trs.ShouldSyncParent(_asServer))
             {
                 trs.ResetToLastValidParent();
                 return;
             }
             
-            if (!trs.HasChangeParentAuthority())
+            if (!trs.HasChangeParentAuthority(_asServer))
             {
                 PurrLogger.LogError($"Parent change failed for '{trs.name}' due to lack of permissions.", trs);
                 trs.ResetToLastValidParent();
@@ -622,7 +625,22 @@ namespace PurrNet.Modules
             }
             
             var parentTrs = trs.transform.parent;
-            int parentId = parentTrs ? parentTrs.GetComponent<NetworkIdentity>().id : -1;
+            int parentId;
+
+            if (parentTrs)
+            {
+                if (parentTrs.TryGetComponent<NetworkIdentity>(out var parent))
+                {
+                    parentId = parent.id;
+                }
+                else
+                {
+                    PurrLogger.LogError($"Failed to find NetworkIdentity component on parent '{parentTrs.name}' aborting parent change.", trs);
+                    trs.ResetToLastValidParent();
+                    return;
+                }
+            }
+            else parentId = -1;
             
             var action = new ChangeParentAction
             {
@@ -693,6 +711,16 @@ namespace PurrNet.Modules
         
         private void OnToggledComponent(NetworkIdentity identity, bool active)
         {
+            if (!identity.ShouldSyncSetEnabled(_asServer))
+                return;
+            
+            if (!identity.HasSetEnabledAuthority(_asServer))
+            {
+                PurrLogger.LogError($"SetEnabled failed for '{identity.name}' due to lack of permissions.", identity);
+                identity.enabled = !active;
+                return;
+            }
+            
             _history.AddSetEnabledAction(new SetEnabledAction
             {
                 identityId = identity.id,
@@ -702,6 +730,16 @@ namespace PurrNet.Modules
         
         private void OnToggledGameObject(NetworkIdentity identity, bool active)
         {
+            if (!identity.ShouldSyncSetActive(_asServer))
+                return;
+            
+            if (!identity.HasSetActiveAuthority(_asServer))
+            {
+                PurrLogger.LogError($"SetActive failed for '{identity.name}' due to lack of permissions.", identity);
+                identity.gameObject.SetActive(!active);
+                return;
+            }
+            
             _history.AddSetActiveAction(new SetActiveAction
             {
                 identityId = identity.id,
@@ -751,11 +789,14 @@ namespace PurrNet.Modules
             {
                 var delta = _history.GetDelta();
 
-                if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
+                if (_asServer)
                 {
-                    if (_asServer)
-                         _playersManager.Send(players, delta);
-                    else _playersManager.SendToServer(delta);
+                    if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
+                        _playersManager.Send(players, delta);
+                }
+                else
+                {
+                    _playersManager.SendToServer(delta);
                 }
 
                 _history.Flush();

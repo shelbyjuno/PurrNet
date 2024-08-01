@@ -87,44 +87,54 @@ namespace PurrNet
         [Tooltip("Who can send ObserversRpc and TargetRpc")]
         public ConnectionAuth clientRpcAuth;*/
 
-        public bool HasDespawnAuthority(NetworkIdentity identity, PlayerID player)
+        public bool HasDespawnAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
         {
-            return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player);
+            return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player, asServer);
         }
         
-        public bool HasSpawnAuthority(NetworkIdentity identity)
+        public bool HasSpawnAuthority(NetworkIdentity identity, bool asServer)
         {
-            return HasAuthority(_defaultSpawnRules.spawnAuth, identity);
+            return HasAuthority(_defaultSpawnRules.spawnAuth, asServer);
         }
         
-        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID player)
+        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
         {
-            return HasAuthority(_defaultIdentityRules.syncGameObjectActiveAuth, identity, player);
+            return HasAuthority(_defaultIdentityRules.syncGameObjectActiveAuth, identity, player, asServer);
         }
         
-        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID player)
+        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
         {
-            return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player);
+            return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player, asServer);
         }
         
-        public bool ShouldSyncParent(NetworkIdentity identity)
+        public bool ShouldSyncParent(NetworkIdentity identity, bool asServer)
         {
             return _defaultTransformRules.syncParent;
         }
         
-        public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player)
+        public bool ShouldSyncSetActive(NetworkIdentity identity, bool asServer)
         {
-            return HasAuthority(_defaultTransformRules.changeParentAuth, identity, player);
+            return _defaultIdentityRules.syncGameObjectActive;
         }
         
-        static bool HasAuthority(ConnectionAuth connAuth, NetworkIdentity identity)
+        public bool ShouldSyncSetEnabled(NetworkIdentity identity, bool asServer)
         {
-            return connAuth == ConnectionAuth.Everyone || identity.networkManager.isServer;
+            return _defaultIdentityRules.syncComponentActive;
         }
         
-        static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player)
+        public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
         {
-            if (action.HasFlag(ActionAuth.Server) && identity.networkManager.isServer)
+            return HasAuthority(_defaultTransformRules.changeParentAuth, identity, player, asServer);
+        }
+        
+        static bool HasAuthority(ConnectionAuth connAuth, bool asServer)
+        {
+            return connAuth == ConnectionAuth.Everyone || asServer;
+        }
+        
+        static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player, bool asServer)
+        {
+            if (action.HasFlag(ActionAuth.Server) && asServer)
                 return true;
             
             if (action.HasFlag(ActionAuth.Owner) && identity.owner == player)
