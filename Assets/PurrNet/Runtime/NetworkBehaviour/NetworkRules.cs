@@ -45,6 +45,7 @@ namespace PurrNet
     [Serializable]
     public struct NetworkTransformRules
     {
+        public bool syncParent;
         public ActionAuth changeParentAuth;
     }
     
@@ -77,7 +78,8 @@ namespace PurrNet
         
         [SerializeField] private NetworkTransformRules _defaultTransformRules = new()
         {
-            changeParentAuth = ActionAuth.Server | ActionAuth.Owner
+            changeParentAuth = ActionAuth.Server | ActionAuth.Owner,
+            syncParent = true
         };
         
         /*[Tooltip("Who can modify syncvars")]
@@ -105,14 +107,14 @@ namespace PurrNet
             return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player);
         }
         
+        public bool ShouldSyncParent(NetworkIdentity identity)
+        {
+            return _defaultTransformRules.syncParent;
+        }
+        
         public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player)
         {
             return HasAuthority(_defaultTransformRules.changeParentAuth, identity, player);
-        }
-        
-        public bool ShouldSyncParent(NetworkIdentity identity)
-        {
-            return _defaultSpawnRules.propagateOwnership;
         }
         
         static bool HasAuthority(ConnectionAuth connAuth, NetworkIdentity identity)

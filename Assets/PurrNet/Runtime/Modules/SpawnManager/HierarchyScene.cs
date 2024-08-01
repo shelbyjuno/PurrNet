@@ -63,10 +63,10 @@ namespace PurrNet.Modules
         public void Enable(bool asServer)
         {
             _asServer = asServer;
+            _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (!asServer)
             {
-                _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
                 _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
             }
             else
@@ -197,6 +197,8 @@ namespace PurrNet.Modules
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
+            Debug.Log($"Received hierarchy action batch from {player}");
+            
             if (_manager.isHost && !asserver) return;
             
             if (_sceneID != data.sceneId)
@@ -607,7 +609,10 @@ namespace PurrNet.Modules
         private void OnIdentityParentChanged(NetworkTransform trs)
         {
             if (!trs.ShouldSyncParent())
+            {
+                trs.ResetToLastValidParent();
                 return;
+            }
             
             if (!trs.HasChangeParentAuthority())
             {
