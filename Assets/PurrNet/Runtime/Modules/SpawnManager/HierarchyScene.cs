@@ -320,21 +320,21 @@ namespace PurrNet.Modules
         [UsedImplicitly]
         private void HandleSpawn(PlayerID player, SpawnAction action, bool asServer)
         {
-            if (asServer)
+            if (!_prefabs.TryGetPrefab(action.prefabId, out var prefab))
             {
-                Debug.Log("TODO: Implement client actions with permissions");
+                PurrLogger.LogError($"Failed to find prefab with id {action.prefabId}");
+                return;
+            }
+            
+            if (!_manager.networkRules.HasSpawnAuthority(_manager))
+            {
+                PurrLogger.LogError($"Spawn failed from '{player}' for prefab '{prefab.name}' due to lack of permissions.");
                 return;
             }
             
             if (_identities.TryGetIdentity(action.identityId, out _))
             {
                 PurrLogger.LogError($"Identity with id {action.identityId} already exists");
-                return;
-            }
-
-            if (!_prefabs.TryGetPrefab(action.prefabId, out var prefab))
-            {
-                PurrLogger.LogError($"Failed to find prefab with id {action.prefabId}");
                 return;
             }
 

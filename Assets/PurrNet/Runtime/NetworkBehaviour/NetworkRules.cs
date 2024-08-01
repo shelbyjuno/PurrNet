@@ -90,14 +90,14 @@ namespace PurrNet
             return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player);
         }
         
-        public bool HasSpawnAuthority(NetworkIdentity identity, PlayerID player)
+        public bool HasSpawnAuthority(NetworkManager manager)
         {
-            return HasAuthority(_defaultSpawnRules.spawnAuth, identity, player);
+            return HasAuthority(_defaultSpawnRules.spawnAuth, manager);
         }
         
-        static bool HasAuthority(ConnectionAuth action, NetworkIdentity identity, PlayerID player)
+        static bool HasAuthority(ConnectionAuth action, NetworkManager manager)
         {
-            return action != ConnectionAuth.Server || identity.networkManager.isServer;
+            return action != ConnectionAuth.Server || manager.isServer;
         }
         
         static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player)
