@@ -63,10 +63,10 @@ namespace PurrNet.Modules
         public void Enable(bool asServer)
         {
             _asServer = asServer;
+            _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (!asServer)
             {
-                _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
                 _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
             }
             else
@@ -197,6 +197,8 @@ namespace PurrNet.Modules
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
+            Debug.Log($"Received hierarchy action batch from {player}");
+            
             if (_manager.isHost && !asserver) return;
             
             if (_sceneID != data.sceneId)
@@ -213,48 +215,47 @@ namespace PurrNet.Modules
             
             for (int i = 0; i < data.actions.Count; i++)
             {
-                OnHierarchyAction(player, data.actions[i], asserver);
+                OnHierarchyAction(player, data.actions[i]);
             }
         }
         
-        private void OnHierarchyAction(PlayerID player, HierarchyAction data, bool asserver)
+        private void OnHierarchyAction(PlayerID player, HierarchyAction data)
         {
             switch (data.type)
             {
                 case HierarchyActionType.Despawn:
-                    HandleDespawn(player, data.despawnAction, asserver);
+                    HandleDespawn(player, data.despawnAction);
                     break;
                 
                 case HierarchyActionType.Spawn:
-                    HandleSpawn(player, data.spawnAction, asserver);
+                    HandleSpawn(player, data.spawnAction);
                     break;
                 
                 case HierarchyActionType.ChangeParent:
-                    HandleChangeParent(player, data.changeParentAction, asserver);
+                    HandleChangeParent(player, data.changeParentAction);
                     break;
                 
                 case HierarchyActionType.SetActive:
-                    HandleSetActive(player, data.setActiveAction, asserver);
+                    HandleSetActive(player, data.setActiveAction);
                     break;
                 
                 case HierarchyActionType.SetEnabled:
-                    HandleSetEnabled(player, data.setEnabledAction, asserver);
+                    HandleSetEnabled(player, data.setEnabledAction);
                     break;
             }
         }
 
-        [UsedImplicitly]
-        private void HandleSetEnabled(PlayerID player, SetEnabledAction dataSetEnabledAction, bool asServer)
+        private void HandleSetEnabled(PlayerID player, SetEnabledAction dataSetEnabledAction)
         {
-            if (asServer)
-            {
-                Debug.Log("TODO: Implement client actions with permissions");
-                return;
-            }
-            
             if (!_identities.TryGetIdentity(dataSetEnabledAction.identityId, out var identity))
             {
                 PurrLogger.LogError($"Failed to find identity with id {dataSetEnabledAction.identityId}");
+                return;
+            }
+            
+            if (_asServer && !identity.HasSetEnabledAuthority(player))
+            {
+                PurrLogger.LogError($"SetEnabled failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
             }
 
@@ -262,18 +263,17 @@ namespace PurrNet.Modules
             identity.enabled = dataSetEnabledAction.enabled;
         }
 
-        [UsedImplicitly]
-        private void HandleSetActive(PlayerID player, SetActiveAction dataSetActiveAction, bool asServer)
+        private void HandleSetActive(PlayerID player, SetActiveAction dataSetActiveAction)
         {
-            if (asServer)
-            {
-                Debug.Log("TODO: Implement client actions with permissions");
-                return;
-            }
-            
             if (!_identities.TryGetIdentity(dataSetActiveAction.identityId, out var identity))
             {
                 PurrLogger.LogError($"Failed to find identity with id {dataSetActiveAction.identityId}");
+                return;
+            }
+            
+            if (_asServer && !identity.HasSetActiveAuthority(player))
+            {
+                PurrLogger.LogError($"SetActive failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
             }
 
@@ -283,7 +283,7 @@ namespace PurrNet.Modules
         }
 
         [UsedImplicitly]
-        private void HandleChangeParent(PlayerID player, ChangeParentAction action, bool asServer)
+        private void HandleChangeParent(PlayerID player, ChangeParentAction action)
         {
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
             {
@@ -297,7 +297,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (asServer && !trs.HasParentSyncAuthority(player))
+            if (_asServer && !_manager.networkRules.HasChangeParentAuthority(trs, player))
             {
                 PurrLogger.LogError($"Parent change from '{player}' failed for '{trs.name}' due to lack of permissions.", trs);
                 return;
@@ -317,24 +317,29 @@ namespace PurrNet.Modules
             trs.ValidateParent();
         }
 
-        [UsedImplicitly]
-        private void HandleSpawn(PlayerID player, SpawnAction action, bool asServer)
+        private void HandleSpawn(PlayerID player, SpawnAction action)
         {
-            if (asServer)
+            if (!_prefabs.TryGetPrefab(action.prefabId, out var prefab))
             {
-                Debug.Log("TODO: Implement client actions with permissions");
+                PurrLogger.LogError($"Failed to find prefab with id {action.prefabId}");
+                return;
+            }
+            
+            if (!prefab.TryGetComponent<PrefabLink>(out var link))
+            {
+                PurrLogger.LogError($"Failed to find PrefabLink component on '{prefab.name}'");
+                return;
+            }
+            
+            if (_asServer && !link.HasSpawnAuthority())
+            {
+                PurrLogger.LogError($"Spawn failed from '{player}' for prefab '{prefab.name}' due to lack of permissions.");
                 return;
             }
             
             if (_identities.TryGetIdentity(action.identityId, out _))
             {
                 PurrLogger.LogError($"Identity with id {action.identityId} already exists");
-                return;
-            }
-
-            if (!_prefabs.TryGetPrefab(action.prefabId, out var prefab))
-            {
-                PurrLogger.LogError($"Failed to find prefab with id {action.prefabId}");
                 return;
             }
 
@@ -402,11 +407,7 @@ namespace PurrNet.Modules
             component.onActivatedChanged += OnIdentityGoActivatedChanged;
 
             if (component is NetworkTransform transform)
-            {
-                if (_asServer)
-                    transform.onParentChanged += OnIdentityParentChangedServer;
-                else transform.onParentChanged += OnIdentityParentChangedClient;
-            }
+               transform.onParentChanged += OnIdentityParentChanged;
         }
 
         internal static readonly List<NetworkIdentity> CACHE = new ();
@@ -435,12 +436,12 @@ namespace PurrNet.Modules
         }
 
         [UsedImplicitly]
-        private void HandleDespawn(PlayerID player, DespawnAction action, bool asServer)
+        private void HandleDespawn(PlayerID player, DespawnAction action)
         {
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
                 return;
 
-            if (!identity.HasDespawnAuthority(player))
+            if (_asServer && !identity.HasDespawnAuthority(player))
             {
                 PurrLogger.LogError($"Despawn failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
@@ -537,11 +538,7 @@ namespace PurrNet.Modules
                 child.onActivatedChanged += OnIdentityGoActivatedChanged;
 
                 if (child is NetworkTransform transform)
-                {
-                    if (_asServer)
-                         transform.onParentChanged += OnIdentityParentChangedServer;
-                    else transform.onParentChanged += OnIdentityParentChangedClient;
-                }
+                    transform.onParentChanged += OnIdentityParentChanged;
             }
             
             var action = new SpawnAction
@@ -609,21 +606,17 @@ namespace PurrNet.Modules
             _gosToDeactivate.Clear();
         }
 
-        private void OnIdentityParentChangedClient(NetworkTransform obj) => OnIdentityParentChanged(obj, false);
-        
-        private void OnIdentityParentChangedServer(NetworkTransform obj) => OnIdentityParentChanged(obj, true);
-        
-        private void OnIdentityParentChanged(NetworkTransform trs, bool asServer)
+        private void OnIdentityParentChanged(NetworkTransform trs)
         {
-            if (!trs.HasParentSyncAuthority(asServer))
+            if (!trs.ShouldSyncParent())
             {
-                bool isOwner = trs.isOwner;
-                string parentName = trs.transform.parent ? trs.transform.parent.name : "null";
-                
-                PurrLogger.LogError($"Parent change failed for '{trs.name}' to '{parentName}' due to lack of permissions.\n" +
-                                    $"You called this as {(asServer ? "server" : "client")} and you are {(isOwner ? "the owner" : "not the owner")}.\n" +
-                                    "The parent will be reset to the last known one.", trs);
-                
+                trs.ResetToLastValidParent();
+                return;
+            }
+            
+            if (!trs.HasChangeParentAuthority())
+            {
+                PurrLogger.LogError($"Parent change failed for '{trs.name}' due to lack of permissions.", trs);
                 trs.ResetToLastValidParent();
                 return;
             }

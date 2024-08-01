@@ -45,6 +45,7 @@ namespace PurrNet
     [Serializable]
     public struct NetworkTransformRules
     {
+        public bool syncParent;
         public ActionAuth changeParentAuth;
     }
     
@@ -77,7 +78,8 @@ namespace PurrNet
         
         [SerializeField] private NetworkTransformRules _defaultTransformRules = new()
         {
-            changeParentAuth = ActionAuth.Server | ActionAuth.Owner
+            changeParentAuth = ActionAuth.Server | ActionAuth.Owner,
+            syncParent = true
         };
         
         /*[Tooltip("Who can modify syncvars")]
@@ -90,20 +92,40 @@ namespace PurrNet
             return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player);
         }
         
-        public bool HasSpawnAuthority(NetworkIdentity identity, PlayerID player)
+        public bool HasSpawnAuthority(NetworkIdentity identity)
         {
-            return HasAuthority(_defaultSpawnRules.spawnAuth, identity, player);
+            return HasAuthority(_defaultSpawnRules.spawnAuth, identity);
         }
         
-        static bool HasAuthority(ConnectionAuth action, NetworkIdentity identity, PlayerID player)
+        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID player)
         {
-            return action != ConnectionAuth.Server || identity.networkManager.isServer;
+            return HasAuthority(_defaultIdentityRules.syncGameObjectActiveAuth, identity, player);
+        }
+        
+        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID player)
+        {
+            return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player);
+        }
+        
+        public bool ShouldSyncParent(NetworkIdentity identity)
+        {
+            return _defaultTransformRules.syncParent;
+        }
+        
+        public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player)
+        {
+            return HasAuthority(_defaultTransformRules.changeParentAuth, identity, player);
+        }
+        
+        static bool HasAuthority(ConnectionAuth connAuth, NetworkIdentity identity)
+        {
+            return connAuth == ConnectionAuth.Everyone || identity.networkManager.isServer;
         }
         
         static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player)
         {
-            if (action.HasFlag(ActionAuth.Server))
-                return identity.networkManager.isServer;
+            if (action.HasFlag(ActionAuth.Server) && identity.networkManager.isServer)
+                return true;
             
             if (action.HasFlag(ActionAuth.Owner) && identity.owner == player)
                 return true;
