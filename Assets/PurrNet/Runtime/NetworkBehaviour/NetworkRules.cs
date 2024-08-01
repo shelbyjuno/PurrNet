@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace PurrNet
@@ -13,7 +14,7 @@ namespace PurrNet
         public DefaultOwner defaultOwner;
 
         [Tooltip("Propagate ownership to all children of the object")]
-        public bool propagateOwnership;
+        public bool propagateOwnershipByDefault;
 
         [Tooltip("If owner disconnects, should the object despawn or stay in the scene?")]
         public bool despawnIfOwnerDisconnects;
@@ -30,6 +31,9 @@ namespace PurrNet
         
         [Tooltip("Who can remove ownership from objects")]
         public ActionAuth removeAuth;
+        
+        [Tooltip("If object already has an owner, should the new owner override the existing owner?")]
+        public bool overrideWhenPropagating;
     }
 
     [Serializable]
@@ -57,7 +61,7 @@ namespace PurrNet
             despawnAuth = ActionAuth.Server | ActionAuth.Owner,
             spawnAuth = ConnectionAuth.Server,
             defaultOwner = DefaultOwner.SpawnerIfClient,
-            propagateOwnership = true,
+            propagateOwnershipByDefault = true,
             despawnIfOwnerDisconnects = true
         };
         
@@ -65,7 +69,7 @@ namespace PurrNet
         {
             assignAuth = ConnectionAuth.Server,
             transferAuth = ActionAuth.Owner | ActionAuth.Server,
-            removeAuth = ActionAuth.Owner | ActionAuth.Server
+            overrideWhenPropagating = true
         };
         
         [SerializeField] private NetworkIdentityRules _defaultIdentityRules = new()
@@ -82,17 +86,17 @@ namespace PurrNet
             syncParent = true
         };
         
-        /*[Tooltip("Who can modify syncvars")]
-        public ConnectionAuth syncVarAuth;
-        [Tooltip("Who can send ObserversRpc and TargetRpc")]
-        public ConnectionAuth clientRpcAuth;*/
+        public SpawnRules GetDefaultSpawnRules() => _defaultSpawnRules;
+        public OwnershipRules GetDefaultOwnershipRules() => _defaultOwnershipRules;
+        public NetworkIdentityRules GetDefaultIdentityRules() => _defaultIdentityRules;
 
         public bool HasDespawnAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
         {
             return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player, asServer);
         }
         
-        public bool HasSpawnAuthority(NetworkIdentity identity, bool asServer)
+        [UsedImplicitly]
+        public bool HasSpawnAuthority(NetworkManager manager, bool asServer)
         {
             return HasAuthority(_defaultSpawnRules.spawnAuth, asServer);
         }
@@ -107,19 +111,28 @@ namespace PurrNet
             return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player, asServer);
         }
         
+        [UsedImplicitly]
         public bool ShouldSyncParent(NetworkIdentity identity, bool asServer)
         {
             return _defaultTransformRules.syncParent;
         }
         
+        [UsedImplicitly]
         public bool ShouldSyncSetActive(NetworkIdentity identity, bool asServer)
         {
             return _defaultIdentityRules.syncGameObjectActive;
         }
         
+        [UsedImplicitly]
         public bool ShouldSyncSetEnabled(NetworkIdentity identity, bool asServer)
         {
             return _defaultIdentityRules.syncComponentActive;
+        }
+        
+        [UsedImplicitly]
+        public bool HasPropagateOwnershipAuthority(NetworkIdentity identity, bool asServer)
+        {
+            return true;
         }
         
         public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
@@ -143,8 +156,27 @@ namespace PurrNet
             return identity.owner != player && action.HasFlag(ActionAuth.Observer);
         }
         
-        public SpawnRules GetDefaultSpawnRules() => _defaultSpawnRules;
-        public OwnershipRules GetDefaultOwnershipRules() => _defaultOwnershipRules;
-        public NetworkIdentityRules GetDefaultIdentityRules() => _defaultIdentityRules;
+        public bool HasTransferOwnershipAuthority(NetworkIdentity networkIdentity, PlayerID localPlayer, bool asServer)
+        {
+            return HasAuthority(_defaultOwnershipRules.transferAuth, networkIdentity, localPlayer, asServer);
+        }
+
+        [UsedImplicitly]
+        public bool HasGiveOwnershipAuthority(NetworkIdentity networkIdentity, bool asServer)
+        {
+            return HasAuthority(_defaultOwnershipRules.assignAuth, asServer);
+        }
+        
+        [UsedImplicitly]
+        public bool ShouldPropagateToChildren(NetworkIdentity networkIdentity, bool asServer)
+        {
+            return _defaultSpawnRules.propagateOwnershipByDefault;
+        }
+
+        [UsedImplicitly]
+        public bool ShouldOverrideExistingOwnership(NetworkIdentity networkIdentity, bool asServer)
+        {
+            return _defaultOwnershipRules.overrideWhenPropagating;
+        }
     }
 }

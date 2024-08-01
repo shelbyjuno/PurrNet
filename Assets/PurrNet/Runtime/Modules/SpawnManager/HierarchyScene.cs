@@ -197,12 +197,10 @@ namespace PurrNet.Modules
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
         {
-            Debug.Log($"Received hierarchy action batch from {player}");
-            
             if (_manager.isHost && !asserver) return;
             
             if (_sceneID != data.sceneId)
-                return;
+                return; 
             
             _instancesAboutToBeRemoved.Clear();
             
@@ -300,7 +298,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (!_manager.networkRules.HasChangeParentAuthority(trs, player, !_asServer))
+            if (!trs.HasChangeParentAuthority(player, !_asServer))
             {
                 PurrLogger.LogError($"Parent change from '{player}' failed for '{trs.name}' due to lack of permissions.", trs);
                 return;
@@ -334,7 +332,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (!link.HasSpawnAuthority(!_asServer))
+            if (!link.HasSpawnAuthority(_manager, !_asServer))
             {
                 PurrLogger.LogError($"Spawn failed from '{player}' for prefab '{prefab.name}' due to lack of permissions.");
                 return;
@@ -717,6 +715,7 @@ namespace PurrNet.Modules
             if (!identity.HasSetEnabledAuthority(_asServer))
             {
                 PurrLogger.LogError($"SetEnabled failed for '{identity.name}' due to lack of permissions.", identity);
+                identity.IgnoreNextEnableCallback();
                 identity.enabled = !active;
                 return;
             }
@@ -736,6 +735,7 @@ namespace PurrNet.Modules
             if (!identity.HasSetActiveAuthority(_asServer))
             {
                 PurrLogger.LogError($"SetActive failed for '{identity.name}' due to lack of permissions.", identity);
+                identity.IgnoreNextActivationCallback();
                 identity.gameObject.SetActive(!active);
                 return;
             }

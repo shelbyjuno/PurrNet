@@ -25,6 +25,11 @@ namespace PurrNet
         /// </summary>
         public SceneID sceneId { get; private set; }
         
+        /// <summary>
+        /// Is spawned over the network.
+        /// </summary>
+        public bool isSpawned => id != -1;
+
         public bool isServer => isSpawned && networkManager.isServer;
         
         public bool isClient => isSpawned && networkManager.isClient;
@@ -38,71 +43,18 @@ namespace PurrNet
         internal PlayerID? internalOwnerServer;
         internal PlayerID? internalOwnerClient;
         
-        internal PlayerID? internalOwner => internalOwnerServer ?? internalOwnerClient;
-        
         /// <summary>
         /// Returns the owner of this object.
         /// It will return the owner of the closest parent object.
         /// If you can, cache this value for performance.
         /// </summary>
-        public PlayerID? owner
-        {
-            get
-            {
-                if (internalOwner.HasValue)
-                    return internalOwner;
-
-                GetComponents(HierarchyScene.CACHE);
-                
-                for (int i = 0; i < HierarchyScene.CACHE.Count; i++)
-                {
-                    var sibling = HierarchyScene.CACHE[i];
-                    
-                    if (!sibling.propagateOwner) continue;
-                    
-                    if (sibling.internalOwner.HasValue)
-                        return sibling.internalOwner;
-                }
-
-                var parentTrs = transform.parent;
-                
-                if (!parentTrs)
-                    return null;
-
-                var parent = GetParentThatPropagatesOwner();
-                return parent ? parent.owner : null;
-            }
-        }
-        
-        private NetworkIdentity GetParentThatPropagatesOwner()
-        {
-            var parentTrs = transform.parent;
-                
-            if (!parentTrs)
-                return null;
-
-            var parent = parentTrs.GetComponentInParent<NetworkIdentity>(true);
-            return parent.propagateOwner ? parent : parent.GetParentThatPropagatesOwner();
-        }
+        public PlayerID? owner => internalOwnerServer ?? internalOwnerClient;
         
         public NetworkManager networkManager { get; private set; }
         
         public PlayerID localPlayer => isSpawned && networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
             ? module.localPlayerId.Value : default;
-
-        /// <summary>
-        /// True if the owner is propagated to children automatically.
-        /// False if the owner is only set to this identity.
-        /// </summary>
-        [Header("Ownership Settings")]
-        [Tooltip("True if the owner is propagated to children automatically.\nFalse if the owner is only set to this identity.")]
-        [SerializeField] private bool propagateOwner = true;
-
-        /// <summary>
-        /// True if this object is spawned and has valid id.
-        /// </summary>
-        public bool isSpawned => id != -1;
-
+        
         internal event Action<NetworkIdentity> onRemoved;
         internal event Action<NetworkIdentity, bool> onEnabledChanged;
         internal event Action<NetworkIdentity, bool> onActivatedChanged;
@@ -148,15 +100,14 @@ namespace PurrNet
 
         internal void UpdateEnabledState()
         {
-            // TODO: add rules whether we should or not update the enabled state
-            /*if (_lastEnabledState != enabled)
+            if (_lastEnabledState != enabled)
             {
                 if (_ignoreNextEnable)
                      _ignoreNextEnable = false;
                 else onEnabledChanged?.Invoke(this, enabled);
 
                 _lastEnabledState = enabled;
-            }*/
+            }
         }
 
         public virtual void OnDisable()

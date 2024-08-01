@@ -74,7 +74,7 @@ namespace PurrNet
         {
             return optionalSpawnRules.propagateOwnership.IsOverridden
                 ? optionalSpawnRules.propagateOwnership.Value
-                : networkManager.networkRules.GetDefaultSpawnRules().propagateOwnership;
+                : networkManager.networkRules.GetDefaultSpawnRules().propagateOwnershipByDefault;
         }
 
         public bool GetEffectiveDespawnIfOwnerDisconnects()

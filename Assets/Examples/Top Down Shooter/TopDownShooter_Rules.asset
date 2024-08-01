@@ -23,8 +23,8 @@ MonoBehaviour:
     transferAuth: -1
     removeAuth: -1
   _defaultIdentityRules:
-    syncComponentActive: 1
-    syncComponentAuth: -1
+    syncComponentActive: 0
+    syncComponentAuth: 0
     syncGameObjectActive: 1
     syncGameObjectActiveAuth: 1
   _defaultTransformRules:

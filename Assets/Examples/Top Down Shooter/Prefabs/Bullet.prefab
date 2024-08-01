@@ -69,7 +69,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b67f5d326b53eb459c681b0bcb20597, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
   optionalSpawnRules:
     spawnAuth:
       overridden: 0
@@ -125,7 +124,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
   optionalSpawnRules:
     spawnAuth:
       overridden: 0

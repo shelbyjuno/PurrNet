@@ -1,5 +1,3 @@
-using PlasticGui.WorkspaceWindow.Home.Repositories;
-
 namespace PurrNet
 {
     public partial class NetworkIdentity
@@ -9,9 +7,9 @@ namespace PurrNet
             return networkManager.networkRules.HasDespawnAuthority(this, player, asServer);
         }
         
-        public bool HasSpawnAuthority(bool asServer)
+        public bool HasSpawnAuthority(NetworkManager manager, bool asServer)
         {
-            return networkManager.networkRules.HasSpawnAuthority(this, asServer);
+            return manager.networkRules.HasSpawnAuthority(manager, asServer);
         }
         
         public bool HasSetActiveAuthority(PlayerID player, bool asServer)
@@ -49,9 +47,45 @@ namespace PurrNet
             return networkManager.networkRules.ShouldSyncSetEnabled(this, asServer);
         }
         
+        public bool ShouldPropagateToChildren(bool asServer)
+        {
+            return networkManager.networkRules.ShouldPropagateToChildren(this, asServer);
+        }
+        
+        public bool ShouldOverrideExistingOwnership(bool asServer)
+        {
+            return networkManager.networkRules.ShouldOverrideExistingOwnership(this, asServer);
+        }
+        
+        public bool HasPropagateOwnershipAuthority(bool asServer)
+        {
+            return networkManager.networkRules.HasPropagateOwnershipAuthority(this, asServer);
+        }
+        
         public bool HasChangeParentAuthority(bool asServer)
         {
             return networkManager.networkRules.HasChangeParentAuthority(this, localPlayer, asServer);
+        }
+        
+        public bool HasChangeParentAuthority(PlayerID player, bool asServer)
+        {
+            return networkManager.networkRules.HasChangeParentAuthority(this, player, asServer);
+        }
+
+
+        public bool HasTransferOwnershipAuthority(bool asServer)
+        {
+            return networkManager.networkRules.HasTransferOwnershipAuthority(this, localPlayer, asServer);
+        }
+        
+        public bool HasTransferOwnershipAuthority(PlayerID player, bool asServer)
+        {
+            return networkManager.networkRules.HasTransferOwnershipAuthority(this, player, asServer);
+        }
+
+        public bool HasGiveOwnershipAuthority(bool asServer)
+        {
+            return networkManager.networkRules.HasGiveOwnershipAuthority(this, asServer);
         }
     }
 }
