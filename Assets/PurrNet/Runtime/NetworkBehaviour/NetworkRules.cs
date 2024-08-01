@@ -142,5 +142,9 @@ namespace PurrNet
             
             return identity.owner != player && action.HasFlag(ActionAuth.Observer);
         }
+        
+        public SpawnRules GetDefaultSpawnRules() => _defaultSpawnRules;
+        public OwnershipRules GetDefaultOwnershipRules() => _defaultOwnershipRules;
+        public NetworkIdentityRules GetDefaultIdentityRules() => _defaultIdentityRules;
     }
 }

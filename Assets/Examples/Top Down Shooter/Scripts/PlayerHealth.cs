@@ -13,11 +13,6 @@ public class PlayerHealth : NetworkIdentity
             SetHealth_Observers(maxHealth);
     }
 
-    private void OnChange(int old, int newValue, bool asServer)
-    {
-        Debug.Log($"Changed: {newValue} | As server: {asServer}"); 
-    }
-
     private void Update()
     {
         Vector3 direction = healthText.transform.position - Camera.main.transform.position;
@@ -26,6 +21,19 @@ public class PlayerHealth : NetworkIdentity
 
         if (!isOwner)
             return;
+
+        
+    }
+
+    [ContextMenu("Log optional")]
+    private void LogOptional()
+    {
+        string allOptionalRules = $"Default Owner: {GetEffectiveDefaultOwner()}" +
+                                  $"\nPropagate Ownership: {GetEffectivePropagateOwnership()}" +
+                                  $"\nDespawn If Owner Disconnects: {GetEffectiveDespawnIfOwnerDisconnects()}" +
+                                  $"\nSpawn Auth: {GetEffectiveSpawnAuth()}" +
+                                  $"\nDespawn Auth: {GetEffectiveDespawnAuth()}";
+        Debug.Log(allOptionalRules);
     }
 
     public void ChangeHealth(int change)
