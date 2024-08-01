@@ -32,6 +32,8 @@ namespace PurrNet.Codegen
     public class PostProcessor : ILPostProcessor
     {
         public override ILPostProcessor GetInstance() => this;
+        
+        static readonly HashSet<string> _processedAssemblies = new();
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly)
         {
@@ -45,8 +47,15 @@ namespace PurrNet.Codegen
             
             if (name.StartsWith("UnityEditor."))
                 return false;
+
+            if (name.Contains("Editor"))
+                return false;
             
-            return !name.Contains("Editor");
+            if (_processedAssemblies.Contains(name))
+                return false;
+            
+            _processedAssemblies.Add(name);
+            return true;
         }
         
         private static int GetIDOffset(TypeDefinition type, ICollection<DiagnosticMessage> messages)
@@ -282,12 +291,16 @@ namespace PurrNet.Codegen
                 try
                 {
                     if (rpc.HasGenericParameters)
+                    {
                         HandleGenericRPC(module, originalRpcs, rpc, genericRpcHeaderType, newMethod, serializeMethod,
                             code, stream, info, paramCount, readHeaderMethod, i, setInfo, localPlayerGetter,
                             setPlayerId, readGeneric, readT, callGenericMethod);
+                    }
                     else
+                    {
                         HandleNonGenericRPC(originalRpcs, rpc, newMethod, i, paramCount, code, info, localPlayerGetter,
                             serializeMethod, stream);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -737,6 +750,10 @@ namespace PurrNet.Codegen
                             try
                             {
                                 var method = type.Methods[i];
+                                
+                                if (method.DeclaringType.FullName != type.FullName)
+                                    continue;
+                                
                                 var rpcType = GetMethodRPCType(method, messages);
 
                                 if (rpcType == null)

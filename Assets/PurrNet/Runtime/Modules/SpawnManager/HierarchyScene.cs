@@ -184,7 +184,13 @@ namespace PurrNet.Modules
             
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
+            {
+                foreach (var action in fullHistory.actions)
+                {
+                    PurrLogger.Log($"Action {action}");
+                }
                 _playersManager.Send(player, fullHistory);
+            }
         } 
         
         private readonly HashSet<int> _instancesAboutToBeRemoved = new ();
@@ -462,6 +468,7 @@ namespace PurrNet.Modules
                     
                     if (_identities.UnregisterIdentity(child))
                         onIdentityRemoved?.Invoke(child);
+                    
                     child.IgnoreNextDestroyCallback();
                 }
                 
@@ -653,6 +660,7 @@ namespace PurrNet.Modules
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
             onIdentityRemoved?.Invoke(identity);
+            
             _removedLastFrame.Add(new ComponentGameObjectPair
             {
                 identity = identity,
