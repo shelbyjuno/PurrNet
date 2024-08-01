@@ -393,6 +393,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   propagateOwner: 1
+  optionalSpawnRules:
+    spawnAuth:
+      overridden: 0
+      value: 0
+    despawnAuth:
+      overridden: 0
+      value: 0
+    defaultOwner:
+      overridden: 0
+      value: 0
+    propagateOwnership:
+      overridden: 0
+      value: 0
+    despawnIfOwnerDisconnects:
+      overridden: 0
+      value: 0
+  optionalOwnershipRules:
+    assignAuth:
+      overridden: 0
+      value: 0
+    transferAuth:
+      overridden: 0
+      value: 0
+    removeAuth:
+      overridden: 0
+      value: 0
+  optionalIdentityRules:
+    syncComponentActive:
+      overridden: 0
+      value: 0
+    syncComponentAuth:
+      overridden: 0
+      value: 0
+    syncGameObjectActive:
+      overridden: 0
+      value: 0
+    syncGameObjectActiveAuth:
+      overridden: 0
+      value: 0
 --- !u!1 &6426148537294609696
 GameObject:
   m_ObjectHideFlags: 0

@@ -8,7 +8,7 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(NetworkIdentity), true)]
     public class NetworkIdentityInspector : UnityEditor.Editor
     {
-        private bool settingsFoldoutVisible = false, statusFoldoutVisible = false;
+        private bool settingsFoldoutVisible = false;
         private GUIStyle boldFoldoutStyle; 
 
         private void SetStyle()
@@ -23,6 +23,7 @@ namespace PurrNet.Editor
         {
             base.OnInspectorGUI();
 
+            serializedObject.Update();
             if (boldFoldoutStyle == null)
             {
                 SetStyle(); 
@@ -168,19 +169,13 @@ namespace PurrNet.Editor
 
         private void HandleStatus(NetworkIdentity identity)
         {
-            statusFoldoutVisible = EditorGUILayout.Foldout(statusFoldoutVisible, "Status", true, boldFoldoutStyle);
-
-            if (!statusFoldoutVisible)
-                return;
             if (identity.isSpawned)
             {
-                EditorGUILayout.LabelField("Identity", identity.id.ToString());
-                EditorGUILayout.LabelField("Prefab Id", identity.prefabId == -1 ? "None" : identity.prefabId.ToString());
-                EditorGUILayout.LabelField("Owner Id", identity.owner.HasValue ? identity.owner.Value.ToString() : "None");
-            }
-            else
-            {
-                EditorGUILayout.LabelField("Currently not spawned");
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
+                EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
+                EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");
+                EditorGUILayout.EndHorizontal();
             }
         }
     }
