@@ -185,10 +185,10 @@ namespace PurrNet.Modules
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
             {
-                foreach (var action in fullHistory.actions)
+                /*foreach (var action in fullHistory.actions)
                 {
                     PurrLogger.Log($"Action {action}");
-                }
+                }*/
                 _playersManager.Send(player, fullHistory);
             }
         } 
@@ -285,29 +285,29 @@ namespace PurrNet.Modules
         [UsedImplicitly]
         private void HandleChangeParent(PlayerID player, ChangeParentAction action, bool asServer)
         {
-            if (asServer)
-            {
-                Debug.Log("TODO: Implement client actions with permissions");
-                return;
-            }
-            
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
             {
                 PurrLogger.LogError($"Failed to find identity with id {action.identityId}");
                 return;
             }
-
+            
+            if (identity is not NetworkTransform trs)
+            {
+                PurrLogger.LogError($"Identity with id {action.identityId} is not a NetworkTransform");
+                return;
+            }
+            
+            if (asServer && !trs.HasParentSyncAuthority(player))
+            {
+                PurrLogger.LogError($"Parent change from '{player}' failed for '{trs.name}' due to lack of permissions.", trs);
+                return;
+            }
+            
             NetworkIdentity parent = null;
             
             if (action.parentId != -1 && !_identities.TryGetIdentity(action.parentId, out parent))
             {
                 PurrLogger.LogError($"Failed to find identity with id {action.identityId}");
-                return;
-            }
-
-            if (identity is not NetworkTransform trs)
-            {
-                PurrLogger.LogError($"Identity with id {action.identityId} is not a NetworkTransform");
                 return;
             }
 
@@ -437,14 +437,14 @@ namespace PurrNet.Modules
         [UsedImplicitly]
         private void HandleDespawn(PlayerID player, DespawnAction action, bool asServer)
         {
-            if (asServer)
-            {
-                Debug.Log("TODO: Implement client actions with permissions");
-                return;
-            }
-            
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
                 return;
+
+            if (!identity.HasDespawnAuthority(player))
+            {
+                PurrLogger.LogError($"Despawn failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
+                return;
+            }
             
             if (!identity)
                 return;
@@ -553,14 +553,7 @@ namespace PurrNet.Modules
                 transformInfo = new TransformInfo(instance.transform)
             };
 
-            if (_asServer)
-            {
-                _history.AddSpawnAction(action);
-            }
-            else
-            {
-                Debug.Log("TODO: Implement client spawn logic.");
-            }
+            _history.AddSpawnAction(action);
         }
 
         struct BehaviourState
@@ -677,15 +670,10 @@ namespace PurrNet.Modules
             });
         }
 
-        private void OnIdentityRemoved(ComponentGameObjectPair pair, bool asServer)
+        private void OnIdentityRemoved(ComponentGameObjectPair pair)
         {
-            if (!asServer)
-            {
-                if (_identities.UnregisterIdentity(pair.identity))
-                    onIdentityRemoved?.Invoke(pair.identity);
-                PurrLogger.LogError("TODO: Implement client despawn logic.");
-                return;
-            }
+            if (_identities.UnregisterIdentity(pair.identity))
+                onIdentityRemoved?.Invoke(pair.identity);
 
             if (!pair.gameObject)
                  OnDestroyedObject(pair.identity.id);
@@ -710,14 +698,8 @@ namespace PurrNet.Modules
             });
         }
         
-        private void OnToggledComponent(NetworkIdentity identity, bool active, bool asServer)
+        private void OnToggledComponent(NetworkIdentity identity, bool active)
         {
-            if (!asServer)
-            {
-                Debug.Log("TODO: Implement client actions with permissions");
-                return;
-            }
-            
             _history.AddSetEnabledAction(new SetEnabledAction
             {
                 identityId = identity.id,
@@ -725,14 +707,8 @@ namespace PurrNet.Modules
             });
         }
         
-        private void OnToggledGameObject(NetworkIdentity identity, bool active, bool asServer)
+        private void OnToggledGameObject(NetworkIdentity identity, bool active)
         {
-            if (!asServer)
-            {
-                Debug.Log("TODO: Implement client actions with permissions");
-                return;
-            }
-            
             _history.AddSetActiveAction(new SetActiveAction
             {
                 identityId = identity.id,
@@ -751,7 +727,7 @@ namespace PurrNet.Modules
                     if (!identity)
                         continue;
 
-                    OnToggledComponent(identity, identity.enabled, _asServer);
+                    OnToggledComponent(identity, identity.enabled);
                 }
                 
                 _toggledLastFrame.Clear();
@@ -766,7 +742,7 @@ namespace PurrNet.Modules
                     if (!active.identity) 
                         continue;
                     
-                    OnToggledGameObject(active.identity, active.isActive, _asServer);
+                    OnToggledGameObject(active.identity, active.isActive);
                 }
                 _activatedLastFrame.Clear();
             }
@@ -774,25 +750,22 @@ namespace PurrNet.Modules
             if (_removedLastFrame.Count > 0)
             {
                 for (int i = 0; i < _removedLastFrame.Count; i++)
-                    OnIdentityRemoved(_removedLastFrame[i], _asServer);
+                    OnIdentityRemoved(_removedLastFrame[i]);
                 _removedLastFrame.Clear();
             }
             
             if (_history.hasUnflushedActions)
             {
-                if (_asServer)
-                {
-                    var delta = _history.GetDelta();
+                var delta = _history.GetDelta();
 
-                    if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
-                        _playersManager.Send(players, delta);
-
-                    _history.Flush();
-                }
-                else
+                if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
                 {
-                    Debug.Log("TODO: Implement client flush logic.");
+                    if (_asServer)
+                         _playersManager.Send(players, delta);
+                    else _playersManager.SendToServer(delta);
                 }
+
+                _history.Flush();
             }
             
             var spawnedThisFrameCount = _spawnedThisFrame.Count;

@@ -12,10 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28e93bf2b6064364aa5fd430134916ac, type: 3}
   m_Name: TopDownShooter_Rules
   m_EditorClassIdentifier: 
-  spawnAuth: 0
-  defaultOwner: 0
-  fullObjectOwnership: 0
-  syncVarAuth: 0
-  clientRpcAuth: 0
-  ownershipTransferAuth: 0
-  syncParentAuth: 0
+  _defaultSpawnRules:
+    spawnAuth: 1
+    despawnAuth: -1
+    defaultOwner: 1
+    propagateOwnership: 1
+    despawnIfOwnerDisconnects: 1
+  _defaultOwnershipRules:
+    assignAuth: 1
+    transferAuth: -1
+    removeAuth: -1
+  _defaultIdentityRules:
+    syncComponentActive: 1
+    syncComponentAuth: -1
+    syncGameObjectActive: 1
+    syncGameObjectActiveAuth: -1
+  _defaultTransformRules:
+    changeParentAuth: -1
