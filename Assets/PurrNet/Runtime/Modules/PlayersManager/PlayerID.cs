@@ -19,7 +19,7 @@ namespace PurrNet
 
         public override string ToString()
         {
-            return _id.ToString("000");
+            return _id == 0 ? "Server" : _id.ToString("000");
         }
 
         public override int GetHashCode()

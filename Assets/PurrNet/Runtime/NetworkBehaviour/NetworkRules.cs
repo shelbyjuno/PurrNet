@@ -90,20 +90,40 @@ namespace PurrNet
             return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player);
         }
         
-        public bool HasSpawnAuthority(NetworkManager manager)
+        public bool HasSpawnAuthority(NetworkIdentity identity)
         {
-            return HasAuthority(_defaultSpawnRules.spawnAuth, manager);
+            return HasAuthority(_defaultSpawnRules.spawnAuth, identity);
         }
         
-        static bool HasAuthority(ConnectionAuth action, NetworkManager manager)
+        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID player)
         {
-            return action != ConnectionAuth.Server || manager.isServer;
+            return HasAuthority(_defaultIdentityRules.syncGameObjectActiveAuth, identity, player);
+        }
+        
+        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID player)
+        {
+            return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player);
+        }
+        
+        public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player)
+        {
+            return HasAuthority(_defaultTransformRules.changeParentAuth, identity, player);
+        }
+        
+        public bool ShouldSyncParent(NetworkIdentity identity)
+        {
+            return _defaultSpawnRules.propagateOwnership;
+        }
+        
+        static bool HasAuthority(ConnectionAuth connAuth, NetworkIdentity identity)
+        {
+            return connAuth == ConnectionAuth.Everyone || identity.networkManager.isServer;
         }
         
         static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player)
         {
-            if (action.HasFlag(ActionAuth.Server))
-                return identity.networkManager.isServer;
+            if (action.HasFlag(ActionAuth.Server) && identity.networkManager.isServer)
+                return true;
             
             if (action.HasFlag(ActionAuth.Owner) && identity.owner == player)
                 return true;
