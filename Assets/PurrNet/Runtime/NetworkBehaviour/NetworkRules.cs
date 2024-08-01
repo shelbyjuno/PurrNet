@@ -3,48 +3,112 @@ using UnityEngine;
 
 namespace PurrNet
 {
+    [Serializable]
+    public struct SpawnRules
+    {
+        public ConnectionAuth spawnAuth;
+        public ActionAuth despawnAuth;
+        
+        [Tooltip("Who gains ownership upon spawning of the identity")]
+        public DefaultOwner defaultOwner;
+
+        [Tooltip("Propagate ownership to all children of the object")]
+        public bool propagateOwnership;
+
+        [Tooltip("If owner disconnects, should the object despawn or stay in the scene?")]
+        public bool despawnIfOwnerDisconnects;
+    }
+
+    [Serializable]
+    public struct OwnershipRules
+    {
+        [Tooltip("Who can assign ownership to objects")]
+        public ConnectionAuth assignAuth;
+        
+        [Tooltip("Who can transfer existing ownership from objects")]
+        public ActionAuth transferAuth;
+        
+        [Tooltip("Who can remove ownership from objects")]
+        public ActionAuth removeAuth;
+    }
+
+    [Serializable]
+    public struct NetworkIdentityRules
+    {
+        public bool syncComponentActive;
+        public ActionAuth syncComponentAuth;
+
+        public bool syncGameObjectActive;
+        public ActionAuth syncGameObjectActiveAuth;
+    }
+
+    [Serializable]
+    public struct NetworkTransformRules
+    {
+        public ActionAuth changeParentAuth;
+    }
+    
     [CreateAssetMenu(fileName = "NetworkRules", menuName = "PurrNet/Network Rules", order = -201)]
     public class NetworkRules : ScriptableObject
     {
-        [Tooltip("Who can spawn identities")]
-        public ConnectionAuth spawnAuth;
-        [Tooltip("Who gains ownership upon spawning of the identity")]
-        public DefaultOwner defaultOwner;
-        [Tooltip("If ownership should transfer to all identities of the GameObject")]
-        public bool fullObjectOwnership;
-        [Tooltip("Who can modify syncvars")]
+        [SerializeField] private SpawnRules _defaultSpawnRules = new()
+        {
+            despawnAuth = ActionAuth.Server | ActionAuth.Owner,
+            spawnAuth = ConnectionAuth.Server,
+            defaultOwner = DefaultOwner.SpawnerIfClient,
+            propagateOwnership = true,
+            despawnIfOwnerDisconnects = true
+        };
+        
+        [SerializeField] private OwnershipRules _defaultOwnershipRules = new()
+        {
+            assignAuth = ConnectionAuth.Server,
+            transferAuth = ActionAuth.Owner | ActionAuth.Server,
+            removeAuth = ActionAuth.Owner | ActionAuth.Server
+        };
+        
+        [SerializeField] private NetworkIdentityRules _defaultIdentityRules = new()
+        {
+            syncComponentActive = true,
+            syncComponentAuth = ActionAuth.Server | ActionAuth.Owner,
+            syncGameObjectActive = true,
+            syncGameObjectActiveAuth = ActionAuth.Server | ActionAuth.Owner
+        };
+        
+        [SerializeField] private NetworkTransformRules _defaultTransformRules = new()
+        {
+            changeParentAuth = ActionAuth.Server | ActionAuth.Owner
+        };
+        
+        /*[Tooltip("Who can modify syncvars")]
         public ConnectionAuth syncVarAuth;
         [Tooltip("Who can send ObserversRpc and TargetRpc")]
-        public ConnectionAuth clientRpcAuth;
-        [Tooltip("Who can transfer ownership of objects")]
-        public ConnectionAuth ownershipTransferAuth;
-        [Tooltip("Who can synchronize parent nesting of objects")]
-        public ActionAuth syncParentAuth;
+        public ConnectionAuth clientRpcAuth;*/
 
-        public bool despawnOnDisconnect = true;
-        public bool syncComponentActive = true;
-        public bool syncGameObjectActive = true;
+        public bool HasDespawnAuthority(NetworkIdentity identity, PlayerID player)
+        {
+            return HasAuthority(_defaultSpawnRules.despawnAuth, identity, player);
+        }
         
-        [Flags]
-        public enum ActionAuth
+        public bool HasSpawnAuthority(NetworkIdentity identity, PlayerID player)
         {
-            None = 0, // Only the server can do the action
-            Server = 1, // Only the server can do the action
-            Owner = 2, // Owner can do the action
-            Observer = 4 // Anyone can do the action
+            return HasAuthority(_defaultSpawnRules.spawnAuth, identity, player);
         }
-
-        public enum ConnectionAuth
+        
+        static bool HasAuthority(ConnectionAuth action, NetworkIdentity identity, PlayerID player)
         {
-            Server,
-            Everyone
+            return action != ConnectionAuth.Server || identity.networkManager.isServer;
         }
-
-        public enum DefaultOwner
+        
+        static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player)
         {
-            None = 0, // Use the default owner setting of the network manager
-            Server = 1, // Server if is client, otherwise None
-            Spawner = 2 // Client that spawns it (only works for unsafe spawning)
+            if (action.HasFlag(ActionAuth.Server))
+                return identity.networkManager.isServer;
+            
+            if (action.HasFlag(ActionAuth.Owner) && identity.owner == player)
+                return true;
+            
+            return identity.owner != player && action.HasFlag(ActionAuth.Observer);
         }
     }
 }
