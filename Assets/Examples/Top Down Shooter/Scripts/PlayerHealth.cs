@@ -6,11 +6,21 @@ public class PlayerHealth : NetworkIdentity
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private TextMesh healthText;
     private int _health;
+ 
+    private SyncVar<int> test = new(4);
 
     protected override void OnSpawned(bool asServer)
     {
         if(isServer)
             SetHealth_Observers(maxHealth);
+
+        if (!isServer)
+            test.OnChange += OnChange;
+    }
+
+    private void OnChange(int old, int newValue, bool asServer)
+    {
+        Debug.Log($"Changed: {newValue} | As server: {asServer}"); 
     }
 
     private void Update()
@@ -18,6 +28,14 @@ public class PlayerHealth : NetworkIdentity
         Vector3 direction = healthText.transform.position - Camera.main.transform.position;
         direction.x = 0;
         healthText.transform.rotation = Quaternion.LookRotation(direction);
+
+        if (!isOwner)
+            return;
+        
+        if (Input.GetKeyDown(KeyCode.S)) 
+            test.Value -= 1;
+        if(Input.GetKeyDown(KeyCode.W))
+            test.Value += 1;
     }
 
     public void ChangeHealth(int change)
@@ -41,6 +59,6 @@ public class PlayerHealth : NetworkIdentity
     private void SetHealth_Observers(int health) 
     {
         _health = health;
-        healthText.text = $"{health}hp";
+        healthText.text = $"{health}hp"; 
     }
 }
