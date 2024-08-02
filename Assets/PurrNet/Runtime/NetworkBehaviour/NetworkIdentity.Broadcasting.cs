@@ -11,48 +11,11 @@ using UnityEngine.Scripting;
 
 namespace PurrNet
 {
-    public struct GenericRPCHeader
-    {
-        public NetworkStream stream;
-        public uint hash;
-        public Type[] types;
-        public object[] values;
-        public RPCInfo info;
-        
-        [UsedImplicitly]
-        public void SetPlayerId(PlayerID player, int index)
-        {
-            values[index] = player;
-        }
-        
-        [UsedImplicitly]
-        public void SetInfo(int index)
-        {
-            values[index] = info;
-        }
-        
-        [UsedImplicitly]
-        public void Read(int genericIndex, int index)
-        {
-            object value = default;
-            stream.Serialize(types[genericIndex], ref value);
-            values[index] = value;
-        }
-        
-        [UsedImplicitly]
-        public void Read<T>(int index)
-        {
-            T value = default;
-            stream.Serialize(ref value);
-            values[index] = value;
-        }
-    }
-    
     public partial class NetworkIdentity
     {
         static readonly Dictionary<string, MethodInfo> _rpcMethods = new ();
         
-        [UsedImplicitly]
+        [UsedByIL]
         protected static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
         {
             uint hash = 0;
@@ -74,7 +37,7 @@ namespace PurrNet
             }
         }
     
-        [UsedImplicitly]
+        [UsedByIL]
         protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
         { 
             if (_rpcMethods.TryGetValue(methodName, out var genericMethod))
@@ -96,30 +59,71 @@ namespace PurrNet
             gmethod.Invoke(this, rpcHeader.values);
         }
         
-        public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
+        [UsedByIL]
+        protected void SendRPC(RPCPacket packet, RPCSignature signature)
         {
-            if (networkManager.isClient)
+            if (!isSpawned)
             {
-                networkManager.GetModule<PlayersManager>(false).Unsubscribe(callback);
+                PurrLogger.LogError($"Trying to send RPC from '{name}' which is not spawned.", this);
+                return;
+            }
+
+            if (!networkManager.TryGetModule<RPCModule>(networkManager.isServer, out var module))
+            {
+                PurrLogger.LogError("Failed to get RPC module.", this);
+                return;
             }
             
-            if (networkManager.isServer)
+            if (signature.requireOwnership && !isOwner)
             {
-                networkManager.GetModule<PlayersManager>(true).Unsubscribe(callback);
+                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{name}' without ownership.", this);
+                return;
+            }
+            
+            if (signature.requireServer && !networkManager.isServer)
+            {
+                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{name}' without server.", this);
+                return;
+            }
+            
+            module.AppendToBufferedRPCs(packet, signature);
+
+            Func<PlayerID, bool> predicate = null;
+            
+            if (signature.excludeOwner)
+                predicate = IsNotOwnerPredicate;
+
+            switch (signature.type)
+            {
+                case RPCType.ServerRPC: SendToServer(packet, signature.channel); break;
+                case RPCType.ObserversRPC: SendToObservers(packet, predicate, signature.channel); break;
+                case RPCType.TargetRPC: SendToTarget(signature.targetPlayer!.Value, packet, signature.channel); break;
+                default: throw new ArgumentOutOfRangeException();
             }
         }
-
-        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
+        
+        [UsedByIL]
+        protected bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
         {
-            if (networkManager.isClient)
+            if (signature.requireOwnership && info.sender != owner)
             {
-                networkManager.GetModule<PlayersManager>(false).Subscribe(callback);
+                PurrLogger.LogError($"Sender '{info.sender}' of RPC '{signature.rpcName}' from '{name}' is not the owner. Aborting RPC call.", this);
+                return false;
+            }
+
+            if (signature.type == RPCType.ServerRPC && !asServer)
+            {
+                PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' on client. Aborting RPC call.", this);
+                return false;
+            }
+
+            if (signature.excludeOwner && isOwner)
+            {
+                PurrLogger.LogError($"Trying to receive RPC '{signature.rpcName}' from '{name}' with exclude owner on owner. Aborting RPC call.", this);
+                return false;
             }
             
-            if (networkManager.isServer)
-            {
-                networkManager.GetModule<PlayersManager>(true).Subscribe(callback);
-            }
+            return true;
         }
         
         static readonly List<PlayerID> _players = new ();

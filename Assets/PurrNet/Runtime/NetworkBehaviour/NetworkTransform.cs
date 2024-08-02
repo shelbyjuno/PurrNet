@@ -56,8 +56,6 @@ namespace PurrNet
         [ObserversRPC(Channel.Unreliable, excludeOwner: false)]
         private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
-            Debug.Log("Received transform");
-            
             _position.Add(position);
             _rotation.Add(rotation);
             _scale.Add(scale);

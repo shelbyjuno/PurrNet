@@ -249,8 +249,16 @@ namespace PurrNet.Modules
 
                 if (rpcHandlerPtr != IntPtr.Zero)
                 {
-                    // Call the RPC handler
-                    ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, bool, void>)rpcHandlerPtr)(identity, stream, packet, info, asServer);
+                    try
+                    {
+                        // Call the RPC handler
+                        ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, bool, void>)
+                            rpcHandlerPtr)(identity, stream, packet, info, asServer);
+                    }
+                    catch (Exception e)
+                    {
+                        PurrLogger.LogError($"{e.Message}\nWhile calling RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.\n{e.StackTrace}");
+                    }
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }
