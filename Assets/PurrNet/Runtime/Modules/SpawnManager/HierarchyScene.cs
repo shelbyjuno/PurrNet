@@ -94,7 +94,7 @@ namespace PurrNet.Modules
             foreach (var identity in _identities.collection)
             {
                 if (identity.isSpawned)
-                    identity.TriggetClientSpawnEvent();
+                    identity.TriggetSpawnEvent(false);
             }
         }
 
@@ -155,7 +155,7 @@ namespace PurrNet.Modules
             else
             {
                 foreach (var identity in _identities.collection)
-                    identity.TriggetClientDespawnEvent();
+                    identity.TriggetDespawnEvent(false);
                 
                 _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             }
@@ -480,6 +480,7 @@ namespace PurrNet.Modules
         }
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
+        readonly List<NetworkIdentity> _despawnedThisFrame = new ();
         
         public void Spawn(GameObject instance)
         {
@@ -679,6 +680,9 @@ namespace PurrNet.Modules
 
         private void OnIdentityRemoved(ComponentGameObjectPair pair)
         {
+            if (pair.identity)
+                pair.identity.TriggetDespawnEvent(_asServer);
+            
             if (_identities.UnregisterIdentity(pair.identity))
                 onIdentityRemoved?.Invoke(pair.identity);
 

@@ -19,6 +19,12 @@ namespace PurrNet
 
         private float _timer;
         
+        public void Teleport(T value)
+        {
+            _lastValue = value;
+            _buffer.Clear();
+        }
+        
         public Interpolated(LerpFunction<T> lerp, float tickDelta, T initialValue = default, int maxBufferSize = 2)
         {
             _lerp = lerp;

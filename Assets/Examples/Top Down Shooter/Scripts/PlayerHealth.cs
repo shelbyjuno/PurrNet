@@ -7,10 +7,25 @@ public class PlayerHealth : NetworkIdentity
     [SerializeField] private TextMesh healthText;
     private int _health;
 
+    protected override void OnSpawned()
+    {
+        Debug.Log("Spawned", this);
+    }
+
     protected override void OnSpawned(bool asServer)
     {
         if(isServer)
             SetHealth_Observers(maxHealth);
+    }
+
+    protected override void OnDespawned()
+    {
+        Debug.Log("Despawned", this);
+    }
+
+    protected override void OnDespawned(bool asServer)
+    {
+        Debug.Log("Despawned " + asServer, this);
     }
 
     private void Update()
@@ -42,7 +57,7 @@ public class PlayerHealth : NetworkIdentity
         ChangeHealth_Server(change);
     }
 
-    [ServerRPC]
+    [ServerRPC(requireOwnership: false)]
     private void ChangeHealth_Server(int change)
     {
         SetHealth_Observers(_health + change);

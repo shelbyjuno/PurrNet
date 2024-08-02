@@ -63,6 +63,10 @@ namespace PurrNet
         private GameObjectEvents _events;
         private GameObject _gameObject;
 
+        protected virtual void OnSpawned() { }
+        
+        protected virtual void OnDespawned() { }
+        
         protected virtual void OnSpawned(bool asServer) { }
         
         protected virtual void OnDespawned(bool asServer) { }
@@ -177,19 +181,6 @@ namespace PurrNet
             if (ApplicationContext.isQuitting)
                 return;
 
-            if (isSpawned)
-            {
-                if (networkManager.isHost)
-                {
-                    OnDespawned(true);
-                    OnDespawned(false);
-                }
-                else
-                {
-                    OnDespawned(networkManager.isServer);
-                }
-            }
-            
             onRemoved?.Invoke(this);
         }
         
@@ -206,19 +197,26 @@ namespace PurrNet
             _ignoreNextEnable = true;
         }
         
+        private int _spawnedCount;
+        
         internal void TriggetSpawnEvent(bool asServer)
         {
             OnSpawned(asServer);
+            
+            if (_spawnedCount == 0)
+                OnSpawned();
+            
+            _spawnedCount++;
         }
 
-        internal void TriggetClientSpawnEvent()
+        internal void TriggetDespawnEvent(bool asServer)
         {
-            TriggetSpawnEvent(false);
-        }
-        
-        internal void TriggetClientDespawnEvent()
-        {
-            OnDespawned(false);
+            OnDespawned(asServer);
+
+            _spawnedCount--;
+            
+            if (_spawnedCount == 0)
+                OnDespawned();
         }
     }
 }

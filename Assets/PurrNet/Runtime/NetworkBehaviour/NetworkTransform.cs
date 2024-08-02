@@ -15,7 +15,7 @@ namespace PurrNet
         Interpolated<Vector3> _position;
         Interpolated<Quaternion> _rotation;
         Interpolated<Vector3> _scale;
-        
+
         void Awake()
         {
             ValidateParent();
@@ -27,6 +27,15 @@ namespace PurrNet
             _scale = new Interpolated<Vector3>(Vector3.Lerp, Time.fixedDeltaTime, trs.localScale);
         }
 
+        protected override void OnSpawned()
+        {
+            var trs = transform;
+
+            _position.Teleport(trs.position);
+            _rotation.Teleport(trs.rotation);
+            _scale.Teleport(trs.localScale);
+        }
+        
         private void FixedUpdate()
         {
             if (isOwner)
