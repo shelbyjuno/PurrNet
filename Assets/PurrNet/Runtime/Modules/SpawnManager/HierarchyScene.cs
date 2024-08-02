@@ -443,7 +443,6 @@ namespace PurrNet.Modules
         [UsedImplicitly]
         private void HandleDespawn(PlayerID player, DespawnAction action)
         {
-            Debug.Log($"Despawn {action.identityId} {_asServer}");
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
                 return;
 
