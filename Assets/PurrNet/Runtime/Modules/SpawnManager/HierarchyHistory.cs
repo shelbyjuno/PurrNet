@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
-using PurrNet.Logging;
-
 namespace PurrNet.Modules
 {
     public class HierarchyHistory
@@ -12,8 +9,6 @@ namespace PurrNet.Modules
         
         readonly SceneID _sceneId;
         
-        [UsedImplicitly]
-        private readonly List<IOptimizationRule> _optimizationRules = new();
         private readonly List<Prefab> _prefabs = new();
         
         public bool hasUnflushedActions { get; private set; }
@@ -108,9 +103,6 @@ namespace PurrNet.Modules
         {
             CleanupPrefabs();
             RemoveIrrelevantActions();
-            
-            if(_optimizationRules.Count > 0)
-                RunOptimizationRules();
         }
 
         private void CleanupPrefabs()
@@ -228,82 +220,27 @@ namespace PurrNet.Modules
             return removed;
         }
 
-        private void RunOptimizationRules()
+        private static NetworkID GetObjectId(HierarchyAction action)
         {
-            Dictionary<int, List<HierarchyAction>> actionsByObject = new Dictionary<int, List<HierarchyAction>>();
-            List<int> actionOrder = new List<int>();
-
-            // Group actions by object ID and maintain overall order
-            for (int i = 0; i < _actions.Count; i++)
+            return action.type switch
             {
-                var action = _actions[i];
-                int objectId = GetObjectId(action);
-                if (!actionsByObject.TryGetValue(objectId, out var objectActions))
-                {
-                    objectActions = new List<HierarchyAction>();
-                    actionsByObject[objectId] = objectActions;
-                }
-                objectActions.Add(action);
-                actionOrder.Add(objectId);
-            }
-
-            // Optimize actions for each object
-            Dictionary<int, Queue<HierarchyAction>> optimizedActionsByObject = new Dictionary<int, Queue<HierarchyAction>>();
-            foreach (var kvp in actionsByObject)
-            {
-                optimizedActionsByObject[kvp.Key] = new Queue<HierarchyAction>(OptimizeObjectActions(kvp.Value));
-            }
-
-            // Merge optimized actions back into a single list, preserving original order
-            List<HierarchyAction> optimizedActions = new List<HierarchyAction>();
-            foreach (int objectId in actionOrder)
-            {
-                if (optimizedActionsByObject.TryGetValue(objectId, out var queue) && queue.Count > 0)
-                {
-                    optimizedActions.Add(queue.Dequeue());
-                }
-            }
-
-            _actions.Clear();
-            _actions.AddRange(optimizedActions);
-        }
-
-        private List<HierarchyAction> OptimizeObjectActions(List<HierarchyAction> actions)
-        {
-            foreach (var rule in _optimizationRules)
-            {
-                actions = rule.Apply(actions);
-            }
-
-            return actions;
-        }
-
-        private int GetObjectId(HierarchyAction action)
-        {
-            switch (action.type)
-            {
-                case HierarchyActionType.Spawn: return action.spawnAction.identityId;
-                case HierarchyActionType.Despawn: return action.despawnAction.identityId;
-                case HierarchyActionType.ChangeParent: return action.changeParentAction.identityId;
-                case HierarchyActionType.SetActive: return action.setActiveAction.identityId;
-                case HierarchyActionType.SetEnabled: return action.setEnabledAction.identityId;
-                default: throw new ArgumentException("Unknown action type");
-            }
-        }
-        
-        private interface IOptimizationRule
-        {
-            List<HierarchyAction> Apply(List<HierarchyAction> actions);
+                HierarchyActionType.Spawn => action.spawnAction.identityId,
+                HierarchyActionType.Despawn => action.despawnAction.identityId,
+                HierarchyActionType.ChangeParent => action.changeParentAction.identityId,
+                HierarchyActionType.SetActive => action.setActiveAction.identityId,
+                HierarchyActionType.SetEnabled => action.setEnabledAction.identityId,
+                _ => throw new ArgumentException("Unknown action type")
+            };
         }
 
         private struct Prefab
         {
-            public int childCount;
-            public int identityId;
+            public ushort childCount;
+            public NetworkID identityId;
             public int despawnedChildren;
             public int spawnActionIndex;
 
-            public bool IsChild(int id)
+            public bool IsChild(NetworkID id)
             {
                 return id >= identityId && id < identityId + childCount;
             }

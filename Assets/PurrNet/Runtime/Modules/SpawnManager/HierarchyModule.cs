@@ -109,7 +109,7 @@ namespace PurrNet
                 hierarchy.TriggerSpawnEventOnClient();
         }
         
-        public bool TryGetIdentity(SceneID sceneID, int id, out NetworkIdentity identity)
+        public bool TryGetIdentity(SceneID sceneID, NetworkID id, out NetworkIdentity identity)
         {
             if (!_asServer && _manager.isServer)
             {

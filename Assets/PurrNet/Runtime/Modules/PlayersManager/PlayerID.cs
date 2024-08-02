@@ -5,13 +5,13 @@ namespace PurrNet
 {
     public readonly partial struct PlayerID : IAutoNetworkedData, IEquatable<PlayerID>
     {
-        private uint _id { get; }
+        private ushort _id { get; }
 
         public bool isBot { get; }
         
-        public uint id => _id;
+        public ushort id => _id;
 
-        public PlayerID(uint id, bool isBot)
+        public PlayerID(ushort id, bool isBot)
         {
             _id = id;
             this.isBot = isBot;
@@ -24,7 +24,7 @@ namespace PurrNet
 
         public override int GetHashCode()
         {
-            return (int)_id;
+            return _id;
         }
 
         public bool Equals(PlayerID other)

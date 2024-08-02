@@ -94,7 +94,7 @@ namespace PurrNet.Modules
 
     internal partial struct DespawnAction : IAutoNetworkedData
     {
-        public int identityId { get; set; }
+        public NetworkID identityId { get; set; }
         public DespawnType despawnType { get; set; }
 
         public override string ToString() => $"Despawn: {identityId} ({despawnType})";
@@ -102,7 +102,7 @@ namespace PurrNet.Modules
     
     internal partial struct SetActiveAction : IAutoNetworkedData
     {
-        public int identityId { get; set; }
+        public NetworkID identityId { get; set; }
         public bool active { get; set; }
         
         public override string ToString() => $"SetActive: {identityId} ({active})";
@@ -110,7 +110,7 @@ namespace PurrNet.Modules
     
     internal partial struct SetEnabledAction : IAutoNetworkedData
     {
-        public int identityId { get; set; }
+        public NetworkID identityId { get; set; }
         public bool enabled { get; set; }
         
         public override string ToString() => $"SetEnabled: {identityId} ({enabled})";
@@ -119,8 +119,8 @@ namespace PurrNet.Modules
     internal partial struct SpawnAction : IAutoNetworkedData
     {
         public int prefabId { get; set; }
-        public int identityId { get; set; }
-        public int childCount { get; set; }
+        public NetworkID identityId { get; set; }
+        public ushort childCount { get; set; }
         public TransformInfo transformInfo { get; set; }
 
         /// <summary>
@@ -134,15 +134,15 @@ namespace PurrNet.Modules
 
     public partial struct ChangeParentAction : IAutoNetworkedData
     {
-        public int identityId { get; set; }
-        public int parentId { get; set; }
+        public NetworkID identityId { get; set; }
+        public NetworkID? parentId { get; set; }
         
         public override string ToString() => $"ChangeParent: {identityId} (target parent id: {parentId})";
     }
 
     public partial struct TransformInfo : IAutoNetworkedData
     {
-        public int parentId { get; set; }
+        public NetworkID? parentId { get; set; }
         public bool activeInHierarchy { get; set; }
         public Vector3 localPos { get; set; }
         public Quaternion localRot { get; set; }
@@ -151,7 +151,18 @@ namespace PurrNet.Modules
         public TransformInfo(Transform trs)
         {
             activeInHierarchy = trs.gameObject.activeInHierarchy;
-            parentId = trs.parent ? trs.parent.GetComponent<NetworkIdentity>().id : -1;
+
+            var parent = trs.parent;
+
+            if (parent)
+            {
+                parentId = parent.TryGetComponent(out NetworkIdentity parentIdentity) ? parentIdentity.id : null;
+            }
+            else
+            {
+                parentId = null;
+            }
+            
             localPos = trs.localPosition;
             localRot = trs.localRotation;
             localScale = trs.localScale;

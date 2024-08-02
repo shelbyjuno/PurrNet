@@ -7,7 +7,7 @@ namespace PurrNet
     {
         public const string GET_ID_METHOD = nameof(GetID);
         
-        public int networkId;
+        public NetworkID networkId;
         public SceneID sceneId;
         public byte rpcId;
         public ByteData data;
@@ -16,7 +16,7 @@ namespace PurrNet
 
         public void Serialize(NetworkStream packer)
         {
-            packer.Serialize(ref networkId, false);
+            packer.Serialize(ref networkId);
             packer.Serialize(ref sceneId);
             packer.Serialize(ref rpcId);
             

@@ -225,8 +225,8 @@ namespace PurrNet
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
             modules.AddModule(ownershipModule);
-            modules.AddModule(rpcModule);
             modules.AddModule(hierarchyModule);
+            modules.AddModule(rpcModule);
         }
 
         static bool ShouldStart(StartFlags flags)

@@ -9,7 +9,7 @@ namespace PurrNet.Modules
     internal readonly struct RPC_ID
     {
         public readonly SceneID sceneId;
-        public readonly int networkId;
+        public readonly NetworkID networkId;
         private readonly byte rpcId;
             
         public RPC_ID(RPCPacket packet)
@@ -187,11 +187,12 @@ namespace PurrNet.Modules
         }
 
         [UsedByIL]
-        public static RPCPacket BuildRawRPC(int networkId, SceneID id, byte rpcId, NetworkStream data)
+        public static RPCPacket BuildRawRPC(NetworkID? networkId, SceneID id, byte rpcId, NetworkStream data)
         {
+            
             var rpc = new RPCPacket
             {
-                networkId = networkId,
+                networkId = networkId!.Value,
                 rpcId = rpcId,
                 sceneId = id,
                 data = data.buffer.ToByteData()
@@ -255,6 +256,7 @@ namespace PurrNet.Modules
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }
+            else PurrLogger.LogError($"Can't find identity with id {packet.networkId} in scene {packet.sceneId}.");
             
             FreeStream(stream);
         }

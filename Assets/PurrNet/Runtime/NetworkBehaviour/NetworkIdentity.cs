@@ -18,7 +18,7 @@ namespace PurrNet
         /// <summary>
         /// Network id of this object.
         /// </summary>
-        public int id { get; private set; } = -1;
+        public NetworkID? id { get; private set; }
         
         /// <summary>
         /// Scene id of this object.
@@ -28,7 +28,7 @@ namespace PurrNet
         /// <summary>
         /// Is spawned over the network.
         /// </summary>
-        public bool isSpawned => id != -1;
+        public bool isSpawned => id.HasValue;
 
         public bool isServer => isSpawned && networkManager.isServer;
         
@@ -115,7 +115,7 @@ namespace PurrNet
             UpdateEnabledState();
         }
         
-        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int identityId, bool asServer)
+        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, NetworkID identityId, bool asServer)
         {
             networkManager = manager;
 

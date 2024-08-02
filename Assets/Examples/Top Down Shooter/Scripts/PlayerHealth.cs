@@ -18,11 +18,6 @@ public class PlayerHealth : NetworkIdentity
         Vector3 direction = healthText.transform.position - Camera.main.transform.position;
         direction.x = 0;
         healthText.transform.rotation = Quaternion.LookRotation(direction);
-
-        if (!isOwner)
-            return;
-
-        
     }
 
     [ContextMenu("Log optional")]

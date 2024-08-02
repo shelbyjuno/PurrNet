@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -71,7 +70,7 @@ namespace PurrNet.Modules
         private readonly ITransport _transport;
 
         private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new();
-        private uint _playerIdCounter;
+        private ushort _playerIdCounter;
         
         private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new();
         private readonly Dictionary<PlayerID, Connection> _playerToConnection = new();

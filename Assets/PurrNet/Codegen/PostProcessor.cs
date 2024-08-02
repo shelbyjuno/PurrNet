@@ -28,13 +28,17 @@ namespace PurrNet.Codegen
         public MethodDefinition originalMethod;
     }
     
+    public struct PendingAddition
+    {
+        public TypeDefinition target;
+        public MethodDefinition method;
+    }
+    
     [UsedImplicitly]
     public class PostProcessor : ILPostProcessor
     {
         public override ILPostProcessor GetInstance() => this;
         
-        static readonly HashSet<string> _processedAssemblies = new();
-
         public override bool WillProcess(ICompiledAssembly compiledAssembly)
         {
             var name = compiledAssembly.Name;
@@ -51,10 +55,6 @@ namespace PurrNet.Codegen
             if (name.Contains("Editor"))
                 return false;
             
-            if (_processedAssemblies.Contains(name))
-                return false;
-            
-            _processedAssemblies.Add(name);
             return true;
         }
         
@@ -90,9 +90,7 @@ namespace PurrNet.Codegen
                     return false;
 
                 if (type.BaseType.FullName == baseTypeName)
-                {
                     return true;
-                }
 
                 var btype = type.BaseType.Resolve();
                 return btype != null && InheritsFrom(btype, baseTypeName);
@@ -701,7 +699,6 @@ namespace PurrNet.Codegen
             }
         }
         
-        static readonly List<RPCMethod> _rpcMethods = new();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
@@ -709,7 +706,7 @@ namespace PurrNet.Codegen
             {
                 if (!WillProcess(compiledAssembly))
                     return default!;
-
+                
                 var messages = new List<DiagnosticMessage>();
 
                 using var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData);
@@ -729,6 +726,7 @@ namespace PurrNet.Codegen
                 for (var m = 0; m < assemblyDefinition.Modules.Count; m++)
                 {
                     var module = assemblyDefinition.Modules[m];
+
                     for (var t = 0; t < module.Types.Count; t++)
                     {
                         var type = module.Types[t];
@@ -741,7 +739,7 @@ namespace PurrNet.Codegen
                         if (!InheritsFrom(type, idFullName) && type.FullName != idFullName)
                             continue;
 
-                        _rpcMethods.Clear();
+                        List<RPCMethod> _rpcMethods = new();
 
                         int idOffset = GetIDOffset(type, messages);
 
@@ -824,7 +822,7 @@ namespace PurrNet.Codegen
                     messages.Add(new DiagnosticMessage
                     {
                         DiagnosticType = DiagnosticType.Error,
-                        MessageData = $"Failed to write assembly: {e.Message}",
+                        MessageData = $"Failed to write assembly ({compiledAssembly.Name}): {e.Message}",
                     });
                 }
 
