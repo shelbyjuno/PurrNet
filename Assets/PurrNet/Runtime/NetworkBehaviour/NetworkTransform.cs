@@ -12,14 +12,16 @@ namespace PurrNet
         internal event Action<NetworkTransform> onParentChanged;
         private bool _isResettingParent;
         
+        private bool _isFirstTransform = true;
+
         Interpolated<Vector3> _position;
         Interpolated<Quaternion> _rotation;
         Interpolated<Vector3> _scale;
 
-        void Awake()
+        private void Awake()
         {
             ValidateParent();
-            
+
             var trs = transform;
 
             _position = new Interpolated<Vector3>(Vector3.Lerp, Time.fixedDeltaTime, trs.position);
@@ -29,15 +31,14 @@ namespace PurrNet
 
         protected override void OnSpawned()
         {
-            var trs = transform;
-
-            _position.Teleport(trs.position);
-            _rotation.Teleport(trs.rotation);
-            _scale.Teleport(trs.localScale);
+            _isFirstTransform = true;
         }
         
         private void FixedUpdate()
         {
+            if (!isSpawned)
+                return;
+            
             if (isOwner)
             {
                 var trs = transform;
@@ -47,6 +48,9 @@ namespace PurrNet
         
         private void Update()
         {
+            if (!isSpawned)
+                return;
+            
             if (!isOwner)
             {
                 var trs = transform;
@@ -65,9 +69,19 @@ namespace PurrNet
         [ObserversRPC(Channel.Unreliable, excludeOwner: false)]
         private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
-            _position.Add(position);
-            _rotation.Add(rotation);
-            _scale.Add(scale);
+            if (_isFirstTransform)
+            {
+                _isFirstTransform = false;
+                _position.Teleport(position);
+                _rotation.Teleport(rotation);
+                _scale.Teleport(scale);
+            }
+            else
+            {
+                _position.Add(position);
+                _rotation.Add(rotation);
+                _scale.Add(scale);
+            }
         }
         
         void OnTransformParentChanged()

@@ -116,6 +116,12 @@ namespace PurrNet
                 PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' on client. Aborting RPC call.", this);
                 return false;
             }
+            
+            if (signature.type != RPCType.ServerRPC && asServer)
+            {
+                PurrLogger.LogError($"Trying to receive client RPC '{signature.rpcName}' from '{name}' on server. Aborting RPC call.", this);
+                return false;
+            }
 
             if (signature.excludeOwner && isOwner)
             {

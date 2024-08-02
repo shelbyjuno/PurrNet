@@ -364,8 +364,18 @@ namespace PurrNet.Modules
                 prefab.gameObject.SetActive(false);
             }
 
-            var go = Object.Instantiate(prefab.gameObject, parent);
-            go.transform.SetLocalPositionAndRotation(trsInfo.localPos, trsInfo.localRot);
+            GameObject go;
+
+            if (parent == null)
+            {
+                go = Object.Instantiate(prefab.gameObject, trsInfo.localPos, trsInfo.localRot, parent);
+            }
+            else
+            {
+                go = Object.Instantiate(prefab.gameObject, parent);
+                go.transform.SetLocalPositionAndRotation(trsInfo.localPos, trsInfo.localRot);
+            }
+
             go.transform.localScale = trsInfo.localScale;
 
             if (parent == null && _scenes.TryGetSceneState(_sceneID, out var state))
@@ -433,6 +443,7 @@ namespace PurrNet.Modules
         [UsedImplicitly]
         private void HandleDespawn(PlayerID player, DespawnAction action)
         {
+            Debug.Log($"Despawn {action.identityId} {_asServer}");
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
                 return;
 

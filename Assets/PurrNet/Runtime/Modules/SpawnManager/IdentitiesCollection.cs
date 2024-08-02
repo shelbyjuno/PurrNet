@@ -47,6 +47,8 @@ namespace PurrNet
         {
             foreach (var identity in _identities.Values)
             {
+                identity.IgnoreNextDestroyCallback();
+                
                 if (identity && identity.gameObject && identity.prefabId != -1)
                     Object.Destroy(identity.gameObject);
             }
