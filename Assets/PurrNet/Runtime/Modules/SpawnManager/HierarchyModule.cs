@@ -129,6 +129,7 @@ namespace PurrNet
         
         internal void AutoSpawn(GameObject gameObject)
         {
+            Debug.Log($"AutoSpawn {gameObject.name}.");
             if (!_scenes.TryGetSceneID(gameObject.scene, out var sceneID))
             {
                 PurrLogger.LogError($"Failed to find scene id for '{gameObject.scene.name}'.");

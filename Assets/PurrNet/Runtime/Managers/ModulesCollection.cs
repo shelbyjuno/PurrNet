@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using PurrNet.Modules;
 using PurrNet.Transports;
-using UnityEngine;
 
 namespace PurrNet
 {
@@ -12,6 +11,7 @@ namespace PurrNet
         private readonly List<IConnectionStateListener> _connectionStateListeners;
         private readonly List<IDataListener> _dataListeners;
         private readonly List<IFixedUpdate> _fixedUpdatesListeners;
+        private readonly List<IPreFixedUpdate> _preFixedUpdatesListeners;
         private readonly List<IUpdate> _updateListeners;
         private readonly List<ICleanup> _cleanupListeners;
 
@@ -23,6 +23,7 @@ namespace PurrNet
             _modules = new List<INetworkModule>();
             _connectionListeners = new List<IConnectionListener>();
             _connectionStateListeners = new List<IConnectionStateListener>();
+            _preFixedUpdatesListeners = new List<IPreFixedUpdate>();
             _dataListeners = new List<IDataListener>();
             _updateListeners = new List<IUpdate>();
             _fixedUpdatesListeners = new List<IFixedUpdate>();
@@ -85,6 +86,10 @@ namespace PurrNet
                 // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is ICleanup cleanup)
                     _cleanupListeners.Add(cleanup);
+                
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is IPreFixedUpdate preFixedUpdate)
+                    _preFixedUpdatesListeners.Add(preFixedUpdate);
             }
         }
         
@@ -122,6 +127,12 @@ namespace PurrNet
         {
             for (int i = 0; i < _fixedUpdatesListeners.Count; i++)
                 _fixedUpdatesListeners[i].FixedUpdate();
+        }
+        
+        public void TriggerOnPreFixedUpdate()
+        {
+            for (int i = 0; i < _preFixedUpdatesListeners.Count; i++)
+                _preFixedUpdatesListeners[i].PreFixedUpdate();
         }
 
         public bool Cleanup()

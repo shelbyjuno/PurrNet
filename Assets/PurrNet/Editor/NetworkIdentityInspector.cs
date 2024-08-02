@@ -8,7 +8,7 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(NetworkIdentity), true)]
     public class NetworkIdentityInspector : UnityEditor.Editor
     {
-        private bool settingsFoldoutVisible = false;
+        private bool settingsFoldoutVisible;
         private GUIStyle boldFoldoutStyle; 
 
         private void SetStyle()
@@ -23,7 +23,6 @@ namespace PurrNet.Editor
         {
             base.OnInspectorGUI();
 
-            serializedObject.Update();
             if (boldFoldoutStyle == null)
             {
                 SetStyle(); 
@@ -139,39 +138,37 @@ namespace PurrNet.Editor
                 overriddenProp.boolValue = selectedIndex != 0;
                 if (overriddenProp.boolValue)
                 {
-                    if (valueProp.propertyType == SerializedPropertyType.Enum)
-                        valueProp.enumValueIndex = selectedIndex - 1;
-                    else if (valueProp.propertyType == SerializedPropertyType.Boolean)
-                        valueProp.boolValue = options[selectedIndex] == "True";
+                    switch (valueProp.propertyType)
+                    {
+                        case SerializedPropertyType.Enum:
+                            valueProp.enumValueIndex = selectedIndex - 1;
+                            break;
+                        case SerializedPropertyType.Boolean:
+                            valueProp.boolValue = options[selectedIndex] == "True";
+                            break;
+                    }
                 }
             }
 
             EditorGUILayout.EndHorizontal();
         }
 
-        private string[] GetOptionsForProperty(SerializedProperty property)
+        private static string[] GetOptionsForProperty(SerializedProperty property)
         {
-            string[] options;
-            switch (property.propertyType)
+            string[] options = property.propertyType switch
             {
-                case SerializedPropertyType.Enum:
-                    options = new string[] { "Default" }.Concat(property.enumNames).ToArray();
-                    break;
-                case SerializedPropertyType.Boolean:
-                    options = new string[] { "Default", "True", "False" };
-                    break;
-                default:
-                    options = new string[] { "Default", "Custom" };
-                    break;
-            }
+                SerializedPropertyType.Enum => new[] { "Default" }.Concat(property.enumNames).ToArray(),
+                SerializedPropertyType.Boolean => new[] { "Default", "True", "False" },
+                _ => new[] { "Default", "Custom" }
+            };
             return options;
         }
 
-        private void HandleStatus(NetworkIdentity identity)
+        private static void HandleStatus(NetworkIdentity identity)
         {
             if (identity.isSpawned)
             {
-                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.BeginHorizontal("box");
                 EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
                 EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
                 EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");

@@ -49,7 +49,7 @@ namespace PurrNet.Modules
     
     public delegate void OwnershipChanged(int identity, PlayerID? player, bool asServer);
     
-    public class GlobalOwnershipModule : INetworkModule, IFixedUpdate
+    public class GlobalOwnershipModule : INetworkModule, IPreFixedUpdate
     {
         readonly PlayersManager _playersManager;
         readonly ScenePlayersModule _scenePlayers;
@@ -348,7 +348,7 @@ namespace PurrNet.Modules
             _sceneOwnerships[scene] = new SceneOwnership(asServer);
         }
         
-        public void FixedUpdate()
+        public void PreFixedUpdate()
         {
             HandleBatches();
             HandleChanges();
@@ -431,8 +431,7 @@ namespace PurrNet.Modules
             
             if (!_hierarchy.TryGetIdentity(change.sceneId, id, out var identity))
             {
-                PurrLogger.LogError(
-                    $"Failed to find scene {change.sceneId} when {verb2} ownership change for identity {id}");
+                PurrLogger.LogError($"Failed to find network identity {id} when {verb2} ownership.");
                 return;
             }
 

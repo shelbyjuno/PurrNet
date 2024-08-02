@@ -40,6 +40,11 @@ namespace PurrNet.Modules
         void FixedUpdate();
     }
     
+    internal interface IPreFixedUpdate
+    {
+        void PreFixedUpdate();
+    }
+    
     internal interface IUpdate
     {
         void Update();

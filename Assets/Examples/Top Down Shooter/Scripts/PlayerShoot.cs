@@ -14,8 +14,11 @@ public class PlayerShoot : NetworkIdentity
     {
         if (!Input.GetMouseButtonDown(0))
             return;
+
+        var trs = transform;
+        var bullet = Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
         
-        var bullet = Instantiate(bulletPrefab, transform.position + transform.forward * 0.5f + Vector3.up * 0.7f, transform.rotation);
-        bullet.GiveOwnership(owner.Value);
+        Debug.Log($"GiveOwnership to {bullet.id}.");
+        bullet.GiveOwnership(owner!.Value);
     }
 }

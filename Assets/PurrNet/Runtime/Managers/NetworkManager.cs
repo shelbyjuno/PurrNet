@@ -257,6 +257,12 @@ namespace PurrNet
 
         private void FixedUpdate()
         {
+            if (serverState == ConnectionState.Connected)
+                _serverModules.TriggerOnPreFixedUpdate();
+            
+            if (clientState == ConnectionState.Connected)
+                _clientModules.TriggerOnPreFixedUpdate();
+            
             _transport.transport.UpdateEvents(Time.fixedDeltaTime);
             
             if (serverState == ConnectionState.Connected)
