@@ -48,7 +48,7 @@ namespace PurrNet
         }
     }
     
-    public partial class NetworkIdentity : IPlayerBroadcaster
+    public partial class NetworkIdentity
     {
         static readonly Dictionary<string, MethodInfo> _rpcMethods = new ();
         
@@ -121,11 +121,33 @@ namespace PurrNet
                 networkManager.GetModule<PlayersManager>(true).Subscribe(callback);
             }
         }
+        
+        static readonly List<PlayerID> _players = new ();
 
-        public void SendToAll<T>(T packet, Channel method = Channel.ReliableOrdered)
+        public void SendToObservers<T>(T packet, [CanBeNull] Func<PlayerID, bool> predicate, Channel method = Channel.ReliableOrdered)
         {
-            if (networkManager.isServer)
-                networkManager.GetModule<PlayersManager>(true).SendToAll(packet, method);
+            if (!networkManager.TryGetModule<ScenePlayersModule>(isServer, out var scene))
+            {
+                PurrLogger.LogError("Trying to send packet to observers without scene module.", this);
+                return;
+            }
+                
+            if (scene.TryGetPlayersInScene(sceneId, out var playersInScene))
+            {
+                _players.Clear();
+                _players.AddRange(playersInScene);
+
+                if (predicate != null)
+                {
+                    for (int i = 0; i < _players.Count; i++)
+                    {
+                        if (!predicate(_players[i]))
+                            _players.RemoveAt(i--);
+                    }
+                }
+
+                Send(_players, packet, method);
+            }
         }
 
         public void Send<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
@@ -140,42 +162,12 @@ namespace PurrNet
             Send(player, packet, method);
         }
         
-        private void Send<T>(IPlayerBroadcaster players, ScenePlayersModule scene, PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
-        {
-            if (scene.TryGetPlayersInScene(sceneId, out var playersInScene))
-            {
-                if (playersInScene.Contains(player))
-                    players.Send(playersInScene, packet, method);
-                else PurrLogger.LogError($"Player {player} is not in scene {sceneId}, can't send packet '{typeof(T).Name}' to him.");
-            }
-        }
-
         public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)
         {
             if (networkManager.isServer)
                 networkManager.GetModule<PlayersManager>(true).Send(players, data, method);
         }
         
-        static readonly List<PlayerID> _playersList = new ();
-        
-        private void Send<T>(IPlayerBroadcaster players, ScenePlayersModule scene, IEnumerable<PlayerID> targets, T data, Channel method = Channel.ReliableOrdered)
-        {
-            _playersList.Clear();
-            
-            if (scene.TryGetPlayersInScene(sceneId, out var playersInScene))
-            {
-                foreach (var target in targets)
-                {
-                    if (!playersInScene.Contains(target))
-                        PurrLogger.LogError($"Player {target} is not in scene {sceneId}, can't send packet '{typeof(T).Name}' to him.");
-                    else _playersList.Add(target);
-                }
-                
-                if (_playersList.Count > 0)
-                    players.Send(_playersList, data, method);
-            }
-        }
-
         public void SendToServer<T>(T packet, Channel method = Channel.ReliableOrdered)
         {
             if (networkManager.isClient)

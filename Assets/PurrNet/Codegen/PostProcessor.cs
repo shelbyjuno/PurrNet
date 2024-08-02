@@ -24,8 +24,9 @@ namespace PurrNet.Codegen
 
     public struct RPCMethod
     {
-        public RPCDetails details;
+        public RPCSignature Signature;
         public MethodDefinition originalMethod;
+        public string ogName;
     }
     
     public struct PendingAddition
@@ -101,9 +102,9 @@ namespace PurrNet.Codegen
             }
         }
         
-        private static RPCDetails? GetMethodRPCType(MethodDefinition method, ICollection<DiagnosticMessage> messages)
+        private static RPCSignature? GetMethodRPCType(MethodDefinition method, ICollection<DiagnosticMessage> messages)
         {
-            RPCDetails data = default;
+            RPCSignature data = default;
             int rpcCount = 0;
             
             foreach (var attribute in method.CustomAttributes)
@@ -120,7 +121,7 @@ namespace PurrNet.Codegen
                     var runLocally = (bool)attribute.ConstructorArguments[1].Value;
                     var requireOwnership = (bool)attribute.ConstructorArguments[2].Value;
                     
-                    data = new RPCDetails
+                    data = new RPCSignature
                     {
                         type = RPCType.ServerRPC,
                         channel = channel,
@@ -146,7 +147,7 @@ namespace PurrNet.Codegen
                     var requireServer = (bool)attribute.ConstructorArguments[3].Value;
                     var excludeOwner = (bool)attribute.ConstructorArguments[4].Value;
                     
-                    data = new RPCDetails
+                    data = new RPCSignature
                     {
                         type = RPCType.ObserversRPC,
                         channel = channel,
@@ -171,7 +172,7 @@ namespace PurrNet.Codegen
                     var bufferLast = (bool)attribute.ConstructorArguments[2].Value;
                     var requireServer = (bool)attribute.ConstructorArguments[3].Value;
                     
-                    data = new RPCDetails
+                    data = new RPCSignature
                     {
                         type = RPCType.TargetRPC,
                         channel = channel,
@@ -255,6 +256,7 @@ namespace PurrNet.Codegen
                 var readHeaderMethod = identityType.GetMethod("ReadGenericHeader").Import(module);
                 var callGenericMethod = identityType.GetMethod("CallGeneric").Import(module);
                 var localPlayerProp = identityType.GetProperty("localPlayer");
+                var validateReceivingRPC = identityType.GetMethod("ValidateReceivingRPC").Import(module);
                 var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
                 
                 var genericRpcHeaderType = module.GetTypeDefinition<GenericRPCHeader>();
@@ -267,11 +269,12 @@ namespace PurrNet.Codegen
                 var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType.Import(module));
                 var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType.Import(module));
                 var info = new ParameterDefinition("info", ParameterAttributes.None, rpcInfo.Import(module));
+                var asServer = new ParameterDefinition("asServer", ParameterAttributes.None, module.TypeSystem.Boolean);
                 
                 newMethod.Parameters.Add(stream);
                 newMethod.Parameters.Add(packet);
                 newMethod.Parameters.Add(info);
-
+                newMethod.Parameters.Add(asServer);
                 newMethod.Body.InitLocals = true;
                 
                 var code = newMethod.Body.GetILProcessor();
@@ -285,6 +288,19 @@ namespace PurrNet.Codegen
                 var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
                 
                 int paramCount = rpc.Parameters.Count;
+
+                var end = Instruction.Create(OpCodes.Ret);
+                
+                // Call validateReceivingRPC(this, RPCInfo, RPCSignature, asServer)
+                
+                code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                code.Append(Instruction.Create(OpCodes.Ldarg, info)); // info
+                ReturnRPCSignature(module, code, originalRpcs[i]);
+                code.Append(Instruction.Create(OpCodes.Ldarg, asServer)); // asServer
+                code.Append(Instruction.Create(OpCodes.Call, validateReceivingRPC));
+                
+                // if returned false, return early
+                code.Append(Instruction.Create(OpCodes.Brfalse, end));
 
                 try
                 {
@@ -305,7 +321,7 @@ namespace PurrNet.Codegen
                     throw new Exception($"Failed to handle RPC: {e.Message}\n{e.StackTrace}");
                 }
 
-                code.Append(Instruction.Create(OpCodes.Ret));
+                code.Append(end);
                 type.Methods.Add(newMethod);
             }
         }
@@ -321,7 +337,7 @@ namespace PurrNet.Codegen
                 var variable = new VariableDefinition(param.ParameterType);
                 newMethod.Body.Variables.Add(variable);
 
-                if (ShouldIgnore(originalRpcs[i].details.type, param, p, paramCount, out var specialType))
+                if (ShouldIgnore(originalRpcs[i].Signature.type, param, p, paramCount, out var specialType))
                 {
                     switch (specialType)
                     {
@@ -384,7 +400,7 @@ namespace PurrNet.Codegen
             {
                 var param = rpc.Parameters[p];
 
-                if (ShouldIgnore(originalRpcs[i].details.type, param, p, paramCount, out var specialType))
+                if (ShouldIgnore(originalRpcs[i].Signature.type, param, p, paramCount, out var specialType))
                 {
                     switch (specialType)
                     {
@@ -467,15 +483,12 @@ namespace PurrNet.Codegen
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
             var packetType = module.GetTypeDefinition<RPCPacket>();
             var hahserType = module.GetTypeDefinition<Hasher>();
-            var rpcDetails = module.GetTypeDefinition<RPCDetails>();
 
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             var buildRawRPCMethod = rpcType.GetMethod("BuildRawRPC").Import(module);
             var freeStreamMethod = rpcType.GetMethod("FreeStream").Import(module);
-            var makeRpcDetails = rpcDetails.GetMethod("Make").Import(module);
-            var makeRpcDetailsTarget = rpcDetails.GetMethod("MakeWithTarget").Import(module);
-            var onRPCSentInternal = identityType.GetMethod("OnRPCSentInternal").Import(module);
+            var sendRpc = identityType.GetMethod("SendRPC").Import(module);
             
             var getId = identityType.GetProperty("id");
             var getSceneId = identityType.GetProperty("sceneId");
@@ -486,7 +499,7 @@ namespace PurrNet.Codegen
             
             var streamVariable = new VariableDefinition(streamType.Import(module));
             var rpcDataVariable = new VariableDefinition(packetType.Import(module));
-            var rpcDetailsVariable = new VariableDefinition(rpcDetails.Import(module));
+            var rpcDetailsVariable = new VariableDefinition(module.GetTypeDefinition<RPCSignature>().Import(module));
             var typeHash = new VariableDefinition(module.TypeSystem.UInt32);
             
             newMethod.Body.Variables.Add(streamVariable);
@@ -496,7 +509,7 @@ namespace PurrNet.Codegen
 
             var paramCount = newMethod.Parameters.Count;
             
-            if (methodRpc.details.runLocally)
+            if (methodRpc.Signature.runLocally)
             {
                 MethodReference callMethod = method;
                 
@@ -547,7 +560,7 @@ namespace PurrNet.Codegen
             {
                 var param = newMethod.Parameters[i];
                 
-                if (methodRpc.details.type == RPCType.TargetRPC && i == 0)
+                if (methodRpc.Signature.type == RPCType.TargetRPC && i == 0)
                 {
                     if (param.ParameterType.IsGenericParameter || param.ParameterType.FullName != typeof(PlayerID).FullName)
                     {
@@ -557,7 +570,7 @@ namespace PurrNet.Codegen
                     continue;
                 }
 
-                if (ShouldIgnore(methodRpc.details.type, param, i, paramCount, out _))
+                if (ShouldIgnore(methodRpc.Signature.type, param, i, paramCount, out _))
                     continue;
                 
                 var serializeGenericMethod = new GenericInstanceMethod(serializeMethod);
@@ -576,25 +589,8 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ldc_I4, id)); // rpcId
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable)); // stream
             
-            // RPCDetails Make(RPCType type, Channel channel, bool runLocally, bool bufferLast, bool requireServer, bool excludeOwner)
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.details.type));
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.details.channel));
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.runLocally ? 1 : 0));
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.requireOwnership ? 1 : 0));
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.bufferLast ? 1 : 0));
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.requireServer ? 1 : 0));
-            code.Append(Instruction.Create(OpCodes.Ldc_I4, methodRpc.details.excludeOwner ? 1 : 0));
-            
-            if (methodRpc.details.type == RPCType.TargetRPC)
-            {
-                code.Append(Instruction.Create(OpCodes.Ldarg_1));
-                code.Append(Instruction.Create(OpCodes.Call, makeRpcDetailsTarget));
-            }
-            else
-            {
-                code.Append(Instruction.Create(OpCodes.Call, makeRpcDetails));
-            }
-            
+            ReturnRPCSignature(module, code, methodRpc);
+
             code.Append(Instruction.Create(OpCodes.Stloc, rpcDetailsVariable));
             
             // BuildRawRPC(int networkId, SceneID sceneId, byte rpcId, NetworkStream stream, RPCDetails details)
@@ -604,55 +600,8 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
             code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcPacket
             code.Append(Instruction.Create(OpCodes.Ldloc, rpcDetailsVariable)); // rpcDetails
-            code.Append(Instruction.Create(OpCodes.Call, onRPCSentInternal));
+            code.Append(Instruction.Create(OpCodes.Call, sendRpc));
             
-            int rpcChannel = (int)methodRpc.details.channel;
-
-            switch (methodRpc.details.type)
-            {
-                case RPCType.ServerRPC:
-                {
-                    var sendMethod = identityType.GetMethod("SendToServer", true).Import(module);
-                    var sendToServerMethodGeneric = new GenericInstanceMethod(sendMethod);
-                    sendToServerMethodGeneric.GenericArguments.Add(packetType.Import(module));
-
-                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                    code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-                    code.Append(Instruction.Create(OpCodes.Ldc_I4, rpcChannel));
-                    code.Append(Instruction.Create(OpCodes.Call, sendToServerMethodGeneric));
-                    break;
-                }
-
-                case RPCType.ObserversRPC:
-                {
-                    var sendMethod = identityType.GetMethod("SendToAll", true).Import(module);
-                    var sendToAllMethodGeneric = new GenericInstanceMethod(sendMethod);
-                    sendToAllMethodGeneric.GenericArguments.Add(packetType.Import(module));
-                    
-                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                    code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-                    code.Append(Instruction.Create(OpCodes.Ldc_I4, rpcChannel));
-                    code.Append(Instruction.Create(OpCodes.Call, sendToAllMethodGeneric));
-                    break;
-                }
-                
-                case RPCType.TargetRPC:
-                {
-                    var sendMethod = identityType.GetMethod("SendToTarget", true).Import(module);
-                    var sendMethodGeneric = new GenericInstanceMethod(sendMethod);
-                    sendMethodGeneric.GenericArguments.Add(packetType.Import(module));
-                    
-                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                    code.Append(Instruction.Create(OpCodes.Ldarg_1)); // player
-                    code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcData
-                    code.Append(Instruction.Create(OpCodes.Ldc_I4, rpcChannel));
-                    code.Append(Instruction.Create(OpCodes.Call, sendMethodGeneric));
-                    break;
-                }
-                
-                default: throw new InvalidOperationException($"Invalid RPC type: {methodRpc.details.type}");
-            }
-
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
             code.Append(Instruction.Create(OpCodes.Call, freeStreamMethod));
 
@@ -660,7 +609,34 @@ namespace PurrNet.Codegen
 
             return newMethod;
         }
-        
+
+        private static void ReturnRPCSignature(ModuleDefinition module, ILProcessor code, RPCMethod rpc)
+        {
+            var rpcDetails = module.GetTypeDefinition<RPCSignature>();
+            var makeRpcDetails = rpcDetails.GetMethod("Make").Import(module);
+            var makeRpcDetailsTarget = rpcDetails.GetMethod("MakeWithTarget").Import(module);
+            
+            // RPCDetails Make(RPCType type, Channel channel, bool runLocally, bool bufferLast, bool requireServer, bool excludeOwner)
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)rpc.Signature.type));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)rpc.Signature.channel));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.runLocally ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.requireOwnership ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.bufferLast ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.requireServer ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.excludeOwner ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldstr, rpc.ogName));
+
+            if (rpc.Signature.type == RPCType.TargetRPC)
+            {
+                code.Append(Instruction.Create(OpCodes.Ldarg_1));
+                code.Append(Instruction.Create(OpCodes.Call, makeRpcDetailsTarget));
+            }
+            else
+            {
+                code.Append(Instruction.Create(OpCodes.Call, makeRpcDetails));
+            }
+        }
+
         private static void UpdateMethodReferences(ModuleDefinition module, MethodReference old, MethodReference @new, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             foreach (var type in module.Types)
@@ -757,7 +733,10 @@ namespace PurrNet.Codegen
                                 if (rpcType == null)
                                     continue;
 
-                                _rpcMethods.Add(new RPCMethod { details = rpcType.Value, originalMethod = method });
+                                _rpcMethods.Add(new RPCMethod
+                                {
+                                    Signature = rpcType.Value, originalMethod = method, ogName = method.Name
+                                });
                             }
                             catch (Exception e)
                             {

@@ -1,4 +1,5 @@
 using System;
+using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -11,11 +12,57 @@ namespace PurrNet
         internal event Action<NetworkTransform> onParentChanged;
         private bool _isResettingParent;
         
+        Interpolated<Vector3> _position;
+        Interpolated<Quaternion> _rotation;
+        Interpolated<Vector3> _scale;
+        
         void Awake()
         {
             ValidateParent();
+            
+            var trs = transform;
+
+            _position = new Interpolated<Vector3>(Vector3.Lerp, Time.fixedDeltaTime, trs.position);
+            _rotation = new Interpolated<Quaternion>(Quaternion.Lerp, Time.fixedDeltaTime, trs.rotation);
+            _scale = new Interpolated<Vector3>(Vector3.Lerp, Time.fixedDeltaTime, trs.localScale);
         }
 
+        private void FixedUpdate()
+        {
+            if (isOwner)
+            {
+                var trs = transform;
+                SendTransform(trs.position, trs.rotation, trs.localScale);
+            }
+        }
+        
+        private void Update()
+        {
+            if (!isOwner)
+            {
+                var trs = transform;
+                trs.position = _position.Advance(Time.deltaTime);
+                trs.rotation = _rotation.Advance(Time.deltaTime);
+                trs.localScale = _scale.Advance(Time.deltaTime);
+            }
+        }
+        
+        [ServerRPC(Channel.Unreliable)]
+        private void SendTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            ReceiveTransform(position, rotation, scale);
+        }
+        
+        [ObserversRPC(Channel.Unreliable, excludeOwner: false)]
+        private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            Debug.Log("Received transform");
+            
+            _position.Add(position);
+            _rotation.Add(rotation);
+            _scale.Add(scale);
+        }
+        
         void OnTransformParentChanged()
         {
             if (ApplicationContext.isQuitting)

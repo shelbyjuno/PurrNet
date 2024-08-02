@@ -72,10 +72,10 @@ namespace PurrNet.Modules
                     continue;
                 }
                 
-                if (data.details.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
+                if (data.Signature.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
                     break;
                 
-                switch (data.details.type)
+                switch (data.Signature.type)
                 {
                     case RPCType.ObserversRPC:
                     {
@@ -87,7 +87,7 @@ namespace PurrNet.Modules
 
                     case RPCType.TargetRPC:
                     {
-                        if (data.details.targetPlayer == player)
+                        if (data.Signature.targetPlayer == player)
                         {
                             var packet = data.packet;
                             packet.data = data.stream.buffer.ToByteData();
@@ -149,47 +149,45 @@ namespace PurrNet.Modules
         {
             public RPC_ID rpcid;
             public RPCPacket packet;
-            public RPCDetails details;
+            public RPCSignature Signature;
             public NetworkStream stream;
         }
         
         readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new();
         readonly List<RPC_DATA> _bufferedRpcsDatas = new();
         
-        public void OnRPCSent(RPCPacket packet, RPCDetails details)
+        public void AppendToBufferedRPCs(RPCPacket packet, RPCSignature signature)
         {
-            if (details.bufferLast)
-            {
-                var rpcid = new RPC_ID(packet);
+            if (!signature.bufferLast) return;
+            
+            var rpcid = new RPC_ID(packet);
 
-                if (_bufferedRpcsKeys.TryGetValue(rpcid, out var data))
-                {
-                    data.stream.ResetPointer();
-                    data.stream.Write(packet.data);
-                }
-                else
-                {
-                    var newStream = AllocStream(false);
-                    newStream.Write(packet.data);
+            if (_bufferedRpcsKeys.TryGetValue(rpcid, out var data))
+            {
+                data.stream.ResetPointer();
+                data.stream.Write(packet.data);
+            }
+            else
+            {
+                var newStream = AllocStream(false);
+                newStream.Write(packet.data);
                     
-                    var newdata = new RPC_DATA
-                    {
-                        rpcid = rpcid,
-                        packet = packet,
-                        details = details,
-                        stream = newStream
-                    };
+                var newdata = new RPC_DATA
+                {
+                    rpcid = rpcid,
+                    packet = packet,
+                    Signature = signature,
+                    stream = newStream
+                };
                     
-                    _bufferedRpcsKeys[rpcid] = newdata;
-                    _bufferedRpcsDatas.Add(newdata);
-                }
+                _bufferedRpcsKeys[rpcid] = newdata;
+                _bufferedRpcsDatas.Add(newdata);
             }
         }
 
         [UsedByIL]
         public static RPCPacket BuildRawRPC(NetworkID? networkId, SceneID id, byte rpcId, NetworkStream data)
         {
-            
             var rpc = new RPCPacket
             {
                 networkId = networkId!.Value,
@@ -252,7 +250,7 @@ namespace PurrNet.Modules
                 if (rpcHandlerPtr != IntPtr.Zero)
                 {
                     // Call the RPC handler
-                    ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, void>)rpcHandlerPtr)(identity, stream, packet, info);
+                    ((delegate* managed<NetworkIdentity, NetworkStream, RPCPacket, RPCInfo, bool, void>)rpcHandlerPtr)(identity, stream, packet, info, asServer);
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }

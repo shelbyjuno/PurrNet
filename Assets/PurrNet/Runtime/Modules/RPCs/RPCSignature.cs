@@ -15,7 +15,7 @@ namespace PurrNet
         TargetRPC
     }
     
-    public struct RPCDetails
+    public struct RPCSignature
     {
         public RPCType type;
         public Channel channel;
@@ -24,12 +24,13 @@ namespace PurrNet
         public bool bufferLast;
         public bool requireServer;
         public bool excludeOwner;
+        public string rpcName;
         public PlayerID? targetPlayer;
 
         [UsedImplicitly]
-        public static RPCDetails Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner)
+        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name)
         {
-            return new RPCDetails
+            return new RPCSignature
             {
                 type = type,
                 channel = channel,
@@ -38,14 +39,15 @@ namespace PurrNet
                 bufferLast = bufferLast,
                 requireServer = requireServer,
                 excludeOwner = excludeOwner,
-                targetPlayer = null
+                targetPlayer = null,
+                rpcName = name
             };
         }
         
         [UsedImplicitly]
-        public static RPCDetails MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, PlayerID playerID)
+        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, PlayerID playerID)
         {
-            return new RPCDetails
+            return new RPCSignature
             {
                 type = type,
                 channel = channel,
@@ -54,6 +56,7 @@ namespace PurrNet
                 bufferLast = bufferLast,
                 requireServer = requireServer,
                 excludeOwner = excludeOwner,
+                rpcName = name,
                 targetPlayer = playerID
             };
         }

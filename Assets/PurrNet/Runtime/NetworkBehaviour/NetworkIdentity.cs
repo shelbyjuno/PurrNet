@@ -66,20 +66,70 @@ namespace PurrNet
         protected virtual void OnSpawned(bool asServer) { }
         
         protected virtual void OnDespawned(bool asServer) { }
-
+        
+        private bool IsNotOwnerPredicate(PlayerID player)
+        {
+            return player != owner;
+        }
+        
         [UsedByIL]
-        protected void OnRPCSentInternal(RPCPacket packet, RPCDetails details)
+        protected void SendRPC(RPCPacket packet, RPCSignature signature)
         {
             if (!isSpawned)
             {
                 PurrLogger.LogError($"Trying to send RPC from '{name}' which is not spawned.", this);
                 return;
             }
-            
+
             if (!networkManager.TryGetModule<RPCModule>(networkManager.isServer, out var module))
+            {
+                PurrLogger.LogError("Failed to get RPC module.", this);
                 return;
+            }
             
-            module.OnRPCSent(packet, details);
+            if (signature.requireOwnership && !isOwner)
+            {
+                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{name}' without ownership.", this);
+                return;
+            }
+            
+            if (signature.requireServer && !networkManager.isServer)
+            {
+                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{name}' without server.", this);
+                return;
+            }
+            
+            module.AppendToBufferedRPCs(packet, signature);
+
+            Func<PlayerID, bool> predicate = null;
+            
+            if (signature.excludeOwner)
+                predicate = IsNotOwnerPredicate;
+
+            switch (signature.type)
+            {
+                case RPCType.ServerRPC: SendToServer(packet, signature.channel); break;
+                case RPCType.ObserversRPC: SendToObservers(packet, predicate, signature.channel); break;
+                case RPCType.TargetRPC: SendToTarget(signature.targetPlayer!.Value, packet, signature.channel); break;
+            }
+        }
+        
+        [UsedByIL]
+        protected bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
+        {
+            if (signature.requireOwnership && info.sender != owner)
+            {
+                PurrLogger.LogError($"Sender '{info.sender}' of RPC '{signature.rpcName}' from '{name}' is not the owner. Aborting RPC call.", this);
+                return false;
+            }
+
+            if (signature.type == RPCType.ServerRPC && !asServer)
+            {
+                PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' on client. Aborting RPC call.", this);
+                return false;
+            }
+
+            return true;
         }
         
         private void OnActivated(bool active)
