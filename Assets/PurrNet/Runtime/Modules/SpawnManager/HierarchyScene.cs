@@ -27,7 +27,7 @@ namespace PurrNet.Modules
         public int startingId;
     }
     
-    internal class HierarchyScene : INetworkModule, IFixedUpdate
+    internal class HierarchyScene : INetworkModule, IPreFixedUpdate
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -747,7 +747,7 @@ namespace PurrNet.Modules
             });
         }
 
-        public void FixedUpdate()
+        public void PreFixedUpdate()
         {
             if (_toggledLastFrame.Count > 0)
             {

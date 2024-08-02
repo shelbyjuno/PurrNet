@@ -18,7 +18,6 @@ public class PlayerShoot : NetworkIdentity
         var trs = transform;
         var bullet = Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
         
-        Debug.Log($"GiveOwnership to {bullet.id}.");
         bullet.GiveOwnership(owner!.Value);
     }
 }

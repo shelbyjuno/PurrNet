@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace PurrNet
 {
-    public class HierarchyModule : INetworkModule, IFixedUpdate
+    public class HierarchyModule : INetworkModule, IPreFixedUpdate
     {
         private readonly NetworkManager _manager;
         private readonly NetworkPrefabs _prefabs;
@@ -97,10 +97,10 @@ namespace PurrNet
 
         private void TriggerOnEntityRemoved(NetworkIdentity obj) => onIdentityRemoved?.Invoke(obj);
 
-        public void FixedUpdate()
+        public void PreFixedUpdate()
         {
             for (var i = 0; i < _hierarchies.Count; i++)
-                _hierarchies[i].FixedUpdate();
+                _hierarchies[i].PreFixedUpdate();
         }
 
         internal void TriggerOnSpawnedEventForClient()
@@ -129,7 +129,6 @@ namespace PurrNet
         
         internal void AutoSpawn(GameObject gameObject)
         {
-            Debug.Log($"AutoSpawn {gameObject.name}.");
             if (!_scenes.TryGetSceneID(gameObject.scene, out var sceneID))
             {
                 PurrLogger.LogError($"Failed to find scene id for '{gameObject.scene.name}'.");
