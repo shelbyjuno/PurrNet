@@ -250,6 +250,8 @@ namespace PurrNet.Modules
 
             identity.IgnoreNextEnableCallback();
             identity.enabled = dataSetEnabledAction.enabled;
+
+            if (_asServer) _history.AddSetEnabledAction(dataSetEnabledAction);
         }
 
         private void HandleSetActive(PlayerID player, SetActiveAction dataSetActiveAction)
@@ -272,6 +274,8 @@ namespace PurrNet.Modules
             identity.IgnoreNextActivationCallback();
             identity.IgnoreNextEnableCallback();
             identity.gameObject.SetActive(dataSetActiveAction.active);
+
+            if (_asServer) _history.AddSetActiveAction(dataSetActiveAction);
         }
 
         [UsedImplicitly]
@@ -307,6 +311,8 @@ namespace PurrNet.Modules
             identity.transform.SetParent(parent ? parent.transform : null);
             trs.StopIgnoreParentChanged();
             trs.ValidateParent();
+
+            if (_asServer) _history.AddChangeParentAction(action);
         }
 
         private void HandleSpawn(PlayerID player, ref SpawnAction action)
@@ -336,10 +342,7 @@ namespace PurrNet.Modules
             }
             
             if (_identities.TryGetIdentity(action.identityId, out _))
-            {
-                PurrLogger.LogError($"Identity with id {action.identityId} already exists");
                 return;
-            }
 
             if (action.childOffset != 0)
             {
@@ -399,6 +402,8 @@ namespace PurrNet.Modules
 
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
+
+            if (_asServer) _history.AddSpawnAction(action);
         }
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
@@ -496,6 +501,8 @@ namespace PurrNet.Modules
                 }
                 Object.Destroy(identity);
             }
+
+            if (_asServer) _history.AddDespawnAction(action);
         }
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
