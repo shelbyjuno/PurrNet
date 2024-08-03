@@ -262,7 +262,8 @@ namespace PurrNet.Modules
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }
-            else PurrLogger.LogError($"Failed to find identity with id {packet.networkId} in scene {packet.sceneId} while trying to call RPC with id {packet.rpcId}.");
+            // TODO: show this error if RPC was reliable ordered. otherwise, we cant assure this will arrive in time, sequence, etc so it isnt really an error
+            // else PurrLogger.LogError($"Failed to find identity with id {packet.networkId} in scene {packet.sceneId} while trying to call RPC with id {packet.rpcId}.");
             
             FreeStream(stream);
         }
