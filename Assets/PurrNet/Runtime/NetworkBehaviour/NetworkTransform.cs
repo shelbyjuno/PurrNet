@@ -60,13 +60,13 @@ namespace PurrNet
             }
         }
         
-        [ServerRPC(Channel.Unreliable)]
+        [ServerRPC(Channel.UnreliableSequenced)]
         private void SendTransform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             ReceiveTransform(position, rotation, scale);
         }
         
-        [ObserversRPC(Channel.Unreliable, excludeOwner: false)]
+        [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: false)]
         private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             if (_isFirstTransform)
