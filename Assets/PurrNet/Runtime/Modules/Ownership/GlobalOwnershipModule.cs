@@ -500,10 +500,7 @@ namespace PurrNet.Modules
             string verb2 = change.isAdding ? "giving" : "removing";
             
             if (!_hierarchy.TryGetIdentity(change.sceneId, id, out var identity))
-            {
-                PurrLogger.LogError($"Failed to find network identity {id} when {verb2} ownership.");
                 return;
-            }
 
             if (!_sceneOwnerships.TryGetValue(change.sceneId, out var module))
             {
