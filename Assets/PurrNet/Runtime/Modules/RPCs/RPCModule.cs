@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Packets;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -63,31 +66,35 @@ namespace PurrNet.Modules
             for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
             {
                 var data = _bufferedRpcsDatas[i];
-                
-                if (data.rpcid.sceneId != scene) continue;
+
+                if (data.rpcid.sceneId != scene)
+                {
+                    continue;
+                }
 
                 if (!_hierarchyModule.TryGetIdentity(data.packet.sceneId, data.packet.networkId, out var identity))
                 {
                     PurrLogger.LogError($"Can't find identity with id {data.packet.networkId} in scene {data.packet.sceneId}.");
                     continue;
                 }
+
+                if (data.sig.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
+                    continue;
                 
-                if (data.Signature.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
-                    break;
-                
-                switch (data.Signature.type)
+                switch (data.sig.type)
                 {
                     case RPCType.ObserversRPC:
                     {
                         var packet = data.packet;
                         packet.data = data.stream.buffer.ToByteData();
                         _playersManager.Send(player, packet);
+
                         break;
                     }
 
                     case RPCType.TargetRPC:
                     {
-                        if (data.Signature.targetPlayer == player)
+                        if (data.sig.targetPlayer == player)
                         {
                             var packet = data.packet;
                             packet.data = data.stream.buffer.ToByteData();
@@ -149,7 +156,7 @@ namespace PurrNet.Modules
         {
             public RPC_ID rpcid;
             public RPCPacket packet;
-            public RPCSignature Signature;
+            public RPCSignature sig;
             public NetworkStream stream;
         }
         
@@ -176,11 +183,11 @@ namespace PurrNet.Modules
                 {
                     rpcid = rpcid,
                     packet = packet,
-                    Signature = signature,
+                    sig = signature,
                     stream = newStream
                 };
-                    
-                _bufferedRpcsKeys[rpcid] = newdata;
+                   
+                _bufferedRpcsKeys.Add(rpcid, newdata);
                 _bufferedRpcsDatas.Add(newdata);
             }
         }
