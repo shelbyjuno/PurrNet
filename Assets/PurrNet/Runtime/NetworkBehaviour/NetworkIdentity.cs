@@ -80,6 +80,10 @@ namespace PurrNet
 
         protected virtual void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) { }
 
+        protected virtual void OnOwnerDisconnected(PlayerID owner, bool asServer) { }
+
+        protected virtual void OnOwnerConnected(PlayerID owner, bool asServer) { }
+
         private bool IsNotOwnerPredicate(PlayerID player)
         {
             return player != owner;
@@ -211,7 +215,7 @@ namespace PurrNet
         internal void TriggetSpawnEvent(bool asServer)
         {
             OnSpawned(asServer);
-            
+
             if (_spawnedCount == 0)
                 OnSpawned();
             
@@ -234,6 +238,16 @@ namespace PurrNet
         internal void TriggerOnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) 
         {
             OnOwnerChanged(oldOwner, newOwner, asServer);
+        }
+
+        internal void TriggerOnOwnerDisconnected(PlayerID owner, bool asServer)
+        {
+            OnOwnerDisconnected(owner, asServer);
+        }
+
+        internal void TriggerOnOwnerReconnected(PlayerID owner, bool asServer)
+        {
+            OnOwnerConnected(owner, asServer);
         }
     }
 }

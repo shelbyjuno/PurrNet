@@ -36,9 +36,10 @@ namespace PurrNet
             _isFirstTransform = true;
         }
 
-        protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
+        protected override void OnOwnerConnected(PlayerID owner, bool asServer)
         {
-            Debug.Log($"oldOwner: {oldOwner}, newOwner: {newOwner}, asServer: {asServer}");
+            if (asServer)
+                SendLatestTranform(owner, _trs.position, _trs.rotation, _trs.localScale);
         }
 
         private void FixedUpdate()
@@ -89,6 +90,16 @@ namespace PurrNet
                 _rotation.Add(rotation);
                 _scale.Add(scale);
             }
+        }
+
+        [TargetRPC]
+        private void SendLatestTranform(PlayerID player, Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            _position.Teleport(position);
+            _rotation.Teleport(rotation);
+            _scale.Teleport(scale);
+
+            ApplyLerpedPosition();
         }
 
         void OnTransformParentChanged()
