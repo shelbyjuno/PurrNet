@@ -36,7 +36,7 @@ namespace PurrNet
         
         public bool isHost => isSpawned && networkManager.isHost;
         
-        public bool isOwner => owner == localPlayer;
+        public bool isOwner => isSpawned && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
 
@@ -214,9 +214,12 @@ namespace PurrNet
             OnDespawned(asServer);
 
             _spawnedCount--;
-            
+
             if (_spawnedCount == 0)
+            {
                 OnDespawned();
+                id = null;
+            }
         }
     }
 }

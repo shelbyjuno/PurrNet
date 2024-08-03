@@ -11,8 +11,8 @@ namespace PurrNet.Modules
 {
     internal struct ComponentGameObjectPair
     {
-        public NetworkIdentity identity;
         public GameObject gameObject;
+        public NetworkID? networkID;
     }
     
     internal struct GameObjectActive
@@ -471,9 +471,12 @@ namespace PurrNet.Modules
                         trs.SetParent(safeParent);
                         continue;
                     }
-                    
+
                     if (_identities.UnregisterIdentity(child))
+                    {
                         onIdentityRemoved?.Invoke(child);
+                        child.TriggetDespawnEvent(_asServer);
+                    }
                     
                     child.IgnoreNextDestroyCallback();
                 }
@@ -484,13 +487,15 @@ namespace PurrNet.Modules
             {
                 identity.IgnoreNextDestroyCallback();
                 if (_identities.UnregisterIdentity(identity))
+                {
                     onIdentityRemoved?.Invoke(identity);
+                    identity.TriggetDespawnEvent(_asServer);
+                }
                 Object.Destroy(identity);
             }
         }
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
-        readonly List<NetworkIdentity> _despawnedThisFrame = new ();
         
         public void Spawn(GameObject instance)
         {
@@ -670,13 +675,19 @@ namespace PurrNet.Modules
         
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
-            onIdentityRemoved?.Invoke(identity);
-            
             _removedLastFrame.Add(new ComponentGameObjectPair
             {
-                identity = identity,
-                gameObject = identity.gameObject
+                gameObject = identity.gameObject,
+                networkID = identity.id
             });
+            
+            onIdentityRemoved?.Invoke(identity);
+
+            if (_identities.UnregisterIdentity(identity))
+            {
+                onIdentityRemoved?.Invoke(identity);
+                identity.TriggetDespawnEvent(_asServer);
+            }
         }
         
         private void OnIdentityGoActivatedChanged(NetworkIdentity identity, bool active)
@@ -690,21 +701,18 @@ namespace PurrNet.Modules
 
         private void OnIdentityRemoved(ComponentGameObjectPair pair)
         {
-            if (pair.identity)
-                pair.identity.TriggetDespawnEvent(_asServer);
-            
-            if (_identities.UnregisterIdentity(pair.identity))
-                onIdentityRemoved?.Invoke(pair.identity);
-
             if (!pair.gameObject)
-                 OnDestroyedObject(pair.identity.id);
-            else OnRemovedComponent(pair.identity.id);
+                 OnDestroyedObject(pair.networkID);
+            else OnRemovedComponent(pair.networkID);
         }
 
         private void OnDestroyedObject(NetworkID? entityId)
         {
             if (!entityId.HasValue)
+            {
+                PurrLogger.LogError("Trying to destroy object with no id.");
                 return;
+            }
             
             _history.AddDespawnAction(new DespawnAction
             {
@@ -716,7 +724,10 @@ namespace PurrNet.Modules
         private void OnRemovedComponent(NetworkID? entityId)
         {
             if (!entityId.HasValue)
+            {
+                PurrLogger.LogError("Trying to remove component with no id.");
                 return;
+            }
             
             _history.AddDespawnAction(new DespawnAction
             {

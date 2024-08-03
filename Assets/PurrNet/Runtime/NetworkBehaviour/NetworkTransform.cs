@@ -66,7 +66,7 @@ namespace PurrNet
             ReceiveTransform(position, rotation, scale);
         }
         
-        [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: false)]
+        [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: true)]
         private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             if (_isFirstTransform)
