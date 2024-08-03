@@ -63,6 +63,13 @@ namespace PurrNet
         private GameObjectEvents _events;
         private GameObject _gameObject;
 
+        internal PlayerID? GetOwner(bool asServer)
+        {
+            if (asServer)
+                return internalOwnerServer;
+            return internalOwnerClient;
+        }
+
         protected virtual void OnSpawned() { }
         
         protected virtual void OnDespawned() { }

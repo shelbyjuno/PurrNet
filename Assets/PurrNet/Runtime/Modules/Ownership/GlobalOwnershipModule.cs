@@ -196,7 +196,7 @@ namespace PurrNet.Modules
                     }
                 }
 
-                var oldOwner = identity.owner;
+                var oldOwner = identity.GetOwner(_asServer);
 
                 if (module.GiveOwnership(identity, player))
                 {
@@ -279,7 +279,7 @@ namespace PurrNet.Modules
                 player = default
             };
 
-            var oldOwner = id.owner;
+            var oldOwner = id.GetOwner(_asServer);
 
             if (module.RemoveOwnership(id))
             {
@@ -352,7 +352,7 @@ namespace PurrNet.Modules
                 player = default
             };
 
-            var oldOwner = id.owner;
+            var oldOwner = id.GetOwner(_asServer);
 
             if (module.RemoveOwnership(id))
             {
@@ -442,7 +442,7 @@ namespace PurrNet.Modules
                 return;
             }
 
-            var oldOwner = identity.owner;
+            var oldOwner = identity.GetOwner(_asServer);
 
             if (oldOwner == change.player)
                 return;
@@ -507,24 +507,22 @@ namespace PurrNet.Modules
                 return;
             }
 
-            var oldOwner = identity.owner;
+            var oldOwner = identity.GetOwner(_asServer);
 
             if (change.isAdding)
             {
-                if (oldOwner == change.player) 
-                    return;
-
                 module.GiveOwnership(identity, change.player);
-                identity.TriggerOnOwnerChanged(oldOwner, change.player, _asServer);
 
-                if (identity.id.HasValue)
-                   onOwnershipChanged?.Invoke(identity.id.Value, change.player, _asServer);
+                if (oldOwner != change.player)
+                {
+                    identity.TriggerOnOwnerChanged(oldOwner, change.player, _asServer);
+
+                    if (identity.id.HasValue)
+                        onOwnershipChanged?.Invoke(identity.id.Value, change.player, _asServer);
+                }
             }
             else
             {
-                if (oldOwner == null)
-                    return;
-
                 if (module.RemoveOwnership(identity) && identity.id.HasValue)
                 {
                     identity.TriggerOnOwnerChanged(oldOwner, null, _asServer);
