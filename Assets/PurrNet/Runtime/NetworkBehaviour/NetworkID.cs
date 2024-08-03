@@ -10,6 +10,8 @@ namespace PurrNet
         [UsedImplicitly] private ushort _id;
         
         public ushort id => _id;
+
+        public PlayerID scope => _scope;
         
         public NetworkID(NetworkID baseId, ushort offset)
         {

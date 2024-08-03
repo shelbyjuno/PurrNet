@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -36,7 +37,7 @@ namespace PurrNet.Modules
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
         private readonly ScenePlayersModule _scenePlayers;
-        
+
         public event Action<NetworkIdentity> onIdentityRemoved;
         public event Action<NetworkIdentity> onIdentityAdded;
         
@@ -176,14 +177,8 @@ namespace PurrNet.Modules
             
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
-            {
-                /*foreach (var action in fullHistory.actions)
-                {
-                    PurrLogger.Log($"Action {action}");
-                }*/
                 _playersManager.Send(player, fullHistory);
-            }
-        } 
+        }
         
         private readonly HashSet<NetworkID> _instancesAboutToBeRemoved = new ();
         
@@ -205,11 +200,13 @@ namespace PurrNet.Modules
             
             for (int i = 0; i < data.actions.Count; i++)
             {
-                OnHierarchyAction(player, data.actions[i]);
+                var action = data.actions[i];
+                OnHierarchyAction(player, ref action);
+                data.actions[i] = action;
             }
         }
         
-        private void OnHierarchyAction(PlayerID player, HierarchyAction data)
+        private void OnHierarchyAction(PlayerID player, ref HierarchyAction data)
         {
             switch (data.type)
             {
@@ -218,7 +215,7 @@ namespace PurrNet.Modules
                     break;
                 
                 case HierarchyActionType.Spawn:
-                    HandleSpawn(player, data.spawnAction);
+                    HandleSpawn(player, ref data.spawnAction);
                     break;
                 
                 case HierarchyActionType.ChangeParent:
@@ -251,6 +248,8 @@ namespace PurrNet.Modules
 
             identity.IgnoreNextEnableCallback();
             identity.enabled = dataSetEnabledAction.enabled;
+
+            if (_asServer) _history.AddSetEnabledAction(dataSetEnabledAction);
         }
 
         private void HandleSetActive(PlayerID player, SetActiveAction dataSetActiveAction)
@@ -273,6 +272,8 @@ namespace PurrNet.Modules
             identity.IgnoreNextActivationCallback();
             identity.IgnoreNextEnableCallback();
             identity.gameObject.SetActive(dataSetActiveAction.active);
+
+            if (_asServer) _history.AddSetActiveAction(dataSetActiveAction);
         }
 
         [UsedImplicitly]
@@ -308,10 +309,18 @@ namespace PurrNet.Modules
             identity.transform.SetParent(parent ? parent.transform : null);
             trs.StopIgnoreParentChanged();
             trs.ValidateParent();
+
+            if (_asServer) _history.AddChangeParentAction(action);
         }
 
-        private void HandleSpawn(PlayerID player, SpawnAction action)
+        private void HandleSpawn(PlayerID player, ref SpawnAction action)
         {
+            if (_asServer)
+            {
+                var nid = new NetworkID(action.identityId.id, player);
+                action.identityId = nid;
+            }
+
             if (!_prefabs.TryGetPrefab(action.prefabId, out var prefab))
             {
                 PurrLogger.LogError($"Failed to find prefab with id {action.prefabId}");
@@ -331,10 +340,7 @@ namespace PurrNet.Modules
             }
             
             if (_identities.TryGetIdentity(action.identityId, out _))
-            {
-                PurrLogger.LogError($"Identity with id {action.identityId} already exists");
                 return;
-            }
 
             if (action.childOffset != 0)
             {
@@ -394,6 +400,8 @@ namespace PurrNet.Modules
 
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
+
+            if (_asServer) _history.AddSpawnAction(action);
         }
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
@@ -494,6 +502,8 @@ namespace PurrNet.Modules
                 }
                 Object.Destroy(identity);
             }
+
+            if (_asServer) _history.AddDespawnAction(action);
         }
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
@@ -501,10 +511,10 @@ namespace PurrNet.Modules
         public void Spawn(GameObject instance)
         {
             MakeSureAwakeIsCalled(instance);
-            
-            if (!_asServer)
+
+            if (!_manager.networkRules.HasSpawnAuthority(_manager, _asServer))
             {
-                Debug.Log("TODO: Implement client spawn logic.");
+                PurrLogger.LogError($"Failed to spawn '{instance.name}' due to lack of permissions.");
                 return;
             }
             
@@ -528,6 +538,20 @@ namespace PurrNet.Modules
                 return;
             }
 
+            PlayerID scope;
+
+            if (!_asServer)
+            {
+                if (_playersManager.localPlayerId == null)
+                {
+                    PurrLogger.LogError($"Client is trying to spawn '{instance.name}' beforing having been assigned a local player id.");
+                    return;
+                }
+
+                scope = _playersManager.localPlayerId.Value;
+            }
+            else scope = default;
+
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
@@ -537,8 +561,8 @@ namespace PurrNet.Modules
                     PurrLogger.LogError($"Identity with id {child.id} is already spawned", child);
                     return;
                 }
-                
-                var nid = new NetworkID(_identities.GetNextId());
+
+                var nid = new NetworkID(_identities.GetNextId(), scope);
                 child.SetIdentity(_manager, _sceneID, prefabId, nid, _asServer);
                 
                 _spawnedThisFrame.Add(child);

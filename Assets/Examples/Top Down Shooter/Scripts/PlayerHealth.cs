@@ -9,7 +9,7 @@ public class PlayerHealth : NetworkIdentity
 
     protected override void OnSpawned(bool asServer)
     {
-        if(isServer)
+        if (asServer)
             SetHealth_Observers(maxHealth);
     }
 
@@ -38,7 +38,7 @@ public class PlayerHealth : NetworkIdentity
             Destroy(gameObject);
             return;
         }
-        
+
         ChangeHealth_Server(change);
     }
 
