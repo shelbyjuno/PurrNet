@@ -452,7 +452,7 @@ namespace PurrNet.Modules
             
             if (!_hierarchy.TryGetIdentity(change.sceneId, id, out var identity))
             {
-                PurrLogger.LogError($"Failed to find network identity {id} when {verb2} ownership.");
+                PurrLogger.LogWarning($"Failed to find network identity {id} when {verb2} ownership.");
                 return;
             }
 

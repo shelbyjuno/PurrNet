@@ -32,6 +32,11 @@ namespace PurrNet
         {
             return identity.id.HasValue && _identities.Remove(identity.id.Value);
         }
+        
+        public bool UnregisterIdentity(NetworkID id)
+        {
+            return _identities.Remove(id);
+        }
 
         public ushort GetNextId()
         {

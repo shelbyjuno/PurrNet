@@ -36,9 +36,6 @@ namespace PurrNet
         
         private void FixedUpdate()
         {
-            if (!isSpawned)
-                return;
-            
             if (isOwner)
             {
                 var trs = transform;
@@ -48,9 +45,6 @@ namespace PurrNet
         
         private void Update()
         {
-            if (!isSpawned)
-                return;
-            
             if (!isOwner)
             {
                 var trs = transform;

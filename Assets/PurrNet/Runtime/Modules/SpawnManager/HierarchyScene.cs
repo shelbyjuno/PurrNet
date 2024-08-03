@@ -98,8 +98,6 @@ namespace PurrNet.Modules
             }
         }
 
-        //private bool _initiatedHostOnce;
-
         private void OnSetSceneIds(PlayerID player, SetSceneIds data, bool asserver)
         {
             _isReady = true;
@@ -490,6 +488,9 @@ namespace PurrNet.Modules
                 {
                     onIdentityRemoved?.Invoke(identity);
                     identity.TriggetDespawnEvent(_asServer);
+
+                    if (_asServer)
+                        identity.ClearSpawnedData();
                 }
                 Object.Destroy(identity);
             }
@@ -682,12 +683,7 @@ namespace PurrNet.Modules
             });
             
             onIdentityRemoved?.Invoke(identity);
-
-            if (_identities.UnregisterIdentity(identity))
-            {
-                onIdentityRemoved?.Invoke(identity);
-                identity.TriggetDespawnEvent(_asServer);
-            }
+            identity.TriggetDespawnEvent(_asServer);
         }
         
         private void OnIdentityGoActivatedChanged(NetworkIdentity identity, bool active)
@@ -701,6 +697,9 @@ namespace PurrNet.Modules
 
         private void OnIdentityRemoved(ComponentGameObjectPair pair)
         {
+            if (pair.networkID.HasValue)
+                _identities.UnregisterIdentity(pair.networkID.Value);
+            
             if (!pair.gameObject)
                  OnDestroyedObject(pair.networkID);
             else OnRemovedComponent(pair.networkID);

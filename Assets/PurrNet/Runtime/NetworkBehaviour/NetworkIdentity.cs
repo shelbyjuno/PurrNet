@@ -28,7 +28,7 @@ namespace PurrNet
         /// <summary>
         /// Is spawned over the network.
         /// </summary>
-        public bool isSpawned => id.HasValue;
+        public bool isSpawned { get; private set; }
 
         public bool isServer => isSpawned && networkManager.isServer;
         
@@ -91,6 +91,11 @@ namespace PurrNet
         {
             UpdateEnabledState();
         }
+        
+        public virtual void OnDisable()
+        {
+            UpdateEnabledState();
+        }
 
         internal void UpdateEnabledState()
         {
@@ -103,11 +108,6 @@ namespace PurrNet
                 _lastEnabledState = enabled;
             }
         }
-
-        public virtual void OnDisable()
-        {
-            UpdateEnabledState();
-        }
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, NetworkID identityId, bool asServer)
         {
@@ -118,6 +118,7 @@ namespace PurrNet
             sceneId = scene;
             prefabId = pid;
             id = identityId;
+            isSpawned = true;
 
             if (asServer)
                  internalOwnerServer = null;
@@ -209,6 +210,13 @@ namespace PurrNet
             _spawnedCount++;
         }
 
+        internal void ClearSpawnedData()
+        {
+            isSpawned = false;
+            internalOwnerServer = null;
+            internalOwnerClient = null;
+        }
+
         internal void TriggetDespawnEvent(bool asServer)
         {
             OnDespawned(asServer);
@@ -216,10 +224,7 @@ namespace PurrNet
             _spawnedCount--;
 
             if (_spawnedCount == 0)
-            {
                 OnDespawned();
-                id = null;
-            }
         }
     }
 }
