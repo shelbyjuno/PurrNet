@@ -438,7 +438,7 @@ namespace PurrNet.Modules
             if (!_hierarchy.TryGetIdentity(scene, change.identity, out var identity))
             {
                 PurrLogger.LogError(
-                    $"Failed to find scene {scene} when applying ownership change for identity {change.identity}");
+                    $"Failed to find identity {change.identity} in scene {scene} when applying ownership change for identity.");
                 return;
             }
 

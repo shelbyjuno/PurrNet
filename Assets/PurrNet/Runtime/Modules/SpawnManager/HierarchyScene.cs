@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -201,11 +202,13 @@ namespace PurrNet.Modules
             
             for (int i = 0; i < data.actions.Count; i++)
             {
-                OnHierarchyAction(player, data.actions[i]);
+                var action = data.actions[i];
+                OnHierarchyAction(player, ref action);
+                data.actions[i] = action;
             }
         }
         
-        private void OnHierarchyAction(PlayerID player, HierarchyAction data)
+        private void OnHierarchyAction(PlayerID player, ref HierarchyAction data)
         {
             switch (data.type)
             {
@@ -214,7 +217,7 @@ namespace PurrNet.Modules
                     break;
                 
                 case HierarchyActionType.Spawn:
-                    HandleSpawn(player, data.spawnAction);
+                    HandleSpawn(player, ref data.spawnAction);
                     break;
                 
                 case HierarchyActionType.ChangeParent:
@@ -306,8 +309,14 @@ namespace PurrNet.Modules
             trs.ValidateParent();
         }
 
-        private void HandleSpawn(PlayerID player, SpawnAction action)
+        private void HandleSpawn(PlayerID player, ref SpawnAction action)
         {
+            if (_asServer)
+            {
+                var nid = new NetworkID(action.identityId.id, player);
+                action.identityId = nid;
+            }
+
             if (!_prefabs.TryGetPrefab(action.prefabId, out var prefab))
             {
                 PurrLogger.LogError($"Failed to find prefab with id {action.prefabId}");
@@ -494,10 +503,10 @@ namespace PurrNet.Modules
         public void Spawn(GameObject instance)
         {
             MakeSureAwakeIsCalled(instance);
-            
-            if (!_asServer)
+
+            if (!_manager.networkRules.HasSpawnAuthority(_manager, _asServer))
             {
-                Debug.Log("TODO: Implement client spawn logic.");
+                PurrLogger.LogError($"Failed to spawn '{instance.name}' due to lack of permissions.");
                 return;
             }
             
@@ -521,6 +530,20 @@ namespace PurrNet.Modules
                 return;
             }
 
+            PlayerID scope;
+
+            if (!_asServer)
+            {
+                if (_playersManager.localPlayerId == null)
+                {
+                    PurrLogger.LogError($"Client is trying to spawn '{instance.name}' beforing having been assigned a local player id.");
+                    return;
+                }
+
+                scope = _playersManager.localPlayerId.Value;
+            }
+            else scope = default;
+
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
@@ -530,8 +553,8 @@ namespace PurrNet.Modules
                     PurrLogger.LogError($"Identity with id {child.id} is already spawned", child);
                     return;
                 }
-                
-                var nid = new NetworkID(_identities.GetNextId());
+
+                var nid = new NetworkID(_identities.GetNextId(), scope);
                 child.SetIdentity(_manager, _sceneID, prefabId, nid, _asServer);
                 
                 _spawnedThisFrame.Add(child);
