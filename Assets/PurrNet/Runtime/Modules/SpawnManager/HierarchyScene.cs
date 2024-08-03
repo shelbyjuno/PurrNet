@@ -178,14 +178,8 @@ namespace PurrNet.Modules
             
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
-            {
-                /*foreach (var action in fullHistory.actions)
-                {
-                    PurrLogger.Log($"Action {action}");
-                }*/
                 _playersManager.Send(player, fullHistory);
-            }
-        } 
+        }
         
         private readonly HashSet<NetworkID> _instancesAboutToBeRemoved = new ();
         

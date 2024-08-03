@@ -70,7 +70,9 @@ namespace PurrNet
         protected virtual void OnSpawned(bool asServer) { }
         
         protected virtual void OnDespawned(bool asServer) { }
-        
+
+        protected virtual void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) { }
+
         private bool IsNotOwnerPredicate(PlayerID player)
         {
             return player != owner;
@@ -220,6 +222,11 @@ namespace PurrNet
                 OnDespawned();
                 id = null;
             }
+        }
+
+        internal void TriggerOnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) 
+        {
+            OnOwnerChanged(oldOwner, newOwner, asServer);
         }
     }
 }

@@ -34,6 +34,9 @@ namespace PurrNet
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer)
         {
+            if (!asServer)
+                return;
+
             NetworkIdentity newPlayer;
             
             if (spawnPoints.Count > 0)
