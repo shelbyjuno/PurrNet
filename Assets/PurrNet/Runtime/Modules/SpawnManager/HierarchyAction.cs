@@ -36,9 +36,6 @@ namespace PurrNet.Modules
         {
             _sb.Clear();
             
-            _sb.Append(type);
-            _sb.Append(": ");
-            
             switch (type)
             {
                 case HierarchyActionType.Spawn:
@@ -129,7 +126,7 @@ namespace PurrNet.Modules
         /// </summary>
         public ushort childOffset { get; set; }
         
-        public override string ToString() => $"Spawn: {identityId} ({prefabId})";
+        public override string ToString() => $"Spawn: {identityId} ({prefabId} -> {childCount})";
     }
 
     public partial struct ChangeParentAction : IAutoNetworkedData

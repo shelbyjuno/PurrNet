@@ -18,7 +18,7 @@ namespace PurrNet
         /// <summary>
         /// Network id of this object.
         /// </summary>
-        public NetworkID? id { get; private set; }
+        public NetworkID? id => idServer ?? idClient;
         
         /// <summary>
         /// Scene id of this object.
@@ -28,7 +28,9 @@ namespace PurrNet
         /// <summary>
         /// Is spawned over the network.
         /// </summary>
-        public bool isSpawned { get; private set; }
+        public bool isSpawned => id.HasValue;
+        
+        public bool isSceneObject => isSpawned && prefabId == -1;
 
         public bool isServer => isSpawned && networkManager.isServer;
         
@@ -42,6 +44,9 @@ namespace PurrNet
 
         internal PlayerID? internalOwnerServer;
         internal PlayerID? internalOwnerClient;
+        
+        internal NetworkID? idServer { get; private set; }
+        internal NetworkID? idClient { get; private set; }
         
         /// <summary>
         /// Returns the owner of this object.
@@ -80,9 +85,9 @@ namespace PurrNet
 
         protected virtual void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) { }
 
-        protected virtual void OnOwnerDisconnected(PlayerID owner, bool asServer) { }
+        protected virtual void OnOwnerDisconnected(PlayerID ownerId, bool asServer) { }
 
-        protected virtual void OnOwnerConnected(PlayerID owner, bool asServer) { }
+        protected virtual void OnOwnerConnected(PlayerID ownerId, bool asServer) { }
 
         private bool IsNotOwnerPredicate(PlayerID player)
         {
@@ -124,14 +129,15 @@ namespace PurrNet
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, NetworkID identityId, bool asServer)
         {
-            networkManager = manager;
-
             Hasher.PrepareType(GetType());
 
+            networkManager = manager;
             sceneId = scene;
             prefabId = pid;
-            id = identityId;
-            isSpawned = true;
+            
+            if (asServer)
+                 idServer = identityId;
+            else idClient = identityId;
 
             if (asServer)
                  internalOwnerServer = null;
@@ -223,17 +229,14 @@ namespace PurrNet
             _spawnedCount++;
         }
 
-        internal void ClearSpawnedData()
-        {
-            isSpawned = false;
-            internalOwnerServer = null;
-            internalOwnerClient = null;
-        }
-
         internal void TriggetDespawnEvent(bool asServer)
         {
             OnDespawned(asServer);
 
+            if (asServer)
+                 idServer = null;
+            else idClient = null;
+            
             _spawnedCount--;
 
             if (_spawnedCount == 0)
@@ -245,14 +248,14 @@ namespace PurrNet
             OnOwnerChanged(oldOwner, newOwner, asServer);
         }
 
-        internal void TriggerOnOwnerDisconnected(PlayerID owner, bool asServer)
+        internal void TriggerOnOwnerDisconnected(PlayerID ownerId, bool asServer)
         {
-            OnOwnerDisconnected(owner, asServer);
+            OnOwnerDisconnected(ownerId, asServer);
         }
 
-        internal void TriggerOnOwnerReconnected(PlayerID owner, bool asServer)
+        internal void TriggerOnOwnerReconnected(PlayerID ownerId, bool asServer)
         {
-            OnOwnerConnected(owner, asServer);
+            OnOwnerConnected(ownerId, asServer);
         }
     }
 }

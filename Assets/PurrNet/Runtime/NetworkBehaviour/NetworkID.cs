@@ -54,47 +54,5 @@ namespace PurrNet
         {
             return !a.Equals(b);
         }
-        
-        public static NetworkID operator +(NetworkID a, ushort b)
-        {
-            return new NetworkID((ushort)(a._id + b), a._scope);
-        }
-        
-        public static NetworkID operator -(NetworkID a, ushort b)
-        {
-            return new NetworkID((ushort)(a._id - b), a._scope);
-        }
-        
-        public static bool operator >(NetworkID a, NetworkID b)
-        {
-            if (a._scope != b._scope)
-                return false;
-            
-            return a._id > b._id;
-        }
-
-        public static bool operator <(NetworkID a, NetworkID b)
-        {
-            if (a._scope != b._scope)
-                return false;
-            
-            return a._id < b._id;
-        }
-        
-        public static bool operator >=(NetworkID a, NetworkID b)
-        {
-            if (a._scope != b._scope)
-                return false;
-            
-            return a._id >= b._id;
-        }
-
-        public static bool operator <=(NetworkID a, NetworkID b)
-        {
-            if (a._scope != b._scope)
-                return false;
-            
-            return a._id <= b._id;
-        }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+
 namespace PurrNet.Modules
 {
     public class HierarchyHistory
@@ -10,6 +11,7 @@ namespace PurrNet.Modules
         readonly SceneID _sceneId;
         
         private readonly List<Prefab> _prefabs = new();
+        private readonly List<int> _toRemove = new();
         
         public bool hasUnflushedActions { get; private set; }
 
@@ -98,7 +100,7 @@ namespace PurrNet.Modules
             
             hasUnflushedActions = true;
         }
-        
+
         private void OptimizeActions()
         {
             CleanupPrefabs();
@@ -109,7 +111,7 @@ namespace PurrNet.Modules
         {
             _prefabs.Clear();
             
-            for (var i = 0; i < _actions.Count; i++)
+            for (var i = 0; i < _actions.Count; ++i)
             {
                 var action = _actions[i];
                 switch (action.type)
@@ -134,6 +136,7 @@ namespace PurrNet.Modules
                             if (!_prefabs[j].IsChild(action.despawnAction.identityId))
                                 continue;
                             index = j;
+                            break;
                         }
 
                         if (index == -1)
@@ -142,12 +145,17 @@ namespace PurrNet.Modules
                         var prefab = _prefabs[index];
                         prefab.despawnedChildren++;
                         _prefabs[index] = prefab;
-
-                        if (prefab.despawnedChildren >= prefab.childCount)
-                            i -= RemoveRelevantActions(prefab.spawnActionIndex, i);
                         break;
                     }
                 }
+            }
+
+            for (var i = 0; i < _prefabs.Count; ++i)
+            {
+                var prefab = _prefabs[i];
+                
+                if (prefab.despawnedChildren == prefab.childCount)
+                    RemoveRelevantActions(prefab);
             }
         }
         
@@ -196,28 +204,24 @@ namespace PurrNet.Modules
             }
         }
 
-        private int RemoveRelevantActions(int spawnActionIndex, int lastIndex)
+        private void RemoveRelevantActions(Prefab prefab)
         {
-            int removed = 0;
-            var spawnAction = _actions[spawnActionIndex];
+            _toRemove.Clear();
             
-            for (int i = spawnActionIndex + 1; i <= lastIndex; i++)
+            for (int i = 0; i < _actions.Count; i++)
             {
-                var spawnIdentityId = spawnAction.spawnAction.identityId;
                 var identityId = GetObjectId(_actions[i]);
-                
-                if (identityId >= spawnIdentityId + spawnAction.spawnAction.childCount || identityId < spawnIdentityId)
-                    continue;
-                
-                _actions.RemoveAt(i);
-                removed++;
-                lastIndex--;
-                i--;
+
+                if (prefab.IsChild(identityId))
+                {
+                    _toRemove.Add(i);
+                }
             }
             
-            _actions.RemoveAt(spawnActionIndex);
-            removed++;
-            return removed;
+            for (int i = _toRemove.Count - 1; i >= 0; i--)
+            {
+                _actions.RemoveAt(_toRemove[i]);
+            }
         }
 
         private static NetworkID GetObjectId(HierarchyAction action)
@@ -242,8 +246,18 @@ namespace PurrNet.Modules
 
             public bool IsChild(NetworkID id)
             {
-                return id >= identityId && id < identityId + childCount;
+                if (id.scope != identityId.scope)
+                    return false;
+                
+                return id.id >= identityId.id && id.id < identityId.id + childCount;
             }
+        }
+
+        public void Clear()
+        {
+            _actions.Clear();
+            _pending.Clear();
+            hasUnflushedActions = false;
         }
     }
 }

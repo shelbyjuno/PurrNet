@@ -36,10 +36,10 @@ namespace PurrNet
             _isFirstTransform = true;
         }
 
-        protected override void OnOwnerConnected(PlayerID owner, bool asServer)
+        protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
         {
             if (asServer)
-                SendLatestTranform(owner, _trs.position, _trs.rotation, _trs.localScale);
+                SendLatestTranform(ownerId, _trs.position, _trs.rotation, _trs.localScale);
         }
 
         private void FixedUpdate()

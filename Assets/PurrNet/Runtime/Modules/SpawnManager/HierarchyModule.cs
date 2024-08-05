@@ -166,5 +166,10 @@ namespace PurrNet
             
             hierarchy.Spawn(gameObject);
         }
+
+        public string GetActionsAsString(SceneID sceneId)
+        {
+            return _sceneToHierarchy.TryGetValue(sceneId, out var hierarchy) ? hierarchy.GetActionsAsString() : string.Empty;
+        }
     }
 }

@@ -4,7 +4,6 @@ using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using UnityEngine;
-using UnityEngine.Assertions.Must;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -47,6 +46,15 @@ namespace PurrNet.Modules
 
         // the id of the first network identity in the scene
         private NetworkID _sceneFirstNetworkID;
+        
+        public string GetActionsAsString()
+        {
+            string value = "";
+            var history = _history.GetFullHistory();
+            for (int i = 0; i < history.actions.Count; i++)
+                value += history.actions[i].ToString() + '\n';
+            return value;
+        }
         
         public HierarchyScene(SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
         {
@@ -118,6 +126,9 @@ namespace PurrNet.Modules
 
             for (int i = 0; i < sceneObjects.Count; i++)
             {
+                if (sceneObjects[i].isSpawned)
+                    continue;
+                
                 var nextId = _identities.GetNextId();
                 var networkId = new NetworkID(nextId, _asServer ? default : _playersManager.localPlayerId!.Value);
                 
@@ -136,6 +147,9 @@ namespace PurrNet.Modules
         {
             for (ushort i = 0; i < sceneObjects.Count; i++)
             {
+                if (sceneObjects[i].isSpawned && !sceneObjects[i].isSceneObject)
+                    continue;
+                
                 SpawnIdentity(new SpawnAction
                 {
                     prefabId = -1,
@@ -450,16 +464,16 @@ namespace PurrNet.Modules
         private void HandleDespawn(PlayerID player, DespawnAction action)
         {
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
+            {
+                if (_asServer) _history.AddDespawnAction(action);
                 return;
+            }
 
             if (_asServer && !identity.HasDespawnAuthority(player, !_asServer))
             {
                 PurrLogger.LogError($"Despawn failed from '{player}' for '{identity.name}' due to lack of permissions.", identity);
                 return;
             }
-            
-            if (!identity)
-                return;
 
             if (action.despawnType == DespawnType.GameObject)
             {
@@ -480,6 +494,15 @@ namespace PurrNet.Modules
 
                     if (_identities.UnregisterIdentity(child))
                     {
+                        /*if (_asServer && child.id.HasValue) 
+                        {
+                            _history.AddDespawnAction(new DespawnAction
+                            {
+                                identityId = child.id.Value,
+                                despawnType = DespawnType.GameObject
+                            });
+                        }*/
+                        
                         onIdentityRemoved?.Invoke(child);
                         child.TriggetDespawnEvent(_asServer);
                     }
@@ -496,13 +519,10 @@ namespace PurrNet.Modules
                 {
                     onIdentityRemoved?.Invoke(identity);
                     identity.TriggetDespawnEvent(_asServer);
-
-                    if (_asServer)
-                        identity.ClearSpawnedData();
                 }
                 Object.Destroy(identity);
             }
-
+            
             if (_asServer) _history.AddDespawnAction(action);
         }
 
@@ -851,13 +871,14 @@ namespace PurrNet.Modules
                 {
                     if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
                         _playersManager.Send(players, delta);
+                    
+                    _history.Flush();
                 }
                 else
                 {
                     _playersManager.SendToServer(delta);
+                    _history.Clear();
                 }
-
-                _history.Flush();
             }
             
             var spawnedThisFrameCount = _spawnedThisFrame.Count;
@@ -868,7 +889,6 @@ namespace PurrNet.Modules
                     _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
                 _spawnedThisFrame.Clear();
             }
-
         }
 
         public bool TryGetIdentity(NetworkID id, out NetworkIdentity identity)
