@@ -16,12 +16,13 @@ MonoBehaviour:
     spawnAuth: 1
     despawnAuth: -1
     defaultOwner: 1
-    propagateOwnership: 1
+    propagateOwnershipByDefault: 1
     despawnIfOwnerDisconnects: 1
   _defaultOwnershipRules:
     assignAuth: 1
     transferAuth: -1
     removeAuth: -1
+    overrideWhenPropagating: 1
   _defaultIdentityRules:
     syncComponentActive: 0
     syncComponentAuth: 0

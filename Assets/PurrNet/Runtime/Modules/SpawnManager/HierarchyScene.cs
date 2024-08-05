@@ -201,8 +201,8 @@ namespace PurrNet.Modules
             if (_manager.isHost && !asserver) return;
             
             if (_sceneID != data.sceneId)
-                return; 
-            
+                return;
+
             _instancesAboutToBeRemoved.Clear();
             
             for (int i = 0; i < data.actions.Count; i++)
@@ -215,13 +215,27 @@ namespace PurrNet.Modules
             for (int i = 0; i < data.actions.Count; i++)
             {
                 var action = data.actions[i];
-                OnHierarchyAction(player, ref action);
+                OnHierarchyAction(player, ref action, data.isDelta);
                 data.actions[i] = action;
             }
         }
         
-        private void OnHierarchyAction(PlayerID player, ref HierarchyAction data)
+        private void OnHierarchyAction(PlayerID player, ref HierarchyAction data, bool isDelta)
         {
+            if (!_asServer && isDelta)
+            {
+                var localPlayer = _playersManager.localPlayerId;
+
+                if (!localPlayer.HasValue)
+                {
+                    PurrLogger.LogError("Received hierarchy actions before having logged in. Ignoring them.");
+                    return;
+                }
+                
+                if (data.actor == localPlayer)
+                    return;
+            }
+
             switch (data.type)
             {
                 case HierarchyActionType.Despawn:
@@ -263,7 +277,7 @@ namespace PurrNet.Modules
             identity.IgnoreNextEnableCallback();
             identity.enabled = dataSetEnabledAction.enabled;
 
-            if (_asServer) _history.AddSetEnabledAction(dataSetEnabledAction);
+            if (_asServer) _history.AddSetEnabledAction(dataSetEnabledAction, player);
         }
 
         private void HandleSetActive(PlayerID player, SetActiveAction dataSetActiveAction)
@@ -287,7 +301,7 @@ namespace PurrNet.Modules
             identity.IgnoreNextEnableCallback();
             identity.gameObject.SetActive(dataSetActiveAction.active);
 
-            if (_asServer) _history.AddSetActiveAction(dataSetActiveAction);
+            if (_asServer) _history.AddSetActiveAction(dataSetActiveAction, player);
         }
 
         [UsedImplicitly]
@@ -324,7 +338,7 @@ namespace PurrNet.Modules
             trs.StopIgnoreParentChanged();
             trs.ValidateParent();
 
-            if (_asServer) _history.AddChangeParentAction(action);
+            if (_asServer) _history.AddChangeParentAction(action, player);
         }
 
         private void HandleSpawn(PlayerID player, ref SpawnAction action)
@@ -415,7 +429,7 @@ namespace PurrNet.Modules
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
 
-            if (_asServer) _history.AddSpawnAction(action);
+            if (_asServer) _history.AddSpawnAction(action, player);
         }
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
@@ -465,7 +479,7 @@ namespace PurrNet.Modules
         {
             if (!_identities.TryGetIdentity(action.identityId, out var identity))
             {
-                if (_asServer) _history.AddDespawnAction(action);
+                if (_asServer) _history.AddDespawnAction(action, player);
                 return;
             }
 
@@ -523,7 +537,7 @@ namespace PurrNet.Modules
                 Object.Destroy(identity);
             }
             
-            if (_asServer) _history.AddDespawnAction(action);
+            if (_asServer) _history.AddDespawnAction(action, player);
         }
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
@@ -549,6 +563,12 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find prefab with guid {link.prefabGuid}");
                 return;
             }
+            
+            if (!TryGetActor(out var actor))
+            {
+                PurrLogger.LogError($"Client is trying to spawn '{instance.name}' before having been assigned a local player id.");
+                return;
+            }
 
             instance.GetComponentsInChildren(true, CACHE);
 
@@ -557,20 +577,6 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find networked components for '{instance.name}'");
                 return;
             }
-
-            PlayerID scope;
-
-            if (!_asServer)
-            {
-                if (_playersManager.localPlayerId == null)
-                {
-                    PurrLogger.LogError($"Client is trying to spawn '{instance.name}' beforing having been assigned a local player id.");
-                    return;
-                }
-
-                scope = _playersManager.localPlayerId.Value;
-            }
-            else scope = default;
 
             for (int i = 0; i < CACHE.Count; i++)
             {
@@ -582,7 +588,7 @@ namespace PurrNet.Modules
                     return;
                 }
 
-                var nid = new NetworkID(_identities.GetNextId(), scope);
+                var nid = new NetworkID(_identities.GetNextId(), actor);
                 child.SetIdentity(_manager, _sceneID, prefabId, nid, _asServer);
                 
                 _spawnedThisFrame.Add(child);
@@ -607,7 +613,25 @@ namespace PurrNet.Modules
                 transformInfo = new TransformInfo(instance.transform)
             };
 
-            _history.AddSpawnAction(action);
+            _history.AddSpawnAction(action, actor);
+        }
+
+        private bool TryGetActor(out PlayerID player)
+        {
+            if (!_asServer)
+            {
+                if (_playersManager.localPlayerId == null)
+                {
+                    player = default;
+                    return false;
+                }
+                
+                player = _playersManager.localPlayerId.Value;
+                return true;
+            }
+            
+            player = default;
+            return true;
         }
 
         struct BehaviourState
@@ -680,6 +704,12 @@ namespace PurrNet.Modules
                 trs.ResetToLastValidParent();
                 return;
             }
+
+            if (!TryGetActor(out var actor))
+            {
+                PurrLogger.LogError($"Client is trying to change parent of '{trs.name}' before having been assigned a local player id.");
+                return;
+            }
             
             var parentTrs = trs.transform.parent;
             NetworkID? parentId;
@@ -704,8 +734,8 @@ namespace PurrNet.Modules
                 identityId = trs.id.Value,
                 parentId = parentId
             };
-            
-            _history.AddChangeParentAction(action);
+
+            _history.AddChangeParentAction(action, actor);
             trs.ValidateParent();
         }
         
@@ -757,11 +787,17 @@ namespace PurrNet.Modules
                 return;
             }
             
+            if (!TryGetActor(out var actor))
+            {
+                PurrLogger.LogError($"Client is trying to destroy object with id {entityId} before having been assigned a local player id.");
+                return;
+            }
+            
             _history.AddDespawnAction(new DespawnAction
             {
                 identityId = entityId.Value,
                 despawnType = DespawnType.GameObject
-            });
+            }, actor);
         }
 
         private void OnRemovedComponent(NetworkID? entityId)
@@ -772,11 +808,17 @@ namespace PurrNet.Modules
                 return;
             }
             
+            if (!TryGetActor(out var actor))
+            {
+                PurrLogger.LogError($"Client is trying to remove component with id {entityId} before having been assigned a local player id.");
+                return;
+            }
+            
             _history.AddDespawnAction(new DespawnAction
             {
                 identityId = entityId.Value,
                 despawnType = DespawnType.ComponentOnly
-            });
+            }, actor);
         }
         
         private void OnToggledComponent(NetworkIdentity identity, bool active)
@@ -795,11 +837,19 @@ namespace PurrNet.Modules
                 return;
             }
             
+            if (!TryGetActor(out var actor))
+            {
+                PurrLogger.LogError($"Client is trying to toggle component with id {identity.id} before having been assigned a local player id.");
+                identity.IgnoreNextEnableCallback();
+                identity.enabled = !active;
+                return;
+            }
+            
             _history.AddSetEnabledAction(new SetEnabledAction
             {
                 identityId = identity.id.Value,
                 enabled = active
-            });
+            }, actor);
         }
         
         private void OnToggledGameObject(NetworkIdentity identity, bool active)
@@ -818,11 +868,19 @@ namespace PurrNet.Modules
                 return;
             }
             
+            if (!TryGetActor(out var actor))
+            {
+                PurrLogger.LogError($"Client is trying to toggle game object with id {identity.id} before having been assigned a local player id.");
+                identity.IgnoreNextActivationCallback();
+                identity.gameObject.SetActive(!active);
+                return;
+            }
+            
             _history.AddSetActiveAction(new SetActiveAction
             {
                 identityId = identity.id.Value,
                 active = active
-            });
+            }, actor);
         }
 
         public void PreFixedUpdate()

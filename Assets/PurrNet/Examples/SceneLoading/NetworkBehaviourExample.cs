@@ -7,14 +7,17 @@ using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
-    protected override void OnSpawned(bool asServer)
+    private void Awake()
     {
         Hasher.PrepareType<int>();
         Hasher.PrepareType<uint>();
         Hasher.PrepareType<double>();
         Hasher.PrepareType<string>();
         Hasher.PrepareType<float>();
-        
+    }
+
+    protected override void OnSpawned(bool asServer)
+    {
         if (asServer)
             ObserversRPCTest(Time.time);
     }

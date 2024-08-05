@@ -25,7 +25,8 @@ namespace PurrNet.Modules
             return new HierarchyActionBatch
             {
                 sceneId = _sceneId,
-                actions = _actions
+                actions = _actions,
+                isDelta = false
             };
         }
 
@@ -34,7 +35,8 @@ namespace PurrNet.Modules
             return new HierarchyActionBatch
             {
                 sceneId = _sceneId,
-                actions = _pending
+                actions = _pending,
+                isDelta = true
             };
         }
 
@@ -46,55 +48,60 @@ namespace PurrNet.Modules
             hasUnflushedActions = false;
         }
 
-        internal void AddSpawnAction(SpawnAction action)
+        internal void AddSpawnAction(SpawnAction action, PlayerID actor)
         {
             _pending.Add(new HierarchyAction
             {
                 type = HierarchyActionType.Spawn,
+                actor = actor,
                 spawnAction = action
             });
             
             hasUnflushedActions = true;
         }
         
-        internal void AddDespawnAction(DespawnAction action)
+        internal void AddDespawnAction(DespawnAction action, PlayerID actor)
         {
             _pending.Add(new HierarchyAction
             {
                 type = HierarchyActionType.Despawn,
+                actor = actor,
                 despawnAction = action
             });
             
             hasUnflushedActions = true;
         }
         
-        internal void AddChangeParentAction(ChangeParentAction action)
+        internal void AddChangeParentAction(ChangeParentAction action, PlayerID actor)
         {
             _pending.Add(new HierarchyAction
             {
                 type = HierarchyActionType.ChangeParent,
+                actor = actor,
                 changeParentAction = action
             });
             
             hasUnflushedActions = true;
         }
         
-        internal void AddSetActiveAction(SetActiveAction action)
+        internal void AddSetActiveAction(SetActiveAction action, PlayerID actor)
         {
             _pending.Add(new HierarchyAction
             {
                 type = HierarchyActionType.SetActive,
+                actor = actor,
                 setActiveAction = action
             });
             
             hasUnflushedActions = true;
         }
         
-        internal void AddSetEnabledAction(SetEnabledAction action)
+        internal void AddSetEnabledAction(SetEnabledAction action, PlayerID actor)
         {
             _pending.Add(new HierarchyAction
             {
                 type = HierarchyActionType.SetEnabled,
+                actor = actor,
                 setEnabledAction = action
             });
             
@@ -121,8 +128,7 @@ namespace PurrNet.Modules
                         var prefab = new Prefab
                         {
                             childCount = action.spawnAction.childCount,
-                            identityId = action.spawnAction.identityId,
-                            spawnActionIndex = i
+                            identityId = action.spawnAction.identityId
                         };
 
                         _prefabs.Add(prefab);
@@ -242,7 +248,6 @@ namespace PurrNet.Modules
             public ushort childCount;
             public NetworkID identityId;
             public int despawnedChildren;
-            public int spawnActionIndex;
 
             public bool IsChild(NetworkID id)
             {

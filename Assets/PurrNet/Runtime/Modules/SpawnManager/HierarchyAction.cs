@@ -23,6 +23,7 @@ namespace PurrNet.Modules
     internal partial struct HierarchyAction : INetworkedData
     {
         public HierarchyActionType type;
+        public PlayerID actor;
 
         public DespawnAction despawnAction;
         public SpawnAction spawnAction;
@@ -61,6 +62,7 @@ namespace PurrNet.Modules
         public void Serialize(NetworkStream packer)
         {
             packer.Serialize(ref type);
+            packer.Serialize(ref actor);
             
             switch (type)
             {
@@ -87,6 +89,7 @@ namespace PurrNet.Modules
     {
         public SceneID sceneId;
         public List<HierarchyAction> actions;
+        public bool isDelta;
     }
 
     internal partial struct DespawnAction : IAutoNetworkedData
