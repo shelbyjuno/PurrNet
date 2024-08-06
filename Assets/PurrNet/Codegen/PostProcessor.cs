@@ -747,7 +747,7 @@ namespace PurrNet.Codegen
 
                         try
                         {
-                            GenerateExecuteFunction(type, _rpcMethods);
+                            GenerateExecuteFunction(module, type);
                         }
                         catch (Exception e)
                         {
@@ -836,11 +836,12 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void GenerateExecuteFunction(TypeDefinition type, List<RPCMethod> rpcMethods)
+        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type)
         {
-            var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", MethodAttributes.Private | MethodAttributes.Static, type.Module.TypeSystem.Void);
+            var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", MethodAttributes.Private | MethodAttributes.Static, module.TypeSystem.Void);
             type.Methods.Add(initMethod);
             
+            var runtimeInitializeLoadType = type.Module.GetTypeDefinition<RuntimeInitializeLoadType>();
             var attribute = new CustomAttribute(type.Module.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute)
                 .GetConstructor(new []
                 {
@@ -848,7 +849,7 @@ namespace PurrNet.Codegen
                 })));
             
             initMethod.CustomAttributes.Add(attribute);
-            attribute.ConstructorArguments.Add(new CustomAttributeArgument(type.Module.TypeSystem.Int32, RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(runtimeInitializeLoadType, RuntimeInitializeLoadType.AfterAssembliesLoaded));
             
             initMethod.Body.InitLocals = true;
 

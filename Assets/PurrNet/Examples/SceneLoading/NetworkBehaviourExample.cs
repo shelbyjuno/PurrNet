@@ -1,22 +1,10 @@
 using JetBrains.Annotations;
 using PurrNet;
 using PurrNet.Transports;
-using PurrNet.Utils;
 using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-    static void RegisterInitialFormatters()
-    {
-        Hasher.PrepareType<int>();
-        Hasher.PrepareType<uint>();
-        Hasher.PrepareType<double>();
-        Hasher.PrepareType<string>();
-        Hasher.PrepareType<float>();
-        Hasher.PrepareType<NetworkBehaviourExample>();
-    }
-    
     [SerializeField] private NetworkIdentity someRef;
 
     private void Update()
