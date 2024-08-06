@@ -2,9 +2,8 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
-using PurrNet.Logging;
+using PurrNet.Modules;
 using PurrNet.Transports;
-using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace PurrNet.Packets
@@ -312,6 +311,7 @@ namespace PurrNet.Packets
 
     public class NetworkRegister
     {
+        [UsedByIL]
         public static void Register<T>() where T : NetworkIdentity
         {
             MemoryPackFormatterProvider.Register(new NetworkIdentityFormatter<T>());
