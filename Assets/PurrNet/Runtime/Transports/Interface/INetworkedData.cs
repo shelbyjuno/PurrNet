@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -322,7 +321,6 @@ namespace PurrNet.Packets
         [UsedByIL]
         public static void Hash<T>()
         {
-            PurrLogger.Log("Hashing: " + typeof(T).Name);
             Hasher.PrepareType<T>();
         }
     }
@@ -425,7 +423,7 @@ namespace PurrNet.Packets
             
             var networkManager = NetworkManager.main;
 
-            if (!networkManager.TryGetModule<HierarchyModule>(true, out var module) ||
+            if (!networkManager.TryGetModule<HierarchyModule>(networkManager.isServer, out var module) ||
                 !module.TryGetIdentity(sceneId, networkId, out var result) || 
                 result is not T castedResult) return;
             
