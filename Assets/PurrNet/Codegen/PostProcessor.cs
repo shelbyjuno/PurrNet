@@ -838,18 +838,16 @@ namespace PurrNet.Codegen
 
         private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type)
         {
-            var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", MethodAttributes.Private | MethodAttributes.Static, module.TypeSystem.Void);
+            var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 
+                MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static, module.TypeSystem.Void);
             type.Methods.Add(initMethod);
             
-            var runtimeInitializeLoadType = type.Module.GetTypeDefinition<RuntimeInitializeLoadType>();
-            var attribute = new CustomAttribute(type.Module.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute)
-                .GetConstructor(new []
-                {
-                    typeof(RuntimeInitializeLoadType)
-                })));
+            var attributeType = module.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
+            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(module);
+            var attribute = new CustomAttribute(constructor);
             
             initMethod.CustomAttributes.Add(attribute);
-            attribute.ConstructorArguments.Add(new CustomAttributeArgument(runtimeInitializeLoadType, RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(module.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
             
             initMethod.Body.InitLocals = true;
 
