@@ -30,12 +30,6 @@ namespace PurrNet.Codegen
         public string ogName;
     }
     
-    public struct PendingAddition
-    {
-        public TypeDefinition target;
-        public MethodDefinition method;
-    }
-    
     [UsedImplicitly]
     public class PostProcessor : ILPostProcessor
     {
@@ -749,7 +743,7 @@ namespace PurrNet.Codegen
                         {
                             HashSet<TypeReference> usedTypes = new();
                             FindUsedTypes(module, _rpcMethods, usedTypes);
-                            GenerateExecuteFunction(module, type, usedTypes, messages);
+                            GenerateExecuteFunction(module, type, usedTypes);
                         }
                         catch (Exception e)
                         {
@@ -883,7 +877,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, List<DiagnosticMessage> messages)
+        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes)
         {
             var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 
                 MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static, module.TypeSystem.Void);
