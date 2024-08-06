@@ -145,7 +145,7 @@ namespace PurrNet
             {
                 Debug.LogError($"Scene '{sceneID}' is not ready.");
                 return;
-            } 
+            }
             
             hierarchy.Spawn(gameObject);
         }

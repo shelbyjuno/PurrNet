@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 using MemoryPack;
 using PurrNet.Logging;
 using PurrNet.Transports;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace PurrNet.Packets
@@ -309,6 +310,14 @@ namespace PurrNet.Packets
         }
     }
 
+    public class NetworkRegister
+    {
+        public static void Register<T>() where T : NetworkIdentity
+        {
+            MemoryPackFormatterProvider.Register(new NetworkIdentityFormatter<T>());
+        }
+    }
+
 #pragma warning disable CS9074
     
     [Preserve]
@@ -328,9 +337,6 @@ namespace PurrNet.Packets
             {
                 bool isNull = value == null;
                 writer.WriteUnmanaged(isNull);
-                
-                PurrLogger.Log($"Serializing {typeof(T).Name} with isNull: {isNull}");
-                
                 if (isNull) return;
             }
             
@@ -367,6 +373,54 @@ namespace PurrNet.Packets
             dataStream.ResetPointer();
             value.Serialize(stream);
             ByteBufferPool.Free(dataStream);
+        }
+    }
+    
+    [Preserve]
+    public class NetworkIdentityFormatter<T> : MemoryPackFormatter<T> where T : NetworkIdentity
+    {
+        public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref T value)
+        {
+            bool isNull = value == null;
+            writer.WriteUnmanaged(isNull);
+            
+            if (isNull) return;
+        
+            var id = value.id;
+            bool hasId = id.HasValue;
+            
+            writer.WriteUnmanaged(hasId);
+
+            if (hasId)
+            {
+                var idValue = id!.Value;
+                writer.WriteUnmanaged(idValue);
+                writer.WriteUnmanaged(value.sceneId);
+            }
+        }
+
+        public override void Deserialize(ref MemoryPackReader reader, ref T value)
+        {
+            value = null;
+
+            if (reader.ReadUnmanaged<bool>())
+                return;
+        
+            bool hasId = reader.ReadUnmanaged<bool>();
+            
+            if (!hasId)
+                return;
+            
+            var networkId = reader.ReadUnmanaged<NetworkID>();
+            var sceneId = reader.ReadUnmanaged<SceneID>();
+            
+            var networkManager = NetworkManager.main;
+
+            if (!networkManager.TryGetModule<HierarchyModule>(true, out var module) ||
+                !module.TryGetIdentity(sceneId, networkId, out var result) || 
+                result is not T castedResult) return;
+            
+            value = castedResult;
         }
     }
     

@@ -12,6 +12,7 @@ using PurrNet.Transports;
 using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace PurrNet.Codegen
@@ -714,7 +715,7 @@ namespace PurrNet.Codegen
 
                         if (!InheritsFrom(type, idFullName) && type.FullName != idFullName)
                             continue;
-
+                        
                         List<RPCMethod> _rpcMethods = new();
 
                         int idOffset = GetIDOffset(type, messages);
@@ -742,6 +743,19 @@ namespace PurrNet.Codegen
                             {
                                 Error(messages, e.Message + "\n" + e.StackTrace, type.Methods[i]);
                             }
+                        }
+
+                        try
+                        {
+                            GenerateExecuteFunction(type, _rpcMethods);
+                        }
+                        catch (Exception e)
+                        {
+                            messages.Add(new DiagnosticMessage
+                            {
+                                DiagnosticType = DiagnosticType.Error,
+                                MessageData = $"GenerateExecuteFunction [{type.Name}]: {e.Message}\n{e.StackTrace}"
+                            });
                         }
 
                         for (var index = 0; index < _rpcMethods.Count; index++)
@@ -820,6 +834,34 @@ namespace PurrNet.Codegen
                 
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, messages);
             }
+        }
+
+        private static void GenerateExecuteFunction(TypeDefinition type, List<RPCMethod> rpcMethods)
+        {
+            var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", MethodAttributes.Private | MethodAttributes.Static, type.Module.TypeSystem.Void);
+            type.Methods.Add(initMethod);
+            
+            var attribute = new CustomAttribute(type.Module.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute)
+                .GetConstructor(new []
+                {
+                    typeof(RuntimeInitializeLoadType)
+                })));
+            
+            initMethod.CustomAttributes.Add(attribute);
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(type.Module.TypeSystem.Int32, RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            
+            initMethod.Body.InitLocals = true;
+
+            var code = initMethod.Body.GetILProcessor();
+            
+            var networkRegister = type.Module.GetTypeDefinition<NetworkRegister>();
+            var registerMethod = networkRegister.GetMethod("Register", true).Import(type.Module);
+
+            var genericRegister = new GenericInstanceMethod(registerMethod);
+            genericRegister.GenericArguments.Add(type);
+            
+            code.Append(Instruction.Create(OpCodes.Call, genericRegister));
+            code.Append(Instruction.Create(OpCodes.Ret));
         }
     }
 }

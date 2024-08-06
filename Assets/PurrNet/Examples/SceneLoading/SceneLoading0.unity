@@ -162,7 +162,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56408ba6a605f9a40bfd565b95774f70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
+  optionalSpawnRules:
+    spawnAuth:
+      overridden: 0
+      value: 0
+    despawnAuth:
+      overridden: 0
+      value: 0
+    defaultOwner:
+      overridden: 0
+      value: 0
+    propagateOwnership:
+      overridden: 0
+      value: 0
+    despawnIfOwnerDisconnects:
+      overridden: 0
+      value: 0
+  optionalOwnershipRules:
+    assignAuth:
+      overridden: 0
+      value: 0
+    transferAuth:
+      overridden: 0
+      value: 0
+    removeAuth:
+      overridden: 0
+      value: 0
+  optionalIdentityRules:
+    syncComponentActive:
+      overridden: 0
+      value: 0
+    syncComponentAuth:
+      overridden: 0
+      value: 0
+    syncGameObjectActive:
+      overridden: 0
+      value: 0
+    syncGameObjectActiveAuth:
+      overridden: 0
+      value: 0
+  someRef: {fileID: 2113724485}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -329,7 +368,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adafd23749229fc4bb3c3a4abcfb0497, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
+  optionalSpawnRules:
+    spawnAuth:
+      overridden: 0
+      value: 0
+    despawnAuth:
+      overridden: 0
+      value: 0
+    defaultOwner:
+      overridden: 0
+      value: 0
+    propagateOwnership:
+      overridden: 0
+      value: 0
+    despawnIfOwnerDisconnects:
+      overridden: 0
+      value: 0
+  optionalOwnershipRules:
+    assignAuth:
+      overridden: 0
+      value: 0
+    transferAuth:
+      overridden: 0
+      value: 0
+    removeAuth:
+      overridden: 0
+      value: 0
+  optionalIdentityRules:
+    syncComponentActive:
+      overridden: 0
+      value: 0
+    syncComponentAuth:
+      overridden: 0
+      value: 0
+    syncGameObjectActive:
+      overridden: 0
+      value: 0
+    syncGameObjectActiveAuth:
+      overridden: 0
+      value: 0
 --- !u!4 &342056551
 Transform:
   m_ObjectHideFlags: 0
@@ -495,19 +572,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
-  _syncParent: 1
-  _syncParentPermissions: 0
-  _syncTransformFrom: 1
-  _transformPosition:
-    sync: 1
-    interpolationTicks: 1
-  _transformRotation:
-    sync: 1
-    interpolationTicks: 1
-  _transformScale:
-    sync: 0
-    interpolationTicks: 1
+  optionalSpawnRules:
+    spawnAuth:
+      overridden: 0
+      value: 0
+    despawnAuth:
+      overridden: 0
+      value: 0
+    defaultOwner:
+      overridden: 0
+      value: 0
+    propagateOwnership:
+      overridden: 0
+      value: 0
+    despawnIfOwnerDisconnects:
+      overridden: 0
+      value: 0
+  optionalOwnershipRules:
+    assignAuth:
+      overridden: 0
+      value: 0
+    transferAuth:
+      overridden: 0
+      value: 0
+    removeAuth:
+      overridden: 0
+      value: 0
+  optionalIdentityRules:
+    syncComponentActive:
+      overridden: 0
+      value: 0
+    syncComponentAuth:
+      overridden: 0
+      value: 0
+    syncGameObjectActive:
+      overridden: 0
+      value: 0
+    syncGameObjectActiveAuth:
+      overridden: 0
+      value: 0
 --- !u!4 &470262661
 Transform:
   m_ObjectHideFlags: 0
@@ -690,19 +793,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
-  _syncParent: 1
-  _syncParentPermissions: 0
-  _syncTransformFrom: 1
-  _transformPosition:
-    sync: 1
-    interpolationTicks: 1
-  _transformRotation:
-    sync: 1
-    interpolationTicks: 1
-  _transformScale:
-    sync: 0
-    interpolationTicks: 1
+  optionalSpawnRules:
+    spawnAuth:
+      overridden: 0
+      value: 0
+    despawnAuth:
+      overridden: 0
+      value: 0
+    defaultOwner:
+      overridden: 0
+      value: 0
+    propagateOwnership:
+      overridden: 0
+      value: 0
+    despawnIfOwnerDisconnects:
+      overridden: 0
+      value: 0
+  optionalOwnershipRules:
+    assignAuth:
+      overridden: 0
+      value: 0
+    transferAuth:
+      overridden: 0
+      value: 0
+    removeAuth:
+      overridden: 0
+      value: 0
+  optionalIdentityRules:
+    syncComponentActive:
+      overridden: 0
+      value: 0
+    syncComponentAuth:
+      overridden: 0
+      value: 0
+    syncGameObjectActive:
+      overridden: 0
+      value: 0
+    syncGameObjectActiveAuth:
+      overridden: 0
+      value: 0
 --- !u!4 &1238428650
 Transform:
   m_ObjectHideFlags: 0
@@ -814,7 +943,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  propagateOwner: 1
+  optionalSpawnRules:
+    spawnAuth:
+      overridden: 0
+      value: 0
+    despawnAuth:
+      overridden: 0
+      value: 0
+    defaultOwner:
+      overridden: 0
+      value: 0
+    propagateOwnership:
+      overridden: 0
+      value: 0
+    despawnIfOwnerDisconnects:
+      overridden: 0
+      value: 0
+  optionalOwnershipRules:
+    assignAuth:
+      overridden: 0
+      value: 0
+    transferAuth:
+      overridden: 0
+      value: 0
+    removeAuth:
+      overridden: 0
+      value: 0
+  optionalIdentityRules:
+    syncComponentActive:
+      overridden: 0
+      value: 0
+    syncComponentAuth:
+      overridden: 0
+      value: 0
+    syncGameObjectActive:
+      overridden: 0
+      value: 0
+    syncGameObjectActiveAuth:
+      overridden: 0
+      value: 0
 --- !u!4 &1401039317
 Transform:
   m_ObjectHideFlags: 0
@@ -987,6 +1154,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 861083549}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2113724485 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2094792936452001535, guid: 9c94830e4fb1f9a449c584760ebb1ead, type: 3}
+  m_PrefabInstance: {fileID: 534972092}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

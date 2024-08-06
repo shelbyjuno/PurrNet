@@ -1,4 +1,3 @@
-using System;
 using JetBrains.Annotations;
 using PurrNet;
 using PurrNet.Transports;
@@ -7,20 +6,18 @@ using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
-    private void Awake()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+    static void RegisterInitialFormatters()
     {
         Hasher.PrepareType<int>();
         Hasher.PrepareType<uint>();
         Hasher.PrepareType<double>();
         Hasher.PrepareType<string>();
         Hasher.PrepareType<float>();
+        Hasher.PrepareType<NetworkBehaviourExample>();
     }
-
-    protected override void OnSpawned(bool asServer)
-    {
-        if (asServer)
-            ObserversRPCTest(Time.time);
-    }
+    
+    [SerializeField] private NetworkIdentity someRef;
 
     private void Update()
     {
@@ -28,16 +25,21 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                ObserversRPCTest(Time.time);
+                ObserversRPCTest(Time.time, someRef);
             }
         }
     }
 
 
     [ObserversRPC(bufferLast: true)]
-    private void ObserversRPCTest<T>(T data, RPCInfo info = default)
+    private void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
     {
-        Debug.Log("Observers: " + data + " " + typeof(T).Name + " " + info.sender);
+        Debug.Log("Observers: " + data + " " + info.sender);
+
+        if (someNetRef)
+            Debug.Log(someNetRef.name);
+        else
+            Debug.Log("No ref");
     }
     
     [ServerRPC(Channel.Unreliable)]
