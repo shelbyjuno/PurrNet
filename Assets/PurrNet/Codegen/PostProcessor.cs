@@ -747,7 +747,9 @@ namespace PurrNet.Codegen
 
                         try
                         {
-                            GenerateExecuteFunction(module, type);
+                            HashSet<TypeReference> usedTypes = new();
+                            FindUsedTypes(module, _rpcMethods, usedTypes);
+                            GenerateExecuteFunction(module, type, usedTypes, messages);
                         }
                         catch (Exception e)
                         {
@@ -836,7 +838,52 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type)
+        private static void FindUsedTypes(ModuleDefinition module, List<RPCMethod> methods, HashSet<TypeReference> types)
+        {
+            for (int i = 0; i < module.Types.Count; i++)
+            {
+                var type = module.Types[i];
+
+                for (int j = 0; j < type.Methods.Count; j++)
+                {
+                    var method = type.Methods[j];
+
+                    if (method.Body == null) continue;
+
+                    var body = method.Body;
+                    
+                    for (int k = 0; k < body.Instructions.Count; k++)
+                    {
+                        var instruction = body.Instructions[k];
+                        
+                        if (instruction.OpCode == OpCodes.Call && instruction.Operand is GenericInstanceMethod currentMethod)
+                        {
+                            bool isRpcMethod = false;
+                            
+                            foreach (var rpcMethod in methods)
+                            {
+                                if (rpcMethod.originalMethod.GetElementMethod() == currentMethod.GetElementMethod())
+                                {
+                                    isRpcMethod = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isRpcMethod)
+                                continue;
+
+                            foreach (var argument in currentMethod.GenericArguments)
+                            {
+                                if (!argument.IsGenericParameter)
+                                    types.Add(argument);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, List<DiagnosticMessage> messages)
         {
             var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 
                 MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static, module.TypeSystem.Void);
@@ -855,11 +902,21 @@ namespace PurrNet.Codegen
             
             var networkRegister = type.Module.GetTypeDefinition<NetworkRegister>();
             var registerMethod = networkRegister.GetMethod("Register", true).Import(type.Module);
+            var hashMethod = networkRegister.GetMethod("Hash", true).Import(type.Module);
 
             var genericRegister = new GenericInstanceMethod(registerMethod);
             genericRegister.GenericArguments.Add(type);
             
             code.Append(Instruction.Create(OpCodes.Call, genericRegister));
+
+            foreach (var usedType in usedTypes)
+            {
+                var hash = new GenericInstanceMethod(hashMethod);
+                hash.GenericArguments.Add(usedType.Import(module));
+                
+                code.Append(Instruction.Create(OpCodes.Call, hash));
+            }
+            
             code.Append(Instruction.Create(OpCodes.Ret));
         }
     }
