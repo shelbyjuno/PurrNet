@@ -54,4 +54,23 @@ public class PlayerHealth : NetworkIdentity
         _health = health;
         healthText.text = $"{health}hp"; 
     }
+
+    [ContextMenu("Send first")]
+    private void SendFirst()
+    {
+        TestRpc("Purrfect!", true);
+    }
+
+    [ContextMenu("Send second")]
+    private void SendSecond()
+    {
+        TestRpc(69, 4.20f);
+    }
+
+    [ServerRPC]
+    private void TestRpc<T, P>(T myData1, P myData2)
+    {
+        Debug.Log($"Received {myData1} with type of: {myData1.GetType()}");
+        Debug.Log($"Received {myData2} with type of: {myData2.GetType()}");
+    }
 }
