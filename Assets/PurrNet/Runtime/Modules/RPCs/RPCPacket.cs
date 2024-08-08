@@ -89,4 +89,20 @@ namespace PurrNet
             return sceneId.GetHashCode() ^ networkId.GetHashCode() ^ rpcId.GetHashCode();
         }
     }
+
+    internal class RPC_DATA
+    {
+        public RPC_ID rpcid;
+        public RPCPacket packet;
+        public RPCSignature sig;
+        public NetworkStream stream;
+    }
+        
+    internal class STATIC_RPC_DATA
+    {
+        public RPC_ID rpcid;
+        public StaticRPCPacket packet;
+        public RPCSignature sig;
+        public NetworkStream stream;
+    }
 }

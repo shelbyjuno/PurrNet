@@ -28,7 +28,8 @@ namespace PurrNet.Modules
         {
             _playersManager.Subscribe<RPCPacket>(ReceiveRPC);
             _playersManager.Subscribe<StaticRPCPacket>(ReceiveStaticRPC);
-            
+
+            _playersManager.onPlayerJoined += OnPlayerJoined;
             _scenePlayers.onPostPlayerLoadedScene += OnPlayerJoinedScene;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved += OnIdentityRemoved;
@@ -39,9 +40,54 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<RPCPacket>(ReceiveRPC);
             _playersManager.Unsubscribe<StaticRPCPacket>(ReceiveStaticRPC);
             
+            _playersManager.onPlayerJoined -= OnPlayerJoined;
             _scenePlayers.onPostPlayerLoadedScene -= OnPlayerJoinedScene;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved -= OnIdentityRemoved;
+        }
+        
+        // Clean up buffered RPCs when an identity is removed
+        private void OnIdentityRemoved(NetworkIdentity identity)
+        {
+            for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
+            {
+                var data = _bufferedRpcsDatas[i];
+                
+                if (data.rpcid.sceneId != identity.sceneId) continue;
+                if (data.rpcid.networkId != identity.id) continue;
+                
+                FreeStream(data.stream);
+                
+                _bufferedRpcsKeys.Remove(data.rpcid);
+                _bufferedRpcsDatas.RemoveAt(i--);
+            }
+        }
+
+        // Clean up buffered RPCs when a scene is unloaded
+        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        {
+            for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
+            {
+                var data = _bufferedRpcsDatas[i];
+                
+                if (data.rpcid.sceneId != scene) continue;
+                
+                var key = data.rpcid;
+                FreeStream(data.stream);
+                
+                _bufferedRpcsKeys.Remove(key);
+                _bufferedRpcsDatas.RemoveAt(i--);
+            }
+        }
+
+        private void OnPlayerJoined(PlayerID player, bool asserver)
+        {
+            SendAnyStaticRPCs(player);
+        }
+
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        {
+            SendAnyInstanceRPCs(player, scene);
         }
         
         [UsedByIL]
@@ -104,10 +150,21 @@ namespace PurrNet.Modules
             return true;
         }
 
-        struct StaticGenericKey
+        readonly struct StaticGenericKey
         {
-            public IntPtr type;
-            public string methodName;
+            readonly IntPtr _type;
+            readonly string _methodName;
+            
+            public StaticGenericKey(IntPtr type, string methodName)
+            {
+                _type = type;
+                _methodName = methodName;
+            }
+            
+            public override int GetHashCode()
+            {
+                return _type.GetHashCode() ^ _methodName.GetHashCode();
+            }
         }
         
         static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new();
@@ -116,13 +173,11 @@ namespace PurrNet.Modules
         public static void CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
         {
             var targetType = Type.GetTypeFromHandle(type);
-            var key = new StaticGenericKey { type = type.Value, methodName = methodName };
+            var key = new StaticGenericKey(type.Value, methodName);
 
             if (!_staticGenericHandlers.TryGetValue(key, out var method))
             {
-                method = targetType.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-
+                method = targetType.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
                 _staticGenericHandlers[key] = method;
             }
             
@@ -136,7 +191,7 @@ namespace PurrNet.Modules
             gmethod.Invoke(null, rpcHeader.values);
         }
 
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        private void SendAnyInstanceRPCs(PlayerID player, SceneID scene)
         {
             for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
             {
@@ -155,7 +210,7 @@ namespace PurrNet.Modules
 
                 if (data.sig.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
                     continue;
-                
+
                 switch (data.sig.type)
                 {
                     case RPCType.ObserversRPC:
@@ -175,43 +230,42 @@ namespace PurrNet.Modules
                             packet.data = data.stream.buffer.ToByteData();
                             _playersManager.Send(player, packet);
                         }
+
                         break;
                     }
                 }
             }
         }
-
-        // Clean up buffered RPCs when an identity is removed
-        private void OnIdentityRemoved(NetworkIdentity identity)
+        
+        private void SendAnyStaticRPCs(PlayerID player)
         {
-            for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
+            for (int i = 0; i < _bufferedStaticRpcsDatas.Count; i++)
             {
-                var data = _bufferedRpcsDatas[i];
-                
-                if (data.rpcid.sceneId != identity.sceneId) continue;
-                if (data.rpcid.networkId != identity.id) continue;
-                
-                FreeStream(data.stream);
-                
-                _bufferedRpcsKeys.Remove(data.rpcid);
-                _bufferedRpcsDatas.RemoveAt(i--);
-            }
-        }
+                var data = _bufferedStaticRpcsDatas[i];
 
-        // Clean up buffered RPCs when a scene is unloaded
-        private void OnSceneUnloaded(SceneID scene, bool asserver)
-        {
-            for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
-            {
-                var data = _bufferedRpcsDatas[i];
-                
-                if (data.rpcid.sceneId != scene) continue;
-                
-                var key = data.rpcid;
-                FreeStream(data.stream);
-                
-                _bufferedRpcsKeys.Remove(key);
-                _bufferedRpcsDatas.RemoveAt(i--);
+                switch (data.sig.type)
+                {
+                    case RPCType.ObserversRPC:
+                    {
+                        var packet = data.packet;
+                        packet.data = data.stream.buffer.ToByteData();
+                        _playersManager.Send(player, packet);
+
+                        break;
+                    }
+
+                    case RPCType.TargetRPC:
+                    {
+                        if (data.sig.targetPlayer == player)
+                        {
+                            var packet = data.packet;
+                            packet.data = data.stream.buffer.ToByteData();
+                            _playersManager.Send(player, packet);
+                        }
+
+                        break;
+                    }
+                }
             }
         }
         
@@ -226,23 +280,39 @@ namespace PurrNet.Modules
         {
             ByteBufferPool.Free(stream.buffer);
         }
-
-        class RPC_DATA
-        {
-            public RPC_ID rpcid;
-            public RPCPacket packet;
-            public RPCSignature sig;
-            public NetworkStream stream;
-        }
         
         readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new();
+        readonly Dictionary<RPC_ID, STATIC_RPC_DATA> _bufferedStaticRpcsKeys = new();
         readonly List<RPC_DATA> _bufferedRpcsDatas = new();
+        readonly List<STATIC_RPC_DATA> _bufferedStaticRpcsDatas = new();
 
-        public void AppendToBufferedRPCs(StaticRPCPacket packet, RPCSignature signature)
+        private void AppendToBufferedRPCs(StaticRPCPacket packet, RPCSignature signature)
         {
             if (!signature.bufferLast) return;
             
-            PurrLogger.Log($"TODO: Append static RPC {signature.rpcName} to buffered RPCs.");
+            var rpcid = new RPC_ID(packet);
+
+            if (_bufferedStaticRpcsKeys.TryGetValue(rpcid, out var data))
+            {
+                data.stream.ResetPointer();
+                data.stream.Write(packet.data);
+            }
+            else
+            {
+                var newStream = AllocStream(false);
+                newStream.Write(packet.data);
+                    
+                var newdata = new STATIC_RPC_DATA
+                {
+                    rpcid = rpcid,
+                    packet = packet,
+                    sig = signature,
+                    stream = newStream
+                };
+                   
+                _bufferedStaticRpcsKeys.Add(rpcid, newdata);
+                _bufferedStaticRpcsDatas.Add(newdata);
+            }
         }
         
         public void AppendToBufferedRPCs(RPCPacket packet, RPCSignature signature)
@@ -399,7 +469,7 @@ namespace PurrNet.Modules
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }
-            // TODO: show this error if RPC was reliable ordered. otherwise, we cant assure this will arrive in time, sequence, etc so it isnt really an error
+            // TODO: show this error if RPC was reliable ordered. otherwise, we cant assure this will arrive in time, sequence, etc so it isn't really an error
             // else PurrLogger.LogError($"Failed to find identity with id {packet.networkId} in scene {packet.sceneId} while trying to call RPC with id {packet.rpcId}.");
             
             FreeStream(stream);
