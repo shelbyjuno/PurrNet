@@ -1,33 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Packets;
-using UnityEngine;
+using PurrNet.Utils;
 
 namespace PurrNet.Modules
 {
-    internal readonly struct RPC_ID
-    {
-        public readonly SceneID sceneId;
-        public readonly NetworkID networkId;
-        private readonly byte rpcId;
-            
-        public RPC_ID(RPCPacket packet)
-        {
-            sceneId = packet.sceneId;
-            networkId = packet.networkId;
-            rpcId = packet.rpcId;
-        }
-        
-        public override int GetHashCode()
-        {
-            return sceneId.GetHashCode() ^ networkId.GetHashCode() ^ rpcId.GetHashCode();
-        }
-    }
-
     public class RPCModule : INetworkModule
     {
         readonly HierarchyModule _hierarchyModule;
@@ -48,6 +27,8 @@ namespace PurrNet.Modules
         public void Enable(bool asServer)
         {
             _playersManager.Subscribe<RPCPacket>(ReceiveRPC);
+            _playersManager.Subscribe<StaticRPCPacket>(ReceiveStaticRPC);
+            
             _scenePlayers.onPostPlayerLoadedScene += OnPlayerJoinedScene;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved += OnIdentityRemoved;
@@ -56,9 +37,91 @@ namespace PurrNet.Modules
         public void Disable(bool asServer)
         {
             _playersManager.Unsubscribe<RPCPacket>(ReceiveRPC);
+            _playersManager.Unsubscribe<StaticRPCPacket>(ReceiveStaticRPC);
+            
             _scenePlayers.onPostPlayerLoadedScene -= OnPlayerJoinedScene;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved -= OnIdentityRemoved;
+        }
+        
+        [UsedByIL]
+        public static PlayerID GetLocalPlayer()
+        {
+            var nm = NetworkManager.main;
+
+            if (!nm) return default;
+
+            if (nm.TryGetModule<PlayersManager>(false, out var players))
+                return default;
+
+            return players.localPlayerId ?? default;
+        }
+        
+        [UsedByIL]
+        public static void SendStaticRPC(StaticRPCPacket packet, RPCSignature signature)
+        {
+            var nm = NetworkManager.main;
+
+            if (!nm)
+            {
+                PurrLogger.LogError($"Can't send static RPC '{signature.rpcName}'. NetworkManager not found.");
+                return;
+            }
+            
+            if (!nm.TryGetModule<RPCModule>(nm.isServer, out var module))
+            {
+                PurrLogger.LogError("Failed to get RPC module while sending static RPC.", nm);
+                return;
+            }
+            
+            if (signature.requireServer && !nm.isServer)
+            {
+                PurrLogger.LogError($"Trying to send static RPC '{signature.rpcName}' of type {signature.type} without server.");
+                return;
+            }
+            
+            module.AppendToBufferedRPCs(packet, signature);
+            
+            switch (signature.type)
+            {
+                case RPCType.ServerRPC: nm.GetModule<PlayersManager>(false).SendToServer(packet, signature.channel); break;
+                case RPCType.ObserversRPC: nm.GetModule<PlayersManager>(true).SendToAll(packet, signature.channel); break;
+                case RPCType.TargetRPC: nm.GetModule<PlayersManager>(true).Send(signature.targetPlayer!.Value, packet, signature.channel); break;
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        [UsedByIL]
+        public static bool ValidateReceivingStaticRPC(RPCInfo info, RPCSignature signature, bool asServer)
+        {
+            if (signature.type == RPCType.ServerRPC && !asServer ||
+                signature.type != RPCType.ServerRPC && asServer)
+            {
+                PurrLogger.LogError($"Trying to receive {signature.type} '{signature.rpcName}' on {(asServer ? "server" : "client")}. Aborting RPC call.");
+                return false;
+            }
+            
+            return true;
+        }
+        
+        [UsedByIL]
+        public static void CallStaticGeneric<T>(string methodName, GenericRPCHeader rpcHeader)
+        {
+            var targetType = typeof(T);
+
+            PurrLogger.Log($"Calling static generic RPC <{targetType.Name}>{methodName}() .");
+            
+            // TODO: cache this
+            var method = targetType.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+        
+            if (method == null)
+            {
+                PurrLogger.LogError($"Calling generic static RPC failed. Method '{methodName}' not found.");
+                return;
+            }
+
+            var gmethod = method.MakeGenericMethod(rpcHeader.types);
+            gmethod.Invoke(null, rpcHeader.values);
         }
 
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
@@ -162,6 +225,13 @@ namespace PurrNet.Modules
         
         readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new();
         readonly List<RPC_DATA> _bufferedRpcsDatas = new();
+
+        public void AppendToBufferedRPCs(StaticRPCPacket packet, RPCSignature signature)
+        {
+            if (!signature.bufferLast) return;
+            
+            PurrLogger.Log($"TODO: Append static RPC {signature.rpcName} to buffered RPCs.");
+        }
         
         public void AppendToBufferedRPCs(RPCPacket packet, RPCSignature signature)
         {
@@ -206,6 +276,21 @@ namespace PurrNet.Modules
             return rpc;
         }
         
+        [UsedByIL]
+        public static StaticRPCPacket BuildStaticRawRPC<T>(byte rpcId, NetworkStream data)
+        {
+            var hash = Hasher.GetStableHashU32<T>();
+            
+            var rpc = new StaticRPCPacket
+            {
+                rpcId = rpcId,
+                data = data.buffer.ToByteData(),
+                typeHash = hash
+            };
+
+            return rpc;
+        }
+        
         readonly struct RPCKey
         {
             private readonly IReflect type;
@@ -233,13 +318,46 @@ namespace PurrNet.Modules
                 return handler;
             
             string methodName = $"HandleRPCGenerated_{rpcId}";
-            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
+            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
             var ptr = method != null ? method.MethodHandle.GetFunctionPointer() : IntPtr.Zero;
             
             if (ptr != IntPtr.Zero)
                 _rpcHandlers[rpcKey] = ptr;
             
             return ptr;
+        }
+
+        static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
+        {
+            if (!Hasher.TryGetType(data.typeHash, out var type))
+            {
+                PurrLogger.LogError($"Failed to resolve type with hash {data.typeHash}.");
+                return;
+            }
+            
+            var stream = AllocStream(true);
+            stream.Write(data.data);
+            stream.ResetPointer();
+            
+            var rpcHandlerPtr = GetRPCHandler(type, data.rpcId);
+            var info = new RPCInfo { sender = player };
+
+            if (rpcHandlerPtr != IntPtr.Zero)
+            {
+                try
+                {
+                    // Call the RPC handler
+                    ((delegate* managed<NetworkStream, StaticRPCPacket, RPCInfo, bool, void>)
+                        rpcHandlerPtr)(stream, data, info, asServer);
+                }
+                catch (Exception e)
+                {
+                    PurrLogger.LogError($"{e.Message}\nWhile calling RPC handler for id {data.rpcId} on '{type.Name}'.\n{e.StackTrace}");
+                }
+            }
+            else PurrLogger.LogError($"Can't find RPC handler for id {data.rpcId} on '{type.Name}'.");
+            
+            FreeStream(stream);
         }
         
         unsafe void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)

@@ -1,6 +1,5 @@
 using JetBrains.Annotations;
 using PurrNet;
-using PurrNet.Transports;
 using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
@@ -14,10 +13,25 @@ public class NetworkBehaviourExample : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 ObserversRPCTest(Time.time, someRef);
+                Test("WAZZAAp");
             }
         }
     }
 
+    [ObserversRPC(runLocally: true)]
+    static void Test(string someVal)
+    {
+        Debug.Log("Test from static " + someVal);
+        
+        if (NetworkManager.main.isClient)
+            ServerTest(someVal + someVal);
+    }
+    
+    [ServerRPC]
+    static void ServerTest(string someVal)
+    {
+        Debug.Log("Test from static " + someVal);
+    }
 
     [ObserversRPC(bufferLast: true)]
     private void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
@@ -29,14 +43,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         else
             Debug.Log("No ref");
     }
-    
-    [ServerRPC(Channel.Unreliable)]
-    private void ServerRPCMethodGeneric<T>(T data, RPCInfo info = default)
-    {
-        SendToTarget(info.sender, data);
-    }
 
-    
     [TargetRPC(bufferLast: true)]
     private void SendToTarget<T>([UsedImplicitly] PlayerID target, T message)
     {

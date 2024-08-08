@@ -19,6 +19,7 @@ namespace PurrNet
     {
         public RPCType type;
         public Channel channel;
+        public bool isStatic;
         public bool runLocally;
         public bool requireOwnership;
         public bool bufferLast;
@@ -28,7 +29,7 @@ namespace PurrNet
         public PlayerID? targetPlayer;
 
         [UsedImplicitly]
-        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name)
+        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic)
         {
             return new RPCSignature
             {
@@ -40,12 +41,13 @@ namespace PurrNet
                 requireServer = requireServer,
                 excludeOwner = excludeOwner,
                 targetPlayer = null,
+                isStatic = isStatic,
                 rpcName = name
             };
         }
         
         [UsedImplicitly]
-        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, PlayerID playerID)
+        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, PlayerID playerID)
         {
             return new RPCSignature
             {
@@ -57,6 +59,7 @@ namespace PurrNet
                 requireServer = requireServer,
                 excludeOwner = excludeOwner,
                 rpcName = name,
+                isStatic = isStatic,
                 targetPlayer = playerID
             };
         }

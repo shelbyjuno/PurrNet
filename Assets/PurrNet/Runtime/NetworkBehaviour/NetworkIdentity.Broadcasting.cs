@@ -46,11 +46,11 @@ namespace PurrNet
                 return;
             }
             
-            var method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            var method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
         
             if (method == null)
             {
-                PurrLogger.LogError("Calling generic RPC failed. Method not found.");
+                PurrLogger.LogError($"Calling generic RPC failed. Method '{methodName}' not found.");
                 return;
             }
 
