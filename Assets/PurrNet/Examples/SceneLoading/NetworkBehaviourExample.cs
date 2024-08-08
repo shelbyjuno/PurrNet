@@ -14,7 +14,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 ObserversRPCTest(Time.time, someRef);
-                SomeClass.Test("WAZZAAp");
             }
         }
     }
@@ -34,21 +33,5 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private void SendToTarget<T>([UsedImplicitly] PlayerID target, T message)
     {
         Debug.Log("Targeted: " + message + " " + typeof(T).Name);
-    }
-}
-
-class SomeClass
-{
-    [ObserversRPC(runLocally: true)]
-    public static void Test(string someVal)
-    {
-        if (NetworkManager.main.isClient)
-            ServerTest(someVal + someVal);
-    }
-    
-    [ServerRPC]
-    public static void ServerTest(string someVal)
-    {
-        Debug.Log("Test from static " + someVal);
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -320,9 +321,9 @@ namespace PurrNet.Packets
         }
         
         [UsedByIL]
-        public static void Hash(string fullname)
+        public static void Hash(RuntimeTypeHandle handle)
         {
-            var type = Type.GetType(fullname);
+            var type = Type.GetTypeFromHandle(handle);
             Hasher.PrepareType(type);
         }
     }

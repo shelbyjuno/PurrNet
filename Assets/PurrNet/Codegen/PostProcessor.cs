@@ -1016,9 +1016,12 @@ namespace PurrNet.Codegen
 
             foreach (var usedType in usedTypes)
             {
-                code.Append(Instruction.Create(OpCodes.Ldstr, usedType.FullName));
+                code.Append(Instruction.Create(OpCodes.Ldtoken, usedType));
                 code.Append(Instruction.Create(OpCodes.Call, hashMethod));
             }
+            
+            code.Append(Instruction.Create(OpCodes.Ldtoken, type));
+            code.Append(Instruction.Create(OpCodes.Call, hashMethod));
             
             code.Append(Instruction.Create(OpCodes.Ret));
         }
