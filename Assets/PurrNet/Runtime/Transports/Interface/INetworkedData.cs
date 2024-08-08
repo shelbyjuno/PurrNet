@@ -5,6 +5,7 @@ using MemoryPack;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace PurrNet.Packets
@@ -319,9 +320,10 @@ namespace PurrNet.Packets
         }
         
         [UsedByIL]
-        public static void Hash<T>()
+        public static void Hash(string fullname)
         {
-            Hasher.PrepareType<T>();
+            var type = Type.GetType(fullname);
+            Hasher.PrepareType(type);
         }
     }
 

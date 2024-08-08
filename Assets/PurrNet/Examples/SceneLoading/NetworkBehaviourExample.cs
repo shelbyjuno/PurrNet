@@ -1,5 +1,6 @@
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Packets;
 using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
@@ -13,31 +14,16 @@ public class NetworkBehaviourExample : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 ObserversRPCTest(Time.time, someRef);
-                Test("WAZZAAp");
+                SomeClass.Test("WAZZAAp");
             }
         }
-    }
-
-    [ObserversRPC(runLocally: true)]
-    static void Test(string someVal)
-    {
-        Debug.Log("Test from static " + someVal);
-        
-        if (NetworkManager.main.isClient)
-            ServerTest(someVal + someVal);
-    }
-    
-    [ServerRPC]
-    static void ServerTest(string someVal)
-    {
-        Debug.Log("Test from static " + someVal);
     }
 
     [ObserversRPC(bufferLast: true)]
     private void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
     {
         Debug.Log("Observers: " + data + " " + info.sender);
-
+        
         if (someNetRef)
             Debug.Log(someNetRef.name);
         else
@@ -48,5 +34,21 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private void SendToTarget<T>([UsedImplicitly] PlayerID target, T message)
     {
         Debug.Log("Targeted: " + message + " " + typeof(T).Name);
+    }
+}
+
+class SomeClass
+{
+    [ObserversRPC(runLocally: true)]
+    public static void Test(string someVal)
+    {
+        if (NetworkManager.main.isClient)
+            ServerTest(someVal + someVal);
+    }
+    
+    [ServerRPC]
+    public static void ServerTest(string someVal)
+    {
+        Debug.Log("Test from static " + someVal);
     }
 }

@@ -808,10 +808,8 @@ namespace PurrNet.Codegen
                             continue;
 
                         var idFullName = typeof(NetworkIdentity).FullName;
+                        bool inheritsFromNetworkIdentity = type.FullName == idFullName || InheritsFrom(type, idFullName);
 
-                        if (!InheritsFrom(type, idFullName) && type.FullName != idFullName)
-                            continue;
-                        
                         List<RPCMethod> _rpcMethods = new();
 
                         int idOffset = GetIDOffset(type, messages);
@@ -829,6 +827,12 @@ namespace PurrNet.Codegen
 
                                 if (rpcType == null)
                                     continue;
+                                
+                                if (!rpcType.Value.isStatic && !inheritsFromNetworkIdentity)
+                                {
+                                    Error(messages, "RPC must be static if not inheriting from NetworkIdentity", method);
+                                    continue;
+                                }
 
                                 _rpcMethods.Add(new RPCMethod
                                 {
@@ -841,11 +845,14 @@ namespace PurrNet.Codegen
                             }
                         }
 
+                        if (!inheritsFromNetworkIdentity && _rpcMethods.Count == 0)
+                            continue;
+                        
                         try
                         {
                             HashSet<TypeReference> usedTypes = new();
                             FindUsedTypes(module, _rpcMethods, usedTypes);
-                            GenerateExecuteFunction(module, type, usedTypes);
+                            GenerateExecuteFunction(module, type, usedTypes, inheritsFromNetworkIdentity);
                         }
                         catch (Exception e)
                         {
@@ -979,7 +986,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes)
+        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, bool inheritsFromIdentity)
         {
             var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 
                 MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static, module.TypeSystem.Void);
@@ -998,19 +1005,19 @@ namespace PurrNet.Codegen
             
             var networkRegister = type.Module.GetTypeDefinition<NetworkRegister>();
             var registerMethod = networkRegister.GetMethod("Register", true).Import(type.Module);
-            var hashMethod = networkRegister.GetMethod("Hash", true).Import(type.Module);
+            var hashMethod = networkRegister.GetMethod("Hash").Import(type.Module);
 
-            var genericRegister = new GenericInstanceMethod(registerMethod);
-            genericRegister.GenericArguments.Add(type);
-            
-            code.Append(Instruction.Create(OpCodes.Call, genericRegister));
+            if (inheritsFromIdentity)
+            {
+                var genericRegister = new GenericInstanceMethod(registerMethod);
+                genericRegister.GenericArguments.Add(type);
+                code.Append(Instruction.Create(OpCodes.Call, genericRegister));
+            }
 
             foreach (var usedType in usedTypes)
             {
-                var hash = new GenericInstanceMethod(hashMethod);
-                hash.GenericArguments.Add(usedType.Import(module));
-                
-                code.Append(Instruction.Create(OpCodes.Call, hash));
+                code.Append(Instruction.Create(OpCodes.Ldstr, usedType.FullName));
+                code.Append(Instruction.Create(OpCodes.Call, hashMethod));
             }
             
             code.Append(Instruction.Create(OpCodes.Ret));
