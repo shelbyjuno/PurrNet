@@ -257,9 +257,6 @@ namespace PurrNet.Codegen
                     module.GetTypeDefinition<RPCPacket>();
                 
                 var rpcInfo = module.GetTypeDefinition<RPCInfo>();
-
-                var localPlayerProp = identityType.GetProperty("localPlayer");
-                var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
                 
                 var stream = new ParameterDefinition("stream", ParameterAttributes.None, streamType.Import(module));
                 var packet = new ParameterDefinition("packet", ParameterAttributes.None, packetType.Import(module));
@@ -280,13 +277,8 @@ namespace PurrNet.Codegen
                 try
                 {
                     if (originalRpcs[i].originalMethod.HasGenericParameters)
-                    {
-                        HandleGenericRPC(module, originalRpcs[i], newMethod, stream, info, localPlayerGetter);
-                    }
-                    else
-                    {
-                        HandleNonGenericRPC(module, originalRpcs[i], newMethod, info, localPlayerGetter, stream);
-                    }
+                         HandleGenericRPC(module, originalRpcs[i], newMethod, stream, info);
+                    else HandleNonGenericRPC(module, originalRpcs[i], newMethod, stream, info);
                 }
                 catch (Exception e)
                 {
@@ -331,17 +323,22 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void HandleNonGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod, ParameterDefinition info, MethodReference localPlayerGetter, ParameterDefinition stream)
+        private static void HandleNonGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod, ParameterDefinition stream, ParameterDefinition info)
         {
             var code = newMethod.Body.GetILProcessor();
             var originalMethod = rpcMethod.originalMethod;
             int paramCount = originalMethod.Parameters.Count;
 
             var streamType = module.GetTypeDefinition<NetworkStream>();
+            var identityType = module.GetTypeDefinition<NetworkIdentity>();
+
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             
             var rpcModule = originalMethod.DeclaringType.Module.GetTypeDefinition<RPCModule>();
             var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
+            
+            var localPlayerProp = identityType.GetProperty("localPlayer");
+            var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
             
             for (var p = 0; p < originalMethod.Parameters.Count; p++)
             {
@@ -359,7 +356,7 @@ namespace PurrNet.Codegen
                             code.Append(Instruction.Create(OpCodes.Stloc, variable));
                             break;
                         case SpecialParamType.SenderId:
-                            if (!originalMethod.IsStatic)
+                            if (!rpcMethod.Signature.isStatic)
                             {
                                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                                 code.Append(Instruction.Create(OpCodes.Call, localPlayerGetter));
@@ -396,10 +393,13 @@ namespace PurrNet.Codegen
         }
 
         private static void HandleGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod,
-            ParameterDefinition stream, ParameterDefinition info, MethodReference localPlayerGetter)
+            ParameterDefinition stream, ParameterDefinition info)
         {
             var streamType = module.GetTypeDefinition<NetworkStream>();
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
+            
+            var localPlayerProp = identityType.GetProperty("localPlayer");
+            var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
             
             var genericRpcHeaderType = module.GetTypeDefinition<GenericRPCHeader>();
             var code = newMethod.Body.GetILProcessor();
@@ -413,7 +413,7 @@ namespace PurrNet.Codegen
             var rpcModule = module.GetTypeDefinition<RPCModule>();
 
             var callGenericMethod = rpcMethod.Signature.isStatic ? 
-                rpcModule.GetMethod("CallStaticGeneric", true).Import(module) : 
+                rpcModule.GetMethod("CallStaticGeneric").Import(module) : 
                 identityType.GetMethod("CallGeneric").Import(module);
 
             var originalMethod = rpcMethod.originalMethod;
@@ -453,7 +453,7 @@ namespace PurrNet.Codegen
                         case SpecialParamType.SenderId:
                             code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
 
-                            if (!originalMethod.IsStatic)
+                            if (!rpcMethod.Signature.isStatic)
                             {
                                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                                 code.Append(Instruction.Create(OpCodes.Call, localPlayerGetter));
@@ -493,7 +493,7 @@ namespace PurrNet.Codegen
             }
 
             // call 'CallGeneric'
-            if (!originalMethod.IsStatic)
+            if (!rpcMethod.Signature.isStatic)
             {
                 code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                 code.Append(Instruction.Create(OpCodes.Ldstr, originalMethod.Name)); // methodName
@@ -502,12 +502,13 @@ namespace PurrNet.Codegen
             }
             else
             {
-                var genericMethod = new GenericInstanceMethod(originalMethod);
-                genericMethod.GenericArguments.Add(originalMethod.DeclaringType);
+                /*var genericMethod = new GenericInstanceMethod(originalMethod);
+                genericMethod.GenericArguments.Add(originalMethod.DeclaringType);*/
                 
+                code.Append(Instruction.Create(OpCodes.Ldtoken, originalMethod.DeclaringType)); // methodName
                 code.Append(Instruction.Create(OpCodes.Ldstr, originalMethod.Name)); // methodName
                 code.Append(Instruction.Create(OpCodes.Ldloc, headerValue)); // rpcHeader
-                code.Append(Instruction.Create(OpCodes.Call, genericMethod)); // CallGeneric
+                code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
             }
         }
 

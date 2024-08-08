@@ -105,9 +105,9 @@ namespace PurrNet.Modules
         }
         
         [UsedByIL]
-        public static void CallStaticGeneric<T>(string methodName, GenericRPCHeader rpcHeader)
+        public static void CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
         {
-            var targetType = typeof(T);
+            var targetType = Type.GetTypeFromHandle(type);
 
             PurrLogger.Log($"Calling static generic RPC <{targetType.Name}>{methodName}() .");
             

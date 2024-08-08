@@ -18,9 +18,9 @@ public class NetworkBehaviourExample : NetworkBehaviour
     }
 
     [ObserversRPC(bufferLast: true)]
-    private void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
+    private static void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef/*, RPCInfo info = default*/)
     {
-        Debug.Log("Observers: " + data + " " + info.sender);
+        Debug.Log("Observers: " + data /*+ " " + info.sender*/);
         
         if (someNetRef)
             Debug.Log(someNetRef.name);
