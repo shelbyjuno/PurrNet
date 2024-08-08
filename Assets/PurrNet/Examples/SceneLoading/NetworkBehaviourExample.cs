@@ -1,6 +1,5 @@
 using JetBrains.Annotations;
 using PurrNet;
-using PurrNet.Packets;
 using UnityEngine;
 
 public class NetworkBehaviourExample : NetworkBehaviour
