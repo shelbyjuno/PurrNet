@@ -103,17 +103,29 @@ namespace PurrNet.Modules
             
             return true;
         }
+
+        struct StaticGenericKey
+        {
+            public IntPtr type;
+            public string methodName;
+        }
+        
+        static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new();
         
         [UsedByIL]
         public static void CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
         {
             var targetType = Type.GetTypeFromHandle(type);
+            var key = new StaticGenericKey { type = type.Value, methodName = methodName };
 
-            PurrLogger.Log($"Calling static generic RPC <{targetType.Name}>{methodName}() .");
+            if (!_staticGenericHandlers.TryGetValue(key, out var method))
+            {
+                method = targetType.GetMethod(methodName,
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+
+                _staticGenericHandlers[key] = method;
+            }
             
-            // TODO: cache this
-            var method = targetType.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-        
             if (method == null)
             {
                 PurrLogger.LogError($"Calling generic static RPC failed. Method '{methodName}' not found.");

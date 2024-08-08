@@ -502,9 +502,6 @@ namespace PurrNet.Codegen
             }
             else
             {
-                /*var genericMethod = new GenericInstanceMethod(originalMethod);
-                genericMethod.GenericArguments.Add(originalMethod.DeclaringType);*/
-                
                 code.Append(Instruction.Create(OpCodes.Ldtoken, originalMethod.DeclaringType)); // methodName
                 code.Append(Instruction.Create(OpCodes.Ldstr, originalMethod.Name)); // methodName
                 code.Append(Instruction.Create(OpCodes.Ldloc, headerValue)); // rpcHeader
