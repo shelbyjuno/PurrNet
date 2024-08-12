@@ -1,23 +1,25 @@
-using PurrNet;
 using UnityEngine;
 
-public class PlayerShoot : NetworkIdentity
+namespace PurrNet.Examples.TopDownShooter
 {
-    [SerializeField] private Bullet bulletPrefab;
-
-    protected override void OnSpawned(bool asServer)
+    public class PlayerShoot : NetworkIdentity
     {
-        enabled = isOwner;
-    }
-    
-    private void Update()
-    {
-        if (!Input.GetMouseButtonDown(0))
-            return;
+        [SerializeField] private Bullet bulletPrefab;
 
-        var trs = transform;
-        var bullet = Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
-        
-        bullet.GiveOwnership(owner!.Value);
+        protected override void OnSpawned(bool asServer)
+        {
+            enabled = isOwner;
+        }
+
+        private void Update()
+        {
+            if (!Input.GetMouseButtonDown(0))
+                return;
+
+            var trs = transform;
+            var bullet = Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
+
+            bullet.GiveOwnership(owner!.Value);
+        }
     }
 }

@@ -1,59 +1,60 @@
-using System;
-using PurrNet;
 using UnityEngine;
 
-public class Bullet : NetworkIdentity
+namespace PurrNet.Examples.TopDownShooter
 {
-    [SerializeField] private float speed = 8f;
-    [SerializeField] private int damage = 25;
-    [SerializeField] private float lifeTime = 2f;
-    [SerializeField] private HitDetection hitDetection;
-
-    private void Update()
+    public class Bullet : NetworkIdentity
     {
-        transform.position += transform.forward * (speed * Time.deltaTime);
-        lifeTime -= Time.deltaTime;
+        [SerializeField] private float speed = 8f;
+        [SerializeField] private int damage = 25;
+        [SerializeField] private float lifeTime = 2f;
+        [SerializeField] private HitDetection hitDetection;
 
-        if (lifeTime <= 0)
-            Destroy(gameObject);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (hitDetection == HitDetection.Owner && isOwner)
+        private void Update()
         {
-            if (!other.TryGetComponent(out PlayerHealth health))
-            {
+            transform.position += transform.forward * (speed * Time.deltaTime);
+            lifeTime -= Time.deltaTime;
+
+            if (lifeTime <= 0)
                 Destroy(gameObject);
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (hitDetection == HitDetection.Owner && isOwner)
+            {
+                if (!other.TryGetComponent(out PlayerHealth health))
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+
+                if (!health.isOwner)
+                {
+                    health.ChangeHealth(-damage);
+                    Destroy(gameObject);
+                }
+
                 return;
             }
 
-            if (!health.isOwner)
+            if (hitDetection == HitDetection.Victim)
             {
-                health.ChangeHealth(-damage);
-                Destroy(gameObject);
-            }
-            
-            return;
-        } 
-        
-        if (hitDetection == HitDetection.Victim)
-        {
-            if (other.TryGetComponent(out PlayerHealth health) && health.isOwner && health.owner != owner)
-            {
-                health.ChangeHealth(-damage);
-                Destroy(gameObject);
-            }
-            
-            if(isOwner)
-                Destroy(gameObject);
-        }
-    }
+                if (other.TryGetComponent(out PlayerHealth health) && health.isOwner && health.owner != owner)
+                {
+                    health.ChangeHealth(-damage);
+                    Destroy(gameObject);
+                }
 
-    [System.Serializable]
-    private enum HitDetection
-    {
-        Owner,
-        Victim
+                if (isOwner)
+                    Destroy(gameObject);
+            }
+        }
+
+        [System.Serializable]
+        private enum HitDetection
+        {
+            Owner,
+            Victim
+        }
     }
 }
