@@ -11,9 +11,26 @@ using UnityEngine.Scripting;
 
 namespace PurrNet
 {
+    readonly struct InstanceGenericKey
+    {
+        readonly string _methodName;
+        readonly int _typesHash;
+        
+        public InstanceGenericKey(string methodName, Type[] types)
+        {
+            _methodName = methodName;
+            _typesHash = 0;
+                
+            for (int i = 0; i < types.Length; i++)
+                _typesHash ^= types[i].GetHashCode();
+        }
+        
+        public override int GetHashCode() => _methodName.GetHashCode() ^ _typesHash;
+    }
+    
     public partial class NetworkIdentity
     {
-        static readonly Dictionary<string, MethodInfo> _rpcMethods = new ();
+        static readonly Dictionary<InstanceGenericKey, MethodInfo> _rpcMethods = new ();
         
         [UsedByIL]
         protected static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
@@ -40,19 +57,22 @@ namespace PurrNet
         [UsedByIL]
         protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
         { 
-            if (!_rpcMethods.TryGetValue(methodName, out var method))
+            var key = new InstanceGenericKey(methodName, rpcHeader.types);
+            
+            if (!_rpcMethods.TryGetValue(key, out var gmethod))
             {
-                method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                _rpcMethods.Add(methodName, method);
+                var method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                gmethod = method?.MakeGenericMethod(rpcHeader.types);
+                
+                _rpcMethods.Add(key, gmethod);
             }
         
-            if (method == null)
+            if (gmethod == null)
             {
                 PurrLogger.LogError($"Calling generic RPC failed. Method '{methodName}' not found.");
                 return;
             }
 
-            var gmethod = method.MakeGenericMethod(rpcHeader.types);
             gmethod.Invoke(this, rpcHeader.values);
         }
         

@@ -154,16 +154,22 @@ namespace PurrNet.Modules
         {
             readonly IntPtr _type;
             readonly string _methodName;
+            readonly int _typesHash;
             
-            public StaticGenericKey(IntPtr type, string methodName)
+            public StaticGenericKey(IntPtr type, string methodName, Type[] types)
             {
                 _type = type;
                 _methodName = methodName;
+                
+                _typesHash = 0;
+                
+                for (int i = 0; i < types.Length; i++)
+                    _typesHash ^= types[i].GetHashCode();
             }
             
             public override int GetHashCode()
             {
-                return _type.GetHashCode() ^ _methodName.GetHashCode();
+                return _type.GetHashCode() ^ _methodName.GetHashCode() ^ _typesHash;
             }
         }
         
@@ -173,21 +179,22 @@ namespace PurrNet.Modules
         public static void CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
         {
             var targetType = Type.GetTypeFromHandle(type);
-            var key = new StaticGenericKey(type.Value, methodName);
+            var key = new StaticGenericKey(type.Value, methodName, rpcHeader.types);
 
-            if (!_staticGenericHandlers.TryGetValue(key, out var method))
+            if (!_staticGenericHandlers.TryGetValue(key, out var gmethod))
             {
-                method = targetType.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-                _staticGenericHandlers[key] = method;
+                var method = targetType.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+                gmethod = method?.MakeGenericMethod(rpcHeader.types);
+
+                _staticGenericHandlers[key] = gmethod;
             }
             
-            if (method == null)
+            if (gmethod == null)
             {
                 PurrLogger.LogError($"Calling generic static RPC failed. Method '{methodName}' not found.");
                 return;
             }
 
-            var gmethod = method.MakeGenericMethod(rpcHeader.types);
             gmethod.Invoke(null, rpcHeader.values);
         }
 
