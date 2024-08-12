@@ -144,6 +144,11 @@ namespace PurrNet.Modules
             return _playerToConnection.TryGetValue(playerId, out conn);
         }
         
+        public bool IsPlayerConnected(PlayerID playerId)
+        {
+            return _playerToConnection.ContainsKey(playerId);
+        }
+        
         /// <summary>
         /// Try to get the playerId of a connection.
         /// </summary>

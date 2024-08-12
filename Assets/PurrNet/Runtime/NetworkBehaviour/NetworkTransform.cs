@@ -22,7 +22,7 @@ namespace PurrNet
         private Transform _trs;
         private Rigidbody _rb;
 
-        private bool _isController => hasOwner ? isOwner : isServer;
+        private bool _isController => hasConnectedOwner ? isOwner : isServer;
 
         private void Awake()
         {

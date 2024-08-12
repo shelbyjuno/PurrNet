@@ -41,6 +41,8 @@ namespace PurrNet
         public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
+        
+        public bool hasConnectedOwner => owner.HasValue && networkManager.TryGetModule<PlayersManager>(isServer, out var module) && module.IsPlayerConnected(owner.Value);
 
         internal PlayerID? internalOwnerServer;
         internal PlayerID? internalOwnerClient;
