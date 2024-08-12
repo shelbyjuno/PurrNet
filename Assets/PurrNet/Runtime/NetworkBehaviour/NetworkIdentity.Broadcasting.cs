@@ -40,13 +40,11 @@ namespace PurrNet
         [UsedByIL]
         protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
         { 
-            if (_rpcMethods.TryGetValue(methodName, out var genericMethod))
+            if (!_rpcMethods.TryGetValue(methodName, out var method))
             {
-                genericMethod.Invoke(this, rpcHeader.values);
-                return;
+                method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                _rpcMethods.Add(methodName, method);
             }
-            
-            var method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
         
             if (method == null)
             {
@@ -55,7 +53,6 @@ namespace PurrNet
             }
 
             var gmethod = method.MakeGenericMethod(rpcHeader.types);
-            _rpcMethods.Add(methodName, gmethod);
             gmethod.Invoke(this, rpcHeader.values);
         }
         
