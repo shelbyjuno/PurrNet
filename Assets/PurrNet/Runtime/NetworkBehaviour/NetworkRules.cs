@@ -101,12 +101,12 @@ namespace PurrNet
             return HasAuthority(_defaultSpawnRules.spawnAuth, asServer);
         }
         
-        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
+        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID? player, bool asServer)
         {
             return HasAuthority(_defaultIdentityRules.syncGameObjectActiveAuth, identity, player, asServer);
         }
         
-        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
+        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID? player, bool asServer)
         {
             return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player, asServer);
         }
@@ -135,7 +135,7 @@ namespace PurrNet
             return true;
         }
         
-        public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
+        public bool HasChangeParentAuthority(NetworkIdentity identity, PlayerID? player, bool asServer)
         {
             return HasAuthority(_defaultTransformRules.changeParentAuth, identity, player, asServer);
         }
@@ -145,18 +145,18 @@ namespace PurrNet
             return connAuth == ConnectionAuth.Everyone || asServer;
         }
         
-        static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID player, bool asServer)
+        static bool HasAuthority(ActionAuth action, NetworkIdentity identity, PlayerID? player, bool asServer)
         {
             if (action.HasFlag(ActionAuth.Server) && asServer)
                 return true;
             
-            if (action.HasFlag(ActionAuth.Owner) && identity.owner == player)
+            if (action.HasFlag(ActionAuth.Owner) && player.HasValue && identity.owner == player)
                 return true;
             
             return identity.owner != player && action.HasFlag(ActionAuth.Observer);
         }
         
-        public bool HasTransferOwnershipAuthority(NetworkIdentity networkIdentity, PlayerID localPlayer, bool asServer)
+        public bool HasTransferOwnershipAuthority(NetworkIdentity networkIdentity, PlayerID? localPlayer, bool asServer)
         {
             return HasAuthority(_defaultOwnershipRules.transferAuth, networkIdentity, localPlayer, asServer);
         }

@@ -20,10 +20,14 @@ namespace PurrNet
         Interpolated<Vector3> _scale;
 
         private Transform _trs;
+        private Rigidbody _rb;
+
+        private bool _isController => hasOwner ? isOwner : isServer;
 
         private void Awake()
         {
             _trs = transform;
+            _rb = GetComponent<Rigidbody>();
 
             ValidateParent();
 
@@ -45,16 +49,28 @@ namespace PurrNet
 
         private void FixedUpdate()
         {
-            if (isOwner)
+            if (_isController)
             {
-                SendTransform(_trs.position, _trs.rotation, _trs.localScale);
+                // TODO: this is a hack to reset the object's kinematic state when it's the owner
+                if (_rb && _rb.isKinematic)
+                    _rb.isKinematic = false;
+                
+                if (isServer)
+                     ReceiveTransform(_trs.position, _trs.rotation, _trs.localScale);
+                else SendTransform(_trs.position, _trs.rotation, _trs.localScale);
             }
         }
         
         private void Update()
         {
-            if (!isOwner)
+            if (!_isController)
+            {
+                // TODO: this is a hack to prevent the object from moving when it's not the owner
+                if (_rb && !_rb.isKinematic)
+                    _rb.isKinematic = true;
+                
                 ApplyLerpedPosition();
+            }
         }
 
         private void ApplyLerpedPosition()

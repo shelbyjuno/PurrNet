@@ -123,10 +123,10 @@ namespace PurrNet
         protected bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
         {
             if (signature.requireOwnership && info.sender != owner)
-            {
-                PurrLogger.LogError($"Sender '{info.sender}' of RPC '{signature.rpcName}' from '{name}' is not the owner. Aborting RPC call.", this);
                 return false;
-            }
+            
+            if (signature.excludeOwner && isOwner)
+                return false;
 
             if (signature.type == RPCType.ServerRPC && !asServer)
             {
@@ -140,12 +140,6 @@ namespace PurrNet
                 return false;
             }
 
-            if (signature.excludeOwner && isOwner)
-            {
-                PurrLogger.LogError($"Trying to receive RPC '{signature.rpcName}' from '{name}' with exclude owner on owner. Aborting RPC call.", this);
-                return false;
-            }
-            
             return true;
         }
         

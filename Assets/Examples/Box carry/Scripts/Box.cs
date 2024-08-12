@@ -18,9 +18,9 @@ namespace PurrNet.Examples.BoxCarry
 
         protected override void OnSpawned(bool asServer)
         {
-            if (asServer)
+            if (asServer && localPlayer.HasValue)
             {
-                GiveOwnership(localPlayer);
+                GiveOwnership(localPlayer.Value);
                 renderer.material = ownerMaterial;
                 _rigidbody.isKinematic = false;
             }

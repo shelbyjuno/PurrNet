@@ -497,7 +497,6 @@ namespace PurrNet.Modules
         private void HandleOwnershipChange(PlayerID actor, OwnershipChange change, NetworkID id)
         {
             string verb = change.isAdding ? "give" : "remove";
-            string verb2 = change.isAdding ? "giving" : "removing";
             
             if (!_hierarchy.TryGetIdentity(change.sceneId, id, out var identity))
                 return;
@@ -597,9 +596,9 @@ namespace PurrNet.Modules
             return _cache;
         }
 
-        public IReadOnlyCollection<NetworkID> TryGetOwnedObjects(PlayerID player)
+        public IEnumerable<NetworkID> TryGetOwnedObjects(PlayerID player)
         {
-            if (_playerOwnedIds.TryGetValue(player, out var owned))
+            if (_playerOwnedIds.TryGetValue(player, out _))
                 return _playerOwnedIds[player];
             return Array.Empty<NetworkID>();
         }
