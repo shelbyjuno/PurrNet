@@ -11,25 +11,25 @@ using UnityEngine.Scripting;
 
 namespace PurrNet
 {
-    readonly struct InstanceGenericKey
-    {
-        readonly string _methodName;
-        readonly int _typesHash;
-        
-        public InstanceGenericKey(string methodName, Type[] types)
-        {
-            _methodName = methodName;
-            _typesHash = 0;
-                
-            for (int i = 0; i < types.Length; i++)
-                _typesHash ^= types[i].GetHashCode();
-        }
-        
-        public override int GetHashCode() => _methodName.GetHashCode() ^ _typesHash;
-    }
-    
     public partial class NetworkIdentity
     {
+        readonly struct InstanceGenericKey
+        {
+            readonly string _methodName;
+            readonly int _typesHash;
+        
+            public InstanceGenericKey(string methodName, Type[] types)
+            {
+                _methodName = methodName;
+                _typesHash = 0;
+                
+                for (int i = 0; i < types.Length; i++)
+                    _typesHash ^= types[i].GetHashCode();
+            }
+        
+            public override int GetHashCode() => _methodName.GetHashCode() ^ _typesHash;
+        }
+        
         static readonly Dictionary<InstanceGenericKey, MethodInfo> _rpcMethods = new ();
         
         [UsedByIL]
