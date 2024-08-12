@@ -38,7 +38,7 @@ namespace PurrNet
         
         public bool isHost => isSpawned && networkManager.isHost;
         
-        public bool isOwner => isSpawned && owner == localPlayer;
+        public bool isOwner => isSpawned && safeLocalPlayer.HasValue && owner == safeLocalPlayer;
         
         public bool hasOwner => owner.HasValue;
 
@@ -59,6 +59,9 @@ namespace PurrNet
         
         public PlayerID localPlayer => isSpawned && networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
             ? module.localPlayerId.Value : default;
+        
+        private PlayerID? safeLocalPlayer => networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
+            ? module.localPlayerId.Value : null;
         
         internal event Action<NetworkIdentity> onRemoved;
         internal event Action<NetworkIdentity, bool> onEnabledChanged;

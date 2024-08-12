@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
@@ -93,7 +94,7 @@ namespace PurrNet
         }
 
         [TargetRPC]
-        private void SendLatestTranform(PlayerID player, Vector3 position, Quaternion rotation, Vector3 scale)
+        private void SendLatestTranform([UsedImplicitly] PlayerID player, Vector3 position, Quaternion rotation, Vector3 scale)
         {
             _position.Teleport(position);
             _rotation.Teleport(rotation);
