@@ -13,24 +13,27 @@ namespace PurrNet
 {
     public partial class NetworkIdentity
     {
-        readonly struct InstanceGenericKey
+        internal readonly struct InstanceGenericKey
         {
             readonly string _methodName;
             readonly int _typesHash;
+            readonly int _callerHash;
         
-            public InstanceGenericKey(string methodName, Type[] types)
+            public InstanceGenericKey(string methodName, Type caller, Type[] types)
             {
                 _methodName = methodName;
                 _typesHash = 0;
+                
+                _callerHash = caller.GetHashCode();
                 
                 for (int i = 0; i < types.Length; i++)
                     _typesHash ^= types[i].GetHashCode();
             }
         
-            public override int GetHashCode() => _methodName.GetHashCode() ^ _typesHash;
+            public override int GetHashCode() => _methodName.GetHashCode() ^ _typesHash ^ _callerHash;
         }
         
-        static readonly Dictionary<InstanceGenericKey, MethodInfo> _rpcMethods = new ();
+        internal static readonly Dictionary<InstanceGenericKey, MethodInfo> genericMethods = new ();
         
         [UsedByIL]
         protected static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
@@ -57,14 +60,14 @@ namespace PurrNet
         [UsedByIL]
         protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
         { 
-            var key = new InstanceGenericKey(methodName, rpcHeader.types);
+            var key = new InstanceGenericKey(methodName, GetType(), rpcHeader.types);
             
-            if (!_rpcMethods.TryGetValue(key, out var gmethod))
+            if (!genericMethods.TryGetValue(key, out var gmethod))
             {
                 var method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
                 gmethod = method?.MakeGenericMethod(rpcHeader.types);
                 
-                _rpcMethods.Add(key, gmethod);
+                genericMethods.Add(key, gmethod);
             }
         
             if (gmethod == null)
@@ -120,7 +123,7 @@ namespace PurrNet
         }
         
         [UsedByIL]
-        protected bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
+        public bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
         {
             if (signature.requireOwnership && info.sender != owner)
                 return false;

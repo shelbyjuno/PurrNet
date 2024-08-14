@@ -45,13 +45,7 @@ namespace PurrNet.Codegen
             if (name.StartsWith("UnityEngine."))
                 return false;
             
-            if (name.StartsWith("UnityEditor."))
-                return false;
-
-            if (name.Contains("Editor"))
-                return false;
-            
-            return true;
+            return !name.Contains("Editor");
         }
         
         private static int GetIDOffset(TypeDefinition type, ICollection<DiagnosticMessage> messages)
@@ -234,7 +228,7 @@ namespace PurrNet.Codegen
             return false;
         }
         
-        private static void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, IReadOnlyList<RPCMethod> originalRpcs, int offset)
+        private static void HandleRPCReceiver(ModuleDefinition module, TypeDefinition type, IReadOnlyList<RPCMethod> originalRpcs, bool isNetworkClass, int offset)
         {
             for (var i = 0; i < originalRpcs.Count; i++)
             {
@@ -249,12 +243,10 @@ namespace PurrNet.Codegen
                 var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
                 newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
                 
-                var identityType = module.GetTypeDefinition<NetworkIdentity>();
                 var streamType = module.GetTypeDefinition<NetworkStream>();
 
-                var packetType = originalRpcs[i].Signature.isStatic ? 
-                    module.GetTypeDefinition<StaticRPCPacket>() : 
-                    module.GetTypeDefinition<RPCPacket>();
+                var packetType = originalRpcs[i].Signature.isStatic ? module.GetTypeDefinition<StaticRPCPacket>() : 
+                    isNetworkClass ? module.GetTypeDefinition<ChildRPCPacket>() : module.GetTypeDefinition<RPCPacket>();
                 
                 var rpcInfo = module.GetTypeDefinition<RPCInfo>();
                 
@@ -272,12 +264,12 @@ namespace PurrNet.Codegen
                 var code = newMethod.Body.GetILProcessor();
                 var end = Instruction.Create(OpCodes.Ret);
                 
-                ValidateReceivingRPC(module, originalRpcs[i], code, info, asServer, end);
+                ValidateReceivingRPC(module, isNetworkClass, originalRpcs[i], code, info, asServer, end);
 
                 try
                 {
                     if (originalRpcs[i].originalMethod.HasGenericParameters)
-                         HandleGenericRPC(module, originalRpcs[i], newMethod, stream, info);
+                         HandleGenericRPC(module, originalRpcs[i], newMethod, stream, info, isNetworkClass);
                     else HandleNonGenericRPC(module, originalRpcs[i], newMethod, stream, info);
                 }
                 catch (Exception e)
@@ -290,37 +282,38 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void ValidateReceivingRPC(ModuleDefinition module, RPCMethod originalRpc, ILProcessor code, ParameterDefinition info, ParameterDefinition asServer, Instruction end)
+        private static void ValidateReceivingRPC(ModuleDefinition module, bool isNetworkClass, RPCMethod originalRpc, ILProcessor code, ParameterDefinition info, ParameterDefinition asServer, Instruction end)
         {
+            MethodReference validateReceivingRPC;
             if (originalRpc.Signature.isStatic)
             {
                 var rpcModule = module.GetTypeDefinition<RPCModule>();
-                var validateReceivingRPC = rpcModule.GetMethod("ValidateReceivingStaticRPC").Import(module);
+                validateReceivingRPC = rpcModule.GetMethod("ValidateReceivingStaticRPC").Import(module);
+            }
+            else if (isNetworkClass)
+            {
+                var nclass = module.GetTypeDefinition<NetworkModule>();
+                validateReceivingRPC = nclass.GetMethod("ValidateReceivingRPC").Import(module);
 
                 // Call validateReceivingRPC(this, RPCInfo, RPCSignature, asServer)
-                code.Append(Instruction.Create(OpCodes.Ldarg, info)); // info
-                ReturnRPCSignature(module, code, originalRpc);
-                code.Append(Instruction.Create(OpCodes.Ldarg, asServer)); // asServer
-                code.Append(Instruction.Create(OpCodes.Call, validateReceivingRPC));
-
-                // if returned false, return early
-                code.Append(Instruction.Create(OpCodes.Brfalse, end));
+                code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
             }
             else
             {
                 var identityType = module.GetTypeDefinition<NetworkIdentity>();
-                var validateReceivingRPC = identityType.GetMethod("ValidateReceivingRPC").Import(module);
+                validateReceivingRPC = identityType.GetMethod("ValidateReceivingRPC").Import(module);
 
                 // Call validateReceivingRPC(this, RPCInfo, RPCSignature, asServer)
                 code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                code.Append(Instruction.Create(OpCodes.Ldarg, info)); // info
-                ReturnRPCSignature(module, code, originalRpc);
-                code.Append(Instruction.Create(OpCodes.Ldarg, asServer)); // asServer
-                code.Append(Instruction.Create(OpCodes.Call, validateReceivingRPC));
-
-                // if returned false, return early
-                code.Append(Instruction.Create(OpCodes.Brfalse, end));
             }
+            
+            code.Append(Instruction.Create(OpCodes.Ldarg, info)); // info
+            ReturnRPCSignature(module, code, originalRpc);
+            code.Append(Instruction.Create(OpCodes.Ldarg, asServer)); // asServer
+            code.Append(Instruction.Create(OpCodes.Call, validateReceivingRPC));
+
+            // if returned false, return early
+            code.Append(Instruction.Create(OpCodes.Brfalse, end));
         }
 
         private static void HandleNonGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod, ParameterDefinition stream, ParameterDefinition info)
@@ -393,7 +386,7 @@ namespace PurrNet.Codegen
         }
 
         private static void HandleGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod,
-            ParameterDefinition stream, ParameterDefinition info)
+            ParameterDefinition stream, ParameterDefinition info, bool isNetworkClass)
         {
             var streamType = module.GetTypeDefinition<NetworkStream>();
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
@@ -411,9 +404,11 @@ namespace PurrNet.Codegen
             var setPlayerId = genericRpcHeaderType.GetMethod("SetPlayerId").Import(module);
 
             var rpcModule = module.GetTypeDefinition<RPCModule>();
+            var nclassType = module.GetTypeDefinition<NetworkModule>();
 
             var callGenericMethod = rpcMethod.Signature.isStatic ? 
-                rpcModule.GetMethod("CallStaticGeneric").Import(module) : 
+                rpcModule.GetMethod("CallStaticGeneric").Import(module) :
+                isNetworkClass ? nclassType.GetMethod("CallGeneric").Import(module) :
                 identityType.GetMethod("CallGeneric").Import(module);
 
             var originalMethod = rpcMethod.originalMethod;
@@ -509,7 +504,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private MethodDefinition HandleRPC(ModuleDefinition module, int id, RPCMethod methodRpc, [UsedImplicitly] List<DiagnosticMessage> messages)
+        private MethodDefinition HandleRPC(ModuleDefinition module, int id, RPCMethod methodRpc, bool isNetworkClass, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             var method = methodRpc.originalMethod;
             
@@ -558,9 +553,8 @@ namespace PurrNet.Codegen
             // Declare local variables
             newMethod.Body.InitLocals = true;
             
-            var packetType = methodRpc.Signature.isStatic ? 
-                module.GetTypeDefinition<StaticRPCPacket>() : 
-                module.GetTypeDefinition<RPCPacket>();
+            var packetType = methodRpc.Signature.isStatic ? module.GetTypeDefinition<StaticRPCPacket>() : 
+                isNetworkClass ? module.GetTypeDefinition<ChildRPCPacket>() : module.GetTypeDefinition<RPCPacket>();
             
             var streamVariable = new VariableDefinition(streamType.Import(module));
             var rpcDataVariable = new VariableDefinition(packetType.Import(module));
@@ -659,6 +653,16 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Call, genericInstanceMethod));
                 code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
             }
+            else if (isNetworkClass)
+            {
+                var buildChildRpc = module.GetTypeDefinition<NetworkModule>().GetMethod("BuildRPC").Import(module);
+                
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Ldc_I4, id));
+                code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
+                code.Append(Instruction.Create(OpCodes.Call, buildChildRpc));
+                code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
+            }
             else
             {
                 var buildRawRPCMethod = rpcType.GetMethod("BuildRawRPC").Import(module);
@@ -674,7 +678,6 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Call, buildRawRPCMethod));
                 code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
             }
-            
 
             if (!methodRpc.Signature.isStatic)
                 code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
@@ -682,14 +685,19 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcPacket
             ReturnRPCSignature(module, code, methodRpc); // rpcDetails
 
-            if (!methodRpc.Signature.isStatic)
+            if (methodRpc.Signature.isStatic)
             {
-                var sendRpc = identityType.GetMethod("SendRPC").Import(module);
+                var sendRpc = rpcType.GetMethod("SendStaticRPC").Import(module);
+                code.Append(Instruction.Create(OpCodes.Call, sendRpc));
+            }
+            else if (isNetworkClass)
+            {
+                var sendRpc = module.GetTypeDefinition<NetworkModule>().GetMethod("SendRPC").Import(module);
                 code.Append(Instruction.Create(OpCodes.Call, sendRpc));
             }
             else
             {
-                var sendRpc = rpcType.GetMethod("SendStaticRPC").Import(module);
+                var sendRpc = identityType.GetMethod("SendRPC").Import(module);
                 code.Append(Instruction.Create(OpCodes.Call, sendRpc));
             }
             
@@ -806,11 +814,35 @@ namespace PurrNet.Codegen
                             continue;
 
                         var idFullName = typeof(NetworkIdentity).FullName;
+                        var classFullName = typeof(NetworkModule).FullName;
+                        
                         bool inheritsFromNetworkIdentity = type.FullName == idFullName || InheritsFrom(type, idFullName);
+                        bool inheritsFromNetworkClass = type.FullName == classFullName || InheritsFrom(type, classFullName);
 
                         List<RPCMethod> _rpcMethods = new();
 
                         int idOffset = GetIDOffset(type, messages);
+
+                        if (inheritsFromNetworkIdentity)
+                        {
+                            List<FieldDefinition> _networkFields = new();
+
+                            for (var i = 0; i < type.Fields.Count; i++)
+                            {
+                                var field = type.Fields[i];
+                                var fieldType = field.FieldType.Resolve();
+                                var isNetworkClass = fieldType.FullName == classFullName || InheritsFrom(fieldType, classFullName);
+
+                                if (!isNetworkClass) continue;
+                                
+                                _networkFields.Add(field);
+                            }
+                            
+                            for (int i = 0; i < _networkFields.Count; i++)
+                            {
+                                HandleNetworkField(module, i, type, _networkFields[i]);
+                            }
+                        }
 
                         for (var i = 0; i < type.Methods.Count; i++)
                         {
@@ -826,9 +858,9 @@ namespace PurrNet.Codegen
                                 if (rpcType == null)
                                     continue;
                                 
-                                if (!rpcType.Value.isStatic && !inheritsFromNetworkIdentity)
+                                if (!rpcType.Value.isStatic && !inheritsFromNetworkIdentity && !inheritsFromNetworkClass)
                                 {
-                                    Error(messages, "RPC must be static if not inheriting from NetworkIdentity", method);
+                                    Error(messages, "RPC must be static if not inheriting from NetworkIdentity or NetworkClass", method);
                                     continue;
                                 }
 
@@ -843,7 +875,7 @@ namespace PurrNet.Codegen
                             }
                         }
 
-                        if (!inheritsFromNetworkIdentity && _rpcMethods.Count == 0)
+                        if (!inheritsFromNetworkIdentity && !inheritsFromNetworkClass && _rpcMethods.Count == 0)
                             continue;
                         
                         try
@@ -867,7 +899,7 @@ namespace PurrNet.Codegen
 
                             try
                             {
-                                var newMethod = HandleRPC(module, idOffset + index, _rpcMethods[index], messages);
+                                var newMethod = HandleRPC(module, idOffset + index, _rpcMethods[index], inheritsFromNetworkClass, messages);
 
                                 if (newMethod != null)
                                 {
@@ -885,7 +917,7 @@ namespace PurrNet.Codegen
                         {
                             if (_rpcMethods.Count > 0)
                             {
-                                HandleRPCReceiver(module, type, _rpcMethods, idOffset);
+                                HandleRPCReceiver(module, type, _rpcMethods, inheritsFromNetworkClass, idOffset);
                             }
                         }
                         catch (Exception e)
@@ -937,6 +969,26 @@ namespace PurrNet.Codegen
                 
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, messages);
             }
+        }
+
+        private static void HandleNetworkField(ModuleDefinition module, int offset, TypeDefinition type, FieldDefinition networkField)
+        {
+            var newMethod = new MethodDefinition($"HandleRPCGenerated_GetNetworkClass_{offset}", 
+                MethodAttributes.Private | MethodAttributes.HideBySig, networkField.FieldType);
+                
+            var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
+            var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
+            newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
+            
+            newMethod.Body.InitLocals = true;
+            
+            var code = newMethod.Body.GetILProcessor();
+            
+            code.Append(Instruction.Create(OpCodes.Ldarg_0));
+            code.Append(Instruction.Create(OpCodes.Ldfld, networkField));
+            code.Append(Instruction.Create(OpCodes.Ret));
+            
+            type.Methods.Add(newMethod);
         }
 
         private static void FindUsedTypes(ModuleDefinition module, List<RPCMethod> methods, HashSet<TypeReference> types)

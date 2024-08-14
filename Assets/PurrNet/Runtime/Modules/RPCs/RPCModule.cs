@@ -28,6 +28,7 @@ namespace PurrNet.Modules
         {
             _playersManager.Subscribe<RPCPacket>(ReceiveRPC);
             _playersManager.Subscribe<StaticRPCPacket>(ReceiveStaticRPC);
+            _playersManager.Subscribe<ChildRPCPacket>(ReceiveChildRPC);
 
             _playersManager.onPlayerJoined += OnPlayerJoined;
             _scenePlayers.onPostPlayerLoadedScene += OnPlayerJoinedScene;
@@ -39,13 +40,14 @@ namespace PurrNet.Modules
         {
             _playersManager.Unsubscribe<RPCPacket>(ReceiveRPC);
             _playersManager.Unsubscribe<StaticRPCPacket>(ReceiveStaticRPC);
+            _playersManager.Unsubscribe<ChildRPCPacket>(ReceiveChildRPC);
             
             _playersManager.onPlayerJoined -= OnPlayerJoined;
             _scenePlayers.onPostPlayerLoadedScene -= OnPlayerJoinedScene;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved -= OnIdentityRemoved;
         }
-        
+
         // Clean up buffered RPCs when an identity is removed
         private void OnIdentityRemoved(NetworkIdentity identity)
         {
@@ -321,6 +323,11 @@ namespace PurrNet.Modules
                 _bufferedStaticRpcsDatas.Add(newdata);
             }
         }
+
+        public void AppendToBufferedRPCs(ChildRPCPacket packet, RPCSignature signature)
+        {
+            PurrLogger.Log("TODO: Implement AppendToBufferedRPCs for ChildRPCPacket.");
+        }
         
         public void AppendToBufferedRPCs(RPCPacket packet, RPCSignature signature)
         {
@@ -415,6 +422,20 @@ namespace PurrNet.Modules
             
             return ptr;
         }
+        
+        static IntPtr ChildIndexGetter(IReflect type, byte childId)
+        {
+            string methodName = $"HandleRPCGenerated_GetNetworkClass_{childId}";
+            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
+            var ptr = method != null ? method.MethodHandle.GetFunctionPointer() : IntPtr.Zero;
+            return ptr;
+        }
+        
+        static unsafe NetworkModule GetNetworkClass(NetworkIdentity identity, byte childId)
+        {
+            var ptr = ChildIndexGetter(identity.GetType(), childId);
+            return ptr == IntPtr.Zero ? null : ((delegate* managed<NetworkIdentity, NetworkModule>)ptr)(identity);
+        }
 
         static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
         {
@@ -449,6 +470,49 @@ namespace PurrNet.Modules
             FreeStream(stream);
         }
         
+        unsafe void ReceiveChildRPC(PlayerID player, ChildRPCPacket packet, bool asServer)
+        {
+            var stream = AllocStream(true);
+            stream.Write(packet.data);
+            stream.ResetPointer();
+            
+            var info = new RPCInfo { sender = player };
+            
+            if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
+            {
+                var networkClass = GetNetworkClass(identity, packet.childId);
+                
+                if (networkClass == null)
+                {
+                    PurrLogger.LogError($"Can't find child with id {packet.childId} in identity {identity.GetType().Name}.");
+                }
+                else
+                {
+                    var rpcHandlerPtr = GetRPCHandler(networkClass.GetType(), packet.rpcId);
+
+                    if (rpcHandlerPtr != IntPtr.Zero)
+                    {
+                        try
+                        {
+                            // Call the RPC handler
+                            ((delegate* managed<NetworkModule, NetworkStream, ChildRPCPacket, RPCInfo, bool, void>)
+                                rpcHandlerPtr)(networkClass, stream, packet, info, asServer);
+                        }
+                        catch (Exception e)
+                        {
+                            PurrLogger.LogError(
+                                $"{e.Message}\nWhile calling RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.\n{e.StackTrace}");
+                        }
+                    }
+                    else
+                        PurrLogger.LogError(
+                            $"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
+                }
+            }
+            
+            FreeStream(stream);
+        }
+        
         unsafe void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
             var stream = AllocStream(true);
@@ -476,8 +540,6 @@ namespace PurrNet.Modules
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }
-            // TODO: show this error if RPC was reliable ordered. otherwise, we cant assure this will arrive in time, sequence, etc so it isn't really an error
-            // else PurrLogger.LogError($"Failed to find identity with id {packet.networkId} in scene {packet.sceneId} while trying to call RPC with id {packet.rpcId}.");
             
             FreeStream(stream);
         }

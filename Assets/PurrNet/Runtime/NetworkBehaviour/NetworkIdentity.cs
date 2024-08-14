@@ -91,7 +91,7 @@ namespace PurrNet
 
         protected virtual void OnOwnerConnected(PlayerID ownerId, bool asServer) { }
 
-        private bool IsNotOwnerPredicate(PlayerID player)
+        public bool IsNotOwnerPredicate(PlayerID player)
         {
             return player != owner;
         }
