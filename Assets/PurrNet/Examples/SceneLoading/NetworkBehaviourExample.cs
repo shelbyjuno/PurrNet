@@ -1,13 +1,46 @@
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Logging;
 using UnityEngine;
 
-public class TestChild : NetworkModule
+public class SyncVar<T> : NetworkModule where T : struct
 {
-    [ServerRPC]
-    public void Test(string message)
+    private T _value;
+    
+    public T value
     {
-        Debug.Log("Targeted: " + message + " from test child");
+        get => _value;
+        set
+        {
+            if (!isServer)
+            {
+                PurrLogger.LogError("Only server can change the value of SyncVar.");
+                return;
+            }
+            
+            if (value.Equals(_value))
+                return;
+
+            _value = value;
+            Sync();
+        }
+    }
+    
+    public SyncVar(T initialValue = default)
+    {
+        _value = initialValue;
+    }
+
+    private void Sync()
+    {
+        SendValue(_value);
+    }
+    
+    [ObserversRPC]
+    private void SendValue(T newValue)
+    {
+        Debug.Log("Targeted: " + newValue + " from test child");
+        _value = newValue;
     }
 }
 
@@ -15,13 +48,11 @@ public class NetworkBehaviourExample : NetworkBehaviour
 {
     [SerializeField] private NetworkIdentity someRef;
 
-    private readonly TestChild _testChild = new ();
-    private readonly TestChild _testChild2 = new ();
+    private readonly SyncVar<int> _testChild = new (69);
 
     private void Awake()
     {
         _testChild.SetParent(this, 0);
-        _testChild2.SetParent(this, 1);
     }
 
     protected override void OnSpawned(bool asServer)
@@ -29,9 +60,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
         if (!asServer)
         {
             Debug.Log(_testChild.index, _testChild.parent);
-            Debug.Log(_testChild2.index, _testChild2.parent);
-            
-            _testChild2.Test("Hello");
         }
     }
 
@@ -41,6 +69,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                _testChild.value = Random.Range(0, 100);
                 ObserversRPCTest(Time.time, someRef);
             }
         }

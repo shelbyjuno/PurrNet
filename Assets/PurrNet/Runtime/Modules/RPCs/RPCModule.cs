@@ -326,6 +326,8 @@ namespace PurrNet.Modules
 
         public void AppendToBufferedRPCs(ChildRPCPacket packet, RPCSignature signature)
         {
+            if (!signature.bufferLast) return;
+
             PurrLogger.Log("TODO: Implement AppendToBufferedRPCs for ChildRPCPacket.");
         }
         

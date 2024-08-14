@@ -382,7 +382,37 @@ namespace PurrNet.Codegen
             for (var j = 0; j < vars.Count; j++)
                 code.Append(Instruction.Create(OpCodes.Ldloc, vars[j]));
 
-            code.Append(Instruction.Create(OpCodes.Call, originalMethod));
+            CallOriginalMethod(originalMethod, code);
+        }
+
+        private static void CallOriginalMethod(MethodDefinition originalMethod, ILProcessor code)
+        {
+            var declaringType = new GenericInstanceType(originalMethod.DeclaringType);
+
+            foreach (var t in originalMethod.DeclaringType.GenericParameters)
+                declaringType.GenericArguments.Add(t);
+
+            if (originalMethod.ContainsGenericParameter)
+            {
+                var methodToCall = new MethodReference(originalMethod.Name, originalMethod.ReturnType, declaringType)
+                {
+                    HasThis = originalMethod.HasThis,
+                    ExplicitThis = originalMethod.ExplicitThis,
+                    CallingConvention = originalMethod.CallingConvention
+                };
+
+                foreach (var parameter in originalMethod.Parameters)
+                {
+                    methodToCall.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
+                        parameter.ParameterType));
+                }
+
+                code.Append(Instruction.Create(OpCodes.Call, methodToCall));
+            }
+            else
+            {
+                code.Append(Instruction.Create(OpCodes.Call, originalMethod));
+            }
         }
 
         private static void HandleGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod,
@@ -568,6 +598,8 @@ namespace PurrNet.Codegen
             
             if (methodRpc.Signature.runLocally)
             {
+                // CallOriginalMethod(originalMethod, code);
+                
                 MethodReference callMethod = method;
                 
                 if (method.HasGenericParameters)

@@ -12,6 +12,28 @@ namespace PurrNet
         public NetworkIdentity parent { get; private set; }
 
         public byte index { get; private set; }
+        
+        public NetworkManager networkManager => parent.networkManager;
+        
+        public bool isSceneObject => parent.isSceneObject;
+        
+        public bool isOwner => parent.isOwner;
+        
+        public bool isClient => parent.isClient;
+
+        public bool isServer => parent.isServer;
+        
+        public bool isHost => parent.isHost;
+        
+        public bool isSpawned => parent.isSpawned;
+        
+        public bool hasOwner => parent.hasOwner;
+        
+        public bool hasConnectedOwner => parent.hasConnectedOwner;
+        
+        public PlayerID? localPlayer => parent.localPlayer;
+        
+        public PlayerID? owner => parent.owner;
 
         public void SetParent(NetworkIdentity p, byte i)
         {
