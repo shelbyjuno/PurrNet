@@ -52,8 +52,9 @@ namespace PurrNet
             if (_isController)
             {
                 // TODO: this is a hack to reset the object's kinematic state when it's the owner
-                if (_rb && _rb.isKinematic)
-                    _rb.isKinematic = false;
+                // TODO: Valentin, I hate you for this hack. I spent a while debugging it xD
+                //if (_rb && _rb.isKinematic)
+                //    _rb.isKinematic = false;
                 
                 if (isServer)
                      ReceiveTransform(_trs.position, _trs.rotation, _trs.localScale);

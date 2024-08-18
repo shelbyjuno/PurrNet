@@ -9,6 +9,7 @@ namespace PurrNet.Examples.BoxCarry
         [SerializeField] private Renderer renderer;
 
         private Rigidbody _rigidbody;
+        private readonly SyncVar<bool> _gettingCarried = new();
         
         private void Awake()
         {
@@ -31,7 +32,6 @@ namespace PurrNet.Examples.BoxCarry
             if (localPlayer == newOwner)
             {
                 renderer.material = ownerMaterial;
-                _rigidbody.isKinematic = false;
             }
             else
             {
@@ -46,17 +46,63 @@ namespace PurrNet.Examples.BoxCarry
                 return;
             
             GiveOwnership(playerPickUp.owner.Value);
+            transform.SetParent(playerPickUp.transform);
+            transform.localPosition = Vector3.up + Vector3.forward;
+            _rigidbody.isKinematic = true;
+            _gettingCarried.value = true;
+            
+            //TODO: This should be able to go directly to ObserversRPC from client, once logic is in place
+            BoxPickedUp_Server();
+        }
+
+        [ServerRPC]
+        private void BoxPickedUp_Server()
+        {
+            BoxPickedUp();
+        }
+        
+        [ObserversRPC(excludeOwner:true)]
+        private void BoxPickedUp()
+        {
+            if(!InstanceHandler.TryGetInstance<PlayerPickUp>(out var playerPickUp))
+                return;
+            
+            playerPickUp.BoxTaken(this);
+        }
+        
+        public void DropBox()
+        {
+            transform.SetParent(null);
+            _rigidbody.isKinematic = false;
+            _gettingCarried.value = false;
         }
 
         private void OnCollisionEnter(Collision other)
         {
-            if (!other.gameObject.TryGetComponent(out PlayerPickUp playerPickUp))
+            if (_gettingCarried.value)
                 return;
             
-            if (!playerPickUp.owner.HasValue)
-                return;
+            if (other.gameObject.TryGetComponent(out PlayerPickUp playerPickUp))
+            {
+                if (!playerPickUp.owner.HasValue)
+                    return;
+
+                if (playerPickUp.owner.Value == owner || playerPickUp.owner.Value != localPlayer)
+                    return;
             
-            GiveOwnership(playerPickUp.owner.Value);
+                GiveOwnership(localPlayer.Value);
+            }
+
+            if (other.gameObject.TryGetComponent(out Box box))
+            {
+                if (!box.owner.HasValue)
+                    return;
+                
+                if (box.owner.Value == owner || box.owner.Value != localPlayer)
+                    return;
+                
+                GiveOwnership(localPlayer.Value);
+            }
         }
     }
 }

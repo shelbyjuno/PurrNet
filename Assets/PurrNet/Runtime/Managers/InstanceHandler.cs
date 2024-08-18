@@ -76,5 +76,23 @@ namespace PurrNet
             
             return (T)instance;
         }
+        
+        /// <summary>
+        /// Try and get a registered instance
+        /// </summary>
+        /// <param name="instance">The instance of the type. Will be null if not successful</param>
+        /// <typeparam name="T">Type you're trying to get</typeparam>
+        /// <returns>Whether it successfully got the instance</returns>
+        public static bool TryGetInstance<T>(out T instance) where T : class
+        {
+            if (!_instances.TryGetValue(typeof(T), out var obj))
+            {
+                instance = null;
+                return false;
+            }
+
+            instance = (T)obj;
+            return true;
+        }
     }
 }
