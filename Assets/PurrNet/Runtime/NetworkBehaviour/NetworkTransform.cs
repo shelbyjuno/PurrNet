@@ -8,6 +8,8 @@ namespace PurrNet
 {
     public sealed class NetworkTransform : NetworkIdentity
     {
+        [SerializeField] private bool clientAuth = true;
+        
         Transform _lastValidParent;
         
         internal event Action<NetworkTransform> onParentChanged;
@@ -22,7 +24,7 @@ namespace PurrNet
         private Transform _trs;
         private Rigidbody _rb;
 
-        private bool _isController => hasConnectedOwner ? isOwner : isServer;
+        private bool _isController => hasConnectedOwner ? isOwner && clientAuth || !clientAuth && isServer : isServer;
 
         private void Awake()
         {
@@ -55,9 +57,14 @@ namespace PurrNet
                 // TODO: Valentin, I hate you for this hack. I spent a while debugging it xD
                 //if (_rb && _rb.isKinematic)
                 //    _rb.isKinematic = false;
-                
+
                 if (isServer)
-                     ReceiveTransform(_trs.position, _trs.rotation, _trs.localScale);
+                {
+                    if(_isController)
+                        ReceiveTransformServerAuth(_trs.position, _trs.rotation, _trs.localScale);
+                    else
+                        ReceiveTransform(_trs.position, _trs.rotation, _trs.localScale);
+                }
                 else SendTransform(_trs.position, _trs.rotation, _trs.localScale);
             }
         }
@@ -67,8 +74,9 @@ namespace PurrNet
             if (!_isController)
             {
                 // TODO: this is a hack to prevent the object from moving when it's not the owner
-                if (_rb && !_rb.isKinematic)
-                    _rb.isKinematic = true;
+                // TODO: Murder Valentin for these hacks that causes me extra debugging time
+                //if (_rb && !_rb.isKinematic)
+                //    _rb.isKinematic = true;
                 
                 ApplyLerpedPosition();
             }
@@ -87,11 +95,25 @@ namespace PurrNet
         [ServerRPC(Channel.UnreliableSequenced)]
         private void SendTransform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
-            ReceiveTransform(position, rotation, scale);
+            if(_isController)
+                ReceiveTransformServerAuth(position, rotation, scale);
+            else
+                ReceiveTransform(position, rotation, scale);
         }
         
         [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: true)]
         private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            ReceiveTransform_Internal(position, rotation, scale);
+        }
+        
+        [ObserversRPC(Channel.UnreliableSequenced)]
+        private void ReceiveTransformServerAuth(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            ReceiveTransform_Internal(position, rotation, scale);
+        }
+        
+        private void ReceiveTransform_Internal(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             if (_isFirstTransform)
             {
