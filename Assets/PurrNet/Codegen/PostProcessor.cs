@@ -886,6 +886,9 @@ namespace PurrNet.Codegen
                             for (var i = 0; i < type.Fields.Count; i++)
                             {
                                 var field = type.Fields[i];
+
+                                if (field.IsStatic) continue;
+
                                 var fieldType = field.FieldType.Resolve();
                                 var isNetworkClass = fieldType.FullName == classFullName || InheritsFrom(fieldType, classFullName);
 
@@ -1052,13 +1055,26 @@ namespace PurrNet.Codegen
             for (int i = 0; i < networkFields.Count; i++)
             {
                 FieldDefinition field = networkFields[i];
-                
+
+                var nop = Instruction.Create(OpCodes.Nop);
+                var nop2 = Instruction.Create(OpCodes.Nop);
+
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldfld, field));
-             
+                code.Append(Instruction.Create(OpCodes.Dup));
+
+                code.Append(Instruction.Create(OpCodes.Ldnull));
+                code.Append(Instruction.Create(OpCodes.Ceq));
+                code.Append(Instruction.Create(OpCodes.Brtrue, nop));
+
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldc_I4, i));
                 code.Append(Instruction.Create(OpCodes.Call, setparentmethod));
+                code.Append(Instruction.Create(OpCodes.Br, nop2));
+
+                code.Append(nop);
+                code.Append(Instruction.Create(OpCodes.Pop));
+                code.Append(nop2);
             }
 
             code.Append(Instruction.Create(OpCodes.Ret));
