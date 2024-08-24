@@ -1,3 +1,4 @@
+using System;
 using JetBrains.Annotations;
 using PurrNet;
 using PurrNet.Logging;
@@ -39,7 +40,6 @@ public class SyncVar<T> : NetworkModule where T : struct
     [ObserversRPC]
     private void SendValue(T newValue)
     {
-        Debug.Log("Targeted: " + newValue + " from test child");
         _value = newValue;
     }
 
@@ -60,8 +60,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     private void Awake()
     {
-        _testChild.SetParent(this, 0);
-
         //SyncVar<int>.LetServerKnow();
     }
 
@@ -79,7 +77,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                _testChild.value = Random.Range(0, 100);
+                _testChild.value = UnityEngine.Random.Range(0, 100);
                 // ObserversRPCTest(Time.time, someRef);
             }
         }

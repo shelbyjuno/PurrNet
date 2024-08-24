@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -11,7 +10,7 @@ namespace PurrNet
     {
         public NetworkIdentity parent { get; private set; }
 
-        public byte index { get; private set; }
+        public byte index { get; private set; } = 255;
         
         public NetworkManager networkManager => parent.networkManager;
         
@@ -35,6 +34,7 @@ namespace PurrNet
         
         public PlayerID? owner => parent.owner;
 
+        [UsedByIL]
         public void SetParent(NetworkIdentity p, byte i)
         {
             parent = p;

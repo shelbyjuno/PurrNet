@@ -898,6 +898,11 @@ namespace PurrNet.Codegen
                             {
                                 HandleNetworkField(module, i, type, _networkFields[i]);
                             }
+
+                            if (_networkFields.Count > 0)
+                            {
+                                CreateSyncVarInitMethod(module, type, _networkFields);
+                            }
                         }
 
                         for (var i = 0; i < type.Methods.Count; i++)
@@ -1025,6 +1030,38 @@ namespace PurrNet.Codegen
                 
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, messages);
             }
+        }
+
+        private void CreateSyncVarInitMethod(ModuleDefinition module, TypeDefinition type, List<FieldDefinition> networkFields)
+        {
+            var newMethod = new MethodDefinition($"__{type.Name}_CodeGen_Initialize", 
+                MethodAttributes.Private | MethodAttributes.HideBySig, module.TypeSystem.Void);
+
+            var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
+            var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
+            newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
+
+            type.Methods.Add(newMethod);
+            
+            newMethod.Body.InitLocals = true;
+            
+            var code = newMethod.Body.GetILProcessor();
+            var setparentmethod = module.GetTypeDefinition<NetworkModule>().Import(module)
+            .GetMethod("SetParent").Import(module);
+
+            for (int i = 0; i < networkFields.Count; i++)
+            {
+                FieldDefinition field = networkFields[i];
+                
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Ldfld, field));
+             
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Ldc_I4, i));
+                code.Append(Instruction.Create(OpCodes.Call, setparentmethod));
+            }
+
+            code.Append(Instruction.Create(OpCodes.Ret));
         }
 
         private static void HandleNetworkField(ModuleDefinition module, int offset, TypeDefinition type, FieldDefinition networkField)

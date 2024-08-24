@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Utils;
@@ -123,6 +124,19 @@ namespace PurrNet
                 _lastEnabledState = enabled;
             }
         }
+
+        private void CallInitMethods()
+        {
+            var type = GetType();
+            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic);
+
+            for (int i = 0; i < methods.Length; i++)
+            {
+                var m = methods[i];
+                if (m.Name.EndsWith("_CodeGen_Initialize"))
+                    m.Invoke(this, Array.Empty<object>());
+            }
+        }
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, NetworkID identityId, bool asServer)
         {
@@ -151,6 +165,8 @@ namespace PurrNet
                 _events.onActivatedChanged += OnActivated;
                 _events.Register(this);
             }
+
+            CallInitMethods();
         }
 
         private bool _ignoreNextDestroy;
