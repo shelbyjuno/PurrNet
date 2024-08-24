@@ -9,6 +9,9 @@ namespace PurrNet
     public sealed class NetworkTransform : NetworkIdentity
     {
         [SerializeField] private bool clientAuth = true;
+        [SerializeField] private bool syncPosition = true;
+        [SerializeField] private bool syncRotation = true;
+        [SerializeField] private bool syncScale = true;
         
         Transform _lastValidParent;
         
@@ -46,26 +49,21 @@ namespace PurrNet
         protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
         {
             if (asServer)
-                SendLatestTranform(ownerId, _trs.position, _trs.rotation, _trs.localScale);
+                SendLatestTransform(ownerId);
         }
 
         private void FixedUpdate()
         {
             if (_isController)
             {
-                // TODO: this is a hack to reset the object's kinematic state when it's the owner
-                // TODO: Valentin, I hate you for this hack. I spent a while debugging it xD
-                //if (_rb && _rb.isKinematic)
-                //    _rb.isKinematic = false;
-
                 if (isServer)
                 {
-                    if(_isController)
-                        ReceiveTransformServerAuth(_trs.position, _trs.rotation, _trs.localScale);
+                    if (_isController)
+                        ReceiveTransformServerAuth(GetCurrentTransformData());
                     else
-                        ReceiveTransform(_trs.position, _trs.rotation, _trs.localScale);
+                        ReceiveTransform(GetCurrentTransformData());
                 }
-                else SendTransform(_trs.position, _trs.rotation, _trs.localScale);
+                else SendTransform(GetCurrentTransformData());
             }
         }
         
@@ -73,72 +71,92 @@ namespace PurrNet
         {
             if (!_isController)
             {
-                // TODO: this is a hack to prevent the object from moving when it's not the owner
-                // TODO: Murder Valentin for these hacks that causes me extra debugging time
-                //if (_rb && !_rb.isKinematic)
-                //    _rb.isKinematic = true;
-                
                 ApplyLerpedPosition();
             }
         }
 
         private void ApplyLerpedPosition()
         {
-            _trs.SetPositionAndRotation(
-                _position.Advance(Time.deltaTime),
-                _rotation.Advance(Time.deltaTime)
-            );
+            if (syncPosition)
+                _trs.position = _position.Advance(Time.deltaTime);
+            
+            if (syncRotation)
+                _trs.rotation = _rotation.Advance(Time.deltaTime);
+            
+            if (syncScale)
+                _trs.localScale = _scale.Advance(Time.deltaTime);
+        }
 
-            _trs.localScale = _scale.Advance(Time.deltaTime);
+        private TransformData GetCurrentTransformData()
+        {
+            return new TransformData
+            {
+                Position = syncPosition ? _trs.position : null,
+                Rotation = syncRotation ? _trs.rotation : null,
+                Scale = syncScale ? _trs.localScale : null
+            };
         }
         
         [ServerRPC(Channel.UnreliableSequenced)]
-        private void SendTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        private void SendTransform(TransformData data)
         {
-            if(_isController)
-                ReceiveTransformServerAuth(position, rotation, scale);
+            if (_isController)
+                ReceiveTransformServerAuth(data);
             else
-                ReceiveTransform(position, rotation, scale);
+                ReceiveTransform(data);
         }
         
         [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: true)]
-        private void ReceiveTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        private void ReceiveTransform(TransformData data)
         {
-            ReceiveTransform_Internal(position, rotation, scale);
+            ReceiveTransform_Internal(data);
         }
         
         [ObserversRPC(Channel.UnreliableSequenced)]
-        private void ReceiveTransformServerAuth(Vector3 position, Quaternion rotation, Vector3 scale)
+        private void ReceiveTransformServerAuth(TransformData data)
         {
-            ReceiveTransform_Internal(position, rotation, scale);
+            ReceiveTransform_Internal(data);
         }
         
-        private void ReceiveTransform_Internal(Vector3 position, Quaternion rotation, Vector3 scale)
+        private void ReceiveTransform_Internal(TransformData data)
         {
             if (_isFirstTransform)
             {
                 _isFirstTransform = false;
-                _position.Teleport(position);
-                _rotation.Teleport(rotation);
-                _scale.Teleport(scale);
-
+                ApplyTransformData(data, true);
                 ApplyLerpedPosition();
             }
             else
             {
-                _position.Add(position);
-                _rotation.Add(rotation);
-                _scale.Add(scale);
+                ApplyTransformData(data, false);
+            }
+        }
+
+        private void ApplyTransformData(TransformData data, bool teleport)
+        {
+            if (data.Position.HasValue)
+            {
+                if (teleport) _position.Teleport(data.Position.Value);
+                else _position.Add(data.Position.Value);
+            }
+
+            if (data.Rotation.HasValue)
+            {
+                if (teleport) _rotation.Teleport(data.Rotation.Value);
+                else _rotation.Add(data.Rotation.Value);
+            }
+
+            if (data.Scale.HasValue)
+            {
+                if (teleport) _scale.Teleport(data.Scale.Value);
+                else _scale.Add(data.Scale.Value);
             }
         }
 
         [TargetRPC]
-        private void SendLatestTranform([UsedImplicitly] PlayerID player, Vector3 position, Quaternion rotation, Vector3 scale)
+        private void SendLatestTransform([UsedImplicitly] PlayerID player)
         {
-            _position.Teleport(position);
-            _rotation.Teleport(rotation);
-            _scale.Teleport(scale);
-
+            ApplyTransformData(GetCurrentTransformData(), true);
             ApplyLerpedPosition();
         }
 
@@ -172,5 +190,13 @@ namespace PurrNet
         {
             _isResettingParent = false;
         }
+    }
+
+    [Serializable]
+    public struct TransformData
+    {
+        public Vector3? Position;
+        public Quaternion? Rotation;
+        public Vector3? Scale;
     }
 }
