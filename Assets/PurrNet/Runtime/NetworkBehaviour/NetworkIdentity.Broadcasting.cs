@@ -36,7 +36,7 @@ namespace PurrNet
         internal static readonly Dictionary<InstanceGenericKey, MethodInfo> genericMethods = new ();
         
         [UsedByIL]
-        protected static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
+        public static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
         {
             uint hash = 0;
 

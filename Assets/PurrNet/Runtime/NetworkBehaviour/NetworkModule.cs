@@ -108,7 +108,7 @@ namespace PurrNet
         
         [UsedByIL]
         protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
-        { 
+        {
             var key = new NetworkIdentity.InstanceGenericKey(methodName, GetType(), rpcHeader.types);
             
             if (!NetworkIdentity.genericMethods.TryGetValue(key, out var gmethod))

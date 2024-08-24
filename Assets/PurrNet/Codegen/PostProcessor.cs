@@ -269,8 +269,8 @@ namespace PurrNet.Codegen
                 try
                 {
                     if (originalRpcs[i].originalMethod.HasGenericParameters)
-                         HandleGenericRPC(module, originalRpcs[i], newMethod, stream, info, isNetworkClass);
-                    else HandleNonGenericRPC(module, originalRpcs[i], newMethod, stream, info);
+                         HandleGenericRPCReceiver(module, originalRpcs[i], newMethod, stream, info, isNetworkClass);
+                    else HandleNonGenericRPCReceiver(module, originalRpcs[i], newMethod, stream, info);
                 }
                 catch (Exception e)
                 {
@@ -316,7 +316,7 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Brfalse, end));
         }
 
-        private static void HandleNonGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod, ParameterDefinition stream, ParameterDefinition info)
+        private static void HandleNonGenericRPCReceiver(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod, ParameterDefinition stream, ParameterDefinition info)
         {
             var code = newMethod.Body.GetILProcessor();
             var originalMethod = rpcMethod.originalMethod;
@@ -382,40 +382,44 @@ namespace PurrNet.Codegen
             for (var j = 0; j < vars.Count; j++)
                 code.Append(Instruction.Create(OpCodes.Ldloc, vars[j]));
 
-            CallOriginalMethod(originalMethod, code);
+            code.Append(Instruction.Create(OpCodes.Call, GetOriginalMethod(originalMethod)));
         }
 
-        private static void CallOriginalMethod(MethodDefinition originalMethod, ILProcessor code)
+        private static MethodReference GetOriginalMethod(MethodReference originalMethod)
         {
+            if (!originalMethod.ContainsGenericParameter)
+                return originalMethod;
+
             var declaringType = new GenericInstanceType(originalMethod.DeclaringType);
 
             foreach (var t in originalMethod.DeclaringType.GenericParameters)
                 declaringType.GenericArguments.Add(t);
 
-            if (originalMethod.ContainsGenericParameter)
+            var methodToCall = new MethodReference(
+                originalMethod.Name,
+                originalMethod.ReturnType,
+                declaringType)
             {
-                var methodToCall = new MethodReference(originalMethod.Name, originalMethod.ReturnType, declaringType)
-                {
-                    HasThis = originalMethod.HasThis,
-                    ExplicitThis = originalMethod.ExplicitThis,
-                    CallingConvention = originalMethod.CallingConvention
-                };
+                HasThis = originalMethod.HasThis,
+                ExplicitThis = originalMethod.ExplicitThis,
+                CallingConvention = originalMethod.CallingConvention
+            };
 
-                foreach (var parameter in originalMethod.Parameters)
-                {
-                    methodToCall.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
-                        parameter.ParameterType));
-                }
-
-                code.Append(Instruction.Create(OpCodes.Call, methodToCall));
-            }
-            else
+            foreach (var parameter in originalMethod.Parameters)
             {
-                code.Append(Instruction.Create(OpCodes.Call, originalMethod));
+                methodToCall.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
+                    parameter.ParameterType));
             }
+
+            foreach (var parameter in originalMethod.GenericParameters)
+            {
+                methodToCall.GenericParameters.Add(new GenericParameter(parameter.Name, parameter.Owner));
+            }
+
+            return methodToCall;
         }
 
-        private static void HandleGenericRPC(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod,
+        private static void HandleGenericRPCReceiver(ModuleDefinition module, RPCMethod rpcMethod, MethodDefinition newMethod,
             ParameterDefinition stream, ParameterDefinition info, bool isNetworkClass)
         {
             var streamType = module.GetTypeDefinition<NetworkStream>();
@@ -497,10 +501,11 @@ namespace PurrNet.Codegen
                     continue;
                 }
 
-                if (param.ParameterType.IsGenericParameter)
-                {
-                    var genericIdx = originalMethod.GenericParameters.IndexOf((GenericParameter)param.ParameterType);
+                var genericIdx = param.ParameterType.IsGenericParameter ? 
+                    originalMethod.GenericParameters.IndexOf((GenericParameter)param.ParameterType) : -1;
 
+                if (genericIdx != -1)
+                {
                     code.Append(Instruction.Create(OpCodes.Ldloca, headerValue));
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, genericIdx));
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, p));
@@ -551,7 +556,7 @@ namespace PurrNet.Codegen
             
             if (methodRpc.Signature.isStatic)
                 attributes |= MethodAttributes.Static;
-            
+
             var newMethod = new MethodDefinition(ogName, attributes, method.ReturnType);
             
             foreach (var t in method.GenericParameters)
@@ -559,7 +564,8 @@ namespace PurrNet.Codegen
             
             foreach (var param in method.CustomAttributes)
                 newMethod.CustomAttributes.Add(param);
-            
+
+            newMethod.CallingConvention = method.CallingConvention;
             method.CustomAttributes.Clear();
             
             foreach (var param in method.Parameters)
@@ -598,20 +604,21 @@ namespace PurrNet.Codegen
             
             if (methodRpc.Signature.runLocally)
             {
-                // CallOriginalMethod(originalMethod, code);
-                
-                MethodReference callMethod = method;
+                MethodReference callMethod = GetOriginalMethod(method);
                 
                 if (method.HasGenericParameters)
                 {
-                    var genericInstanceMethod = new GenericInstanceMethod(method);
-                    
+                    var genericInstanceMethod = new GenericInstanceMethod(callMethod);
+
                     for (var i = 0; i < method.GenericParameters.Count; i++)
-                        genericInstanceMethod.GenericArguments.Add(newMethod.GenericParameters[i]);
-                    
+                    {
+                        var gp = method.GenericParameters[i];
+                        genericInstanceMethod.GenericArguments.Add(gp);
+                    }
+
                     callMethod = genericInstanceMethod;
                 }
-                
+
                 if (!methodRpc.Signature.isStatic)
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
 
@@ -791,19 +798,36 @@ namespace PurrNet.Codegen
                         if (instruction.OpCode == OpCodes.Call &&
                             instruction.Operand is MethodReference methodReference && methodReference.GetElementMethod() == old)
                         {
+                            var newRef = new MethodReference(@new.Name, @new.ReturnType, 
+                                methodReference.DeclaringType)
+                            {
+                                HasThis = methodReference.HasThis,
+                                ExplicitThis = methodReference.ExplicitThis,
+                                CallingConvention = methodReference.CallingConvention,
+                            };
+
+                            foreach (var parameter in methodReference.Parameters)
+                            {
+                                newRef.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
+                                    parameter.ParameterType));
+                            }
+
+                            foreach (var parameter in methodReference.GenericParameters)
+                            {
+                                newRef.GenericParameters.Add(new GenericParameter(parameter.Name, parameter.Owner));
+                            }
+
                             if (methodReference is GenericInstanceMethod genericInstanceMethod)
                             {
-                                var newGenericInstanceMethod = new GenericInstanceMethod(@new);
+                                var newGenericInstanceMethod = new GenericInstanceMethod(newRef);
         
                                 foreach (var argument in genericInstanceMethod.GenericArguments)
                                     newGenericInstanceMethod.GenericArguments.Add(argument);
 
-                                processor.Replace(instruction, Instruction.Create(OpCodes.Call, newGenericInstanceMethod));
+                                newRef = newGenericInstanceMethod;
                             }
-                            else
-                            {
-                                processor.Replace(instruction, Instruction.Create(OpCodes.Call, @new));
-                            }
+
+                            processor.Replace(instruction, Instruction.Create(OpCodes.Call, newRef));
                         }
                     }
                 }

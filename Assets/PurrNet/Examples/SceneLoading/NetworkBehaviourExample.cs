@@ -42,6 +42,17 @@ public class SyncVar<T> : NetworkModule where T : struct
         Debug.Log("Targeted: " + newValue + " from test child");
         _value = newValue;
     }
+
+    [ServerRPC(runLocally: true)]
+    public static void LetServerKnow()
+    {
+        Debug.Log("SERVER " + typeof(T).FullName);
+    }
+
+    public static void LetServerKnowO()
+    {
+        LetServerKnow();
+    }
 }
 
 public class NetworkBehaviourExample : NetworkBehaviour
@@ -53,6 +64,8 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private void Awake()
     {
         _testChild.SetParent(this, 0);
+
+        //SyncVar<int>.LetServerKnow();
     }
 
     protected override void OnSpawned(bool asServer)
@@ -70,7 +83,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 _testChild.value = Random.Range(0, 100);
-                ObserversRPCTest(Time.time, someRef);
+                // ObserversRPCTest(Time.time, someRef);
             }
         }
     }
