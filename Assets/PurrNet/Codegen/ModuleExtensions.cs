@@ -7,6 +7,31 @@ namespace PurrNet.Codegen
 {
     public static class ModuleExtensions
     {
+        public static TypeReference GetTypeReference(this ModuleDefinition module, Type type)
+        {
+            switch (type.FullName)
+            {
+                case "System.Int32":
+                    return module.TypeSystem.Int32;
+                case "System.Single":
+                    return module.TypeSystem.Single;
+                case "System.String":
+                    return module.TypeSystem.String;
+                case "System.Boolean":
+                    return module.TypeSystem.Boolean;
+                case "System.Void":
+                    return module.TypeSystem.Void;
+                default:
+                    for (var i = 0; i < module.Types.Count; i++)
+                    {
+                        if (module.Types[i].FullName == type.FullName)
+                            return module.Types[i];
+                    }
+
+                    return module.ImportReference(type);
+            }
+        }
+
         public static TypeReference GetTypeReference<T>(this ModuleDefinition module)
         {
             var type = typeof(T);
@@ -40,7 +65,12 @@ namespace PurrNet.Codegen
         {
             return GetTypeReference<T>(module).Resolve();
         }
-        
+
+        public static TypeDefinition GetTypeDefinition(this ModuleDefinition module, Type type)
+        {
+            return GetTypeReference(module, type).Resolve();
+        }
+
         public static TypeReference Import(this ModuleDefinition module, TypeReference member)
         {
             return module.ImportReference(member);

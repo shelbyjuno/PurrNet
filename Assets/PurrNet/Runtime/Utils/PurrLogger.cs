@@ -1,3 +1,4 @@
+using PurrNet.Modules;
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -8,6 +9,12 @@ namespace PurrNet.Logging
 {
     public static class PurrLogger
     {
+        [UsedByIL]
+        public static void LogSimpleError(string message, Object reference)
+        {
+            Debug.LogError(message, reference);
+        }
+
         public static void Log(string message, Object reference = null, LogStyle logStyle = default, [CallerFilePath] string filePath = "")
         {
             LogMessage(message, reference, logStyle, LogType.Log, filePath);

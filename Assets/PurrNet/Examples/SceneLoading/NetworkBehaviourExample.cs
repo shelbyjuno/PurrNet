@@ -47,15 +47,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
 {
     [SerializeField] private NetworkIdentity someRef;
 
-    private readonly SyncVar<int> _testChild = new (69);
-
-    protected override void OnSpawned(bool asServer)
-    {
-        if (!asServer)
-        {
-            Debug.Log(_testChild.index, _testChild.parent);
-        }
-    }
+    private readonly SyncVar<int> _testChild;// = new (69);
 
     private void Update()
     {

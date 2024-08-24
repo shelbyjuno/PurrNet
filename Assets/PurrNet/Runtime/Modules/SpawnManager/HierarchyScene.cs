@@ -944,7 +944,16 @@ namespace PurrNet.Modules
             if (spawnedThisFrameCount > 0)
             {
                 for (int i = 0; i < spawnedThisFrameCount; i++)
-                    _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
+                {
+                    try
+                    {
+                        _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
                 _spawnedThisFrame.Clear();
             }
         }

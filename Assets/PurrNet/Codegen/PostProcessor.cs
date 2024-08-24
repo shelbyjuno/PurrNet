@@ -6,6 +6,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
@@ -1050,7 +1051,10 @@ namespace PurrNet.Codegen
             
             var code = newMethod.Body.GetILProcessor();
             var setparentmethod = module.GetTypeDefinition<NetworkModule>().Import(module)
-            .GetMethod("SetParent").Import(module);
+                .GetMethod("SetParent").Import(module);
+
+            var simpleError = module.GetTypeDefinition(typeof(PurrLogger)).Import(module)
+                .GetMethod("LogSimpleError").Import(module);
 
             for (int i = 0; i < networkFields.Count; i++)
             {
@@ -1073,7 +1077,13 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Br, nop2));
 
                 code.Append(nop);
+                
                 code.Append(Instruction.Create(OpCodes.Pop));
+                code.Append(Instruction.Create(OpCodes.Ldstr, $"[NetworkModule] Field '{field.Name}' of type '{field.FieldType.Name}' was NULL when identity got spawned."));
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Call, simpleError));
+
+
                 code.Append(nop2);
             }
 
