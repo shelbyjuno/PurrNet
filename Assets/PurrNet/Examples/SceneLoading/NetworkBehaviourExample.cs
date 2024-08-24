@@ -43,16 +43,13 @@ public class SyncVar<T> : NetworkModule where T : struct
         _value = newValue;
     }
 
+/*
     [ServerRPC(runLocally: true)]
     public static void LetServerKnow()
     {
         Debug.Log("SERVER " + typeof(T).FullName);
     }
-
-    public static void LetServerKnowO()
-    {
-        LetServerKnow();
-    }
+*/
 }
 
 public class NetworkBehaviourExample : NetworkBehaviour
