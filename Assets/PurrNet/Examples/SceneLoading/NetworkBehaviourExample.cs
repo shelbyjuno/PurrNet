@@ -41,14 +41,6 @@ public class SyncVar<T> : NetworkModule where T : struct
     {
         _value = newValue;
     }
-
-/*
-    [ServerRPC(runLocally: true)]
-    public static void LetServerKnow()
-    {
-        Debug.Log("SERVER " + typeof(T).FullName);
-    }
-*/
 }
 
 public class NetworkBehaviourExample : NetworkBehaviour
@@ -56,11 +48,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [SerializeField] private NetworkIdentity someRef;
 
     private readonly SyncVar<int> _testChild = new (69);
-
-    private void Awake()
-    {
-        //SyncVar<int>.LetServerKnow();
-    }
 
     protected override void OnSpawned(bool asServer)
     {

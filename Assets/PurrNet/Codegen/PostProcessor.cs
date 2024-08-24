@@ -387,7 +387,7 @@ namespace PurrNet.Codegen
 
         private static MethodReference GetOriginalMethod(MethodReference originalMethod)
         {
-            if (!originalMethod.ContainsGenericParameter)
+            if (!originalMethod.DeclaringType.HasGenericParameters)
                 return originalMethod;
 
             var declaringType = new GenericInstanceType(originalMethod.DeclaringType);

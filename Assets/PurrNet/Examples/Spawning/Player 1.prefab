@@ -327,6 +327,9 @@ MonoBehaviour:
       overridden: 0
       value: 0
   clientAuth: 1
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 1
 --- !u!1 &3706820735218235372
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,6 +491,9 @@ MonoBehaviour:
       overridden: 0
       value: 0
   clientAuth: 1
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 1
 --- !u!1 &7964827295588954381
 GameObject:
   m_ObjectHideFlags: 0
@@ -649,3 +655,6 @@ MonoBehaviour:
       overridden: 0
       value: 0
   clientAuth: 1
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 1
