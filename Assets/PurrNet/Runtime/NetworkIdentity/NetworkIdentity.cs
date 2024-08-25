@@ -244,8 +244,16 @@ namespace PurrNet
         {
             OnSpawned(asServer);
 
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnSpawn(asServer);
+
             if (_spawnedCount == 0)
+            {
                 OnSpawned();
+
+                for (int i = 0; i < _modules.Count; i++)
+                    _modules[i].OnSpawn();
+            }
             
             _spawnedCount++;
         }
@@ -254,6 +262,9 @@ namespace PurrNet
         {
             OnDespawned(asServer);
 
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnDespawned(asServer);
+
             if (asServer)
                  idServer = null;
             else idClient = null;
@@ -261,7 +272,12 @@ namespace PurrNet
             _spawnedCount--;
 
             if (_spawnedCount == 0)
+            {
                 OnDespawned();
+
+                for (int i = 0; i < _modules.Count; i++)
+                    _modules[i].OnDespawned();
+            }
         }
 
         internal void TriggerOnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) 

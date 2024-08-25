@@ -34,6 +34,14 @@ namespace PurrNet
         
         public PlayerID? owner => parent.owner;
 
+        public virtual void OnSpawn() { }
+
+        public virtual void OnSpawn(bool asServer) { }
+
+        public virtual void OnDespawned() { }
+        
+        public virtual void OnDespawned(bool asServer) { }
+
         [UsedByIL]
         public void SetParent(NetworkIdentity p, byte i)
         {

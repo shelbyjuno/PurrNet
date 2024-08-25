@@ -25,7 +25,17 @@ public class SyncVar<T> : NetworkModule where T : struct
             Sync();
         }
     }
-    
+
+    public override void OnSpawn()
+    {
+        PurrLogger.Log($"SyncVar {index} spawned.");
+    }
+
+    public override void OnDespawned()
+    {
+        PurrLogger.Log($"SyncVar {index} despawned.");
+    }
+
     public SyncVar(T initialValue = default)
     {
         _value = initialValue;
@@ -48,7 +58,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [SerializeField] private NetworkIdentity someRef;
 
     private SyncVar<int> _testChild;
-    
+
     private SyncVar<int> _testChild2 = new (70);
 
     protected override void OnPreModulesInitialize()
