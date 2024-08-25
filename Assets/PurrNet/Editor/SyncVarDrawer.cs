@@ -26,7 +26,7 @@ namespace PurrNet.Editor
             }
             else
             {
-                GUI.enabled = false;
+                GUI.enabled = !Application.isPlaying;
                 EditorGUI.PropertyField(position, value, GUIContent.none);
                 GUI.enabled = true;
             }

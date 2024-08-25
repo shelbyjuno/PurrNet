@@ -202,6 +202,12 @@ MonoBehaviour:
       overridden: 0
       value: 0
   someRef: {fileID: 2113724485}
+  _testChild:
+    _value: -69
+  _testChild2:
+    _value: -69
+  _testChild3:
+    _value: 12
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

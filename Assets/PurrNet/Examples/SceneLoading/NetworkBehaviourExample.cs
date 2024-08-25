@@ -12,6 +12,9 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [SerializeField]
     private SyncVar<int> _testChild2 = new (70);
 
+    [SerializeField]
+    private SyncVar<int> _testChild3;
+
     protected override void OnPreModulesInitialize()
     {
         _testChild = new SyncVar<int>(69);
@@ -25,6 +28,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
             {
                 _testChild.value = Random.Range(0, 100);
                 _testChild2.value = Random.Range(0, 100);
+                _testChild3.value = Random.Range(0, 100);
                 // ObserversRPCTest(Time.time, someRef);
             }
         }
