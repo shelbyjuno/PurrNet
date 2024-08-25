@@ -1,3 +1,4 @@
+using UnityEngine;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
@@ -15,7 +16,9 @@ namespace PurrNet
         private bool _isDirty;
 
         private int _ticksToSync;
-        
+
+        private readonly float _sendIntervalInSeconds;
+
         public T value
         {
             get => _value;
@@ -46,6 +49,8 @@ namespace PurrNet
             _tickManager.onTick -= OnTick;
         }
 
+        private float _lastSendTime;
+
         private void OnTick()
         {
             if (_isDirty)
@@ -54,17 +59,24 @@ namespace PurrNet
                 _isDirty = false;
             }
 
+            float timeSinceLastSend = Time.time - _lastSendTime;
+
+            if (timeSinceLastSend < _sendIntervalInSeconds)
+                return;
+
             if (_ticksToSync > 0)
             {
-            SendValue(_value);
+                SendValue(_value);
+                _lastSendTime = Time.time;
                 _ticksToSync--;
             }
         }
 
 
-        public SyncVar(T initialValue = default)
+        public SyncVar(T initialValue = default, float sendIntervalInSeconds = 0f)
         {
             _value = initialValue;
+            _sendIntervalInSeconds = sendIntervalInSeconds;
         }
 
         [ObserversRPC(Channel.UnreliableSequenced)]
