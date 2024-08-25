@@ -73,6 +73,8 @@ namespace PurrNet
 
         internal PlayerID? GetOwner(bool asServer) => asServer ? internalOwnerServer : internalOwnerClient;
 
+        internal bool IsSpawned(bool asServer) => asServer ? idServer.HasValue : idClient.HasValue;
+
         protected virtual void OnSpawned() { }
         
         protected virtual void OnDespawned() { }
@@ -260,11 +262,13 @@ namespace PurrNet
 
         internal void TriggetDespawnEvent(bool asServer)
         {
+            if (!IsSpawned(asServer)) return;
+
             OnDespawned(asServer);
 
             for (int i = 0; i < _modules.Count; i++)
                 _modules[i].OnDespawned(asServer);
-
+            
             if (asServer)
                  idServer = null;
             else idClient = null;
@@ -277,6 +281,8 @@ namespace PurrNet
 
                 for (int i = 0; i < _modules.Count; i++)
                     _modules[i].OnDespawned();
+
+                _modules.Clear();
             }
         }
 

@@ -41,7 +41,7 @@ namespace PurrNet.Modules
         public event Action<NetworkIdentity> onIdentityAdded;
         
         private readonly SceneID _sceneID;
-        private bool _asServer;
+        private readonly bool _asServer;
         private bool _isReady;
 
         // the id of the first network identity in the scene

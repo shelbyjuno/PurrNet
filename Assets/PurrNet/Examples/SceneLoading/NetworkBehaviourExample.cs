@@ -26,16 +26,6 @@ public class SyncVar<T> : NetworkModule where T : struct
         }
     }
 
-    public override void OnSpawn()
-    {
-        PurrLogger.Log($"SyncVar {index} spawned.");
-    }
-
-    public override void OnDespawned()
-    {
-        PurrLogger.Log($"SyncVar {index} despawned.");
-    }
-
     public SyncVar(T initialValue = default)
     {
         _value = initialValue;
