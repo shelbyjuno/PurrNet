@@ -1,47 +1,6 @@
 using JetBrains.Annotations;
 using PurrNet;
-using PurrNet.Logging;
 using UnityEngine;
-
-public class SyncVar<T> : NetworkModule where T : struct
-{
-    private T _value;
-    
-    public T value
-    {
-        get => _value;
-        set
-        {
-            if (!isServer)
-            {
-                PurrLogger.LogError("Only server can change the value of SyncVar.");
-                return;
-            }
-            
-            if (value.Equals(_value))
-                return;
-
-            _value = value;
-            Sync();
-        }
-    }
-
-    public SyncVar(T initialValue = default)
-    {
-        _value = initialValue;
-    }
-
-    private void Sync()
-    {
-        SendValue(_value);
-    }
-    
-    [ObserversRPC]
-    private void SendValue(T newValue)
-    {
-        _value = newValue;
-    }
-}
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
