@@ -63,6 +63,19 @@ namespace PurrNet.Modules
                 _bufferedRpcsKeys.Remove(data.rpcid);
                 _bufferedRpcsDatas.RemoveAt(i--);
             }
+
+            for (int i = 0; i < _bufferedChildRpcsDatas.Count; i++)
+            {
+                var data = _bufferedChildRpcsDatas[i];
+
+                if (data.rpcid.sceneId != identity.sceneId) continue;
+                if (data.rpcid.networkId != identity.id) continue;
+
+                FreeStream(data.stream);
+
+                _bufferedChildRpcsKeys.Remove(data.rpcid);
+                _bufferedChildRpcsDatas.RemoveAt(i--);
+            }
         }
 
         // Clean up buffered RPCs when a scene is unloaded
@@ -80,6 +93,19 @@ namespace PurrNet.Modules
                 _bufferedRpcsKeys.Remove(key);
                 _bufferedRpcsDatas.RemoveAt(i--);
             }
+
+            for (int i = 0; i < _bufferedChildRpcsDatas.Count; i++)
+            {
+                var data = _bufferedChildRpcsDatas[i];
+
+                if (data.rpcid.sceneId != scene) continue;
+
+                var key = data.rpcid;
+                FreeStream(data.stream);
+
+                _bufferedChildRpcsKeys.Remove(key);
+                _bufferedChildRpcsDatas.RemoveAt(i--);
+            }
         }
 
         private void OnPlayerJoined(PlayerID player, bool asserver)
@@ -90,6 +116,7 @@ namespace PurrNet.Modules
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             SendAnyInstanceRPCs(player, scene);
+            SendAnyChildRPCs(player, scene);
         }
         
         [UsedByIL]
@@ -200,6 +227,52 @@ namespace PurrNet.Modules
             gmethod.Invoke(null, rpcHeader.values);
         }
 
+        private void SendAnyChildRPCs(PlayerID player, SceneID scene)
+        {
+            for (int i = 0; i < _bufferedChildRpcsDatas.Count; i++)
+            {
+                var data = _bufferedChildRpcsDatas[i];
+
+                if (data.rpcid.sceneId != scene)
+                {
+                    continue;
+                }
+
+                if (!_hierarchyModule.TryGetIdentity(data.packet.sceneId, data.packet.networkId, out var identity))
+                {
+                    PurrLogger.LogError($"Can't find identity with id {data.packet.networkId} in scene {data.packet.sceneId}.");
+                    continue;
+                }
+
+                if (data.sig.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
+                    continue;
+
+                switch (data.sig.type)
+                {
+                    case RPCType.ObserversRPC:
+                        {
+                            var packet = data.packet;
+                            packet.data = data.stream.buffer.ToByteData();
+                            _playersManager.Send(player, packet);
+
+                            break;
+                        }
+
+                    case RPCType.TargetRPC:
+                        {
+                            if (data.sig.targetPlayer == player)
+                            {
+                                var packet = data.packet;
+                                packet.data = data.stream.buffer.ToByteData();
+                                _playersManager.Send(player, packet);
+                            }
+
+                            break;
+                        }
+                }
+            }
+        }
+
         private void SendAnyInstanceRPCs(PlayerID player, SceneID scene)
         {
             for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
@@ -292,8 +365,11 @@ namespace PurrNet.Modules
         
         readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new();
         readonly Dictionary<RPC_ID, STATIC_RPC_DATA> _bufferedStaticRpcsKeys = new();
+        readonly Dictionary<RPC_ID, CHILD_RPC_DATA> _bufferedChildRpcsKeys = new();
+
         readonly List<RPC_DATA> _bufferedRpcsDatas = new();
         readonly List<STATIC_RPC_DATA> _bufferedStaticRpcsDatas = new();
+        readonly List<CHILD_RPC_DATA> _bufferedChildRpcsDatas = new();
 
         private void AppendToBufferedRPCs(StaticRPCPacket packet, RPCSignature signature)
         {
@@ -328,7 +404,29 @@ namespace PurrNet.Modules
         {
             if (!signature.bufferLast) return;
 
-            PurrLogger.Log("TODO: Implement AppendToBufferedRPCs for ChildRPCPacket.");
+            var rpcid = new RPC_ID(packet);
+
+            if (_bufferedChildRpcsKeys.TryGetValue(rpcid, out var data))
+            {
+                data.stream.ResetPointer();
+                data.stream.Write(packet.data);
+            }
+            else
+            {
+                var newStream = AllocStream(false);
+                newStream.Write(packet.data);
+
+                var newdata = new CHILD_RPC_DATA
+                {
+                    rpcid = rpcid,
+                    packet = packet,
+                    sig = signature,
+                    stream = newStream
+                };
+
+                _bufferedChildRpcsKeys.Add(rpcid, newdata);
+                _bufferedChildRpcsDatas.Add(newdata);
+            }
         }
         
         public void AppendToBufferedRPCs(RPCPacket packet, RPCSignature signature)

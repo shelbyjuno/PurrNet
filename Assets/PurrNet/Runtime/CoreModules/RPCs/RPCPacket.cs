@@ -93,26 +93,38 @@ namespace PurrNet
         public readonly SceneID sceneId;
         public readonly NetworkID networkId;
         private readonly byte rpcId;
-            
+        private readonly byte childId;
+
         public RPC_ID(RPCPacket packet)
         {
             sceneId = packet.sceneId;
             networkId = packet.networkId;
             rpcId = packet.rpcId;
             typeHash = default;
+            childId = default;
         }
-        
+
         public RPC_ID(StaticRPCPacket packet)
         {
             sceneId = default;
             networkId = default;
             rpcId = packet.rpcId;
             typeHash = packet.typeHash;
+            childId = default;
         }
-        
+
+        public RPC_ID(ChildRPCPacket packet)
+        {
+            sceneId = packet.sceneId;
+            networkId = packet.networkId;
+            rpcId = packet.rpcId;
+            typeHash = default;
+            childId = packet.childId;
+        }
+
         public override int GetHashCode()
         {
-            return sceneId.GetHashCode() ^ networkId.GetHashCode() ^ rpcId.GetHashCode() ^ typeHash.GetHashCode();
+            return sceneId.GetHashCode() ^ networkId.GetHashCode() ^ rpcId.GetHashCode() ^ typeHash.GetHashCode() ^ childId.GetHashCode();
         }
     }
 
@@ -123,7 +135,15 @@ namespace PurrNet
         public RPCSignature sig;
         public NetworkStream stream;
     }
-        
+
+    internal class CHILD_RPC_DATA
+    {
+        public RPC_ID rpcid;
+        public ChildRPCPacket packet;
+        public RPCSignature sig;
+        public NetworkStream stream;
+    }
+
     internal class STATIC_RPC_DATA
     {
         public RPC_ID rpcid;
