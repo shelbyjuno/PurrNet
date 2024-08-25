@@ -47,7 +47,14 @@ public class NetworkBehaviourExample : NetworkBehaviour
 {
     [SerializeField] private NetworkIdentity someRef;
 
-    private readonly SyncVar<int> _testChild;// = new (69);
+    private SyncVar<int> _testChild;
+    
+    private SyncVar<int> _testChild2 = new (70);
+
+    protected override void OnPreModulesInitialize()
+    {
+        _testChild = new SyncVar<int>(69);
+    }
 
     private void Update()
     {
@@ -55,7 +62,8 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                _testChild.value = UnityEngine.Random.Range(0, 100);
+                _testChild.value = Random.Range(0, 100);
+                _testChild2.value = Random.Range(0, 100);
                 // ObserversRPCTest(Time.time, someRef);
             }
         }

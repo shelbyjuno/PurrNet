@@ -45,7 +45,7 @@ namespace PurrNet.Codegen
             
             if (name.StartsWith("UnityEngine."))
                 return false;
-            
+
             return !name.Contains("Editor");
         }
         
@@ -1050,41 +1050,21 @@ namespace PurrNet.Codegen
             newMethod.Body.InitLocals = true;
             
             var code = newMethod.Body.GetILProcessor();
-            var setparentmethod = module.GetTypeDefinition<NetworkModule>().Import(module)
-                .GetMethod("SetParent").Import(module);
-
-            var simpleError = module.GetTypeDefinition(typeof(PurrLogger)).Import(module)
-                .GetMethod("LogSimpleError").Import(module);
+            
+            var registerModule = module
+                .GetTypeDefinition<NetworkIdentity>().Import(module)
+                .GetMethod("RegisterModuleInternal").Import(module);
 
             for (int i = 0; i < networkFields.Count; i++)
             {
                 FieldDefinition field = networkFields[i];
 
-                var nop = Instruction.Create(OpCodes.Nop);
-                var nop2 = Instruction.Create(OpCodes.Nop);
-
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Ldstr, field.Name));
+                code.Append(Instruction.Create(OpCodes.Ldstr, field.FieldType.Name));
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldfld, field));
-                code.Append(Instruction.Create(OpCodes.Dup));
-
-                code.Append(Instruction.Create(OpCodes.Ldnull));
-                code.Append(Instruction.Create(OpCodes.Ceq));
-                code.Append(Instruction.Create(OpCodes.Brtrue, nop));
-
-                code.Append(Instruction.Create(OpCodes.Ldarg_0));
-                code.Append(Instruction.Create(OpCodes.Ldc_I4, i));
-                code.Append(Instruction.Create(OpCodes.Call, setparentmethod));
-                code.Append(Instruction.Create(OpCodes.Br, nop2));
-
-                code.Append(nop);
-                
-                code.Append(Instruction.Create(OpCodes.Pop));
-                code.Append(Instruction.Create(OpCodes.Ldstr, $"[NetworkModule] Field '{field.Name}' of type '{field.FieldType.Name}' was NULL when identity got spawned."));
-                code.Append(Instruction.Create(OpCodes.Ldarg_0));
-                code.Append(Instruction.Create(OpCodes.Call, simpleError));
-
-
-                code.Append(nop2);
+                code.Append(Instruction.Create(OpCodes.Call, registerModule));
             }
 
             code.Append(Instruction.Create(OpCodes.Ret));

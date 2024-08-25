@@ -81,7 +81,7 @@ namespace PurrNet
         {
             if (!_sceneToHierarchy.ContainsKey(scene))
             {
-                var hierarchy = new HierarchyScene(scene, _scenes, _manager, _players, _scenePlayers, _prefabs);
+                var hierarchy = new HierarchyScene(asserver, scene, _scenes, _manager, _players, _scenePlayers, _prefabs);
                 
                 hierarchy.onIdentityAdded += TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved += TriggerOnEntityRemoved;

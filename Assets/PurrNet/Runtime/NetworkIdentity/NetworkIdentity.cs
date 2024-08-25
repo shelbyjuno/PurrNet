@@ -78,6 +78,8 @@ namespace PurrNet
         protected virtual void OnDespawned() { }
         
         protected virtual void OnSpawned(bool asServer) { }
+
+        protected virtual void OnPreModulesInitialize() { }
         
         protected virtual void OnDespawned(bool asServer) { }
 
@@ -145,6 +147,8 @@ namespace PurrNet
             networkManager = manager;
             sceneId = scene;
             prefabId = pid;
+
+            bool wasAlreadySpawned = isSpawned;
             
             if (asServer)
                  idServer = identityId;
@@ -166,7 +170,11 @@ namespace PurrNet
                 _events.Register(this);
             }
 
-            CallInitMethods();
+            if (!wasAlreadySpawned)
+            {
+                OnPreModulesInitialize();
+                CallInitMethods();
+            }
         }
 
         private bool _ignoreNextDestroy;

@@ -5,11 +5,18 @@ namespace PurrNet
 {
     public class IdentitiesCollection
     {
+        readonly bool _asServer;
+
         readonly Dictionary<NetworkID, NetworkIdentity> _identities = new ();
         
         private ushort _nextId;
         
         public IEnumerable<NetworkIdentity> collection => _identities.Values;
+
+        public IdentitiesCollection(bool asServer)
+        {
+            _asServer = asServer;
+        }
 
         public bool TryGetIdentity(NetworkID id, out NetworkIdentity identity)
         {
@@ -52,10 +59,13 @@ namespace PurrNet
         {
             foreach (var identity in _identities.Values)
             {
-                identity.IgnoreNextDestroyCallback();
+                identity.TriggetDespawnEvent(_asServer);
                 
                 if (identity && identity.gameObject && identity.prefabId != -1)
+                {
+                    identity.IgnoreNextDestroyCallback();
                     Object.Destroy(identity.gameObject);
+                }
             }
             
             _identities.Clear();

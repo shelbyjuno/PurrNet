@@ -56,7 +56,7 @@ namespace PurrNet.Modules
             return value;
         }
         
-        public HierarchyScene(SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
+        public HierarchyScene(bool asServer, SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
         {
             _manager = manager;
             _playersManager = playersManager;
@@ -64,14 +64,14 @@ namespace PurrNet.Modules
             _scenePlayers = scenePlayers;
             _scenes = scenes;
             _sceneID = sceneId;
+            _asServer = asServer;
             
-            _identities = new IdentitiesCollection();
+            _identities = new IdentitiesCollection(_asServer);
             _history = new HierarchyHistory(sceneId);
         }
         
         public void Enable(bool asServer)
         {
-            _asServer = asServer;
             _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (!asServer)
