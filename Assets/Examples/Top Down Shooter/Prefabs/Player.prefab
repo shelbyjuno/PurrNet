@@ -427,6 +427,10 @@ MonoBehaviour:
     syncGameObjectActiveAuth:
       overridden: 0
       value: 0
+  clientAuth: 1
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 1
 --- !u!1 &6426148537294609696
 GameObject:
   m_ObjectHideFlags: 0
