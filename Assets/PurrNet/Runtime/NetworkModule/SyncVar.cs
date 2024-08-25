@@ -22,6 +22,8 @@ namespace PurrNet
 
         private readonly float _sendIntervalInSeconds;
 
+        public event Action<T> onChanged;
+
         public T value
         {
             get => _value;
@@ -38,6 +40,8 @@ namespace PurrNet
 
                 _value = value;
                 _isDirty = true;
+
+                onChanged?.Invoke(value);
             }
         }
 
@@ -87,7 +91,12 @@ namespace PurrNet
         {
             if (isServer)
                 return;
+
+            if (_value.Equals(newValue))
+                return;
+
             _value = newValue;
+            onChanged?.Invoke(value);
         }
 
         public static implicit operator T(SyncVar<T> syncVar)
