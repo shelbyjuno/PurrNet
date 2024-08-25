@@ -2,15 +2,18 @@ using UnityEngine;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
+using System;
 
 namespace PurrNet
 {
+    [Serializable]
     public class SyncVar<T> : NetworkModule where T : struct
     {
         const int REDUNDANCY_TICKS = 10;
 
         private TickManager _tickManager;
 
+        [SerializeField]
         private T _value;
 
         private bool _isDirty;
@@ -82,6 +85,7 @@ namespace PurrNet
         [ObserversRPC(Channel.UnreliableSequenced)]
         private void SendValue(T newValue)
         {
+            if (isServer) return;
             _value = newValue;
         }
 
