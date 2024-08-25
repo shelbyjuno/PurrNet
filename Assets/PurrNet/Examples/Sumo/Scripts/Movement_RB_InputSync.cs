@@ -13,6 +13,10 @@ namespace PurrNet.Examples.Sumo
         [SerializeField] private float maxSpeed = 5f;
         [SerializeField] private float jumpForce = 20f;
         [SerializeField] private float visualRotationSpeed = 10f;
+
+        [Space(10)] 
+        [Header("Collision")] 
+        [SerializeField] private float playerCollisionForce = 10;
         
         [Space(10)]
         [Header("Ground check")]
@@ -21,6 +25,7 @@ namespace PurrNet.Examples.Sumo
         [SerializeField] private LayerMask groundMask;
         
         private Rigidbody _rigidbody;
+        private float _originalDrag;
         
         //Client variable
         private Vector2 _lastInput;
@@ -33,6 +38,15 @@ namespace PurrNet.Examples.Sumo
         {
             if (!TryGetComponent(out _rigidbody))
                 PurrLogger.LogError($"Movement_RB_InputSync could not get rigidbody!", this);
+
+            if (_rigidbody)
+            {
+#if UNITY_6000_0_OR_NEWER
+                _originalDrag = _rigidbody.linearDamping;
+#else
+                _originalDrag = _rigidbody.drag;
+#endif
+            }
         }
 
         protected override void OnSpawned(bool asServer)
@@ -90,7 +104,6 @@ namespace PurrNet.Examples.Sumo
             if(_serverInput.magnitude > 1)
                 _serverInput.Normalize();
             var force = new Vector3(_serverInput.x, 0, _serverInput.y);
-            _rigidbody.AddForce(force * moveForce);
 
             Vector3 velocity;
             
@@ -101,20 +114,14 @@ namespace PurrNet.Examples.Sumo
 #endif
             
             var magnitude = new Vector3(velocity.x, 0, velocity.z).magnitude;
-            if (magnitude > maxSpeed)
-            {
-                var clamped = velocity.normalized * maxSpeed;
-                 
-#if UNITY_6000_0_OR_NEWER
-                _rigidbody.linearVelocity = new Vector3(clamped.x, velocity.y, clamped.z);
-#else
-                _rigidbody.velocity = new Vector3(clamped.x, velocity.y, clamped.z);
-#endif
-            }
+            if (magnitude < maxSpeed)
+                _rigidbody.AddForce(force * moveForce);
 
             var lookVector = new Vector3(velocity.x, 0, velocity.z);
             if(lookVector != Vector3.zero)
                 _targetRotation.value = Quaternion.LookRotation(lookVector.normalized, Vector3.up);
+
+            DragHandling();
         }
 
         private void OwnerTick()
@@ -154,11 +161,52 @@ namespace PurrNet.Examples.Sumo
 
             return false;
         }
-        
+
+        private void DragHandling()
+        {
+            if (IsGrounded())
+            {
+#if UNITY_6000_0_OR_NEWER
+                _rigidbody.linearDamping = _originalDrag;
+#else
+                _rigidbody.drag = _originalDrag;
+#endif
+                return;
+            }
+            
+#if UNITY_6000_0_OR_NEWER
+            _rigidbody.linearDamping = 0;
+#else
+                _rigidbody.drag = 0;
+#endif
+        }
+
+        private void OnCollisionEnter(Collision other)
+        {
+            if (other.transform.TryGetComponent(out Movement_RB_InputSync otherPlayer))
+            {
+                var direction = (transform.position - other.transform.position).normalized;
+                _rigidbody.AddForce(direction * playerCollisionForce, ForceMode.Impulse);
+            }
+        }
+
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position - Vector3.up * groundCheckDistance, groundCheckRadius);
+        }
+
+        public void ResetPosition(Vector3 position)
+        {
+            _rigidbody.angularVelocity = Vector3.zero;
+            
+#if UNITY_6000_0_OR_NEWER
+            _rigidbody.linearVelocity = Vector3.zero;
+#else
+            _rigidbody.velocity = Vector3.zero;
+#endif
+            
+            _rigidbody.position = position;
         }
     }
 }
