@@ -7,7 +7,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [SerializeField] private NetworkIdentity someRef;
 
     [SerializeField]
-    private SyncVar<int> _testChild;
+    private SyncVar<int> _testChild; 
 
     [SerializeField]
     private SyncVar<int> _testChild2 = new (70);
