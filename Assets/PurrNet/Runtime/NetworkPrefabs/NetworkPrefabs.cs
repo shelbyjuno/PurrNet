@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using PurrNet.Logging;
-using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using PurrNet.Utils;
 using UnityEditor;
@@ -13,7 +12,7 @@ using UnityEditor.Build.Reporting;
 namespace PurrNet
 {
     [CreateAssetMenu(fileName = "NetworkPrefabs", menuName = "PurrNet/Network Prefabs", order = -201)]
-    public class NetworkPrefabs : ScriptableObject
+    public class NetworkPrefabs : PrefabProviderScriptable
 #if UNITY_EDITOR
         , IPreprocessBuildWithReport
 #endif
@@ -30,21 +29,20 @@ namespace PurrNet
             if (autoGenerate)
                 Generate();
         }
-        
-        private void OnValidate()
-        {
-            //if (autoGenerate)
-            //    Generate();
-        }
 #endif
-        
-        public bool TryGetPrefabId(GameObject prefab, out int id)
+
+        public override GameObject GetPrefabFromGuid(string guid)
         {
-            id = prefabs.IndexOf(prefab);
-            return id != -1;
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                if (prefabs[i].TryGetComponent<PrefabLink>(out var link) && link.MatchesGUID(guid))
+                    return prefabs[i];
+            }
+
+            return null;
         }
-        
-        public bool TryGetPrefab(int id, out GameObject prefab)
+
+        public override bool TryGetPrefab(int id, out GameObject prefab)
         {
             if (id < 0 || id >= prefabs.Count)
             {
@@ -56,7 +54,7 @@ namespace PurrNet
             return true;
         }
         
-        public bool TryGetPrefabFromGuid(string guid, out int id)
+        public override bool TryGetPrefabID(string guid, out int id)
         {
             for (int i = 0; i < prefabs.Count; i++)
             {
@@ -67,23 +65,6 @@ namespace PurrNet
                 }
             }
             
-            id = -1;
-            return false;
-        }
-        
-        public bool TryGetPrefabFromGuid(string guid, out GameObject prefab, out int id)
-        {
-            for (int i = 0; i < prefabs.Count; i++)
-            {
-                if (prefabs[i].TryGetComponent<PrefabLink>(out var link) && link.MatchesGUID(guid))
-                {
-                    prefab = prefabs[i];
-                    id = i;
-                    return true;
-                }
-            }
-            
-            prefab = null;
             id = -1;
             return false;
         }

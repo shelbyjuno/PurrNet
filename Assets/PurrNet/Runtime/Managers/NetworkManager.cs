@@ -39,7 +39,9 @@ namespace PurrNet
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private NetworkRules _networkRules;
         [SerializeField] private int _tickRate = 20;
-        
+
+        public IPrefabProvider prefabProvider { get; private set; } = null;
+
         /// <summary>
         /// Occurs when the server connection state changes.
         /// </summary>
@@ -134,16 +136,32 @@ namespace PurrNet
                 main = instance;
         }
 
+        public void SetPrefabProvider(IPrefabProvider prefabProvider)
+        {
+            if (!isOffline)
+            {
+                PurrLogger.LogError("Failed to update prefab provider since a connection is active.");
+                return;
+            }
+
+            this.prefabProvider = prefabProvider;
+        }
+
         private void Awake()
         {
             if (!main)
                 main = this;
             
             Application.runInBackground = true;
-            
-            if(_networkPrefabs.autoGenerate)
-                _networkPrefabs.Generate();
-            _networkPrefabs.PostProcess();
+
+            if (_networkPrefabs)
+            {
+                prefabProvider ??= _networkPrefabs;
+
+                if (_networkPrefabs.autoGenerate)
+                    _networkPrefabs.Generate();
+                _networkPrefabs.PostProcess();
+            }
 
             if (!_subscribed)
                 transport = _transport;
@@ -209,7 +227,7 @@ namespace PurrNet
             var scenesModule = new ScenesModule(this, playersManager);
             var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
             
-            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, _networkPrefabs);
+            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
             var rpcModule = new RPCModule(playersManager, hierarchyModule, ownershipModule, scenesModule, scenePlayersModule);
@@ -367,13 +385,7 @@ namespace PurrNet
 
         public GameObject GetPrefabFromGuid(string guid)
         {
-            for (int i = 0; i < _networkPrefabs.prefabs.Count; i++)
-            {
-                if (_networkPrefabs.prefabs[i].TryGetComponent<PrefabLink>(out var link) && link.MatchesGUID(guid))
-                    return _networkPrefabs.prefabs[i];
-            }
-            
-            return null;
+            return _networkPrefabs.GetPrefabFromGuid(guid);
         }
     }
 }
