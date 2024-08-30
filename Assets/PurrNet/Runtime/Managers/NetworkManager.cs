@@ -15,6 +15,7 @@ namespace PurrNet
     [Flags]
     public enum StartFlags
     {
+        None = 0,
         Editor = 1,
         Clone = 2,
         ClientBuild = 4,
@@ -39,6 +40,10 @@ namespace PurrNet
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private NetworkRules _networkRules;
         [SerializeField] private int _tickRate = 20;
+
+        public StartFlags startServerFlags { get => _startServerFlags; set => _startServerFlags = value; }
+
+        public StartFlags startClientFlags { get => _startClientFlags; set => _startClientFlags = value; }
 
         public IPrefabProvider prefabProvider { get; private set; } = null;
 
@@ -281,7 +286,8 @@ namespace PurrNet
             if (clientState == ConnectionState.Connected)
                 _clientModules.TriggerOnPreFixedUpdate();
             
-            _transport.transport.UpdateEvents(Time.fixedDeltaTime);
+            if (_transport)
+                _transport.transport.UpdateEvents(Time.fixedDeltaTime);
             
             if (serverState == ConnectionState.Connected)
                 _serverModules.TriggerOnFixedUpdate();

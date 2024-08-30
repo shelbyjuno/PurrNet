@@ -11,15 +11,6 @@ namespace PurrNet
         bool TryGetPrefabID(string guid, out int id);
     }
 
-    public abstract class PrefabProviderComponent : MonoBehaviour, IPrefabProvider
-    {
-        public abstract GameObject GetPrefabFromGuid(string guid);
-
-        public abstract bool TryGetPrefab(int id, out GameObject prefab);
-
-        public abstract bool TryGetPrefabID(string guid, out int id);
-    }
-
     public abstract class PrefabProviderScriptable : ScriptableObject, IPrefabProvider
     {
         public abstract GameObject GetPrefabFromGuid(string guid);
