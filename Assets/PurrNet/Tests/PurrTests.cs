@@ -9,6 +9,32 @@ namespace Purrnet.Tests
 {
     public static class PurrTests
     {
+        public static void DoWith(NetworkManager manager, Action action)
+        {
+            if (manager == NetworkManager.main)
+            {
+                action();
+                return;
+            }
+
+            var old = NetworkManager.main;
+            NetworkManager.SetMainInstance(manager);
+            action();
+            NetworkManager.SetMainInstance(old);
+        }
+
+        public static IEnumerator ReconnectClient(NetworkManager manager)
+        {
+            manager.StopClient();
+
+            while (manager.clientState != ConnectionState.Disconnected)
+                yield return null;
+
+            manager.StartClient();
+
+            WaitOrThrow(() => manager.clientState == ConnectionState.Connected);
+        }
+
         public static IEnumerator WaitOrThrow(Func<bool> condition, float timeout = 5f, string message = "")
         {
             float time = Time.time;
@@ -60,6 +86,34 @@ namespace Purrnet.Tests
         {
             var nm = BuildNetworkManager(PurrTests.BuildSafeUDP());
             return await InternalStartHost(nm);
+        }
+
+        static NetworkManager _udpHostCached;
+
+        public static IEnumerator StartHostUDP()
+        {
+            if (_udpHostCached != null)
+                yield break;
+
+            var nm = BuildNetworkManager(PurrTests.BuildSafeUDP());
+
+            _udpHostCached = nm;
+
+            nm.StartServer();
+            nm.StartClient();
+
+            var time = Time.time;
+
+            while (!nm.isHost)
+            {
+                if (Time.time - time > 5)
+                    break;
+
+                yield return null;
+            }
+
+            if (!nm.isHost)
+                throw new Exception($"Failed to start transport as host after 5 seconds.");
         }
 
         private static async Task<NetworkManager> InternalStartHost(NetworkManager nm)
