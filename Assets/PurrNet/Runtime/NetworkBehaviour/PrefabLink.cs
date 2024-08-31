@@ -36,7 +36,7 @@ namespace PurrNet
             if (!anyConnected)
                 return;
 
-            var prefab = manager.GetPrefabFromGuid(_guid);
+            var prefab = manager.prefabProvider.GetPrefabFromGuid(_guid);
 
             if (!prefab)
             {

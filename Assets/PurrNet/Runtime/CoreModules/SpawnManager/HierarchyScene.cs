@@ -30,7 +30,7 @@ namespace PurrNet.Modules
     internal class HierarchyScene : INetworkModule, IPreFixedUpdate
     {
         private readonly NetworkManager _manager;
-        private readonly NetworkPrefabs _prefabs;
+        private readonly IPrefabProvider _prefabs;
         private readonly PlayersManager _playersManager;
         private readonly ScenesModule _scenes;
         private readonly IdentitiesCollection _identities;
@@ -56,7 +56,7 @@ namespace PurrNet.Modules
             return value;
         }
         
-        public HierarchyScene(bool asServer, SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
+        public HierarchyScene(bool asServer, SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, IPrefabProvider prefabs)
         {
             _manager = manager;
             _playersManager = playersManager;
@@ -558,7 +558,7 @@ namespace PurrNet.Modules
                 return;
             }
 
-            if (!_prefabs.TryGetPrefabFromGuid(link.prefabGuid, out var prefabId))
+            if (!_prefabs.TryGetPrefabID(link.prefabGuid, out var prefabId))
             {
                 PurrLogger.LogError($"Failed to find prefab with guid {link.prefabGuid}");
                 return;

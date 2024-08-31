@@ -9,7 +9,7 @@ namespace PurrNet
     public class HierarchyModule : INetworkModule, IPreFixedUpdate
     {
         private readonly NetworkManager _manager;
-        private readonly NetworkPrefabs _prefabs;
+        private readonly IPrefabProvider _prefabs;
         private readonly PlayersManager _players;
         private readonly ScenesModule _scenes;
         private readonly ScenePlayersModule _scenePlayers;
@@ -24,7 +24,7 @@ namespace PurrNet
         private bool _asServer;
         
         public HierarchyModule(NetworkManager manager, ScenesModule scenes, PlayersManager players,
-            ScenePlayersModule scenePlayers, NetworkPrefabs prefabs)
+            ScenePlayersModule scenePlayers, IPrefabProvider prefabs)
         {
             _scenes = scenes;
             _manager = manager;
