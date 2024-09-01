@@ -8,7 +8,7 @@ namespace PurrNet
         bool HasVisiblity(PlayerID playerId, NetworkIdentity identity);
     }
 
-    public abstract class NetworkVisibilityRule : MonoBehaviour, INetworkVisibilityRule
+    public abstract class NetworkVisibilityRule : ScriptableObject, INetworkVisibilityRule
     {
         public abstract bool HasVisiblity(PlayerID playerId, NetworkIdentity identity);
     }
@@ -18,7 +18,7 @@ namespace PurrNet
     {
         [SerializeField] private List<NetworkVisibilityRule> _rules = new ();
 
-        private List<INetworkVisibilityRule> _raw_rules = new ();
+        private readonly List<INetworkVisibilityRule> _raw_rules = new ();
 
         private void Awake()
         {
