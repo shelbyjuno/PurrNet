@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace PurrNet
+namespace PurrNet.Utils
 {
     public class PurrLockAttribute : PropertyAttribute
     {
