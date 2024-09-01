@@ -99,6 +99,21 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<OwnershipChangeBatch>(OnOwnershipChange);
             _playersManager.Unsubscribe<OwnershipChange>(OnOwnershipChange);
         }
+        
+        /// <summary>
+        /// Gets all the objects owned by the given player.
+        /// This creates a new list every time it's called.
+        /// So it's recommended to cache the result if you're going to use it multiple times.
+        /// </summary>
+        public List<NetworkID> GetAllPlayerOwnedIds(PlayerID player)
+        {
+            List<NetworkID> ids = new ();
+            
+            foreach (var (_, owned) in _sceneOwnerships)
+                ids.AddRange(owned.TryGetOwnedObjects(player));
+            
+            return ids;
+        }
 
         private void OnIdentityDespawned(NetworkIdentity identity)
         {
@@ -621,7 +636,7 @@ namespace PurrNet.Modules
             
             _owners[identity.id.Value] = player;
 
-            if (!_playerOwnedIds.TryGetValue(player, out HashSet<NetworkID> ownedIds))
+            if (!_playerOwnedIds.TryGetValue(player, out var ownedIds))
             {
                 ownedIds = new HashSet<NetworkID>() { identity.id.Value };
                 _playerOwnedIds[player] = ownedIds;

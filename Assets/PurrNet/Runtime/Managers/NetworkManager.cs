@@ -3,6 +3,7 @@ using UnityEditor;
 #endif
 
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -218,6 +219,17 @@ namespace PurrNet
             return asServer ?
                 _serverModules.TryGetModule(out module) :
                 _clientModules.TryGetModule(out module);
+        }
+        
+        /// <summary>
+        /// Gets all the objects owned by the given player.
+        /// This creates a new list every time it's called.
+        /// So it's recommended to cache the result if you're going to use it multiple times.
+        /// </summary>
+        public List<NetworkID> GetAllPlayerOwnedIds(PlayerID player, bool asServer)
+        {
+            var ownershipModule = GetModule<GlobalOwnershipModule>(asServer);
+            return ownershipModule.GetAllPlayerOwnedIds(player);
         }
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
