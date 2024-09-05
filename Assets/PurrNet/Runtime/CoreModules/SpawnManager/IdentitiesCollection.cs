@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet
@@ -32,7 +33,15 @@ namespace PurrNet
         public void RegisterIdentity(NetworkIdentity identity)
         {
             if (identity.id.HasValue)
+            {
+                if (_identities.ContainsKey(identity.id.Value))
+                {
+                    PurrLogger.LogError($"Identity with id {identity.id} already exists.");
+                    return;
+                }
+                
                 _identities.Add(identity.id.Value, identity);
+            }
         }
         
         public bool UnregisterIdentity(NetworkIdentity identity)

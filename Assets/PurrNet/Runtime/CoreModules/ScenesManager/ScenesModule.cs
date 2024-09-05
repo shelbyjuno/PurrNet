@@ -148,6 +148,22 @@ namespace PurrNet.Modules
             
             SceneManager.sceneLoaded += SceneManagerOnSceneLoaded;
         }
+        
+        public void Disable(bool asServer)
+        {
+            if (!asServer)
+            {
+                _players.Unsubscribe<SceneActionsBatch>(OnSceneActionsBatch);
+            }
+            else
+            {
+                _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
+            }
+            
+            SceneManager.sceneLoaded -= SceneManagerOnSceneLoaded;
+
+            DoCleanup();
+        }
 
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
@@ -202,8 +218,8 @@ namespace PurrNet.Modules
                 {
                     if (_networkManager.isHost && !_asServer)
                     {
-                        onPreSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
-                        onSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
+                        /*onPreSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
+                        onSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);*/
                         _actionsQueue.Dequeue();
                         break;
                     }
@@ -417,22 +433,6 @@ namespace PurrNet.Modules
             _history.AddUnloadAction(new UnloadSceneAction { sceneID = sceneIndex, options = options});
             SceneManager.UnloadSceneAsync(scene, options);
             RemoveScene(scene);
-        }
-
-        public void Disable(bool asServer)
-        {
-            if (!asServer)
-            {
-                _players.Unsubscribe<SceneActionsBatch>(OnSceneActionsBatch);
-            }
-            else
-            {
-                _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
-            }
-            
-            SceneManager.sceneLoaded -= SceneManagerOnSceneLoaded;
-
-            DoCleanup();
         }
         
         static readonly List<SceneAction> _playerFilteredActions = new();

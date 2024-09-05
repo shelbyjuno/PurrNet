@@ -145,10 +145,15 @@ namespace PurrNet.Modules
             if (!asserver)
                 return;
 
+            var state = ownerships.GetState();
+            
+            if (state.Count == 0)
+                return;
+            
             _playersManager.Send(player, new OwnershipChangeBatch
             {
                 scene = scene,
-                state = ownerships.GetState()
+                state = state
             });
         }
 
@@ -210,7 +215,7 @@ namespace PurrNet.Modules
             }
             
             var shouldOverride = overrideExistingOwners ?? nid.ShouldOverrideExistingOwnership(_asServer);
-            var affectedIds = GetAllChildrenOrSelf(nid, propagateToChildren);
+            var affectedIds = GetAllChildrenOrSelf(nid, propagateToChildren, _asServer);
 
             _idsCache.Clear();
 
@@ -241,6 +246,12 @@ namespace PurrNet.Modules
                 }
 
                 _idsCache.Add(identity.id.Value);
+            }
+
+            if (_idsCache.Count == 0)
+            {
+                PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because no identities were affected.");
+                return;
             }
 
             // TODO: compress _idsCache using RLE
@@ -286,7 +297,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            var children = GetAllChildrenOrSelf(id, true);
+            var children = GetAllChildrenOrSelf(id, true, _asServer);
             
             _idsCache.Clear();
 
@@ -359,7 +370,7 @@ namespace PurrNet.Modules
             }
             
             var originalOwner = id.owner.Value;
-            var children = GetAllChildrenOrSelf(id, propagateToChildren);
+            var children = GetAllChildrenOrSelf(id, propagateToChildren, _asServer);
             
             _idsCache.Clear();
 
@@ -443,7 +454,7 @@ namespace PurrNet.Modules
         private void HandleOwenshipBatch(OwnershipChangeBatch data)
         {
             var stateCount = data.state.Count;
-            
+
             for (var j = 0; j < stateCount; j++)
                 HandleOwnershipBatch(data.scene, data.state[j]);
         }
@@ -481,7 +492,11 @@ namespace PurrNet.Modules
             var oldOwner = identity.GetOwner(_asServer);
 
             if (oldOwner == change.player)
+            {
+                PurrLogger.LogError(
+                    $"Failed to give ownership of '{identity.gameObject.name}' to {change.player} because it already has it.");
                 return;
+            }
 
             if (module.GiveOwnership(identity, change.player))
             {
@@ -512,7 +527,7 @@ namespace PurrNet.Modules
         private void HandleOwnershipChange(PlayerID actor, OwnershipChange change, NetworkID id)
         {
             string verb = change.isAdding ? "give" : "remove";
-            
+
             if (!_hierarchy.TryGetIdentity(change.sceneId, id, out var identity))
                 return;
 
@@ -563,12 +578,12 @@ namespace PurrNet.Modules
             }
         }
 
-        private List<NetworkIdentity> GetAllChildrenOrSelf(NetworkIdentity id, bool? propagateToChildren)
+        internal static List<NetworkIdentity> GetAllChildrenOrSelf(NetworkIdentity id, bool? propagateToChildren, bool asServer)
         {
             var cache = HierarchyScene.CACHE;
-            bool shouldPropagate = propagateToChildren ?? id.ShouldPropagateToChildren(_asServer);
+            bool shouldPropagate = propagateToChildren ?? id.ShouldPropagateToChildren(asServer);
 
-            if (shouldPropagate && id.HasPropagateOwnershipAuthority(_asServer))
+            if (shouldPropagate && id.HasPropagateOwnershipAuthority(asServer))
             {
                 id.GetComponentsInChildren(true, cache);
             }

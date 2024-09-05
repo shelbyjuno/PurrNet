@@ -83,9 +83,12 @@ namespace PurrNet.Modules
                 var networkId = new NetworkID(_identities.PeekNextId());
 
                 _sceneFirstNetworkID = networkId;
-                
+
                 if (_scenes.TryGetSceneState(_sceneID, out var sceneState))
+                {
                     SpawnSceneObjectsServer(SceneObjectsModule.GetSceneIdentities(sceneState.scene));
+                }
+                
                 if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
                 {
                     foreach (var player in players)
@@ -97,15 +100,6 @@ namespace PurrNet.Modules
         }
 
         public bool IsSceneReady() => _isReady;
-
-        internal void TriggerSpawnEventOnClient()
-        {
-            foreach (var identity in _identities.collection)
-            {
-                if (identity.isSpawned)
-                    identity.TriggetSpawnEvent(false);
-            }
-        }
 
         private void OnSetSceneIds(PlayerID player, SetSceneIds data, bool asserver)
         {
@@ -147,7 +141,7 @@ namespace PurrNet.Modules
         {
             for (ushort i = 0; i < sceneObjects.Count; i++)
             {
-                if (sceneObjects[i].isSpawned && !sceneObjects[i].isSceneObject)
+                if (sceneObjects[i].IsSpawned(_asServer) && !sceneObjects[i].isSceneObject)
                     continue;
                 
                 SpawnIdentity(new SpawnAction
@@ -603,7 +597,13 @@ namespace PurrNet.Modules
                 if (child is NetworkTransform transform)
                     transform.onParentChanged += OnIdentityParentChanged;
             }
-            
+
+            for (int i = 0; i < CACHE.Count; i++)
+            {
+                var child = CACHE[i];
+                child.PostSetIdentity();
+            }
+
             var action = new SpawnAction
             {
                 prefabId = prefabId,
@@ -882,6 +882,7 @@ namespace PurrNet.Modules
                 active = active
             }, actor);
         }
+        
 
         public void PreFixedUpdate()
         {

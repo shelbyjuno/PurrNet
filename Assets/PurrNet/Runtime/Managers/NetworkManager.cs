@@ -46,7 +46,7 @@ namespace PurrNet
 
         public StartFlags startClientFlags { get => _startClientFlags; set => _startClientFlags = value; }
 
-        public IPrefabProvider prefabProvider { get; private set; } = null;
+        public IPrefabProvider prefabProvider { get; private set; }
 
         /// <summary>
         /// Occurs when the server connection state changes.
@@ -142,7 +142,7 @@ namespace PurrNet
                 main = instance;
         }
 
-        public void SetPrefabProvider(IPrefabProvider prefabProvider)
+        public void SetPrefabProvider(IPrefabProvider provider)
         {
             if (!isOffline)
             {
@@ -150,7 +150,7 @@ namespace PurrNet
                 return;
             }
 
-            this.prefabProvider = prefabProvider;
+            prefabProvider = provider;
         }
 
         private void Awake()
@@ -245,6 +245,7 @@ namespace PurrNet
             var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
+            var visibilityFactory = new VisibilityFactory(this, scenesModule, asServer);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
             var rpcModule = new RPCModule(playersManager, hierarchyModule, ownershipModule, scenesModule, scenePlayersModule);
@@ -261,6 +262,7 @@ namespace PurrNet
             modules.AddModule(scenePlayersModule);
             modules.AddModule(ownershipModule);
             modules.AddModule(hierarchyModule);
+            modules.AddModule(visibilityFactory);
             modules.AddModule(rpcModule);
         }
 

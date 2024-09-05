@@ -141,6 +141,15 @@ namespace PurrNet
                     m.Invoke(this, Array.Empty<object>());
             }
         }
+
+        internal void PostSetIdentity()
+        {
+            if (_pendingOwnershipRequest.HasValue)
+            {
+                GiveOwnershipInternal(_pendingOwnershipRequest.Value);
+                _pendingOwnershipRequest = null;
+            }
+        }
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, NetworkID identityId, bool asServer)
         {
@@ -186,11 +195,24 @@ namespace PurrNet
             _ignoreNextDestroy = true;
         }
         
+        private PlayerID? _pendingOwnershipRequest;
+        
         public void GiveOwnership(PlayerID player)
         {
             if (!networkManager)
             {
-                PurrLogger.LogError($"Trying to give ownership to '{name}' which is not spawned.", this);
+                _pendingOwnershipRequest = player;
+                return;
+            }
+            
+            GiveOwnershipInternal(player);
+        }
+        
+        private void GiveOwnershipInternal(PlayerID player)
+        {
+            if (!networkManager)
+            {
+                PurrLogger.LogError("Trying to give ownership to " + player + " but identity isn't spawned.", this);
                 return;
             }
             

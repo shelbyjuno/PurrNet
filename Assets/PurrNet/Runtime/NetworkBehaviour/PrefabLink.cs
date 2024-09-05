@@ -15,7 +15,7 @@ namespace PurrNet
             _muteAutoSpawn = true;
         }
 
-        void Awake()
+        void Start()
         {
             if (_muteAutoSpawn)
             {

@@ -11,7 +11,7 @@ namespace PurrNet.Examples.TopDownShooter
         {
             if (!owner.HasValue)
             {
-                Debug.LogError($"No owner for player", this);
+                Debug.LogError($"No owner for player {asServer}", this);
                 return;
             }
 

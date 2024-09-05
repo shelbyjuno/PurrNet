@@ -35,10 +35,7 @@ namespace PurrNet
         
         public bool IsSceneReady(SceneID sceneID)
         {
-            if (!_sceneToHierarchy.TryGetValue(sceneID, out var hierarchy))
-                return false;
-            
-            return hierarchy.IsSceneReady();
+            return _sceneToHierarchy.TryGetValue(sceneID, out var hierarchy) && hierarchy.IsSceneReady();
         }
 
         public void Enable(bool asServer)
@@ -102,12 +99,6 @@ namespace PurrNet
             for (var i = 0; i < _hierarchies.Count; i++)
                 _hierarchies[i].PreFixedUpdate();
         }
-
-        internal void TriggerOnSpawnedEventForClient()
-        {
-            foreach (var hierarchy in _sceneToHierarchy.Values)
-                hierarchy.TriggerSpawnEventOnClient();
-        }
         
         public bool TryGetIdentity(SceneID sceneID, NetworkID id, out NetworkIdentity identity)
         {
@@ -142,10 +133,7 @@ namespace PurrNet
             }
 
             if (!hierarchy.IsSceneReady())
-            {
-                Debug.LogError($"Scene '{sceneID}' is not ready.");
                 return;
-            }
             
             hierarchy.Spawn(gameObject);
         }
