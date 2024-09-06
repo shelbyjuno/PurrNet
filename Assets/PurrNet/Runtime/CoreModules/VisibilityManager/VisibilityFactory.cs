@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PurrNet.Logging;
 using PurrNet.Modules;
 
 namespace PurrNet
@@ -7,16 +8,20 @@ namespace PurrNet
     {
         private readonly NetworkManager _manager;
         private readonly ScenesModule _scenes;
+        private readonly HierarchyModule _hierarchy;
+        private readonly ScenePlayersModule _players;
         private readonly bool _asServer;
 
         private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisiblityManager = new ();
         private readonly List<VisibilityManager> _visiblityManagers = new ();
 
-        public VisibilityFactory(NetworkManager manager, ScenesModule scenes, bool asServer)
+        public VisibilityFactory(NetworkManager manager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players, bool asServer)
         {
             _asServer = asServer;
             _manager = manager;
             _scenes = scenes;
+            _hierarchy = hierarchy;
+            _players = players;
         }
 
         public void Enable(bool asServer)
@@ -42,14 +47,20 @@ namespace PurrNet
 
         private void OnSceneLoaded(SceneID scene, bool asserver)
         {
+            if (!_hierarchy.TryGetHierarchy(scene, out var hierarchy))
+            {
+                PurrLogger.LogError("Hierarchy not found for scene " + scene);
+                return;
+            }
+            
             if (!_sceneToVisiblityManager.ContainsKey(scene))
             {
-                var hierarchy = new VisibilityManager(scene);
+                var visibility = new VisibilityManager(_manager, hierarchy, _players, scene, _asServer);
                 
-                _visiblityManagers.Add(hierarchy);
-                _sceneToVisiblityManager.Add(scene, hierarchy);
+                _visiblityManagers.Add(visibility);
+                _sceneToVisiblityManager.Add(scene, visibility);
                 
-                hierarchy.Enable(asserver);
+                visibility.Enable(asserver);
             }
         }
 

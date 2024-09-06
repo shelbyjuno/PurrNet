@@ -118,6 +118,11 @@ namespace PurrNet
             return hierarchy.TryGetIdentity(id, out identity);
         }
         
+        internal bool TryGetHierarchy(SceneID sceneID, out HierarchyScene hierarchy)
+        {
+            return _sceneToHierarchy.TryGetValue(sceneID, out hierarchy);
+        }
+        
         internal void AutoSpawn(GameObject gameObject)
         {
             if (!_scenes.TryGetSceneID(gameObject.scene, out var sceneID))
