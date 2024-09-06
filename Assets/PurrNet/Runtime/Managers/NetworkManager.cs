@@ -277,7 +277,7 @@ namespace PurrNet
             var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
-            var visibilityFactory = new VisibilityFactory(this, scenesModule, hierarchyModule, scenePlayersModule, asServer);
+            var visibilityFactory = new VisibilityFactory(this, scenesModule, hierarchyModule, scenePlayersModule);
             var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
             var rpcModule = new RPCModule(playersManager, hierarchyModule, ownershipModule, scenesModule, scenePlayersModule);

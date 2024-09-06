@@ -4,20 +4,18 @@ using PurrNet.Modules;
 
 namespace PurrNet
 {
-    public class VisibilityFactory : INetworkModule
+    public class VisibilityFactory : INetworkModule, IFixedUpdate
     {
         private readonly NetworkManager _manager;
         private readonly ScenesModule _scenes;
         private readonly HierarchyModule _hierarchy;
         private readonly ScenePlayersModule _players;
-        private readonly bool _asServer;
 
         private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisiblityManager = new ();
         private readonly List<VisibilityManager> _visiblityManagers = new ();
 
-        public VisibilityFactory(NetworkManager manager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players, bool asServer)
+        public VisibilityFactory(NetworkManager manager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players)
         {
-            _asServer = asServer;
             _manager = manager;
             _scenes = scenes;
             _hierarchy = hierarchy;
@@ -73,6 +71,12 @@ namespace PurrNet
                 _visiblityManagers.Remove(hierarchy);
                 _sceneToVisiblityManager.Remove(scene);
             }
+        }
+
+        public void FixedUpdate()
+        {
+            for (var i = 0; i < _visiblityManagers.Count; i++)
+                _visiblityManagers[i].FixedUpdate();
         }
     }
 }

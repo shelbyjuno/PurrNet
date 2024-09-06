@@ -7,7 +7,7 @@ namespace PurrNet
 {
     public delegate void VisibilityChanged(PlayerID player, NetworkIdentity identity);
     
-    public class VisibilityManager : INetworkModule
+    public class VisibilityManager : INetworkModule, IFixedUpdate
     {
         [UsedImplicitly]
         private readonly NetworkManager _manager;
@@ -127,12 +127,26 @@ namespace PurrNet
             _observers.Remove(identity.id.Value);
         }
 
+        static readonly HashSet<PlayerID> _collection = new();
+        
         private void EvaluateVisibility(NetworkIdentity nid, HashSet<PlayerID> collection)
         {
+            _collection.Clear();
+            _collection.UnionWith(collection);
+            
             collection.Clear();
 
             if (!_players.TryGetPlayersInScene(_sceneId, out var players))
+            {
+                foreach (var player in _collection)
+                    onObserverRemoved?.Invoke(player, nid);
                 return;
+            }
+            
+            _collection.ExceptWith(players);
+            
+            foreach (var player in _collection)
+                onObserverRemoved?.Invoke(player, nid);
 
             foreach (var player in players)
                 EvaluateVisibility(player, nid, collection);
@@ -149,6 +163,25 @@ namespace PurrNet
             {
                 if (collection.Remove(target))
                     onObserverRemoved?.Invoke(target, nid);
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            // TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
+            var allIdentities = _hierarchy.identities.collection;
+
+            foreach (var identity in allIdentities)
+            {
+                var id = identity.id;
+                
+                if (!id.HasValue)
+                    continue;
+                
+                if (!_observers.TryGetValue(id.Value, out var observers))
+                    continue;
+                
+                EvaluateVisibility(identity, observers);
             }
         }
     }
