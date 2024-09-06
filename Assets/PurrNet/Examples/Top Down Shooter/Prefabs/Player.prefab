@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   moveSpeed: 4
   acceleration: 4
   jumpForce: 1.5
@@ -169,6 +170,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   bulletPrefab: {fileID: 6263184292926161676, guid: e013d4a382956084e907feb2a3501cf8, type: 3}
 --- !u!114 &6099025641715272783
 MonoBehaviour:
@@ -183,6 +185,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   maxHealth: 100
   healthText: {fileID: 2339485392063238819}
 --- !u!143 &4393774338475174367
@@ -223,6 +226,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   _guid: 20ec334e1da5edf44ac0079941c62c2b
 --- !u!114 &5061607183926739309
 MonoBehaviour:
@@ -237,6 +241,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   clientAuth: 1
   syncPosition: 1
   syncRotation: 1
@@ -290,6 +295,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   bodies:
   - {fileID: 8899729376433070502}
   - {fileID: 2125669350971959550}

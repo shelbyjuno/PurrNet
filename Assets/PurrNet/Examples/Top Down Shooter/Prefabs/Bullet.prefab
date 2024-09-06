@@ -69,46 +69,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b67f5d326b53eb459c681b0bcb20597, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionalSpawnRules:
-    spawnAuth:
-      overridden: 0
-      value: 0
-    despawnAuth:
-      overridden: 0
-      value: 0
-    defaultOwner:
-      overridden: 0
-      value: 0
-    propagateOwnership:
-      overridden: 0
-      value: 0
-    despawnIfOwnerDisconnects:
-      overridden: 0
-      value: 0
-  optionalOwnershipRules:
-    assignAuth:
-      overridden: 0
-      value: 0
-    transferAuth:
-      overridden: 0
-      value: 0
-    removeAuth:
-      overridden: 0
-      value: 0
-  optionalIdentityRules:
-    syncComponentActive:
-      overridden: 0
-      value: 0
-    syncComponentAuth:
-      overridden: 0
-      value: 0
-    syncGameObjectActive:
-      overridden: 0
-      value: 0
-    syncGameObjectActiveAuth:
-      overridden: 0
-      value: 0
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   speed: 8
   damage: 25
   lifeTime: 2
@@ -125,46 +87,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionalSpawnRules:
-    spawnAuth:
-      overridden: 0
-      value: 0
-    despawnAuth:
-      overridden: 0
-      value: 0
-    defaultOwner:
-      overridden: 0
-      value: 0
-    propagateOwnership:
-      overridden: 0
-      value: 0
-    despawnIfOwnerDisconnects:
-      overridden: 0
-      value: 0
-  optionalOwnershipRules:
-    assignAuth:
-      overridden: 0
-      value: 0
-    transferAuth:
-      overridden: 0
-      value: 0
-    removeAuth:
-      overridden: 0
-      value: 0
-  optionalIdentityRules:
-    syncComponentActive:
-      overridden: 0
-      value: 0
-    syncComponentAuth:
-      overridden: 0
-      value: 0
-    syncGameObjectActive:
-      overridden: 0
-      value: 0
-    syncGameObjectActiveAuth:
-      overridden: 0
-      value: 0
   _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   _guid: e013d4a382956084e907feb2a3501cf8
 --- !u!54 &2154248365010601148
 Rigidbody:

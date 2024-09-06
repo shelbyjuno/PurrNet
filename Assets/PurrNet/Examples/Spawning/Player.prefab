@@ -126,45 +126,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionalSpawnRules:
-    spawnAuth:
-      overridden: 0
-      value: 0
-    despawnAuth:
-      overridden: 0
-      value: 0
-    defaultOwner:
-      overridden: 0
-      value: 0
-    propagateOwnership:
-      overridden: 0
-      value: 0
-    despawnIfOwnerDisconnects:
-      overridden: 0
-      value: 0
-  optionalOwnershipRules:
-    assignAuth:
-      overridden: 0
-      value: 0
-    transferAuth:
-      overridden: 0
-      value: 0
-    removeAuth:
-      overridden: 0
-      value: 0
-  optionalIdentityRules:
-    syncComponentActive:
-      overridden: 0
-      value: 0
-    syncComponentAuth:
-      overridden: 0
-      value: 0
-    syncGameObjectActive:
-      overridden: 0
-      value: 0
-    syncGameObjectActiveAuth:
-      overridden: 0
-      value: 0
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   _guid: db03de8c3e30c094fbaad7cd57f45a01
 --- !u!1 &3568380479217191225
 GameObject:
@@ -287,45 +250,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionalSpawnRules:
-    spawnAuth:
-      overridden: 0
-      value: 0
-    despawnAuth:
-      overridden: 0
-      value: 0
-    defaultOwner:
-      overridden: 0
-      value: 0
-    propagateOwnership:
-      overridden: 0
-      value: 0
-    despawnIfOwnerDisconnects:
-      overridden: 0
-      value: 0
-  optionalOwnershipRules:
-    assignAuth:
-      overridden: 0
-      value: 0
-    transferAuth:
-      overridden: 0
-      value: 0
-    removeAuth:
-      overridden: 0
-      value: 0
-  optionalIdentityRules:
-    syncComponentActive:
-      overridden: 0
-      value: 0
-    syncComponentAuth:
-      overridden: 0
-      value: 0
-    syncGameObjectActive:
-      overridden: 0
-      value: 0
-    syncGameObjectActiveAuth:
-      overridden: 0
-      value: 0
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   clientAuth: 1
   syncPosition: 1
   syncRotation: 1
@@ -451,45 +377,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionalSpawnRules:
-    spawnAuth:
-      overridden: 0
-      value: 0
-    despawnAuth:
-      overridden: 0
-      value: 0
-    defaultOwner:
-      overridden: 0
-      value: 0
-    propagateOwnership:
-      overridden: 0
-      value: 0
-    despawnIfOwnerDisconnects:
-      overridden: 0
-      value: 0
-  optionalOwnershipRules:
-    assignAuth:
-      overridden: 0
-      value: 0
-    transferAuth:
-      overridden: 0
-      value: 0
-    removeAuth:
-      overridden: 0
-      value: 0
-  optionalIdentityRules:
-    syncComponentActive:
-      overridden: 0
-      value: 0
-    syncComponentAuth:
-      overridden: 0
-      value: 0
-    syncGameObjectActive:
-      overridden: 0
-      value: 0
-    syncGameObjectActiveAuth:
-      overridden: 0
-      value: 0
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   clientAuth: 1
   syncPosition: 1
   syncRotation: 1
@@ -615,45 +504,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionalSpawnRules:
-    spawnAuth:
-      overridden: 0
-      value: 0
-    despawnAuth:
-      overridden: 0
-      value: 0
-    defaultOwner:
-      overridden: 0
-      value: 0
-    propagateOwnership:
-      overridden: 0
-      value: 0
-    despawnIfOwnerDisconnects:
-      overridden: 0
-      value: 0
-  optionalOwnershipRules:
-    assignAuth:
-      overridden: 0
-      value: 0
-    transferAuth:
-      overridden: 0
-      value: 0
-    removeAuth:
-      overridden: 0
-      value: 0
-  optionalIdentityRules:
-    syncComponentActive:
-      overridden: 0
-      value: 0
-    syncComponentAuth:
-      overridden: 0
-      value: 0
-    syncGameObjectActive:
-      overridden: 0
-      value: 0
-    syncGameObjectActiveAuth:
-      overridden: 0
-      value: 0
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
   clientAuth: 1
   syncPosition: 1
   syncRotation: 1
