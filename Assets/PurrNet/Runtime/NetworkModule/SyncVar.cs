@@ -103,5 +103,10 @@ namespace PurrNet
         {
             return syncVar._value;
         }
+
+        public override string ToString()
+        {
+            return value.ToString();
+        }
     }
 }

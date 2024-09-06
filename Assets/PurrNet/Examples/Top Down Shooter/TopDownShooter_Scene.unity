@@ -1666,6 +1666,8 @@ MonoBehaviour:
   _transport: {fileID: 1216416896}
   _networkPrefabs: {fileID: 11400000, guid: 37af97d33ef8d9747b965053a79d21f4, type: 2}
   _networkRules: {fileID: 11400000, guid: 5879a6fa5625f844e9c773a4ca0099dc, type: 2}
+  _visibilityRules:
+  - {fileID: 11400000, guid: 9fa58c24aa9c54844988c4c24f601942, type: 2}
   _tickRate: 20
 --- !u!4 &1216416898
 Transform:

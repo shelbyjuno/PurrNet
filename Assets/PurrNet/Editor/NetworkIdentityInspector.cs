@@ -10,6 +10,13 @@ namespace PurrNet.Editor
     {
         private bool settingsFoldoutVisible;
         private GUIStyle boldFoldoutStyle; 
+        
+        private SerializedProperty _networkRules;
+        
+        private void OnEnable()
+        {
+            _networkRules = serializedObject.FindProperty("_networkRules");
+        }
 
         private void SetStyle()
         {
@@ -39,70 +46,32 @@ namespace PurrNet.Editor
                 return;
             }
 
-            HandleSettings(identity);
-            HandleOptionalRules(identity);
+            HandleOverrides(identity);
             HandleStatus(identity);
             
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void HandleSettings(NetworkIdentity identity)
-        {
-            if (identity.isSpawned)
-                return;
-            
-            settingsFoldoutVisible = EditorGUILayout.Foldout(settingsFoldoutVisible, "Network Identity Settings", true, boldFoldoutStyle);
-
-            if (settingsFoldoutVisible)
-            {
-                EditorGUI.indentLevel++;
-                EditorGUILayout.LabelField("Test");
-                EditorGUI.indentLevel--;
-            }
-        }
-
-        private void HandleOptionalRules(NetworkIdentity identity)
+        private void HandleOverrides(NetworkIdentity identity)
         {
             if (identity.isSpawned)
                 return;
             
             string prefKey = $"NetworkIdentityInspector_OptionalRulesFoldout_{identity.GetInstanceID()}";
-            bool foldoutVisible = EditorPrefs.GetBool(prefKey, false);
+            bool foldoutVisible = SessionState.GetBool(prefKey, false);
             
             EditorGUI.BeginChangeCheck();
             foldoutVisible = EditorGUILayout.Foldout(foldoutVisible, "Optional Network Rules", true, boldFoldoutStyle);
             if (EditorGUI.EndChangeCheck())
             {
-                EditorPrefs.SetBool(prefKey, foldoutVisible);
+                SessionState.SetBool(prefKey, foldoutVisible);
             }
 
             if (foldoutVisible)
             {
                 EditorGUI.indentLevel++;
 
-                DrawRulesSection("Spawn Rules", "optionalSpawnRules", new[]
-                {
-                    ("spawnAuth", "Spawn Auth"),
-                    ("despawnAuth", "Despawn Auth"),
-                    ("defaultOwner", "Default Owner"),
-                    ("propagateOwnership", "Propagate Ownership"),
-                    ("despawnIfOwnerDisconnects", "Despawn If Owner Disconnects")
-                });
-
-                DrawRulesSection("Ownership Rules", "optionalOwnershipRules", new[]
-                {
-                    ("assignAuth", "Assign Auth"),
-                    ("transferAuth", "Transfer Auth"),
-                    ("removeAuth", "Remove Auth")
-                });
-
-                DrawRulesSection("Network Identity Rules", "optionalIdentityRules", new[]
-                {
-                    ("syncComponentActive", "Sync Component Active"),
-                    ("syncComponentAuth", "Sync Component Auth"),
-                    ("syncGameObjectActive", "Sync GameObject Active"),
-                    ("syncGameObjectActiveAuth", "Sync GameObject Active Auth")
-                });
+                EditorGUILayout.PropertyField(_networkRules, new GUIContent("Rules Override"));
 
                 EditorGUI.indentLevel--;
             }

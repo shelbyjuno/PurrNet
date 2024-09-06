@@ -40,6 +40,7 @@ namespace PurrNet
         [SerializeField] private GenericTransport _transport;
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private NetworkRules _networkRules;
+        [SerializeField, PurrLock] private List<NetworkVisibilityRule> _visibilityRules = new ();
         [SerializeField] private int _tickRate = 20;
 
         public StartFlags startServerFlags { get => _startServerFlags; set => _startServerFlags = value; }
@@ -136,6 +137,8 @@ namespace PurrNet
         
         private bool _subscribed;
         
+        private readonly List<INetworkVisibilityRule> _raw_rules = new ();
+        
         public static void SetMainInstance(NetworkManager instance)
         {
             if (instance)
@@ -152,12 +155,34 @@ namespace PurrNet
 
             prefabProvider = provider;
         }
+        
+        public void AddRule(INetworkVisibilityRule rule)
+        {
+            if (rule is NetworkVisibilityRule nrule)
+                nrule.Setup(this);
+            _raw_rules.Add(rule);
+        }
+
+        public void RemoveRule(INetworkVisibilityRule rule)
+        {
+            _raw_rules.Remove(rule);
+        }
 
         private void Awake()
         {
             if (!main)
                 main = this;
-            
+
+            if (_visibilityRules != null)
+            {
+                for (int i = 0; i < _visibilityRules.Count; i++)
+                {
+                    var rule = _visibilityRules[i];
+                    rule.Setup(this);
+                    _raw_rules.Add(rule);
+                }
+            }
+
             Application.runInBackground = true;
 
             if (_networkPrefabs)
@@ -226,10 +251,34 @@ namespace PurrNet
         /// This creates a new list every time it's called.
         /// So it's recommended to cache the result if you're going to use it multiple times.
         /// </summary>
-        public List<NetworkID> GetAllPlayerOwnedIds(PlayerID player, bool asServer)
+        public List<NetworkIdentity> GetAllPlayerOwnedIds(PlayerID player, bool asServer)
         {
             var ownershipModule = GetModule<GlobalOwnershipModule>(asServer);
             return ownershipModule.GetAllPlayerOwnedIds(player);
+        }
+        
+        public IEnumerable<NetworkIdentity> EnumerateAllPlayerOwnedIds(PlayerID player, bool asServer)
+        {
+            var ownershipModule = GetModule<GlobalOwnershipModule>(asServer);
+            return ownershipModule.EnumerateAllPlayerOwnedIds(player);
+        }
+        
+        public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
+        {
+            if (_raw_rules == null || _raw_rules.Count == 0)
+                return true;
+
+            if (identity.owner == playerId)
+                return true;
+
+            for (int i = 0; i < _raw_rules.Count; i++)
+            {
+                var rule = _raw_rules[i];
+                if (!rule.HasVisiblity(playerId, identity))
+                    return false;
+            }
+
+            return true;
         }
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)

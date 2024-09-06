@@ -55,7 +55,7 @@ namespace PurrNet
             
             if (!_sceneToVisiblityManager.ContainsKey(scene))
             {
-                var visibility = new VisibilityManager(_manager, hierarchy, _players, scene, _asServer);
+                var visibility = new VisibilityManager(_manager, hierarchy, _players, scene);
                 
                 _visiblityManagers.Add(visibility);
                 _sceneToVisiblityManager.Add(scene, visibility);

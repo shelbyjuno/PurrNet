@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet.Examples.BoxCarry
 {
@@ -6,7 +7,7 @@ namespace PurrNet.Examples.BoxCarry
     public class Box : NetworkBehaviour
     {
         [SerializeField] private Material ownerMaterial, nonOwnerMaterial;
-        [SerializeField] private Renderer renderer;
+        [FormerlySerializedAs("renderer")] [SerializeField] private Renderer _renderer;
 
         private Rigidbody _rigidbody;
         private readonly SyncVar<bool> _gettingCarried = new();
@@ -22,7 +23,7 @@ namespace PurrNet.Examples.BoxCarry
             if (asServer && localPlayer.HasValue)
             {
                 GiveOwnership(localPlayer.Value);
-                renderer.material = ownerMaterial;
+                _renderer.material = ownerMaterial;
                 _rigidbody.isKinematic = false;
             }
         }
@@ -31,11 +32,11 @@ namespace PurrNet.Examples.BoxCarry
         {
             if (localPlayer == newOwner)
             {
-                renderer.material = ownerMaterial;
+                _renderer.material = ownerMaterial;
             }
             else
             {
-                renderer.material = nonOwnerMaterial;
+                _renderer.material = nonOwnerMaterial;
                 _rigidbody.isKinematic = true;
             }
         }

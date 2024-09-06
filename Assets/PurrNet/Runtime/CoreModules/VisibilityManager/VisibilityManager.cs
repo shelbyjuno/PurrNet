@@ -10,15 +10,13 @@ namespace PurrNet
         private readonly HierarchyScene _hierarchy;
         private readonly ScenePlayersModule _players;
         private readonly SceneID _sceneId;
-        private readonly bool _asServer;
         
         private readonly Dictionary<NetworkID, HashSet<PlayerID>> _observers = new();
         
-        internal VisibilityManager(NetworkManager manager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId, bool asServer)
+        internal VisibilityManager(NetworkManager manager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
             _manager = manager;
             _sceneId = sceneId;
-            _asServer = asServer;
             _hierarchy = hierarchy;
             _players = players;
         }
@@ -31,12 +29,18 @@ namespace PurrNet
         
         public void Enable(bool asServer)
         {
+            if (!asServer)
+                return;
+            
             _hierarchy.onIdentityAdded += OnIdentityAdded;
             _hierarchy.onIdentityRemoved += OnIdentityRemoved;
         }
 
         public void Disable(bool asServer)
         {
+            if (!asServer)
+                return;
+            
             _hierarchy.onIdentityAdded -= OnIdentityAdded;
             _hierarchy.onIdentityRemoved -= OnIdentityRemoved;
         }
@@ -79,7 +83,8 @@ namespace PurrNet
         
         private void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
         {
-            collection.Add(target);
+            if (_manager.HasVisiblity(target, nid))
+                collection.Add(target);
         }
     }
 }

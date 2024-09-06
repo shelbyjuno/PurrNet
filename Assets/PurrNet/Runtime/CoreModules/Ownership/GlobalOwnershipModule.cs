@@ -105,14 +105,40 @@ namespace PurrNet.Modules
         /// This creates a new list every time it's called.
         /// So it's recommended to cache the result if you're going to use it multiple times.
         /// </summary>
-        public List<NetworkID> GetAllPlayerOwnedIds(PlayerID player)
+        public List<NetworkIdentity> GetAllPlayerOwnedIds(PlayerID player)
         {
-            List<NetworkID> ids = new ();
-            
-            foreach (var (_, owned) in _sceneOwnerships)
-                ids.AddRange(owned.TryGetOwnedObjects(player));
+            List<NetworkIdentity> ids = new ();
+
+            foreach (var (scene, owned) in _sceneOwnerships)
+            {
+                if (!_hierarchy.TryGetHierarchy(scene, out var hierarchy))
+                    continue;
+
+                var ownedIds = owned.TryGetOwnedObjects(player);
+                foreach (var id in ownedIds)
+                {
+                    if (hierarchy.TryGetIdentity(id, out var identity))
+                        ids.Add(identity);
+                }
+            }
             
             return ids;
+        }
+        
+        public IEnumerable<NetworkIdentity> EnumerateAllPlayerOwnedIds(PlayerID player)
+        {
+            foreach (var (scene, owned) in _sceneOwnerships)
+            {
+                if (!_hierarchy.TryGetHierarchy(scene, out var hierarchy))
+                    continue;
+
+                var ownedIds = owned.TryGetOwnedObjects(player);
+                foreach (var id in ownedIds)
+                {
+                    if (hierarchy.TryGetIdentity(id, out var identity))
+                        yield return identity;
+                }
+            }
         }
 
         private void OnIdentityDespawned(NetworkIdentity identity)

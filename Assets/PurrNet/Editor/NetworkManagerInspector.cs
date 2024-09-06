@@ -18,6 +18,7 @@ namespace PurrNet.Editor
         private SerializedProperty _networkRules;
         private SerializedProperty _transport;
         private SerializedProperty _tickRate;
+        private SerializedProperty _visibilityRules;
         
         private void OnEnable()
         {
@@ -32,6 +33,7 @@ namespace PurrNet.Editor
             _networkRules = serializedObject.FindProperty("_networkRules");
             _transport = serializedObject.FindProperty("_transport");
             _tickRate = serializedObject.FindProperty("_tickRate");
+            _visibilityRules = serializedObject.FindProperty("_visibilityRules");
         }
 
         public override void OnInspectorGUI()
@@ -82,7 +84,8 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(_transport);
             EditorGUILayout.PropertyField(_networkPrefabs);
             EditorGUILayout.PropertyField(_networkRules);
-            
+            EditorGUILayout.PropertyField(_visibilityRules);
+
             GUI.enabled = true;
 
             if (networkManager.serverState != ConnectionState.Disconnected || networkManager.clientState != ConnectionState.Disconnected)

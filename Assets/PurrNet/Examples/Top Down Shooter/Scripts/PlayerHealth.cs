@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace PurrNet.Examples.TopDownShooter
@@ -24,21 +23,9 @@ namespace PurrNet.Examples.TopDownShooter
 
         private void FixedUpdate()
         {
-            //Just temp until syncvar gets OnChange
             healthText.text = _health.value.ToString();
         }
-
-        [ContextMenu("Log optional")]
-        private void LogOptional()
-        {
-            string allOptionalRules = $"Default Owner: {GetEffectiveDefaultOwner()}" +
-                                      $"\nPropagate Ownership: {GetEffectivePropagateOwnership()}" +
-                                      $"\nDespawn If Owner Disconnects: {GetEffectiveDespawnIfOwnerDisconnects()}" +
-                                      $"\nSpawn Auth: {GetEffectiveSpawnAuth()}" +
-                                      $"\nDespawn Auth: {GetEffectiveDespawnAuth()}";
-            Debug.Log(allOptionalRules);
-        }
-
+        
         public void ChangeHealth(int change)
         {
             if (_health + change <= 0)
