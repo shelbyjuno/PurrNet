@@ -1,11 +1,15 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
 
 namespace PurrNet
 {
+    public delegate void VisibilityChanged(PlayerID player, NetworkIdentity identity);
+    
     public class VisibilityManager : INetworkModule
     {
+        [UsedImplicitly]
         private readonly NetworkManager _manager;
         private readonly HierarchyScene _hierarchy;
         private readonly ScenePlayersModule _players;
@@ -13,12 +17,16 @@ namespace PurrNet
         
         private readonly Dictionary<NetworkID, HashSet<PlayerID>> _observers = new();
         
+        public event VisibilityChanged onObserverAdded;
+        
+        public event VisibilityChanged onObserverRemoved;
+        
         internal VisibilityManager(NetworkManager manager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
             _manager = manager;
-            _sceneId = sceneId;
             _hierarchy = hierarchy;
             _players = players;
+            _sceneId = sceneId;
         }
         
         public IEnumerable<PlayerID> GetObservers(NetworkID networkId)
@@ -34,6 +42,9 @@ namespace PurrNet
             
             _hierarchy.onIdentityAdded += OnIdentityAdded;
             _hierarchy.onIdentityRemoved += OnIdentityRemoved;
+            
+            _players.onPlayerLoadedScene += OnPlayerJoinedScene;
+            _players.onPlayerLeftScene += OnPlayerLeftScene;
         }
 
         public void Disable(bool asServer)
@@ -43,6 +54,52 @@ namespace PurrNet
             
             _hierarchy.onIdentityAdded -= OnIdentityAdded;
             _hierarchy.onIdentityRemoved -= OnIdentityRemoved;
+            
+            _players.onPlayerLoadedScene -= OnPlayerJoinedScene;
+            _players.onPlayerLeftScene -= OnPlayerLeftScene;
+        }
+
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        {
+            if (scene != _sceneId)
+                return;
+
+            var allIdentities = _hierarchy.identities.collection;
+
+            foreach (var identity in allIdentities)
+            {
+                var id = identity.id;
+                
+                if (!id.HasValue)
+                    continue;
+                
+                if (!_observers.TryGetValue(id.Value, out var observers))
+                    continue;
+                
+                EvaluateVisibility(player, identity, observers);
+            }
+        }
+
+        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        {
+            if (scene != _sceneId)
+                return;
+            
+            var allIdentities = _hierarchy.identities.collection;
+
+            foreach (var identity in allIdentities)
+            {
+                var id = identity.id;
+                
+                if (!id.HasValue)
+                    continue;
+                
+                if (!_observers.TryGetValue(id.Value, out var observers))
+                    continue;
+                
+                if (observers.Remove(player))
+                    onObserverRemoved?.Invoke(player, identity);
+            }
         }
 
         private void OnIdentityAdded(NetworkIdentity identity)
@@ -81,10 +138,18 @@ namespace PurrNet
                 EvaluateVisibility(player, nid, collection);
         }
         
-        private static void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
+        private void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
         {
             if (nid.HasVisiblity(target, nid))
-                collection.Add(target);
+            {
+                if (collection.Add(target))
+                    onObserverAdded?.Invoke(target, nid);
+            }
+            else
+            {
+                if (collection.Remove(target))
+                    onObserverRemoved?.Invoke(target, nid);
+            }
         }
     }
 }

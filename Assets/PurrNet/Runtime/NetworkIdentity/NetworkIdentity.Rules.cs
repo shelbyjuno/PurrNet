@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PurrNet
@@ -7,12 +8,29 @@ namespace PurrNet
         [SerializeField, HideInInspector] private NetworkRules _networkRules;
         [SerializeField, HideInInspector] private NetworkVisibilityRuleSet _visitiblityRules;
 
+        /// <summary>
+        /// Whitelist of players that can interact with this identity.
+        /// This doesn't block visibility for others but rather enforces visibility for these players.
+        /// </summary>
+        public readonly HashSet<PlayerID> whitelist = new();
+        
+        /// <summary>
+        /// Blacklist of players that can't interact with this identity.
+        /// </summary>
+        public readonly HashSet<PlayerID> blacklist = new();
+
         private NetworkRules networkRules => _networkRules ? _networkRules : networkManager.networkRules;
         
         private NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
 
         public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
         {
+            if (blacklist.Contains(playerId))
+                return false;
+            
+            if (whitelist.Contains(playerId))
+                return true;
+            
             var rules = visibilityRules;
             return rules && rules.HasVisiblity(playerId, identity);
         }

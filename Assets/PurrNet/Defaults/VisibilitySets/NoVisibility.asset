@@ -9,12 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28e93bf2b6064364aa5fd430134916ac, type: 3}
-  m_Name: UnsafeNetworkRules
+  m_Script: {fileID: 11500000, guid: 82fc41c1f0645d946a33c8668909ca23, type: 3}
+  m_Name: NoVisibility
   m_EditorClassIdentifier: 
-  spawnAuth: 1
-  defaultOwner: 2
-  syncVarAuth: 1
-  clientRpcAuth: 1
-  ownershipTransferAuth: 1
-  syncParentAuth: -1
+  _rules:
+  - {fileID: 11400000, guid: f97f4e2d6a9d7fd418f9358ccf98922e, type: 2}

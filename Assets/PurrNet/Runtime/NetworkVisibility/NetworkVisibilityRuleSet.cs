@@ -9,8 +9,6 @@ namespace PurrNet
         [SerializeField] private NetworkVisibilityRule[] _rules;
         
         private readonly List<INetworkVisibilityRule> _raw_rules = new ();
-        
-        public IReadOnlyList<INetworkVisibilityRule> rules => _raw_rules;
 
         public void Setup(NetworkManager manager)
         {

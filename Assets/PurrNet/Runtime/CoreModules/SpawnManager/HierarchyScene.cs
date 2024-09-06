@@ -36,6 +36,8 @@ namespace PurrNet.Modules
         private readonly IdentitiesCollection _identities;
         private readonly HierarchyHistory _history;
         private readonly ScenePlayersModule _scenePlayers;
+        
+        public IdentitiesCollection identities => _identities;
 
         public event Action<NetworkIdentity> onIdentityRemoved;
         public event Action<NetworkIdentity> onIdentityAdded;
