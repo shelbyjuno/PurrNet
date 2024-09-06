@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,35 +6,20 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(NetworkIdentity), true)]
     public class NetworkIdentityInspector : UnityEditor.Editor
     {
-        private bool settingsFoldoutVisible;
-        private GUIStyle boldFoldoutStyle; 
-        
         private SerializedProperty _networkRules;
+        private SerializedProperty _visitiblityRules;
         
         private void OnEnable()
         {
             _networkRules = serializedObject.FindProperty("_networkRules");
-        }
-
-        private void SetStyle()
-        {
-            boldFoldoutStyle = new GUIStyle(EditorStyles.foldout)
-            {
-                fontStyle = FontStyle.Bold
-            };
+            _visitiblityRules = serializedObject.FindProperty("_visitiblityRules");
         }
 
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
 
-            if (boldFoldoutStyle == null)
-            {
-                SetStyle(); 
-                return;
-            }
-
-            GUILayout.Space(10);
+            GUILayout.Space(5);
             
             var identity = (NetworkIdentity)target;
             
@@ -51,86 +34,46 @@ namespace PurrNet.Editor
             
             serializedObject.ApplyModifiedProperties();
         }
+        
+        private bool _foldoutVisible;
 
         private void HandleOverrides(NetworkIdentity identity)
         {
             if (identity.isSpawned)
-                return;
+                GUI.enabled = false;
             
-            string prefKey = $"NetworkIdentityInspector_OptionalRulesFoldout_{identity.GetInstanceID()}";
-            bool foldoutVisible = SessionState.GetBool(prefKey, false);
-            
-            EditorGUI.BeginChangeCheck();
-            foldoutVisible = EditorGUILayout.Foldout(foldoutVisible, "Optional Network Rules", true, boldFoldoutStyle);
-            if (EditorGUI.EndChangeCheck())
-            {
-                SessionState.SetBool(prefKey, foldoutVisible);
-            }
+            bool isNetworkRulesOverridden = _networkRules.objectReferenceValue != null;
+            bool isVisibilityRulesOverridden = _visitiblityRules.objectReferenceValue != null;
 
-            if (foldoutVisible)
+            string label = "Override Defaults";
+            int overridenCount = (isNetworkRulesOverridden ? 1 : 0) + (isVisibilityRulesOverridden ? 1 : 0);
+
+            if (overridenCount > 0)
+            {
+                label += " (";
+
+                if (isNetworkRulesOverridden)
+                {
+                    label += overridenCount > 1 ? "P," : "P";
+                }
+                
+                if (isVisibilityRulesOverridden)
+                    label += "V";
+                
+                label += ")";
+            }
+            
+            _foldoutVisible = EditorGUILayout.BeginFoldoutHeaderGroup(_foldoutVisible, label);
+            
+            if (_foldoutVisible)
             {
                 EditorGUI.indentLevel++;
-
-                EditorGUILayout.PropertyField(_networkRules, new GUIContent("Rules Override"));
-
+                EditorGUILayout.PropertyField(_networkRules, new GUIContent("Permissions Override"));
+                EditorGUILayout.PropertyField(_visitiblityRules, new GUIContent("Visibility Override"));
                 EditorGUI.indentLevel--;
             }
-        }
-
-        private void DrawRulesSection(string sectionTitle, string propertyName, (string propertyName, string label)[] properties)
-        {
-            EditorGUILayout.LabelField(sectionTitle, EditorStyles.boldLabel);
-            SerializedProperty rulesProp = serializedObject.FindProperty(propertyName);
-            foreach (var (propName, label) in properties)
-            {
-                DrawOptionalProperty(rulesProp.FindPropertyRelative(propName), label);
-            }
-            EditorGUILayout.Space();
-        }
-
-        private void DrawOptionalProperty(SerializedProperty property, string label)
-        {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(label, GUILayout.Width(200));
-
-            SerializedProperty overriddenProp = property.FindPropertyRelative("overridden");
-            SerializedProperty valueProp = property.FindPropertyRelative("value");
-
-            string[] options = GetOptionsForProperty(valueProp);
-
-            int selectedIndex = overriddenProp.boolValue ? Array.IndexOf(options, valueProp.propertyType == SerializedPropertyType.Enum ? valueProp.enumNames[valueProp.enumValueIndex] : valueProp.boolValue.ToString()) : 0;
             
-            EditorGUI.BeginChangeCheck();
-            selectedIndex = EditorGUILayout.Popup(selectedIndex, options);
-            if (EditorGUI.EndChangeCheck())
-            {
-                overriddenProp.boolValue = selectedIndex != 0;
-                if (overriddenProp.boolValue)
-                {
-                    switch (valueProp.propertyType)
-                    {
-                        case SerializedPropertyType.Enum:
-                            valueProp.enumValueIndex = selectedIndex - 1;
-                            break;
-                        case SerializedPropertyType.Boolean:
-                            valueProp.boolValue = options[selectedIndex] == "True";
-                            break;
-                    }
-                }
-            }
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private static string[] GetOptionsForProperty(SerializedProperty property)
-        {
-            string[] options = property.propertyType switch
-            {
-                SerializedPropertyType.Enum => new[] { "Default" }.Concat(property.enumNames).ToArray(),
-                SerializedPropertyType.Boolean => new[] { "Default", "True", "False" },
-                _ => new[] { "Default", "Custom" }
-            };
-            return options;
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
         private static void HandleStatus(NetworkIdentity identity)

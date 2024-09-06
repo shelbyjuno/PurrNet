@@ -40,7 +40,7 @@ namespace PurrNet
         [SerializeField] private GenericTransport _transport;
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private NetworkRules _networkRules;
-        [SerializeField, PurrLock] private List<NetworkVisibilityRule> _visibilityRules = new ();
+        [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
         [SerializeField] private int _tickRate = 20;
 
         public StartFlags startServerFlags { get => _startServerFlags; set => _startServerFlags = value; }
@@ -48,6 +48,8 @@ namespace PurrNet
         public StartFlags startClientFlags { get => _startClientFlags; set => _startClientFlags = value; }
 
         public IPrefabProvider prefabProvider { get; private set; }
+        
+        public NetworkVisibilityRuleSet visibilityRules => _visibilityRules;
 
         /// <summary>
         /// Occurs when the server connection state changes.
@@ -137,8 +139,6 @@ namespace PurrNet
         
         private bool _subscribed;
         
-        private readonly List<INetworkVisibilityRule> _raw_rules = new ();
-        
         public static void SetMainInstance(NetworkManager instance)
         {
             if (instance)
@@ -155,33 +155,19 @@ namespace PurrNet
 
             prefabProvider = provider;
         }
-        
-        public void AddRule(INetworkVisibilityRule rule)
-        {
-            if (rule is NetworkVisibilityRule nrule)
-                nrule.Setup(this);
-            _raw_rules.Add(rule);
-        }
-
-        public void RemoveRule(INetworkVisibilityRule rule)
-        {
-            _raw_rules.Remove(rule);
-        }
 
         private void Awake()
         {
+            if (_visibilityRules)
+            {
+                var ogName = _visibilityRules.name;
+                _visibilityRules = Instantiate(_visibilityRules);
+                _visibilityRules.name = "Copy of " + ogName;
+                _visibilityRules.Setup(this);
+            }
+            
             if (!main)
                 main = this;
-
-            if (_visibilityRules != null)
-            {
-                for (int i = 0; i < _visibilityRules.Count; i++)
-                {
-                    var rule = _visibilityRules[i];
-                    rule.Setup(this);
-                    _raw_rules.Add(rule);
-                }
-            }
 
             Application.runInBackground = true;
 
@@ -265,20 +251,17 @@ namespace PurrNet
         
         public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
         {
-            if (_raw_rules == null || _raw_rules.Count == 0)
-                return true;
+            return _visibilityRules && _visibilityRules.HasVisiblity(playerId, identity);
+        }
+        
+        public void AddVisibilityRule(NetworkManager manager, INetworkVisibilityRule rule)
+        {
+            _visibilityRules.AddRule(manager, rule);
+        }
 
-            if (identity.owner == playerId)
-                return true;
-
-            for (int i = 0; i < _raw_rules.Count; i++)
-            {
-                var rule = _raw_rules[i];
-                if (!rule.HasVisiblity(playerId, identity))
-                    return false;
-            }
-
-            return true;
+        public void RemoveVisibilityRule(INetworkVisibilityRule rule)
+        {
+            _visibilityRules.RemoveRule(rule);
         }
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)

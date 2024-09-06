@@ -5,6 +5,7 @@ namespace PurrNet
     public partial class NetworkIdentity
     {
         [SerializeField, HideInInspector] private NetworkRules _networkRules;
+        [SerializeField, HideInInspector] private NetworkVisibilityRuleSet _visitiblityRules;
         
         protected NetworkRules networkRules => _networkRules ? networkManager.networkRules : _networkRules;
         
