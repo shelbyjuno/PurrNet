@@ -81,9 +81,9 @@ namespace PurrNet
                 EvaluateVisibility(player, nid, collection);
         }
         
-        private void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
+        private static void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
         {
-            if (_manager.HasVisiblity(target, nid))
+            if (nid.HasVisiblity(target, nid))
                 collection.Add(target);
         }
     }
