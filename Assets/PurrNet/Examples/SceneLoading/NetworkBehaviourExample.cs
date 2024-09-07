@@ -1,6 +1,8 @@
+using System.Collections;
 using JetBrains.Annotations;
 using PurrNet;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
@@ -20,6 +22,18 @@ public class NetworkBehaviourExample : NetworkBehaviour
         _testChild = new SyncVar<int>(69);
     }
 
+    private void Awake()
+    {
+        Test("Test");
+    }
+
+    IEnumerator TestCoroutine()
+    {
+        yield return new WaitForSeconds(1);
+        
+        Test("Test");
+    }
+
     private void Update()
     {
         if (isSpawned && isServer)
@@ -32,6 +46,12 @@ public class NetworkBehaviourExample : NetworkBehaviour
                 // ObserversRPCTest(Time.time, someRef);
             }
         }
+    }
+    
+    [ObserversRPC]
+    private void Test(string test)
+    {
+        Debug.Log(test);
     }
 
     [ObserversRPC(bufferLast: true)]

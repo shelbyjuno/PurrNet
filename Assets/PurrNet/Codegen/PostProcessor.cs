@@ -6,7 +6,6 @@ using System.Linq;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
@@ -782,24 +781,34 @@ namespace PurrNet.Codegen
 
         private static void UpdateMethodReferences(ModuleDefinition module, MethodReference old, MethodReference @new, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
+            List<TypeDefinition> types = new();
+            
+            types.AddRange(module.Types);
             foreach (var type in module.Types)
             {
+                types.AddRange(type.NestedTypes);
+            }
+
+            for (var tidx = 0; tidx < types.Count; tidx++)
+            {
+                var type = types[tidx];
                 foreach (var method in type.Methods)
                 {
                     if (method == @new || method.GetElementMethod() == @new) continue;
-                    
+
                     if (method.Body == null) continue;
-                    
+
                     var processor = method.Body.GetILProcessor();
 
                     for (var i = 0; i < method.Body.Instructions.Count; i++)
                     {
                         var instruction = method.Body.Instructions[i];
-                        
+
                         if (instruction.OpCode == OpCodes.Call &&
-                            instruction.Operand is MethodReference methodReference && methodReference.GetElementMethod() == old)
+                            instruction.Operand is MethodReference methodReference &&
+                            methodReference.GetElementMethod() == old)
                         {
-                            var newRef = new MethodReference(@new.Name, @new.ReturnType, 
+                            var newRef = new MethodReference(@new.Name, @new.ReturnType,
                                 methodReference.DeclaringType)
                             {
                                 HasThis = methodReference.HasThis,
@@ -821,7 +830,7 @@ namespace PurrNet.Codegen
                             if (methodReference is GenericInstanceMethod genericInstanceMethod)
                             {
                                 var newGenericInstanceMethod = new GenericInstanceMethod(newRef);
-        
+
                                 foreach (var argument in genericInstanceMethod.GenericArguments)
                                     newGenericInstanceMethod.GenericArguments.Add(argument);
 
@@ -834,7 +843,6 @@ namespace PurrNet.Codegen
                 }
             }
         }
-        
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
