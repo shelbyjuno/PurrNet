@@ -43,7 +43,7 @@ namespace PurrNet
         
         public bool HasSpawnAuthority(NetworkManager manager, bool asServer)
         {
-            var rules = _networkRules ? manager.networkRules : _networkRules;
+            var rules = _networkRules ? _networkRules : manager.networkRules;
             return rules && rules.HasSpawnAuthority(manager, asServer);
         }
         
