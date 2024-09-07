@@ -21,6 +21,8 @@ namespace PurrNet
         
         public event VisibilityChanged onObserverRemoved;
         
+        private bool _asServer;
+        
         internal VisibilityManager(NetworkManager manager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
             _manager = manager;
@@ -37,6 +39,8 @@ namespace PurrNet
         
         public void Enable(bool asServer)
         {
+            _asServer = asServer;
+            
             if (!asServer)
                 return;
             
@@ -58,7 +62,7 @@ namespace PurrNet
             _players.onPlayerLoadedScene -= OnPlayerJoinedScene;
             _players.onPlayerLeftScene -= OnPlayerLeftScene;
         }
-
+        
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneId)
@@ -123,30 +127,35 @@ namespace PurrNet
                 PurrLogger.LogError("Identity has no ID when being removed, can't properly clean up.");
                 return;
             }
-            
-            _observers.Remove(identity.id.Value);
+            if (_observers.TryGetValue(identity.id.Value, out var observers))
+            {
+                foreach (var player in observers)
+                    onObserverRemoved?.Invoke(player, identity);
+                _observers.Remove(identity.id.Value);
+            }
         }
 
         static readonly HashSet<PlayerID> _collection = new();
         
         private void EvaluateVisibility(NetworkIdentity nid, HashSet<PlayerID> collection)
         {
-            _collection.Clear();
-            _collection.UnionWith(collection);
-            
-            collection.Clear();
-
             if (!_players.TryGetPlayersInScene(_sceneId, out var players))
             {
-                foreach (var player in _collection)
+                foreach (var player in collection)
                     onObserverRemoved?.Invoke(player, nid);
+                collection.Clear();
                 return;
             }
-            
+
+            _collection.Clear();
+            _collection.UnionWith(collection);
             _collection.ExceptWith(players);
             
             foreach (var player in _collection)
+            {
+                collection.Remove(player);
                 onObserverRemoved?.Invoke(player, nid);
+            }
 
             foreach (var player in players)
                 EvaluateVisibility(player, nid, collection);

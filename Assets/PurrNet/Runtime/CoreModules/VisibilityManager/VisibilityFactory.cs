@@ -11,8 +11,8 @@ namespace PurrNet
         private readonly HierarchyModule _hierarchy;
         private readonly ScenePlayersModule _players;
 
-        private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisiblityManager = new ();
-        private readonly List<VisibilityManager> _visiblityManagers = new ();
+        private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisibilityManager = new ();
+        private readonly List<VisibilityManager> _visibilityManagers = new ();
 
         public VisibilityFactory(NetworkManager manager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players)
         {
@@ -36,8 +36,8 @@ namespace PurrNet
 
         public void Disable(bool asServer)
         {
-            for (var i = 0; i < _visiblityManagers.Count; i++)
-                _visiblityManagers[i].Disable(asServer);
+            for (var i = 0; i < _visibilityManagers.Count; i++)
+                _visibilityManagers[i].Disable(asServer);
             
             _scenes.onPreSceneLoaded -= OnSceneLoaded;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
@@ -51,12 +51,12 @@ namespace PurrNet
                 return;
             }
             
-            if (!_sceneToVisiblityManager.ContainsKey(scene))
+            if (!_sceneToVisibilityManager.ContainsKey(scene))
             {
                 var visibility = new VisibilityManager(_manager, hierarchy, _players, scene);
                 
-                _visiblityManagers.Add(visibility);
-                _sceneToVisiblityManager.Add(scene, visibility);
+                _visibilityManagers.Add(visibility);
+                _sceneToVisibilityManager.Add(scene, visibility);
                 
                 visibility.Enable(asserver);
             }
@@ -64,19 +64,19 @@ namespace PurrNet
 
         private void OnSceneUnloaded(SceneID scene, bool asserver)
         {
-            if (_sceneToVisiblityManager.TryGetValue(scene, out var hierarchy))
+            if (_sceneToVisibilityManager.TryGetValue(scene, out var hierarchy))
             {
                 hierarchy.Disable(asserver);
                 
-                _visiblityManagers.Remove(hierarchy);
-                _sceneToVisiblityManager.Remove(scene);
+                _visibilityManagers.Remove(hierarchy);
+                _sceneToVisibilityManager.Remove(scene);
             }
         }
 
         public void FixedUpdate()
         {
-            for (var i = 0; i < _visiblityManagers.Count; i++)
-                _visiblityManagers[i].FixedUpdate();
+            for (var i = 0; i < _visibilityManagers.Count; i++)
+                _visibilityManagers[i].FixedUpdate();
         }
     }
 }

@@ -157,7 +157,7 @@ namespace PurrNet.Modules
         /// <summary>
         /// Get all players that are both part of the scene and have finished loading the scene
         /// </summary>
-        public bool TryGetPlayersInScene(SceneID scene, out IReadOnlyCollection<PlayerID> players)
+        public bool TryGetPlayersInScene(SceneID scene, out HashSet<PlayerID> players)
         {
             if (_sceneLoadedPlayers.TryGetValue(scene, out var data))
             {

@@ -9,7 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48f649fea1c64484b9dfea72be0c0ad9, type: 3}
-  m_Name: DefaultDistance
+  m_Script: {fileID: 11500000, guid: 82fc41c1f0645d946a33c8668909ca23, type: 3}
+  m_Name: DistanceVisibility
   m_EditorClassIdentifier: 
-  _distance: 5
+  _rules:
+  - {fileID: 11400000, guid: 9fa58c24aa9c54844988c4c24f601942, type: 2}
