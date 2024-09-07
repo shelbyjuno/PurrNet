@@ -179,7 +179,7 @@ namespace PurrNet.Modules
             return true;
         }
 
-        readonly struct StaticGenericKey
+        readonly struct StaticGenericKey : IEquatable<StaticGenericKey>
         {
             readonly IntPtr _type;
             readonly string _methodName;
@@ -198,7 +198,17 @@ namespace PurrNet.Modules
             
             public override int GetHashCode()
             {
-                return _type.GetHashCode() ^ _methodName.GetHashCode() ^ _typesHash;
+                return HashCode.Combine(_type, _methodName, _typesHash);
+            }
+
+            public bool Equals(StaticGenericKey other)
+            {
+                return _type.Equals(other._type) && _methodName == other._methodName && _typesHash == other._typesHash;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is StaticGenericKey other && Equals(other);
             }
         }
         
@@ -487,7 +497,7 @@ namespace PurrNet.Modules
             return rpc;
         }
         
-        readonly struct RPCKey
+        readonly struct RPCKey : IEquatable<RPCKey>
         {
             private readonly IReflect type;
             private readonly byte rpcId;
@@ -501,6 +511,16 @@ namespace PurrNet.Modules
             {
                 this.type = type;
                 this.rpcId = rpcId;
+            }
+
+            public bool Equals(RPCKey other)
+            {
+                return Equals(type, other.type) && rpcId == other.rpcId;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is RPCKey other && Equals(other);
             }
         }
         

@@ -3,6 +3,7 @@ using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
+using PurrNet.Transports;
 
 namespace PurrNet
 {
@@ -54,13 +55,15 @@ namespace PurrNet
         {
             if (!parent)
             {
-                PurrLogger.LogError($"Trying to send RPC from '{GetType().Name}' which is not initialized.");
+                if (signature.channel is Channel.ReliableOrdered or Channel.ReliableSequenced)
+                    PurrLogger.LogError($"Trying to send RPC from '{GetType().Name}' which is not initialized.");
                 return;
             }
 
             if (!parent.isSpawned)
             {
-                PurrLogger.LogError($"Trying to send RPC from '{parent.name}' which is not spawned.", parent);
+                if (signature.channel is Channel.ReliableOrdered or Channel.ReliableSequenced)
+                    PurrLogger.LogError($"Trying to send RPC from '{parent.name}' which is not spawned.", parent);
                 return;
             }
 
