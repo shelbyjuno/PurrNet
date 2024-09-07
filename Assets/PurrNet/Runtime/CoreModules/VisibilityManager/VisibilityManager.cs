@@ -21,8 +21,6 @@ namespace PurrNet
         
         public event VisibilityChanged onObserverRemoved;
         
-        private bool _asServer;
-        
         internal VisibilityManager(NetworkManager manager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
             _manager = manager;
@@ -39,8 +37,6 @@ namespace PurrNet
         
         public void Enable(bool asServer)
         {
-            _asServer = asServer;
-            
             if (!asServer)
                 return;
             
