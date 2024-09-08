@@ -813,6 +813,7 @@ namespace PurrNet.Codegen
                         {
                             if (flag.FullName == startLocalExecutionFlag)
                             {
+                                processor.Replace(instruction, Instruction.Create(OpCodes.Nop));
                                 if (isSkipping)
                                 {
                                     Error(messages, "Local mode flag was already set, avoid nesting these flags.", method);
@@ -824,6 +825,7 @@ namespace PurrNet.Codegen
                             
                             if (flag.FullName == exitLocalExecutionFlag)
                             {
+                                processor.Replace(instruction, Instruction.Create(OpCodes.Nop));
                                 if (!isSkipping)
                                 {
                                     Error(messages, "Local mode flag was not set, you should first call <b>PurrCompilerFlags.EnterLocalExecution()</b>", method);
