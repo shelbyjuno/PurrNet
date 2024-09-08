@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using JetBrains.Annotations;
 using PurrNet;
@@ -25,13 +26,13 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private void Awake()
     {
         Test("Test");
-    }
-
-    IEnumerator TestCoroutine()
-    {
-        yield return new WaitForSeconds(1);
         
-        Test("Test");
+        TestIndirectCall(Test);
+    }
+    
+    private void TestIndirectCall(Action<string> action)
+    {
+        action("Test");
     }
 
     private void Update()

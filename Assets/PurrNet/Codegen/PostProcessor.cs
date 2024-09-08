@@ -804,44 +804,49 @@ namespace PurrNet.Codegen
                     {
                         var instruction = method.Body.Instructions[i];
 
-                        if (instruction.OpCode == OpCodes.Call &&
-                            instruction.Operand is MethodReference methodReference &&
+                        if (instruction.Operand is MethodReference methodReference &&
                             methodReference.GetElementMethod() == old)
                         {
-                            var newRef = new MethodReference(@new.Name, @new.ReturnType,
-                                methodReference.DeclaringType)
-                            {
-                                HasThis = methodReference.HasThis,
-                                ExplicitThis = methodReference.ExplicitThis,
-                                CallingConvention = methodReference.CallingConvention,
-                            };
-
-                            foreach (var parameter in methodReference.Parameters)
-                            {
-                                newRef.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
-                                    parameter.ParameterType));
-                            }
-
-                            foreach (var parameter in methodReference.GenericParameters)
-                            {
-                                newRef.GenericParameters.Add(new GenericParameter(parameter.Name, parameter.Owner));
-                            }
-
-                            if (methodReference is GenericInstanceMethod genericInstanceMethod)
-                            {
-                                var newGenericInstanceMethod = new GenericInstanceMethod(newRef);
-
-                                foreach (var argument in genericInstanceMethod.GenericArguments)
-                                    newGenericInstanceMethod.GenericArguments.Add(argument);
-
-                                newRef = newGenericInstanceMethod;
-                            }
-
-                            processor.Replace(instruction, Instruction.Create(OpCodes.Call, newRef));
+                            var newRef = GenerateNewRef(@new, methodReference);
+                            processor.Replace(instruction, Instruction.Create(instruction.OpCode, newRef));
                         }
                     }
                 }
             }
+        }
+
+        private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
+        {
+            var newRef = new MethodReference(@new.Name, @new.ReturnType,
+                methodReference.DeclaringType)
+            {
+                HasThis = methodReference.HasThis,
+                ExplicitThis = methodReference.ExplicitThis,
+                CallingConvention = methodReference.CallingConvention,
+            };
+
+            foreach (var parameter in methodReference.Parameters)
+            {
+                newRef.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
+                    parameter.ParameterType));
+            }
+
+            foreach (var parameter in methodReference.GenericParameters)
+            {
+                newRef.GenericParameters.Add(new GenericParameter(parameter.Name, parameter.Owner));
+            }
+
+            if (methodReference is GenericInstanceMethod genericInstanceMethod)
+            {
+                var newGenericInstanceMethod = new GenericInstanceMethod(newRef);
+
+                foreach (var argument in genericInstanceMethod.GenericArguments)
+                    newGenericInstanceMethod.GenericArguments.Add(argument);
+
+                newRef = newGenericInstanceMethod;
+            }
+
+            return newRef;
         }
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
