@@ -779,15 +779,20 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void UpdateMethodReferences(ModuleDefinition module, MethodReference old, MethodReference @new, [UsedImplicitly] List<DiagnosticMessage> messages)
+        private static bool UpdateMethodReferences(ModuleDefinition module, MethodReference old, MethodReference @new, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             List<TypeDefinition> types = new();
+            
+            var startLocalExecutionFlag = module.GetTypeDefinition(typeof(PurrCompilerFlags)).GetMethod("EnterLocalExecution").FullName;
+            var exitLocalExecutionFlag = module.GetTypeDefinition(typeof(PurrCompilerFlags)).GetMethod("ExitLocalExecution").FullName;
             
             types.AddRange(module.Types);
             foreach (var type in module.Types)
             {
                 types.AddRange(type.NestedTypes);
             }
+            
+            bool isSkipping = false;
 
             for (var tidx = 0; tidx < types.Count; tidx++)
             {
@@ -803,6 +808,34 @@ namespace PurrNet.Codegen
                     for (var i = 0; i < method.Body.Instructions.Count; i++)
                     {
                         var instruction = method.Body.Instructions[i];
+                        
+                        if (instruction.OpCode == OpCodes.Call && instruction.Operand is MethodReference flag)
+                        {
+                            if (flag.FullName == startLocalExecutionFlag)
+                            {
+                                if (isSkipping)
+                                {
+                                    Error(messages, "Local mode flag was already set, avoid nesting these flags.", method);
+                                    return false;
+                                }
+                                isSkipping = true;
+                                continue;
+                            }
+                            
+                            if (flag.FullName == exitLocalExecutionFlag)
+                            {
+                                if (!isSkipping)
+                                {
+                                    Error(messages, "Local mode flag was not set, you should first call <b>PurrCompilerFlags.EnterLocalExecution()</b>", method);
+                                    return false;
+                                }
+                                isSkipping = false;
+                                continue;
+                            }
+                        }
+                        
+                        if (isSkipping)
+                            continue;
 
                         if (instruction.Operand is MethodReference methodReference &&
                             methodReference.GetElementMethod() == old)
@@ -811,8 +844,16 @@ namespace PurrNet.Codegen
                             processor.Replace(instruction, Instruction.Create(instruction.OpCode, newRef));
                         }
                     }
+
+                    if (isSkipping)
+                    {
+                        Error(messages, "Local mode flag was not unset, you should call <b>PurrCompilerFlags.ExitLocalExecution()</b>", method);
+                        return false;
+                    }
                 }
             }
+
+            return true;
         }
 
         private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
@@ -982,7 +1023,10 @@ namespace PurrNet.Codegen
                                 if (newMethod != null)
                                 {
                                     type.Methods.Add(newMethod);
-                                    UpdateMethodReferences(module, method, newMethod, messages);
+                                    if (!UpdateMethodReferences(module, method, newMethod, messages))
+                                    {
+                                        return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, messages);
+                                    }
                                 }
                             }
                             catch (Exception e)

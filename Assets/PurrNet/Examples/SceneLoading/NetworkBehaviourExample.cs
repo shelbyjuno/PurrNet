@@ -27,7 +27,16 @@ public class NetworkBehaviourExample : NetworkBehaviour
     {
         if (!asServer)
         {
-            Test("Test");
+            PurrCompilerFlags.EnterLocalExecution();
+            
+            // these 2 will ONLY run locally
+            Test("Test 1");
+            Test("Test 2");
+            
+            PurrCompilerFlags.ExitLocalExecution();
+            
+            // this will be sent to the server as per usual
+            Test("Test 3");
         }
     }
     
