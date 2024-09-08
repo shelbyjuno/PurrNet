@@ -81,7 +81,7 @@ namespace PurrNet
         
         protected virtual void OnSpawned(bool asServer) { }
 
-        protected virtual void OnPreModulesInitialize() { }
+        protected virtual void OnInitializeModules() { }
         
         protected virtual void OnDespawned(bool asServer) { }
 
@@ -183,7 +183,7 @@ namespace PurrNet
 
             if (!wasAlreadySpawned)
             {
-                OnPreModulesInitialize();
+                OnInitializeModules();
                 CallInitMethods();
             }
         }

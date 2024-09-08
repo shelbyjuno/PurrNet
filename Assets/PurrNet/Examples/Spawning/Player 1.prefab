@@ -252,10 +252,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  clientAuth: 1
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 1
+  _clientAuth: 1
+  _syncPosition: 1
+  _syncRotation: 1
+  _syncScale: 1
 --- !u!1 &3706820735218235372
 GameObject:
   m_ObjectHideFlags: 0
@@ -379,10 +379,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  clientAuth: 1
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 1
+  _clientAuth: 1
+  _syncPosition: 1
+  _syncRotation: 1
+  _syncScale: 1
 --- !u!1 &7964827295588954381
 GameObject:
   m_ObjectHideFlags: 0
@@ -506,7 +506,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  clientAuth: 1
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 1
+  _clientAuth: 1
+  _syncPosition: 1
+  _syncRotation: 1
+  _syncScale: 1

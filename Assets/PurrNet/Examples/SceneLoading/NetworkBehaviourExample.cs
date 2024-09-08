@@ -18,23 +18,19 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [SerializeField]
     private SyncVar<int> _testChild3;
 
-    protected override void OnPreModulesInitialize()
+    protected override void OnInitializeModules()
     {
         _testChild = new SyncVar<int>(69);
     }
 
-    private void Awake()
+    protected override void OnSpawned(bool asServer)
     {
-        Test("Test");
-        
-        TestIndirectCall(Test);
+        if (!asServer)
+        {
+            Test("Test");
+        }
     }
     
-    private void TestIndirectCall(Action<string> action)
-    {
-        action("Test");
-    }
-
     private void Update()
     {
         if (isSpawned && isServer)
@@ -49,7 +45,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         }
     }
     
-    [ObserversRPC]
+    [ServerRPC(requireOwnership: false)]
     private void Test(string test)
     {
         Debug.Log(test);

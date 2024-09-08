@@ -84,7 +84,7 @@ namespace PurrNet
         {
             if (!isSpawned)
             {
-                PurrLogger.LogError($"Trying to send RPC from '{name}' which is not spawned.", this);
+                PurrLogger.LogError($"Trying to send RPC from '{GetType().Name}' which is not spawned.", this);
                 return;
             }
 
@@ -96,13 +96,13 @@ namespace PurrNet
             
             if (signature.requireOwnership && !isOwner)
             {
-                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{name}' without ownership.", this);
+                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without ownership.", this);
                 return;
             }
             
             if (signature.requireServer && !networkManager.isServer)
             {
-                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{name}' without server.", this);
+                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without server.", this);
                 return;
             }
             
