@@ -24,7 +24,7 @@ namespace PurrNet
     }
     
     [DefaultExecutionOrder(-999)]
-    public sealed class NetworkManager : MonoBehaviour
+    public sealed partial class NetworkManager : MonoBehaviour
     {
         [UsedImplicitly]
         public static NetworkManager main { get; private set; }

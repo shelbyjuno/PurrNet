@@ -210,14 +210,14 @@ namespace PurrNet.Modules
             
             if (asServer)
             {
-                _broadcastModule.Subscribe<ClientLoginRequest>(OnClientLoginRequest, true);
+                _broadcastModule.Subscribe<ClientLoginRequest>(OnClientLoginRequest);
             }
             else
             {
-                _broadcastModule.Subscribe<ServerLoginResponse>(OnClientLoginResponse, false);
-                _broadcastModule.Subscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent, false);
-                _broadcastModule.Subscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent, false);
-                _broadcastModule.Subscribe<PlayerLeftEvent>(OnPlayerLeftEvent, false);
+                _broadcastModule.Subscribe<ServerLoginResponse>(OnClientLoginResponse);
+                _broadcastModule.Subscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent);
+                _broadcastModule.Subscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent);
+                _broadcastModule.Subscribe<PlayerLeftEvent>(OnPlayerLeftEvent);
             }
         }
 

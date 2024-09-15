@@ -178,7 +178,7 @@ namespace PurrNet.Modules
             TriggerCallback(conn, typeId, instance);
         }
 
-        public void Subscribe<T>(BroadcastDelegate<T> callback, bool asServer) where T : new()
+        public void Subscribe<T>(BroadcastDelegate<T> callback)
         {
             RegisterTypeForSerializer<T>();
 
@@ -196,7 +196,7 @@ namespace PurrNet.Modules
             });
         }
 
-        internal static void RegisterTypeForSerializer<T>() where T : new()
+        internal static void RegisterTypeForSerializer<T>()
         {
             if (!MemoryPackFormatterProvider.IsRegistered<T>())
             {
@@ -212,7 +212,7 @@ namespace PurrNet.Modules
             }
         }
 
-        public void Unsubscribe<T>(BroadcastDelegate<T> callback) where T : new()
+        public void Unsubscribe<T>(BroadcastDelegate<T> callback)
         {
             var hash = Hasher.GetStableHashU32(typeof(T));
             if (!_actions.TryGetValue(hash, out var actions))
