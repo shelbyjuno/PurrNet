@@ -16,8 +16,6 @@ namespace PurrNet
 
         private bool _isDirty;
 
-        private int _ticksToSync;
-
         private readonly float _sendIntervalInSeconds;
 
         public event Action<T> onChanged;
@@ -67,7 +65,6 @@ namespace PurrNet
             {
                 SendValue(_value);
                 _lastSendTime = Time.time;
-                _ticksToSync--;
             }
         }
 
