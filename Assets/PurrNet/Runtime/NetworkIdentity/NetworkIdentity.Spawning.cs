@@ -62,7 +62,7 @@ namespace PurrNet
         }
     }
     
-    public partial struct HierarchyAction : INetworkedData
+    public partial struct HierarchySpawnAction : INetworkedData
     {
         public enum HierarchyActionType : byte
         {
@@ -79,7 +79,7 @@ namespace PurrNet
         public InstantiateWithParentAction instantiateWithParentAction;
         public ReplaceAction replaceAction;
         
-        public HierarchyAction(InstantiateAction instantiateAction)
+        public HierarchySpawnAction(InstantiateAction instantiateAction)
         {
             action = HierarchyActionType.Instantiate;
             this.instantiateAction = instantiateAction;
@@ -88,7 +88,7 @@ namespace PurrNet
             replaceAction = default;
         }
         
-        public HierarchyAction(InstantiateWithParentAction instantiateWithParentAction)
+        public HierarchySpawnAction(InstantiateWithParentAction instantiateWithParentAction)
         {
             action = HierarchyActionType.InstantiateWithParent;
             instantiateAction = default;
@@ -97,7 +97,7 @@ namespace PurrNet
             replaceAction = default;
         }
         
-        public HierarchyAction(DestroyAction destroyAction)
+        public HierarchySpawnAction(DestroyAction destroyAction)
         {
             action = HierarchyActionType.Destroy;
             instantiateAction = default;
@@ -106,7 +106,7 @@ namespace PurrNet
             replaceAction = default;
         }
         
-        public HierarchyAction(ReplaceAction replaceAction)
+        public HierarchySpawnAction(ReplaceAction replaceAction)
         {
             action = HierarchyActionType.Replace;
             instantiateAction = default;
@@ -218,9 +218,9 @@ namespace PurrNet
             return node;
         }
         
-        public List<HierarchyAction> GetHierarchyActionsToSpawnThis()
+        public List<HierarchySpawnAction> GetHierarchyActionsToSpawnThis()
         {
-            var actions = new List<HierarchyAction>();
+            var actions = new List<HierarchySpawnAction>();
             var prefabLink = GetComponentInParent<PrefabLink>();
 
             if (!prefabLink)
@@ -247,7 +247,7 @@ namespace PurrNet
             
             var instantiated = GetHierarchyTree(prefab, tree.prefabId, tree.prefabOffset);
             
-            actions.Add(new HierarchyAction(
+            actions.Add(new HierarchySpawnAction(
                 new InstantiateAction(first.id!.Value, tree.prefabId, tree.prefabOffset)
             ));
             
@@ -267,7 +267,7 @@ namespace PurrNet
             return GetHierarchyTree(prefab, target.prefabId, target.prefabOffset);
         }
 
-        private void GetActions(HierarchyNode current, HierarchyNode expected, IList<HierarchyAction> actions)
+        private void GetActions(HierarchyNode current, HierarchyNode expected, IList<HierarchySpawnAction> actions)
         {
             if (current.prefabId != expected.prefabId || 
                 current.prefabOffset != expected.prefabOffset)
@@ -277,7 +277,7 @@ namespace PurrNet
                 if (!instantiated.HasValue)
                     return;
                 
-                actions.Add(new HierarchyAction(new ReplaceAction(
+                actions.Add(new HierarchySpawnAction(new ReplaceAction(
                     current.prefabOffset, expected.components[0].networkId, expected.prefabId, expected.prefabOffset))
                 );
                 
@@ -298,7 +298,7 @@ namespace PurrNet
                     if (!instantiated.HasValue)
                         continue;
 
-                    actions.Add(new HierarchyAction(new InstantiateWithParentAction(
+                    actions.Add(new HierarchySpawnAction(new InstantiateWithParentAction(
                         current.prefabOffset, expectedChild.components[0].networkId, expectedChild.prefabId, expectedChild.prefabOffset))
                     );
                     
@@ -312,7 +312,7 @@ namespace PurrNet
             for (var i = expectedChildCount; i < currentChildCount; i++)
             {
                 var child = current.children[i];
-                actions.Add(new HierarchyAction(new DestroyAction(child.prefabOffset)));
+                actions.Add(new HierarchySpawnAction(new DestroyAction(child.prefabOffset)));
             }
         }
 
@@ -335,7 +335,6 @@ namespace PurrNet
                 var child = children[i];
                 var nid = new NetworkID(action.networkId, (ushort)i);
                 
-                //TODO: probably need to set the prefab id and offset here, this is just a placeholder
                 child.SetIdentity(networkManager, sceneId, prefabId, nid, action.prefabOffset, true);
                 child.SetIdentity(networkManager, sceneId, prefabId, nid, action.prefabOffset, false);
             }
@@ -384,7 +383,7 @@ namespace PurrNet
             
         }
         
-        private void ReplayActions(IList<HierarchyAction> actions)
+        private void ReplayActions(IList<HierarchySpawnAction> actions)
         {
             GameObject instantiated = null;
 
@@ -394,15 +393,15 @@ namespace PurrNet
                 
                 switch (action.action)
                 {
-                    case HierarchyAction.HierarchyActionType.Instantiate:
+                    case HierarchySpawnAction.HierarchyActionType.Instantiate:
                     {
                         HandleInstantiateAction(action.instantiateAction, out instantiated);
                         break;
                     }
-                    case HierarchyAction.HierarchyActionType.Destroy: 
+                    case HierarchySpawnAction.HierarchyActionType.Destroy: 
                         HandleDestroyAction(action.destroyAction);
                         break;
-                    case HierarchyAction.HierarchyActionType.InstantiateWithParent:
+                    case HierarchySpawnAction.HierarchyActionType.InstantiateWithParent:
                     {
                         if (HandleInstantiateWithParentAction(action.instantiateWithParentAction, instantiated,
                                 out var inst))
@@ -412,7 +411,7 @@ namespace PurrNet
 
                         break;
                     }
-                    case HierarchyAction.HierarchyActionType.Replace: 
+                    case HierarchySpawnAction.HierarchyActionType.Replace: 
                         HandleReplaceAction(action.replaceAction);
                         break;
                     default: PurrLogger.LogError($"Unknown action type {action.action}"); break;
