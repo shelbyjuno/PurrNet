@@ -176,17 +176,7 @@ namespace PurrNet
 
             PrefabLink.IgnoreNextAutoSpawnAttempt();
             instantiated = new NGameObject(Instantiate(prefab));
-            
-            var hierarchy = networkManager.GetModule<HierarchyModule>(asServer);
-            if (hierarchy.TryGetHierarchy(sceneId, out var scene))
-            {
-                for (ushort i = 0; i < instantiated.identities.Count; i++)
-                {
-                    var child = instantiated.identities[i];
-                    scene.SpawnIdentity(child, action.prefabId, action.networkId, i, asServer);
-                }
-            }
-            
+            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated, asServer);
             return true;
         }
         
@@ -209,21 +199,21 @@ namespace PurrNet
 
             PrefabLink.IgnoreNextAutoSpawnAttempt();
             instantiated = new NGameObject(Instantiate(prefab, parent.transform));
+            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated, asServer);
+            return true;
+        }
 
+        private void SpawnInstantiatedGo(int pid, NetworkID nid, NGameObject instantiated, bool asServer)
+        {
             var hierarchy = networkManager.GetModule<HierarchyModule>(asServer);
 
             if (hierarchy.TryGetHierarchy(sceneId, out var scene))
             {
                 for (ushort i = 0; i < instantiated.identities.Count; i++)
-                {
-                    var child = instantiated.identities[i];
-                    scene.SpawnIdentity(child, action.prefabId, action.networkId, i, asServer);
-                }
+                    scene.SpawnIdentity(instantiated.identities[i], pid, nid, i, asServer);
             }
-
-            return true;
         }
-        
+
         private void HandleReplaceAction(ReplaceAction action, NGameObject instantiated, bool asServer)
         {
             var oldChild = instantiated.identities[action.childId];
@@ -237,23 +227,13 @@ namespace PurrNet
 
             PrefabLink.IgnoreNextAutoSpawnAttempt();
             using var copy = new NGameObject(Instantiate(prefab, parent));
-            
-            var hierarchy = networkManager.GetModule<HierarchyModule>(asServer);
-            if (hierarchy.TryGetHierarchy(sceneId, out var scene))
-            {
-                for (ushort i = 0; i < copy.identities.Count; i++)
-                {
-                    var child = copy.identities[i];
-                    scene.SpawnIdentity(child, action.prefabId, action.networkId, i, asServer);
-                }
-            }
+            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated, asServer);
         }
         
         static readonly Stack<NGameObject> _instantiatedStack = new();
         
         private void ReplayActions(IList<HierarchySpawnAction> actions, bool asServer)
         {
-
             for (int i = 0; i < actions.Count; ++i)
             {
                 var action = actions[i];
@@ -268,13 +248,27 @@ namespace PurrNet
                     }
                     case HierarchySpawnAction.HierarchyActionType.Pop:
                     {
+                        if (_instantiatedStack.Count == 0)
+                        {
+                            PurrLogger.LogError("No parent to pop from, bad stack state");
+                            break;
+                        }
+                        
                         var go = _instantiatedStack.Pop();
                         go.Dispose();
                         break;
                     }
-                    case HierarchySpawnAction.HierarchyActionType.Destroy: 
+                    case HierarchySpawnAction.HierarchyActionType.Destroy:
+                    {
+                        if (_instantiatedStack.Count == 0)
+                        {
+                            PurrLogger.LogError("No parent to destroy from, bad stack state");
+                            break;
+                        }
+
                         HandleDestroyAction(action.destroyAction, _instantiatedStack.Peek());
                         break;
+                    }
                     case HierarchySpawnAction.HierarchyActionType.InstantiateWithParent:
                     {
                         if (_instantiatedStack.Count == 0)
@@ -292,9 +286,17 @@ namespace PurrNet
 
                         break;
                     }
-                    case HierarchySpawnAction.HierarchyActionType.Replace: 
+                    case HierarchySpawnAction.HierarchyActionType.Replace:
+                    {
+                        if (_instantiatedStack.Count == 0)
+                        {
+                            PurrLogger.LogError("No parent to replace from, bad stack state");
+                            break;
+                        }
+
                         HandleReplaceAction(action.replaceAction, _instantiatedStack.Peek(), asServer);
                         break;
+                    }
                     default: PurrLogger.LogError($"Unknown action type {action.action}"); break;
                 }
             }
