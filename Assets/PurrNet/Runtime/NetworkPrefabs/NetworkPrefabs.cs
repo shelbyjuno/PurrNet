@@ -53,7 +53,33 @@ namespace PurrNet
             prefab = prefabs[id];
             return true;
         }
-        
+
+        public override bool TryGetPrefab(int id, int offset, out GameObject prefab)
+        {
+            if (!TryGetPrefab(id, out var root))
+            {
+                prefab = null;
+                return false;
+            }
+
+            if (offset == 0)
+            {
+                prefab = root;
+                return true;
+            }
+
+            root.GetComponentsInChildren(true, _identities);
+            
+            if (offset < 0 || offset >= _identities.Count)
+            {
+                prefab = null;
+                return false;
+            }
+            
+            prefab = _identities[offset].gameObject;
+            return true;
+        }
+
         public override bool TryGetPrefabID(string guid, out int id)
         {
             for (int i = 0; i < prefabs.Count; i++)
