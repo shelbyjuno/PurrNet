@@ -34,13 +34,8 @@ namespace PurrNet
         {
             if (identity.id.HasValue)
             {
-                if (_identities.ContainsKey(identity.id.Value))
-                {
+                if (!_identities.TryAdd(identity.id.Value, identity))
                     PurrLogger.LogError($"Identity with id {identity.id} already exists.");
-                    return;
-                }
-                
-                _identities.Add(identity.id.Value, identity);
             }
         }
         

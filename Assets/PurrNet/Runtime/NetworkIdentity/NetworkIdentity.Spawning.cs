@@ -180,16 +180,18 @@ namespace PurrNet
                 var child = children[i];
                 var nid = new NetworkID(action.networkId, (ushort)i);
                 
-                child.SetIdentity(networkManager, sceneId, prefabId, nid, action.prefabOffset, true);
-                child.SetIdentity(networkManager, sceneId, prefabId, nid, action.prefabOffset, false);
+                child.SetIdentity(networkManager, sceneId, action.prefabId, nid, action.prefabOffset, true);
+                child.SetIdentity(networkManager, sceneId, action.prefabId, nid, action.prefabOffset, false);
             }
             
             return true;
         }
         
-        private void HandleDestroyAction(DestroyAction action)
+        private void HandleDestroyAction(DestroyAction action, GameObject instantiated)
         {
-            
+            var children = instantiated.GetComponentsInChildren<NetworkIdentity>(true);
+            var child = children[action.childId];
+            Destroy(child.gameObject);
         }
         
         private bool HandleInstantiateWithParentAction(InstantiateWithParentAction action, GameObject current, out GameObject instantiated)
@@ -215,22 +217,49 @@ namespace PurrNet
 
                 for (var i = 0; i < children.Length; i++)
                 {
-                    if (isServer) scene.SpawnIdentity(children[i], action.prefabId, action.networkId, 0, true);
-                    if (isClient) scene.SpawnIdentity(children[i], action.prefabId, action.networkId, 0, false);
+                    var child = children[i];
+                    var nid = new NetworkID(action.networkId, (ushort)i);
+                
+                    child.SetIdentity(networkManager, sceneId, action.prefabId, nid, action.prefabOffset, true);
+                    child.SetIdentity(networkManager, sceneId, action.prefabId, nid, action.prefabOffset, false);
                 }
             }
 
             return true;
         }
         
-        private void HandleReplaceAction(ReplaceAction action)
+        private void HandleReplaceAction(ReplaceAction action, GameObject instantiated)
         {
+            var oldChildren = instantiated.GetComponentsInChildren<NetworkIdentity>(true);
+            var oldChild = oldChildren[action.childId];
+            var parent = oldChild.transform.parent;
             
+            if (!networkManager.prefabProvider.TryGetPrefab(action.prefabId, action.prefabOffset, out var prefab))
+            {
+                PurrLogger.LogError($"Failed to get prefab with id {action.prefabId} and offset {action.prefabOffset}");
+                return;
+            }
+
+            PrefabLink.IgnoreNextAutoSpawnAttempt();
+            instantiated = Instantiate(prefab, parent);
+            
+            var children = instantiated.GetComponentsInChildren<NetworkIdentity>(true);
+            
+            for (var i = 0; i < children.Length; i++)
+            {
+                var child = children[i];
+                var nid = new NetworkID(action.networkId, (ushort)i);
+                
+                child.SetIdentity(networkManager, sceneId, action.prefabId, nid, action.prefabOffset, true);
+                child.SetIdentity(networkManager, sceneId, action.prefabId, nid, action.prefabOffset, false);
+            }
+            
+            return;
         }
         
         private void ReplayActions(IList<HierarchySpawnAction> actions)
         {
-            GameObject instantiated = null;
+            Stack<GameObject> instantiatedStack = new();
 
             for (int i = 0; i < actions.Count; ++i)
             {
@@ -240,28 +269,40 @@ namespace PurrNet
                 {
                     case HierarchySpawnAction.HierarchyActionType.Instantiate:
                     {
-                        HandleInstantiateAction(action.instantiateAction, out instantiated);
+                        if (HandleInstantiateAction(action.instantiateAction, out var instantiated))
+                            instantiatedStack.Push(instantiated);
                         break;
                     }
+                    case HierarchySpawnAction.HierarchyActionType.Pop: instantiatedStack.Pop(); break;
                     case HierarchySpawnAction.HierarchyActionType.Destroy: 
-                        HandleDestroyAction(action.destroyAction);
+                        HandleDestroyAction(action.destroyAction, instantiatedStack.Peek());
                         break;
                     case HierarchySpawnAction.HierarchyActionType.InstantiateWithParent:
                     {
-                        if (HandleInstantiateWithParentAction(action.instantiateWithParentAction, instantiated,
-                                out var inst))
+                        if (instantiatedStack.Count == 0)
                         {
-                            instantiated = inst;
+                            PurrLogger.LogError("No parent to instantiate with, bad stack state");
+                            break;
+                        }
+                        
+                        var peek = instantiatedStack.Peek();
+                        if (HandleInstantiateWithParentAction(action.instantiateWithParentAction, peek,
+                                out var instantiated))
+                        {
+                            instantiatedStack.Push(instantiated);
                         }
 
                         break;
                     }
                     case HierarchySpawnAction.HierarchyActionType.Replace: 
-                        HandleReplaceAction(action.replaceAction);
+                        HandleReplaceAction(action.replaceAction, instantiatedStack.Peek());
                         break;
                     default: PurrLogger.LogError($"Unknown action type {action.action}"); break;
                 }
             }
+            
+            if (instantiatedStack.Count > 0)
+                PurrLogger.LogError("Stack is not empty, something went wrong");
         }
 
         [ContextMenu("Spawn")]

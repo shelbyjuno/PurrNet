@@ -169,6 +169,9 @@ namespace PurrNet
             if (ApplicationContext.isQuitting)
                 return;
             
+            if (!_trs)
+                return;
+            
             if (!_isResettingParent && _lastValidParent != _trs.parent)
                 onParentChanged?.Invoke(this);
         }
