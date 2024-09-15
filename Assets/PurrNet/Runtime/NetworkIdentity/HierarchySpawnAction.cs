@@ -1,10 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using PurrNet.Packets;
+using PurrNet.Pooling;
 using PurrNet.Utils;
+using UnityEngine;
 
 namespace PurrNet
 {
-        public partial struct InstantiateAction : IAutoNetworkedData
+    internal readonly struct NGameObject : IDisposable
+    {
+        public readonly GameObject gameObject;
+        public readonly List<NetworkIdentity> identities;
+            
+        public NGameObject(GameObject gameObject)
+        {
+            this.gameObject = gameObject;
+            identities = ListPool<NetworkIdentity>.New();
+            gameObject.GetComponentsInChildren(identities);
+        }
+
+        public void Dispose() => ListPool<NetworkIdentity>.Destroy(identities);
+    }
+    
+    internal partial struct InstantiateAction : IAutoNetworkedData
     {
         public readonly NetworkID networkId;
         public readonly int prefabId;
@@ -18,7 +36,7 @@ namespace PurrNet
         }
     }
     
-    public partial struct InstantiateWithParentAction : IAutoNetworkedData
+    internal partial struct InstantiateWithParentAction : IAutoNetworkedData
     {
         public readonly int parentChildId;
         public readonly NetworkID networkId;
@@ -34,7 +52,7 @@ namespace PurrNet
         }
     }
     
-    public partial struct ReplaceAction : IAutoNetworkedData
+    internal partial struct ReplaceAction : IAutoNetworkedData
     {
         public readonly int childId;
         public readonly NetworkID networkId;
@@ -50,7 +68,7 @@ namespace PurrNet
         }
     }
     
-    public partial struct DestroyAction : IAutoNetworkedData
+    internal partial struct DestroyAction : IAutoNetworkedData
     {
         public readonly int childId;
         
@@ -60,16 +78,26 @@ namespace PurrNet
         }
     }
 
-    public struct HierarchyNode
+    internal struct HierarchyNode : IDisposable
     {
         public int prefabId;
         public ushort prefabOffset;
 
         public List<HierarchyNode> children;
         public List<NodeComponent> components;
+        
+        public void Dispose()
+        {
+            
+            for (var i = 0; i < children.Count; i++)
+                children[i].Dispose();
+            
+            ListPool<HierarchyNode>.Destroy(children);
+            ListPool<NodeComponent>.Destroy(components);
+        }
     }
     
-    public struct NodeComponent
+    internal struct NodeComponent
     {
         public uint typeHash;
         public NetworkID networkId;
@@ -84,7 +112,7 @@ namespace PurrNet
     }
     
     
-    public partial struct HierarchySpawnAction : INetworkedData
+    internal partial struct HierarchySpawnAction : INetworkedData
     {
         public enum HierarchyActionType : byte
         {
