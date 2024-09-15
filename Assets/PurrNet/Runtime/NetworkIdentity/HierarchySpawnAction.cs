@@ -9,14 +9,12 @@ namespace PurrNet
 {
     internal readonly struct NGameObject : IDisposable
     {
-        public readonly GameObject gameObject;
         public readonly List<NetworkIdentity> identities;
             
         public NGameObject(GameObject gameObject)
         {
-            this.gameObject = gameObject;
             identities = ListPool<NetworkIdentity>.New();
-            gameObject.GetComponentsInChildren(identities);
+            gameObject.GetComponentsInChildren(true, identities);
         }
 
         public void Dispose() => ListPool<NetworkIdentity>.Destroy(identities);
