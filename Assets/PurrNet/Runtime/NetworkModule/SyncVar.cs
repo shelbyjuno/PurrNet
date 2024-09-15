@@ -9,8 +9,6 @@ namespace PurrNet
     [Serializable]
     public class SyncVar<T> : NetworkModule where T : struct
     {
-        const int REDUNDANCY_TICKS = 10;
-
         private TickManager _tickManager;
 
         [SerializeField]
@@ -60,18 +58,12 @@ namespace PurrNet
 
         private void OnTick()
         {
-            if (_isDirty)
-            {
-                _ticksToSync = REDUNDANCY_TICKS;
-                _isDirty = false;
-            }
-
             float timeSinceLastSend = Time.time - _lastSendTime;
 
             if (timeSinceLastSend < _sendIntervalInSeconds)
                 return;
 
-            if (_ticksToSync > 0)
+            if (_isDirty)
             {
                 SendValue(_value);
                 _lastSendTime = Time.time;
@@ -86,7 +78,7 @@ namespace PurrNet
             _sendIntervalInSeconds = sendIntervalInSeconds;
         }
 
-        [ObserversRPC(Channel.UnreliableSequenced, bufferLast: true)]
+        [ObserversRPC(Channel.ReliableSequenced, bufferLast: true)]
         private void SendValue(T newValue)
         {
             if (isServer)
