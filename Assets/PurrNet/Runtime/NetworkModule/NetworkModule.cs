@@ -35,13 +35,13 @@ namespace PurrNet
         
         protected PlayerID? owner => parent.owner;
 
-        protected virtual void OnSpawn() { }
+        public virtual void OnSpawn() { }
 
-        protected virtual void OnSpawn(bool asServer) { }
+        public virtual void OnSpawn(bool asServer) { }
 
-        protected virtual void OnDespawned() { }
+        public virtual void OnDespawned() { }
         
-        protected virtual void OnDespawned(bool asServer) { }
+        public virtual void OnDespawned(bool asServer) { }
 
         [UsedByIL]
         public void SetParent(NetworkIdentity p, byte i)
