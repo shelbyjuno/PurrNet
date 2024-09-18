@@ -953,7 +953,7 @@ namespace PurrNet.Modules
                 {
                     try
                     {
-                        _spawnedThisFrame[i].TriggetSpawnEvent(_asServer);
+                        _spawnedThisFrame[i].TriggerSpawnEvent(_asServer);
                     }
                     catch (Exception e)
                     {

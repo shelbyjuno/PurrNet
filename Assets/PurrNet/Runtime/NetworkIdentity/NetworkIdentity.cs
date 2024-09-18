@@ -267,7 +267,7 @@ namespace PurrNet
         
         private int _spawnedCount;
         
-        internal void TriggetSpawnEvent(bool asServer)
+        internal void TriggerSpawnEvent(bool asServer)
         {
             OnSpawned(asServer);
 
