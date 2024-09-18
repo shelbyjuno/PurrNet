@@ -9,39 +9,39 @@ namespace PurrNet
 {
     public class NetworkModule
     {
-        public NetworkIdentity parent { get; private set; }
+        protected NetworkIdentity parent { get; private set; }
 
-        public byte index { get; private set; } = 255;
-        
-        public NetworkManager networkManager => parent.networkManager;
-        
-        public bool isSceneObject => parent.isSceneObject;
-        
-        public bool isOwner => parent.isOwner;
-        
-        public bool isClient => parent.isClient;
+        private byte index { get; set; } = 255;
 
-        public bool isServer => parent.isServer;
+        protected NetworkManager networkManager => parent.networkManager;
         
-        public bool isHost => parent.isHost;
+        protected bool isSceneObject => parent.isSceneObject;
         
-        public bool isSpawned => parent.isSpawned;
+        protected bool isOwner => parent.isOwner;
         
-        public bool hasOwner => parent.hasOwner;
-        
-        public bool hasConnectedOwner => parent.hasConnectedOwner;
-        
-        public PlayerID? localPlayer => parent.localPlayer;
-        
-        public PlayerID? owner => parent.owner;
+        protected bool isClient => parent.isClient;
 
-        public virtual void OnSpawn() { }
-
-        public virtual void OnSpawn(bool asServer) { }
-
-        public virtual void OnDespawned() { }
+        protected bool isServer => parent.isServer;
         
-        public virtual void OnDespawned(bool asServer) { }
+        protected bool isHost => parent.isHost;
+        
+        protected bool isSpawned => parent.isSpawned;
+        
+        protected bool hasOwner => parent.hasOwner;
+        
+        protected bool hasConnectedOwner => parent.hasConnectedOwner;
+        
+        protected PlayerID? localPlayer => parent.localPlayer;
+        
+        protected PlayerID? owner => parent.owner;
+
+        protected virtual void OnSpawn() { }
+
+        protected virtual void OnSpawn(bool asServer) { }
+
+        protected virtual void OnDespawned() { }
+        
+        protected virtual void OnDespawned(bool asServer) { }
 
         [UsedByIL]
         public void SetParent(NetworkIdentity p, byte i)

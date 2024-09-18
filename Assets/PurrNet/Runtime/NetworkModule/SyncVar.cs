@@ -41,13 +41,13 @@ namespace PurrNet
             }
         }
 
-        public override void OnSpawn()
+        protected override void OnSpawn()
         {
             _tickManager = networkManager.GetModule<TickManager>(isServer);
             _tickManager.onTick += OnTick;
         }
 
-        public override void OnDespawned()
+        protected override void OnDespawned()
         {
             _tickManager.onTick -= OnTick;
         }
