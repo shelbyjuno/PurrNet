@@ -17,7 +17,9 @@ namespace PurrNet
         public int prefabId { get; private set; } = -1;
 
         public ushort prefabOffset { get; private set; }
-        
+
+        public int siblingIndex { get; private set; } = -1;
+
         /// <summary>
         /// Network id of this object.
         /// </summary>
@@ -153,13 +155,14 @@ namespace PurrNet
             }
         }
         
-        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, NetworkID identityId, ushort offset, bool asServer)
+        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
             Hasher.PrepareType(GetType());
 
             networkManager = manager;
             sceneId = scene;
             prefabId = pid;
+            siblingIndex = siblingIdx;
             prefabOffset = offset;
 
             bool wasAlreadySpawned = isSpawned;

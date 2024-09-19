@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Pooling;
@@ -7,60 +8,14 @@ namespace PurrNet
 {
     public partial class NetworkIdentity
     {
-        static HierarchyNode GetHierarchyTree(GameObject target, int prefabId = 0, int prefabOffset = 0)
+        private void GetHierarchyActionsToSpawnThis(List<HierarchySpawnAction> actions)
         {
-            var first = target.GetComponent<NetworkIdentity>();
-            return InternalGetHierarchyTree(first, prefabId, ref prefabOffset);
-        }
-        
-        static HierarchyNode GetHierarchyTree(NetworkIdentity target, int prefabId = 0, int prefabOffset = 0)
-        {
-            return InternalGetHierarchyTree(target, prefabId, ref prefabOffset);
-        }
-        
-        static HierarchyNode InternalGetHierarchyTree(NetworkIdentity target, int prefabId, ref int prefabOffset)
-        {
-            var node = new HierarchyNode
-            {
-                prefabId = target.isSpawned ? target.prefabId : prefabId,
-                prefabOffset = target.isSpawned ? target.prefabOffset : (ushort)prefabOffset,
-                children = ListPool<HierarchyNode>.New(),
-                components = ListPool<NodeComponent>.New()
-            };
-
-            var trs = target.transform;
-            
-            var siblings = ListPool<NetworkIdentity>.New();
-            
-            target.GetComponents(siblings);
-
-            for (var i = 0; i < siblings.Count; i++)
-                node.components.Add(new NodeComponent(siblings[i]));
-            prefabOffset += siblings.Count;
-            
-            ListPool<NetworkIdentity>.Destroy(siblings);
-
-            for (var i = 0; i < trs.childCount; i++)
-            {
-                var child = trs.GetChild(i).GetComponentInChildren<NetworkIdentity>();
-                if (!child) continue;
-
-                var childNode = InternalGetHierarchyTree(child, prefabId, ref prefabOffset);
-                node.children.Add(childNode);
-            }
-
-            return node;
-        }
-        
-        private List<HierarchySpawnAction> GetHierarchyActionsToSpawnThis()
-        {
-            var actions = ListPool<HierarchySpawnAction>.New();
             var prefabLink = GetComponentInParent<PrefabLink>();
 
             if (!prefabLink)
             {
                 PurrLogger.LogError("Scene object is not a prefab, can't instantiate out of thin air");
-                return actions;
+                return;
             }
             
             var first = GetComponent<NetworkIdentity>();
@@ -68,18 +23,18 @@ namespace PurrNet
             if (!first.isSpawned)
             {
                 PurrLogger.LogError("Object is not spawned");
-                return actions;
+                return;
             }
             
-            using var tree = GetHierarchyTree(first);
+            using var tree = HierarchyNode.GetHierarchyTree(first);
             
             if (!networkManager.prefabProvider.TryGetPrefab(tree.prefabId, tree.prefabOffset, out var prefab))
             {
                 PurrLogger.LogError($"Failed to get prefab with id {tree.prefabId} and offset {tree.prefabOffset}");
-                return actions;
+                return;
             }
             
-            using var instantiated = GetHierarchyTree(prefab, tree.prefabId, tree.prefabOffset);
+            using var instantiated = HierarchyNode.GetHierarchyTree(prefab, tree.prefabId, tree.prefabOffset);
             
             actions.Add(new HierarchySpawnAction(
                 new InstantiateAction(first.id!.Value, tree.prefabId, tree.prefabOffset)
@@ -88,47 +43,89 @@ namespace PurrNet
             GetActions(instantiated, tree, actions);
             
             actions.Add(new HierarchySpawnAction(HierarchySpawnAction.HierarchyActionType.Pop));
-            
-            return actions;
         }
 
         private HierarchyNode? VInstantiate(HierarchyNode target)
         {
+            if (target.prefabId == -1)
+                return null;
+            
             if (!networkManager.prefabProvider.TryGetPrefab(target.prefabId, target.prefabOffset, out var prefab))
             {
                 PurrLogger.LogError($"Failed to get prefab with id {target.prefabId} and offset {target.prefabOffset}");
                 return null;
             }
 
-            return GetHierarchyTree(prefab, target.prefabId, target.prefabOffset);
+            return HierarchyNode.GetHierarchyTree(prefab, target.prefabId, target.prefabOffset);
         }
 
-        private void GetActions(HierarchyNode current, HierarchyNode expected, IList<HierarchySpawnAction> actions)
+        private void GetActions(HierarchyNode prefab, HierarchyNode expected, IList<HierarchySpawnAction> actions)
         {
             bool replaced = false;
             
-            if (current.prefabId != expected.prefabId || 
-                current.prefabOffset != expected.prefabOffset)
+            if (prefab.prefabId != expected.prefabId || 
+                prefab.siblingIndex != expected.siblingIndex)
             {
                 var instantiated = VInstantiate(expected);
-                
+
                 if (!instantiated.HasValue)
                     return;
-                
+
                 actions.Add(new HierarchySpawnAction(new ReplaceAction(
-                    current.prefabOffset, expected.components[0].networkId, expected.prefabId, expected.prefabOffset))
+                    prefab.prefabOffset, expected.components[0].networkId, expected.prefabId,
+                    expected.prefabOffset))
                 );
-                
-                current = instantiated.Value;
+
+                prefab = instantiated.Value;
                 replaced = true;
             }
             
+            if (prefab.isActive != expected.isActive)
+                actions.Add(new HierarchySpawnAction(new ToggleGameObjectActiveAction(prefab.prefabOffset)));
+            
+            HandleComponents(prefab, expected, actions);
+            HandleChildren(prefab, expected, actions);
+
+            if (replaced)
+                actions.Add(new HierarchySpawnAction(HierarchySpawnAction.HierarchyActionType.Pop));
+        }
+
+        private static void HandleComponents(HierarchyNode prefab, HierarchyNode expected, IList<HierarchySpawnAction> actions)
+        {
+            int currentComponentCount = prefab.components.Count;
+            
+            for (var i = 0; i < currentComponentCount; i++)
+            {
+                var currentComponent = prefab.components[i];
+                NodeComponent? expectedComponent = expected.components.Count > i ? expected.components[i] : null;
+
+                if (!expectedComponent.HasValue)
+                {
+                    actions.Add(new HierarchySpawnAction(new DestroyComponentAction(currentComponent.offset)));
+                    continue;
+                }
+
+                if (currentComponent.offset != expectedComponent.Value.offset)
+                {
+                    prefab.components.RemoveAt(i--);
+                    currentComponentCount = prefab.components.Count;
+                    actions.Add(new HierarchySpawnAction(new DestroyComponentAction(currentComponent.offset)));
+                    continue;
+                }
+                
+                if (currentComponent.enabled != expectedComponent.Value.enabled)
+                    actions.Add(new HierarchySpawnAction(new ToggleComponentEnabledAction(currentComponent.offset)));
+            }
+        }
+
+        private void HandleChildren(HierarchyNode prefab, HierarchyNode expected, IList<HierarchySpawnAction> actions)
+        {
             int expectedChildCount = expected.children.Count;
-            int currentChildCount = current.children.Count;
+            int currentChildCount = prefab.children.Count;
             
             for (var i = 0; i < expectedChildCount; i++)
             {
-                HierarchyNode? child = current.children.Count > i ? current.children[i] : null;
+                HierarchyNode? child = prefab.children.Count > i ? prefab.children[i] : null;
                 var expectedChild = expected.children[i];
                 
                 bool wasSpawned = false;
@@ -141,11 +138,11 @@ namespace PurrNet
                         continue;
 
                     actions.Add(new HierarchySpawnAction(new InstantiateWithParentAction(
-                        current.prefabOffset, expectedChild.components[0].networkId, expectedChild.prefabId, expectedChild.prefabOffset))
+                        prefab.prefabOffset, expectedChild.components[0].networkId, expectedChild.prefabId, expectedChild.prefabOffset))
                     );
                     
                     child = instantiated;
-                    current.children.Add(instantiated.Value);
+                    prefab.children.Add(instantiated.Value);
                     wasSpawned = true;
                 }
                 
@@ -157,15 +154,12 @@ namespace PurrNet
 
             for (var i = expectedChildCount; i < currentChildCount; i++)
             {
-                var child = current.children[i];
+                var child = prefab.children[i];
                 actions.Add(new HierarchySpawnAction(new DestroyAction(child.prefabOffset)));
             }
-            
-            if (replaced)
-                actions.Add(new HierarchySpawnAction(HierarchySpawnAction.HierarchyActionType.Pop));
         }
 
-        private bool HandleInstantiateAction(InstantiateAction action, out NGameObject instantiated, bool asServer)
+        private bool HandleInstantiateAction(InstantiateAction action, out NGameObject instantiated)
         {
             if (!networkManager.prefabProvider.TryGetPrefab(action.prefabId, action.prefabOffset, out var prefab))
             {
@@ -176,7 +170,7 @@ namespace PurrNet
 
             PrefabLink.IgnoreNextAutoSpawnAttempt();
             instantiated = new NGameObject(Instantiate(prefab));
-            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated, asServer);
+            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated);
             return true;
         }
         
@@ -186,7 +180,7 @@ namespace PurrNet
             Destroy(child.gameObject);
         }
         
-        private bool HandleInstantiateWithParentAction(InstantiateWithParentAction action, NGameObject current, out NGameObject instantiated, bool asServer)
+        private bool HandleInstantiateWithParentAction(InstantiateWithParentAction action, NGameObject current, out NGameObject instantiated)
         {
             if (!networkManager.prefabProvider.TryGetPrefab(action.prefabId, action.prefabOffset, out var prefab))
             {
@@ -199,22 +193,38 @@ namespace PurrNet
 
             PrefabLink.IgnoreNextAutoSpawnAttempt();
             instantiated = new NGameObject(Instantiate(prefab, parent.transform));
-            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated, asServer);
+            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated);
             return true;
         }
-
-        private void SpawnInstantiatedGo(int pid, NetworkID nid, NGameObject instantiated, bool asServer)
+        
+        struct SpawnAction
         {
-            var hierarchy = networkManager.GetModule<HierarchyModule>(asServer);
+            public List<NetworkIdentity> identities;
+            public NetworkID startingNetworkId;
+            public int prefabId;
+        }
+        
+        static readonly List<SpawnAction> _finalSpawnActions = new();
 
-            if (hierarchy.TryGetHierarchy(sceneId, out var scene))
+        private void SpawnInstantiatedGo(int pid, NetworkID nid, NGameObject instantiated)
+        {
+            Debug.Log($"Prepping the spawning of {instantiated.identities.Count} identities");
+            
+            for (ushort i = 0; i < instantiated.identities.Count; i++)
+                instantiated.identities[i].siblingIndex = i;
+            
+            _finalSpawnActions.Add(new SpawnAction
             {
-                for (ushort i = 0; i < instantiated.identities.Count; i++)
-                    scene.SpawnIdentity(instantiated.identities[i], pid, nid, i, asServer);
-            }
+                identities = instantiated.identities,
+                startingNetworkId = nid,
+                prefabId = pid
+            });
+            
+            /*for (ushort i = 0; i < instantiated.identities.Count; i++)
+                scene.SpawnIdentity(instantiated.identities[i], pid, nid, i, asServer);*/
         }
 
-        private void HandleReplaceAction(ReplaceAction action, NGameObject instantiated, bool asServer)
+        private void HandleReplaceAction(ReplaceAction action, NGameObject instantiated)
         {
             var oldChild = instantiated.identities[action.childId];
             var parent = oldChild.transform.parent;
@@ -227,11 +237,29 @@ namespace PurrNet
 
             PrefabLink.IgnoreNextAutoSpawnAttempt();
             using var copy = new NGameObject(Instantiate(prefab, parent));
-            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated, asServer);
+            SpawnInstantiatedGo(action.prefabId, action.networkId, instantiated);
+        }
+        
+        private static void HandleToggleGameObjectActiveAction(ToggleGameObjectActiveAction action, NGameObject instantiated)
+        {
+            var child = instantiated.identities[action.childId];
+            child.gameObject.SetActive(!child.gameObject.activeSelf);
+        }
+        
+        private static void HandleToggleComponentEnabledAction(ToggleComponentEnabledAction action, NGameObject instantiated)
+        {
+            var child = instantiated.identities[action.childId];
+            child.enabled = !child.enabled;
+        }
+        
+        private static void HandleDestroyComponentAction(DestroyComponentAction action, NGameObject instantiated)
+        {
+            Destroy(instantiated.identities[action.childId]);
         }
         
         static readonly Stack<NGameObject> _instantiatedStack = new();
-        
+        static readonly List<IDisposable> _toDispose = new();
+
         private void ReplayActions(IList<HierarchySpawnAction> actions, bool asServer)
         {
             for (int i = 0; i < actions.Count; ++i)
@@ -242,7 +270,7 @@ namespace PurrNet
                 {
                     case HierarchySpawnAction.HierarchyActionType.Instantiate:
                     {
-                        if (HandleInstantiateAction(action.instantiateAction, out var instantiated, asServer))
+                        if (HandleInstantiateAction(action.instantiateAction, out var instantiated))
                             _instantiatedStack.Push(instantiated);
                         break;
                     }
@@ -255,7 +283,7 @@ namespace PurrNet
                         }
                         
                         var go = _instantiatedStack.Pop();
-                        go.Dispose();
+                        _toDispose.Add(go);
                         break;
                     }
                     case HierarchySpawnAction.HierarchyActionType.Destroy:
@@ -279,7 +307,7 @@ namespace PurrNet
                         
                         var peek = _instantiatedStack.Peek();
                         if (HandleInstantiateWithParentAction(action.instantiateWithParentAction, peek,
-                                out var instantiated, asServer))
+                                out var instantiated))
                         {
                             _instantiatedStack.Push(instantiated);
                         }
@@ -294,7 +322,40 @@ namespace PurrNet
                             break;
                         }
 
-                        HandleReplaceAction(action.replaceAction, _instantiatedStack.Peek(), asServer);
+                        HandleReplaceAction(action.replaceAction, _instantiatedStack.Peek());
+                        break;
+                    }
+                    case HierarchySpawnAction.HierarchyActionType.DestroyComponent:
+                    {
+                        if (_instantiatedStack.Count == 0)
+                        {
+                            PurrLogger.LogError("No parent to toggle active from, bad stack state");
+                            break;
+                        }
+
+                        HandleDestroyComponentAction(action.destroyComponentAction, _instantiatedStack.Peek());
+                        break;
+                    }
+                    case HierarchySpawnAction.HierarchyActionType.ToggleActive:
+                    {
+                        if (_instantiatedStack.Count == 0)
+                        {
+                            PurrLogger.LogError("No parent to toggle active from, bad stack state");
+                            break;
+                        }
+
+                        HandleToggleGameObjectActiveAction(action.toggleGameObjectActiveAction, _instantiatedStack.Peek());
+                        break;
+                    }
+                    case HierarchySpawnAction.HierarchyActionType.ToggleEnabled:
+                    {
+                        if (_instantiatedStack.Count == 0)
+                        {
+                            PurrLogger.LogError("No parent to toggle active from, bad stack state");
+                            break;
+                        }
+
+                        HandleToggleComponentEnabledAction(action.toggleComponentEnabledAction, _instantiatedStack.Peek());
                         break;
                     }
                     default: PurrLogger.LogError($"Unknown action type {action.action}"); break;
@@ -310,15 +371,41 @@ namespace PurrNet
                 
                 PurrLogger.LogError("Stack is not empty, something went wrong");
             }
+
+            var hierarchy = networkManager.GetModule<HierarchyModule>(asServer);
+            if (hierarchy.TryGetHierarchy(sceneId, out var scene))
+            {
+                var finalActionsCount = _finalSpawnActions.Count;
+                for (int i = 0; i < finalActionsCount; i++)
+                {
+                    var action = _finalSpawnActions[i];
+                    for (ushort j = 0; j < action.identities.Count; j++)
+                    {
+                        var identity = action.identities[j];
+                        if (identity)
+                            scene.SpawnIdentity(identity, action.prefabId, identity.siblingIndex, action.startingNetworkId, j, asServer);
+                    }
+                }
+            }
+
+            _finalSpawnActions.Clear();
+            
+            foreach (var disposable in _toDispose)
+                disposable.Dispose();
+            
+            _toDispose.Clear();
         }
 
         [ContextMenu("Spawn")]
         void TestSpawnActions()
         {
-            var actions = GetHierarchyActionsToSpawnThis();
+            var actions = ListPool<HierarchySpawnAction>.New();
+            GetHierarchyActionsToSpawnThis(actions);
             
+            Debug.Log("----");
             foreach (var action in actions)
-                PurrLogger.Log(action.ToString());
+                Debug.Log(action);
+            Debug.Log("----");
             
             ReplayActions(actions, false);
             

@@ -428,12 +428,13 @@ namespace PurrNet.Modules
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
         {
-            SpawnIdentity(component, action.prefabId, action.identityId, offset, asServer);
+            var siblingIdx = component.transform.parent ? component.transform.GetSiblingIndex() : 0;
+            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer);
         }
         
-        public void SpawnIdentity(NetworkIdentity component, int prefabId, NetworkID nid, ushort offset, bool asServer)
+        public void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer)
         {
-            component.SetIdentity(_manager, _sceneID, prefabId, new NetworkID(nid, offset), offset, asServer);
+            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, new NetworkID(nid, offset), offset, asServer);
 
             _spawnedThisFrame.Add(component);
             
@@ -588,7 +589,9 @@ namespace PurrNet.Modules
                 }
 
                 var nid = new NetworkID(identities.GetNextId(), actor);
-                child.SetIdentity(_manager, _sceneID, prefabId, nid, (ushort)i, _asServer);
+                var siblingIdx = child.transform.parent ? child.transform.GetSiblingIndex() : 0;
+                
+                child.SetIdentity(_manager, _sceneID, prefabId, siblingIdx, nid, (ushort)i, _asServer);
                 
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
