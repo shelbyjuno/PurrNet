@@ -49,11 +49,20 @@ namespace PurrNet.Modules
         
         public string GetActionsAsString()
         {
+            return GetActionsAsString(_history.GetFullHistory());
+        }
+        
+        public static string GetActionsAsString(HierarchyActionBatch batch)
+        {
             string value = "";
-            var history = _history.GetFullHistory();
-            for (int i = 0; i < history.actions.Count; i++)
-                value += history.actions[i].ToString() + '\n';
+            for (int i = 0; i < batch.actions.Count; i++)
+                value += batch.actions[i].ToString() + '\n';
             return value;
+        }
+
+        public HierarchyActionBatch GetActionsToSpawnTarget(List<NetworkIdentity> roots)
+        {
+            return _history.GetHistoryThatAffects(roots);
         }
         
         public HierarchyScene(bool asServer, SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, IPrefabProvider prefabs)

@@ -129,7 +129,7 @@ namespace PurrNet.Modules
         /// </summary>
         public ushort childOffset { get; set; }
         
-        public override string ToString() => $"Spawn: {identityId} ({prefabId} -> {childCount})";
+        public override string ToString() => $"Spawn: {identityId} (pid: {prefabId}, children: {childCount})";
     }
 
     public partial struct ChangeParentAction : IAutoNetworkedData

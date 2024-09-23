@@ -1,8 +1,146 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using PurrNet.Logging;
+using PurrNet.Pooling;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
+    public class HierarchyNode : IDisposable
+    {
+        public HierarchyNode parent;
+        private readonly List<HierarchyNode> children = ListPool<HierarchyNode>.New();
+        private readonly HashSet<NetworkID> components = HashSetPool<NetworkID>.New();
+        
+        public HierarchyNode(HierarchyNode parent)
+        {
+            this.parent = parent;
+        }
+        
+        public HierarchyNode GetChild(NetworkID id)
+        {
+            foreach (var child in children)
+            {
+                return child.components.Contains(id) ? child : child.GetChild(id);
+            }
+            
+            return null;
+        }
+        
+        public bool IsChildOf(HierarchyNode node)
+        {
+            return parent == node || (parent != null && parent.IsChildOf(node));
+        }
+        
+        public bool ContainsComponent(NetworkID id)
+        {
+            if (components.Contains(id))
+                return true;
+            
+            foreach (var child in children)
+            {
+                if (child.ContainsComponent(id))
+                    return true;
+            }
+            
+            return false;
+        }
+        
+        public void AddChild(HierarchyNode child)
+        {
+            children.Add(child);
+        }
+        
+        public void RemoveChild(HierarchyNode child)
+        {
+            children.Remove(child);
+        }
+        
+        public bool RemoveNodeInHierarchy(NetworkID id)
+        {
+            if (components.Contains(id))
+            {
+                parent?.RemoveChild(this);
+                Dispose();
+                return true;
+            }
+            
+            for (int i = 0; i < children.Count; i++)
+            {
+                if (children[i].RemoveNodeInHierarchy(id))
+                    return true;
+            }
+            
+            return false;
+        }
+        
+        public bool RemoveComponentInHierarchy(NetworkID id)
+        {
+            if (components.Contains(id))
+            {
+                components.Remove(id);
+                return true;
+            }
+            
+            for (int i = 0; i < children.Count; i++)
+            {
+                if (children[i].RemoveComponentInHierarchy(id))
+                    return true;
+            }
+            
+            return false;
+        }
+        
+        public void AddComponentRange(NetworkID start, int count)
+        {
+            for (ushort i = 0; i < count; ++i)
+            {
+                components.Add(new NetworkID(start, i));
+            }
+        }
+        
+        public void AddComponent(NetworkID id)
+        {
+            components.Add(id);
+        }
+        
+        public void RemoveComponent(NetworkID id)
+        {
+            components.Remove(id);
+        }
+
+        public void Dispose()
+        {
+            foreach (var child in children)
+                child.Dispose();
+            
+            ListPool<HierarchyNode>.Destroy(children);
+            HashSetPool<NetworkID>.Destroy(components);
+        }
+
+        public void Decouple()
+        {
+            if (parent != null)
+            {
+                parent.RemoveChild(this);
+                parent = null;
+            }
+        }
+
+        public void PrintHierarchy(int indent = 0)
+        {
+            PurrLogger.Log(parent == null
+                ? $"Root {components.Count}"
+                : $"{new string('-', indent)}Node: {components.Count} components (first: {(components.Count > 0 ? components.First().ToString() : "none")})");
+
+            foreach (var child in children)
+            {
+                child.PrintHierarchy(indent + 1);
+            }
+        }
+    }
+    
     public class HierarchyHistory
     {
         readonly List<HierarchyAction> _actions = new ();
@@ -10,8 +148,8 @@ namespace PurrNet.Modules
         
         readonly SceneID _sceneId;
         
-        private readonly List<Prefab> _prefabs = new();
-        private readonly List<int> _toRemove = new();
+        static readonly List<Prefab> _prefabs = new();
+        static readonly List<int> _toRemove = new();
         
         public bool hasUnflushedActions { get; private set; }
 
@@ -27,6 +165,134 @@ namespace PurrNet.Modules
                 sceneId = _sceneId,
                 actions = _actions,
                 isDelta = false
+            };
+        }
+        
+        static void AddPrefabNode(NetworkManager nm, int prefabId, NetworkID rootId, HierarchyNode parent)
+        {
+            if (!nm.prefabProvider.TryGetPrefab(prefabId, out var prefab))
+            {
+                PurrLogger.LogError($"Failed to get prefab with id {prefabId}");
+                return;
+            }
+            
+            var node = new HierarchyNode(parent);
+            AddPrefabNode(prefab, node, rootId);
+            parent.AddChild(node);
+        }
+
+        static int AddPrefabNode(GameObject gameObject, HierarchyNode node, NetworkID rootId)
+        {
+            var trs = gameObject.transform;
+            
+            var components = ListPool<NetworkIdentity>.New();
+            gameObject.GetComponents(components);
+            var componentsCount = components.Count;
+            ListPool<NetworkIdentity>.Destroy(components);
+
+            node.AddComponentRange(rootId, componentsCount);
+
+            var childCount = trs.childCount;
+            
+            for (int i = 0; i < childCount; ++i)
+            {
+                var child = trs.GetChild(i).GetComponentInChildren<NetworkIdentity>();
+                if (!child) continue;
+                
+                var nextId = new NetworkID(rootId, (ushort)componentsCount);
+                var childNode = new HierarchyNode(node);
+                
+                componentsCount += AddPrefabNode(child.gameObject, childNode, nextId);
+                
+                node.AddChild(childNode);
+            }
+            
+            return componentsCount;
+        }
+        
+        internal HierarchyActionBatch GetHistoryThatAffects(List<NetworkIdentity> roots)
+        {
+            var actions = new List<HierarchyAction>();
+
+            var relevant = HashSetPool<NetworkID>.New();
+            var tmp = ListPool<NetworkIdentity>.New();
+
+            for (var rootIdx = 0; rootIdx < roots.Count; rootIdx++)
+            {
+                var rootIdentity = roots[rootIdx];
+                rootIdentity.GetComponentsInChildren(tmp);
+
+                foreach (var nid in tmp)
+                {
+                    if (nid.id.HasValue)
+                        relevant.Add(nid.id.Value);
+                }
+            }
+
+            ListPool<NetworkIdentity>.Destroy(tmp);
+            
+            for (var i = 0; i < _actions.Count; ++i)
+            {
+                var action = _actions[i];
+
+                switch (action.type)
+                {
+                    // build prefab list as we go
+                    case HierarchyActionType.Spawn:
+                    {
+                        var spawnAction = action.spawnAction;
+                        bool isRelevant = false;
+                        
+                        for (int child = 0; child < spawnAction.childCount; ++child)
+                        {
+                            var childNid = new NetworkID(spawnAction.identityId, (ushort)child);
+                            if (relevant.Contains(childNid))
+                            {
+                                isRelevant = true;
+                                break;
+                            }
+                        }
+                        
+                        if (isRelevant)
+                            actions.Add(action);
+                        break;
+                    }
+                    // apply actions to the prefab list
+                    case HierarchyActionType.Despawn:
+                    {
+                        if (relevant.Contains(action.despawnAction.identityId))
+                            actions.Add(action);
+                        break;
+                    }
+                    // apply actions to the prefab list
+                    case HierarchyActionType.ChangeParent:
+                    {
+                        if (relevant.Contains(action.changeParentAction.identityId))
+                            actions.Add(action);
+                        break;
+                    }
+                    case HierarchyActionType.SetActive:
+                    {
+                        if (relevant.Contains(action.setActiveAction.identityId))
+                            actions.Add(action);
+                        break;
+                    }
+                    case HierarchyActionType.SetEnabled:
+                    {
+                        if (relevant.Contains(action.setEnabledAction.identityId))
+                            actions.Add(action);
+                        break;
+                    }
+                }
+            }
+            
+            HashSetPool<NetworkID>.Destroy(relevant);
+            
+            return new HierarchyActionBatch
+            {
+                sceneId = _sceneId,
+                actions = actions,
+                isDelta = true
             };
         }
 
@@ -112,6 +378,7 @@ namespace PurrNet.Modules
         {
             CleanupPrefabs();
             RemoveIrrelevantActions();
+            CompressParentChanges();
         }
 
         private void CleanupPrefabs()
@@ -209,6 +476,31 @@ namespace PurrNet.Modules
                 }
             }
         }
+        
+        private void CompressParentChanges()
+        {
+            for (int i = _actions.Count - 1; i >= 0; i--)
+            {
+                var action = _actions[i];
+                if (action.type != HierarchyActionType.ChangeParent)
+                    continue;
+
+                var identityId = action.changeParentAction.identityId;
+
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    var previousAction = _actions[j];
+                    if (previousAction.type != HierarchyActionType.ChangeParent)
+                        continue;
+
+                    if (previousAction.changeParentAction.identityId != identityId)
+                        continue;
+
+                    _actions.RemoveAt(j);
+                    i--;
+                }
+            }
+        }
 
         private void RemoveRelevantActions(Prefab prefab)
         {
@@ -242,7 +534,7 @@ namespace PurrNet.Modules
                 _ => throw new ArgumentException("Unknown action type")
             };
         }
-
+        
         private struct Prefab
         {
             public ushort childCount;
