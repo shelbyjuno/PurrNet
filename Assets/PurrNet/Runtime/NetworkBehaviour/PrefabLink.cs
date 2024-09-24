@@ -4,7 +4,7 @@ namespace PurrNet
 {
     public sealed class PrefabLink : NetworkIdentity
     {
-        [SerializeField] private string _guid;
+        [SerializeField, HideInInspector] private string _guid;
 
         static bool _muteAutoSpawn;
         

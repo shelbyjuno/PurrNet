@@ -215,12 +215,13 @@ namespace PurrNet.Modules
             var actions = new List<HierarchyAction>();
 
             var relevant = HashSetPool<NetworkID>.New();
+            var spawned = HashSetPool<NetworkID>.New();
             var tmp = ListPool<NetworkIdentity>.New();
 
             for (var rootIdx = 0; rootIdx < roots.Count; rootIdx++)
             {
                 var rootIdentity = roots[rootIdx];
-                rootIdentity.GetComponentsInChildren(tmp);
+                rootIdentity.GetComponentsInChildren(true, tmp);
 
                 foreach (var nid in tmp)
                 {
@@ -252,16 +253,27 @@ namespace PurrNet.Modules
                                 break;
                             }
                         }
-                        
+
                         if (isRelevant)
+                        {
+                            for (int child = 0; child < spawnAction.childCount; ++child)
+                            {
+                                var childNid = new NetworkID(spawnAction.identityId, (ushort)child);
+                                spawned.Add(childNid);
+                            }
+
                             actions.Add(action);
+                        }
                         break;
                     }
                     // apply actions to the prefab list
                     case HierarchyActionType.Despawn:
                     {
-                        if (relevant.Contains(action.despawnAction.identityId))
+                        if (spawned.Contains(action.despawnAction.identityId) || relevant.Contains(action.despawnAction.identityId))
+                        {
+                            spawned.Remove(action.despawnAction.identityId);
                             actions.Add(action);
+                        }
                         break;
                     }
                     // apply actions to the prefab list
@@ -286,7 +298,24 @@ namespace PurrNet.Modules
                 }
             }
             
+            spawned.ExceptWith(relevant);
+
+            foreach (var spawnedButNotUsed in spawned)
+            {
+                actions.Add(new HierarchyAction
+                {
+                    type = HierarchyActionType.Despawn,
+                    actor = spawnedButNotUsed.scope,
+                    despawnAction = new DespawnAction
+                    {
+                        identityId = spawnedButNotUsed,
+                        despawnType = DespawnType.GameObject
+                    }
+                });
+            }
+            
             HashSetPool<NetworkID>.Destroy(relevant);
+            HashSetPool<NetworkID>.Destroy(spawned);
             
             return new HierarchyActionBatch
             {
