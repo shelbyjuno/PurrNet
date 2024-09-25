@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Pooling;
 
 namespace PurrNet
 {
@@ -157,12 +158,38 @@ namespace PurrNet
                 EvaluateVisibility(player, nid, collection);
         }
         
+        private void PropagateVisibility(PlayerID target, NetworkIdentity child)
+        {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            child.transform.root.GetComponentsInChildren(true, children);
+
+            for (var i = 0; i < children.Count; i++)
+            {
+                var identity = children[i];
+                
+                if (identity == child)
+                    continue;
+                
+                if (!identity.id.HasValue)
+                    continue;
+                
+                if (!_observers.TryGetValue(identity.id.Value, out var observers))
+                    continue;
+
+                if (observers.Add(target))
+                    onObserverAdded?.Invoke(target, child);
+            }
+        }
+        
         private void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
         {
-            if (nid.HasVisiblity(target, nid))
+            if (nid.HasVisibility(target, nid))
             {
                 if (collection.Add(target))
+                {
                     onObserverAdded?.Invoke(target, nid);
+                    //PropagateVisibility(target, nid); TODO: This is an issue when removing observers
+                }
             }
             else
             {

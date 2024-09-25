@@ -16,9 +16,9 @@ namespace PurrNet.Pooling
         
         public static int GetCount() => _instance.count;
 
-        public static List<T> New() => _instance.Allocate();
+        public static List<T> Instantiate() => _instance.Allocate();
 
-        public static void Destroy(List<T> list) => _instance.Free(list);
+        public static void Destroy(List<T> list) => _instance.Delete(list);
     }
     
     public class HashSetPool<T> : GenericPool<HashSet<T>>
@@ -47,14 +47,14 @@ namespace PurrNet.Pooling
             return _instance.count;
         }
         
-        public static HashSet<T> New()
+        public static HashSet<T> Instantiate()
         {
             return _instance.Allocate();
         }
         
         public static void Destroy(HashSet<T> list)
         {
-            _instance.Free(list);
+            _instance.Delete(list);
         }
     }
 }

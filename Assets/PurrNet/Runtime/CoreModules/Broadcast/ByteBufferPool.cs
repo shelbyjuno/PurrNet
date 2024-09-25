@@ -1,20 +1,36 @@
-using System.Collections.Generic;
+using PurrNet.Pooling;
 
 namespace PurrNet.Packets
 {
-    public static class ByteBufferPool
+    public class ByteBufferPool : GenericPool<ByteBuffer>
     {
-        static readonly Queue<ByteBuffer> _pool = new ();
+        static readonly ByteBufferPool _pool;
         
+        static ByteBufferPool()
+        {
+            _pool = new ByteBufferPool();
+        }
+        
+        static ByteBuffer Create()
+        {
+            return new ByteBuffer();
+        }
+        
+        static void Reset(ByteBuffer buffer)
+        {
+            buffer.Clear();
+        }
+
+        public ByteBufferPool() : base(Create, Reset) { }
+
         public static ByteBuffer Alloc()
         {
-            return _pool.Count > 0 ? _pool.Dequeue() : new ByteBuffer();
+            return _pool.Allocate();
         }
         
         public static void Free(ByteBuffer buffer)
         {
-            buffer.Clear();
-            _pool.Enqueue(buffer);
+            _pool.Delete(buffer);
         }
     }
 }

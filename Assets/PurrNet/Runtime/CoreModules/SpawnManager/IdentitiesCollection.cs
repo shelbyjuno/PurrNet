@@ -63,7 +63,7 @@ namespace PurrNet
         {
             foreach (var identity in _identities.Values)
             {
-                identity.TriggetDespawnEvent(_asServer);
+                identity.TriggerDespawnEvent(_asServer);
                 
                 if (identity && identity.gameObject && identity.prefabId != -1)
                 {

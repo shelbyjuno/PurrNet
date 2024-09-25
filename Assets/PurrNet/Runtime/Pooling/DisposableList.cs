@@ -11,7 +11,7 @@ namespace PurrNet.Pooling
         
         public DisposableList(int capacity = 0)
         {
-            _list = ListPool<T>.New();
+            _list = ListPool<T>.Instantiate();
             
             if (_list.Capacity < capacity)
                 _list.Capacity = capacity;

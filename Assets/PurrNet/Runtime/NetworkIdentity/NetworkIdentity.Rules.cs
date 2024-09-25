@@ -23,7 +23,7 @@ namespace PurrNet
         
         private NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
 
-        public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
+        public bool HasVisibility(PlayerID playerId, NetworkIdentity identity)
         {
             if (blacklist.Contains(playerId))
                 return false;

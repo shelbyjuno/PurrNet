@@ -10,8 +10,8 @@ namespace PurrNet.Modules
     public class HierarchyNode : IDisposable
     {
         public HierarchyNode parent;
-        private readonly List<HierarchyNode> children = ListPool<HierarchyNode>.New();
-        private readonly HashSet<NetworkID> components = HashSetPool<NetworkID>.New();
+        private readonly List<HierarchyNode> children = ListPool<HierarchyNode>.Instantiate();
+        private readonly HashSet<NetworkID> components = HashSetPool<NetworkID>.Instantiate();
         
         public HierarchyNode(HierarchyNode parent)
         {
@@ -185,7 +185,7 @@ namespace PurrNet.Modules
         {
             var trs = gameObject.transform;
             
-            var components = ListPool<NetworkIdentity>.New();
+            var components = ListPool<NetworkIdentity>.Instantiate();
             gameObject.GetComponents(components);
             var componentsCount = components.Count;
             ListPool<NetworkIdentity>.Destroy(components);
@@ -214,9 +214,9 @@ namespace PurrNet.Modules
         {
             var actions = new List<HierarchyAction>();
 
-            var relevant = HashSetPool<NetworkID>.New();
-            var spawned = HashSetPool<NetworkID>.New();
-            var tmp = ListPool<NetworkIdentity>.New();
+            var relevant = HashSetPool<NetworkID>.Instantiate();
+            var spawned = HashSetPool<NetworkID>.Instantiate();
+            var tmp = ListPool<NetworkIdentity>.Instantiate();
 
             for (var rootIdx = 0; rootIdx < roots.Count; rootIdx++)
             {

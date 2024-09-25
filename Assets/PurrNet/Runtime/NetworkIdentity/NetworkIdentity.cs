@@ -7,6 +7,8 @@ using UnityEngine;
 
 namespace PurrNet
 {
+    public delegate void OnRootChanged(NetworkIdentity identity, NetworkIdentity oldRoot, NetworkIdentity newRoot);
+    
     [DefaultExecutionOrder(-1000)]
     public partial class NetworkIdentity : MonoBehaviour
     {
@@ -67,6 +69,7 @@ namespace PurrNet
         public PlayerID? localPlayer => isSpawned && networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
             ? module.localPlayerId.Value : null;
         
+        internal event OnRootChanged onRootChanged;
         internal event Action<NetworkIdentity> onRemoved;
         internal event Action<NetworkIdentity, bool> onEnabledChanged;
         internal event Action<NetworkIdentity, bool> onActivatedChanged;
@@ -74,6 +77,70 @@ namespace PurrNet
         private bool _lastEnabledState;
         private GameObjectEvents _events;
         private GameObject _gameObject;
+        private NetworkIdentity _root;
+        
+        private NetworkIdentity GetRootIdentity()
+        {
+            var lastKnown = this;
+            var current = transform.parent;
+
+            while (current)
+            {
+                if (current.TryGetComponent(out NetworkIdentity identity))
+                    lastKnown = identity;
+                
+                current = current.parent;
+            }
+            
+            return lastKnown;
+        }
+        
+        private TickManager _serverTickManager;
+        private TickManager _clientTickManager;
+
+        private void InternalOnSpawn(bool asServer)
+        {
+            if (asServer)
+            {
+                _serverTickManager = networkManager.GetModule<TickManager>(true);
+                _serverTickManager.onTick += ServerTick;
+            }
+            else
+            {
+                _clientTickManager = networkManager.GetModule<TickManager>(false);
+                _clientTickManager.onTick += ClientTick;
+            }
+        }
+        
+        private void InternalOnDespawn(bool asServer)
+        {
+            if (asServer)
+                 _serverTickManager.onTick -= ServerTick;
+            else _clientTickManager.onTick -= ClientTick;
+        }
+
+        private void InternalOnServerTick()
+        {
+            var root = GetRootIdentity();
+
+            if (root != _root)
+            {
+                var oldRoot = _root;
+                _root = root;
+                onRootChanged?.Invoke(this, oldRoot, root);
+            }
+        }
+        
+        private void ClientTick()
+        {
+            OnTick(_serverTickManager.tickDelta, false);
+        }
+
+        private void ServerTick()
+        {
+            InternalOnServerTick();
+            OnTick(_serverTickManager.tickDelta, true);
+        }
 
         internal PlayerID? GetOwner(bool asServer) => asServer ? internalOwnerServer : internalOwnerClient;
 
@@ -84,6 +151,8 @@ namespace PurrNet
         protected virtual void OnDespawned() { }
         
         protected virtual void OnSpawned(bool asServer) { }
+        
+        protected virtual void OnTick(float delta, bool asServer) {}
 
         protected virtual void OnInitializeModules() { }
         
@@ -272,6 +341,7 @@ namespace PurrNet
         
         internal void TriggerSpawnEvent(bool asServer)
         {
+            InternalOnSpawn(asServer);
             OnSpawned(asServer);
 
             for (int i = 0; i < _modules.Count; i++)
@@ -288,10 +358,11 @@ namespace PurrNet
             _spawnedCount++;
         }
 
-        internal void TriggetDespawnEvent(bool asServer)
+        internal void TriggerDespawnEvent(bool asServer)
         {
             if (!IsSpawned(asServer)) return;
 
+            InternalOnDespawn(asServer);
             OnDespawned(asServer);
 
             for (int i = 0; i < _modules.Count; i++)

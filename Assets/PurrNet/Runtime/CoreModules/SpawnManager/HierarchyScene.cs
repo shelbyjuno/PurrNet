@@ -171,7 +171,7 @@ namespace PurrNet.Modules
             else
             {
                 foreach (var identity in identities.collection)
-                    identity.TriggetDespawnEvent(false);
+                    identity.TriggerDespawnEvent(false);
                 
                 _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             }
@@ -527,7 +527,7 @@ namespace PurrNet.Modules
                         }*/
                         
                         onIdentityRemoved?.Invoke(child);
-                        child.TriggetDespawnEvent(_asServer);
+                        child.TriggerDespawnEvent(_asServer);
                     }
                     
                     child.IgnoreNextDestroyCallback();
@@ -541,7 +541,7 @@ namespace PurrNet.Modules
                 if (identities.UnregisterIdentity(identity))
                 {
                     onIdentityRemoved?.Invoke(identity);
-                    identity.TriggetDespawnEvent(_asServer);
+                    identity.TriggerDespawnEvent(_asServer);
                 }
                 Object.Destroy(identity);
             }
@@ -774,7 +774,7 @@ namespace PurrNet.Modules
             });
             
             onIdentityRemoved?.Invoke(identity);
-            identity.TriggetDespawnEvent(_asServer);
+            identity.TriggerDespawnEvent(_asServer);
         }
         
         private void OnIdentityGoActivatedChanged(NetworkIdentity identity, bool active)

@@ -29,6 +29,9 @@ namespace PurrNet.Modules
         }
         
         public int tickRate { get; private set; }
+
+        public readonly float tickDelta;
+        public readonly double tickDeltaDouble;
         
         public event Action onPreTick, onTick, onPostTick;
         
@@ -36,6 +39,8 @@ namespace PurrNet.Modules
 
         public TickManager(int tickRate)
         {
+            tickDelta = 1f / tickRate;
+            tickDeltaDouble = 1d / tickRate;
             this.tickRate = tickRate;
         }
 

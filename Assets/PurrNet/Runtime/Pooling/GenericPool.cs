@@ -27,7 +27,7 @@ namespace PurrNet.Pooling
         }
 
         [UsedImplicitly]
-        public void Free(T obj)
+        public void Delete(T obj)
         {
             _reset(obj);
             _pool.Push(obj);

@@ -25,7 +25,7 @@ namespace PurrNet.Pooling
         
         public static void Destroy(T list)
         {
-            _instance.Free(list);
+            _instance.Delete(list);
         }
     }
 }
