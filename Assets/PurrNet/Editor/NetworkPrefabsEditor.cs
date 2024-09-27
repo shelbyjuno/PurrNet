@@ -35,7 +35,7 @@ namespace PurrNet
 
             EditorGUILayout.LabelField("Generation Settings", EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("folder"), GUIContent.none);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("folder"), new GUIContent("Folder"));
             if (EditorGUI.EndChangeCheck())
             {
                 EditorUtility.SetDirty(networkPrefabs);

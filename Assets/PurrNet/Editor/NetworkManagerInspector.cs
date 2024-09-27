@@ -13,7 +13,8 @@ namespace PurrNet.Editor
         private SerializedProperty _startClientFlags;
         
         private SerializedProperty _cookieScope;
-        
+
+        private SerializedProperty _dontDestroyOnLoad;
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _networkRules;
         private SerializedProperty _transport;
@@ -29,6 +30,7 @@ namespace PurrNet.Editor
             
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
+            _dontDestroyOnLoad = serializedObject.FindProperty("_dontDestroyOnLoad");
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _networkRules = serializedObject.FindProperty("_networkRules");
             _transport = serializedObject.FindProperty("_transport");
@@ -81,6 +83,7 @@ namespace PurrNet.Editor
             if (networkManager.isClient || networkManager.isServer)
                 GUI.enabled = false;
             
+            EditorGUILayout.PropertyField(_dontDestroyOnLoad);
             EditorGUILayout.PropertyField(_transport);
             EditorGUILayout.PropertyField(_networkPrefabs);
             EditorGUILayout.PropertyField(_networkRules);

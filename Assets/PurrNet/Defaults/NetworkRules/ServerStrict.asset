@@ -23,6 +23,8 @@ MonoBehaviour:
     transferAuth: 1
     removeAuth: 1
     overrideWhenPropagating: 1
+  _defaultSceneRules:
+    removePlayerFromSceneOnDisconnect: 0
   _defaultIdentityRules:
     syncComponentActive: 1
     syncComponentAuth: 1

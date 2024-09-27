@@ -4,7 +4,7 @@ namespace PurrNet
 {
     public sealed class PrefabLink : NetworkIdentity
     {
-        [SerializeField, HideInInspector] private string _guid;
+        [SerializeField] private string _guid;
 
         static bool _muteAutoSpawn;
         
@@ -48,7 +48,13 @@ namespace PurrNet
             spawnModule.AutoSpawn(gameObject);
         }
 
-        internal void SetGUID(string guid) => _guid = guid;
+        internal bool SetGUID(string guid)
+        {
+            if (guid == _guid)
+                return false;
+            _guid = guid;
+            return true;
+        }
 
         public bool MatchesGUID(string guid)
         {

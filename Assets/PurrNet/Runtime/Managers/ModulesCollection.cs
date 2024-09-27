@@ -162,6 +162,7 @@ namespace PurrNet
             _updateListeners.Clear();
             _fixedUpdatesListeners.Clear();
             _cleanupListeners.Clear();
+            _preFixedUpdatesListeners.Clear();
         }
 
         public void AddModule(INetworkModule module)

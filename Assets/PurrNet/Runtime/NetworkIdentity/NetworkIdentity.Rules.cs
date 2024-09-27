@@ -70,6 +70,12 @@ namespace PurrNet
             var rules = networkRules;
             return rules && rules.HasSetEnabledAuthority(this, localPlayer, asServer);
         }
+        
+        public bool ShouldDespawnOnOwnerDisconnect()
+        {
+            var rules = networkRules;
+            return rules && rules.ShouldDespawnOnOwnerDisconnect();
+        }
 
         public bool ShouldSyncParent(bool asServer)
         {
@@ -89,10 +95,10 @@ namespace PurrNet
             return rules && rules.ShouldSyncSetEnabled(this, asServer);
         }
         
-        public bool ShouldPropagateToChildren(bool asServer)
+        public bool ShouldPropagateToChildren()
         {
             var rules = networkRules;
-            return rules && rules.ShouldPropagateToChildren(this, asServer);
+            return rules && rules.ShouldPropagateToChildren();
         }
         
         public bool ShouldOverrideExistingOwnership(bool asServer)
@@ -136,6 +142,12 @@ namespace PurrNet
         {
             var rules = networkRules;
             return rules && rules.HasGiveOwnershipAuthority(this, asServer);
+        }
+        
+        public bool HasRemoveOwnershipAuthority(PlayerID player, bool asServer)
+        {
+            var rules = networkRules;
+            return rules && rules.HasRemoveOwnershipAuthority(this, player, asServer);
         }
     }
 }

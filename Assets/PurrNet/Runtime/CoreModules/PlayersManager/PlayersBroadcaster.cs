@@ -121,7 +121,6 @@ namespace PurrNet
 
             if (_playersManager.TryGetConnection(player, out var conn))
                 _broadcastModule.SendRaw(conn, data, method);
-            else PurrLogger.LogWarning($"Player {player} is not connected. Can't send data '{data.GetType().FullName}'.");
         }
         
         public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered)
@@ -131,7 +130,6 @@ namespace PurrNet
 
             if (_playersManager.TryGetConnection(player, out var conn))
                  _broadcastModule.Send(conn, data, method);
-            else PurrLogger.LogWarning($"Player {player} is not connected. Can't send data '{data.GetType().FullName}'.");
         }
         
         public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)

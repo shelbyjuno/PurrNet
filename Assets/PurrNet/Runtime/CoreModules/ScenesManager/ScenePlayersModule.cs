@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -45,8 +44,11 @@ namespace PurrNet.Modules
         
         private bool _asServer;
         
-        public ScenePlayersModule(ScenesModule scenes, PlayersManager players)
+        private readonly NetworkManager _manager;
+        
+        public ScenePlayersModule(NetworkManager manager, ScenesModule scenes, PlayersManager players)
         {
+            _manager = manager;
             _scenes = scenes;
             _players = players;
         }
@@ -66,22 +68,16 @@ namespace PurrNet.Modules
                 _scenes.onSceneLoaded += OnSceneLoaded;
                 _scenes.onSceneUnloaded += OnSceneUnloaded;
                 _scenes.onSceneVisibilityChanged += OnSceneVisibilityChanged;
-                
                 _players.onPrePlayerJoined += OnPlayerJoined;
-                _players.onPrePlayerLeft += OnPlayerLeft;
-                
+                _players.onPlayerLeft += OnPlayerLeft;
+
                 _players.Subscribe<ClientFinishedLoadingScene>(RemoteClientLoadedScene);
             }
             else
             {
                 if (_players.localPlayerId.HasValue)
-                {
-                    OnLocalPlayerReady(_players.localPlayerId.Value);
-                }
-                else
-                {
-                    _players.onLocalPlayerReceivedID += OnLocalPlayerReady;
-                }
+                     OnLocalPlayerReady(_players.localPlayerId.Value);
+                else _players.onLocalPlayerReceivedID += OnLocalPlayerReady;
 
                 _scenes.onSceneLoaded += OnClientSceneLoaded;
             }
@@ -104,9 +100,8 @@ namespace PurrNet.Modules
                 _scenes.onSceneLoaded -= OnSceneLoaded;
                 _scenes.onSceneUnloaded -= OnSceneUnloaded;
                 _scenes.onSceneVisibilityChanged -= OnSceneVisibilityChanged;
-                
                 _players.onPrePlayerJoined -= OnPlayerJoined;
-                _players.onPrePlayerLeft -= OnPlayerLeft;
+                _players.onPlayerLeft -= OnPlayerLeft;
                 
                 _players.Unsubscribe<ClientFinishedLoadingScene>(RemoteClientLoadedScene);
             }
@@ -116,12 +111,25 @@ namespace PurrNet.Modules
                 _scenes.onSceneUnloaded -= OnClientSceneLoaded;
             }
         }
-        
+
+        private void OnPlayerLeft(PlayerID player, bool asserver)
+        {
+            if (!_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave()) return;
+            
+            foreach (var (scene, players) in _scenePlayers)
+            {
+                if (!players.Contains(player))
+                    continue;
+
+                RemovePlayerFromScene(player, scene);
+            }
+        }
+
         private void OnClientSceneLoaded(SceneID scene, bool asserver)
         {
             if (!_players.localPlayerId.HasValue)
             {
-                Debug.LogError("Local player ID not set; aborting OnClientSceneLoaded");
+                PurrLogger.LogError("Local player ID not set; aborting OnClientSceneLoaded");
                 return;
             }
             
@@ -203,11 +211,15 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnPlayerJoined(PlayerID player, bool asserver)
+        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
         {
+            if (isReconnect && !_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave())
+                return;
+            
             for (var i = 0; i < _scenes.scenes.Count; i++)
             {
                 var scene = _scenes.scenes[i];
+                
                 if (!_scenes.TryGetSceneState(scene, out var state))
                     continue;
 
@@ -217,21 +229,35 @@ namespace PurrNet.Modules
                 AddPlayerToScene(player, scene);
             }
         }
-        
-        private void OnPlayerLeft(PlayerID player, bool asserver)
-        {
-            foreach (var (scene, players) in _scenePlayers)
-            {
-                if (!players.Contains(player))
-                    continue;
-                
-                RemovePlayerFromScene(player, scene);
-            }
-        }
 
         public bool IsPlayerInScene(PlayerID player, SceneID scene)
         {
             return _scenePlayers.TryGetValue(scene, out var playersInScene) && playersInScene.Contains(player);
+        }
+        
+        public IEnumerator<SceneID> GetPlayerScenes(PlayerID player)
+        {
+            foreach (var (scene, players) in _scenePlayers)
+            {
+                if (players.Contains(player))
+                    yield return scene;
+            }
+        }
+
+        /// <summary>
+        /// Remove the player from all scenes and add them to the new scene
+        /// </summary>
+        public void MovePlayerToSingleScene(PlayerID player, SceneID scene)
+        {
+            foreach (var (existingScene, players) in _scenePlayers)
+            {
+                if (!players.Contains(player))
+                    continue;
+                
+                RemovePlayerFromScene(player, existingScene);
+            }
+            
+            AddPlayerToScene(player, scene);
         }
         
         public void AddPlayerToScene(PlayerID player, SceneID scene)

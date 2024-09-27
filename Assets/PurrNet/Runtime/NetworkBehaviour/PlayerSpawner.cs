@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using PurrNet.Modules;
+using PurrNet.Pooling;
 using PurrNet.Transports;
 using UnityEngine;
 
@@ -37,6 +38,12 @@ namespace PurrNet
             if (!asServer)
                 return;
 
+            bool isDestroyOnDisconnectEnabled = NetworkManager.main.networkRules.ShouldDespawnOnOwnerDisconnect();
+
+            if (!isDestroyOnDisconnectEnabled && NetworkManager.main.TryGetModule(out GlobalOwnershipModule ownership, asServer) && 
+                ownership.PlayerOwnsSomething(player))
+                return;
+            
             NetworkIdentity newPlayer;
             
             if (spawnPoints.Count > 0)

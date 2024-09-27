@@ -7,6 +7,7 @@ using PurrNet.Utils;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.VersionControl;
 #endif
 
 namespace PurrNet
@@ -69,13 +70,13 @@ namespace PurrNet
             }
 
             root.GetComponentsInChildren(true, _identities);
-            
+
             if (offset < 0 || offset >= _identities.Count)
             {
                 prefab = null;
                 return false;
             }
-            
+
             prefab = _identities[offset].gameObject;
             return true;
         }
@@ -90,11 +91,11 @@ namespace PurrNet
                     return true;
                 }
             }
-            
+
             id = -1;
             return false;
         }
-        
+
 #if UNITY_EDITOR
         private bool _generating;
         static readonly List<NetworkIdentity> _identities = new();
@@ -106,9 +107,9 @@ namespace PurrNet
         /// </summary>
         public void Generate()
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (ApplicationContext.isClone)
-              return;
+                return;
 
             if (_generating) return;
 
@@ -118,17 +119,16 @@ namespace PurrNet
 
             if (folder == null || string.IsNullOrEmpty(AssetDatabase.GetAssetPath(folder)))
             {
-              EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder found...", 0f);
-              if (autoGenerate)
-              {
-                  prefabs.Clear();
-                  EditorUtility.SetDirty(this);
-              }
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder found...", 0f);
+                if (autoGenerate && prefabs.Count > 0)
+                {
+                    prefabs.Clear();
+                    EditorUtility.SetDirty(this);
+                }
 
-              EditorUtility.ClearProgressBar();
-              _generating = false;
-              PurrLogger.LogError("Exiting Generate method early due to no folder.");
-              return;
+                EditorUtility.ClearProgressBar();
+                _generating = false;
+                return;
             }
 
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Found folder...", 0f);
@@ -136,19 +136,18 @@ namespace PurrNet
 
             if (string.IsNullOrEmpty(folderPath))
             {
-              EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder path...", 0f);
-              folder = null;
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder path...", 0f);
 
-              if (autoGenerate)
-              {
-                  prefabs.Clear();
-                  EditorUtility.SetDirty(this);
-              }
+                if (autoGenerate && prefabs.Count > 0)
+                {
+                    prefabs.Clear();
+                    EditorUtility.SetDirty(this);
+                }
 
-              EditorUtility.ClearProgressBar();
-              _generating = false;
-              PurrLogger.LogError("Exiting Generate method early due to empty folder path.");
-              return;
+                EditorUtility.ClearProgressBar();
+                _generating = false;
+                PurrLogger.LogError("Exiting Generate method early due to empty folder path.");
+                return;
             }
 
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Getting existing paths...", 0f);
@@ -157,10 +156,10 @@ namespace PurrNet
             var existingPaths = new HashSet<string>();
             foreach (var prefab in prefabs)
             {
-              if (prefab)
-              {
-                  existingPaths.Add(AssetDatabase.GetAssetPath(prefab));
-              }
+                if (prefab)
+                {
+                    existingPaths.Add(AssetDatabase.GetAssetPath(prefab));
+                }
             }
 
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Finding paths...", 0.1f);
@@ -172,17 +171,18 @@ namespace PurrNet
                 var guid = guids[i];
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-              
+
                 if (prefab)
                 {
-                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}", 0.1f + 0.7f * ((i + 1f) / guids.Length));
+                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}",
+                        0.1f + 0.7f * ((i + 1f) / guids.Length));
 
                     if (!networkOnly)
                     {
                         foundPrefabs.Add(prefab);
                         continue;
                     }
-                    
+
                     prefab.GetComponentsInChildren(true, _identities);
 
                     if (_identities.Count > 0)
@@ -195,63 +195,69 @@ namespace PurrNet
             // Order by creation time
             foundPrefabs.Sort((a, b) =>
             {
-              string pathA = AssetDatabase.GetAssetPath(a);
-              string pathB = AssetDatabase.GetAssetPath(b);
+                string pathA = AssetDatabase.GetAssetPath(a);
+                string pathB = AssetDatabase.GetAssetPath(b);
 
-              var fileInfoA = new FileInfo(pathA);
-              var fileInfoB = new FileInfo(pathB);
+                var fileInfoA = new FileInfo(pathA);
+                var fileInfoB = new FileInfo(pathB);
 
-              return fileInfoA.CreationTime.CompareTo(fileInfoB.CreationTime);
+                return fileInfoA.CreationTime.CompareTo(fileInfoB.CreationTime);
             });
 
             EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Removing invalid prefabs...", 0.95f);
             // Remove invalid or no longer existing prefabs
-            prefabs.RemoveAll(prefab => !prefab || !File.Exists(AssetDatabase.GetAssetPath(prefab)));
-
+            int removed = prefabs.RemoveAll(prefab => !prefab || !File.Exists(AssetDatabase.GetAssetPath(prefab)));
+            int added = 0;
+            
             for (int i = 0; i < prefabs.Count; i++)
             {
-              if (!foundPrefabs.Contains(prefabs[i]))
-              {
-                  prefabs.RemoveAt(i);
-                  i--;
-              }
+                if (!foundPrefabs.Contains(prefabs[i]))
+                {
+                    prefabs.RemoveAt(i);
+                    removed++;
+                    i--;
+                }
             }
 
             // Add new prefabs found in the folder to the list if they don't already exist
             foreach (var foundPrefab in foundPrefabs)
             {
-              string foundPath = AssetDatabase.GetAssetPath(foundPrefab);
-              if (!existingPaths.Contains(foundPath))
-              {
-                  prefabs.Add(foundPrefab);
-              }
+                var foundPath = AssetDatabase.GetAssetPath(foundPrefab);
+                if (!existingPaths.Contains(foundPath))
+                {
+                    prefabs.Add(foundPrefab);
+                    added++;
+                }
             }
 
             PostProcess();
 
-            EditorUtility.SetDirty(this);
+            if (removed > 0 || added > 0)
+                EditorUtility.SetDirty(this);
             EditorUtility.ClearProgressBar();
 
             _generating = false;
-        #endif
+#endif
         }
 
-        
+
         public void PostProcess()
         {
 #if UNITY_EDITOR
             if (ApplicationContext.isClone)
                 return;
-            
+
             for (int i = 0; i < prefabs.Count; ++i)
             {
                 if (!prefabs[i])
                     continue;
-                
+
                 var assetPath = AssetDatabase.GetAssetPath(prefabs[i]);
                 var guid = AssetDatabase.AssetPathToGUID(assetPath);
                 var prefabContents = PrefabUtility.LoadPrefabContents(assetPath);
                 
+                bool isDirty = false;
+
                 prefabContents.GetComponentsInChildren(true, _links);
 
                 if (_links.Count > 0)
@@ -263,13 +269,22 @@ namespace PurrNet
                         var link = prefabContents.AddComponent<PrefabLink>();
                         link.SetGUID(guid);
                         link.hideFlags = HideFlags.NotEditable;
+                        isDirty = true;
                     }
                     else
                     {
-                        for (int j = 1; j < _links.Count; j++)
-                            DestroyImmediate(_links[j]);
-                        _links[0].SetGUID(guid);
-                        _links[0].hideFlags = HideFlags.NotEditable;
+                        if (_links.Count > 1)
+                        {
+                            isDirty = true;
+                            for (int j = 1; j < _links.Count; j++)
+                                DestroyImmediate(_links[j]);
+                        }
+
+                        if (_links[0].SetGUID(guid))
+                        {
+                            isDirty = true;
+                            _links[0].hideFlags = HideFlags.NotEditable;
+                        }
                     }
                 }
                 else
@@ -277,12 +292,14 @@ namespace PurrNet
                     var link = prefabContents.AddComponent<PrefabLink>();
                     link.SetGUID(guid);
                     link.hideFlags = HideFlags.NotEditable;
+                    isDirty = true;
                 }
-                
-                PrefabUtility.SaveAsPrefabAsset(prefabContents, assetPath);
+
+                if (isDirty)
+                    PrefabUtility.SaveAsPrefabAsset(prefabContents, assetPath);
                 PrefabUtility.UnloadPrefabContents(prefabContents);
             }
-            
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 #endif

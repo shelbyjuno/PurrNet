@@ -31,6 +31,7 @@ namespace PurrNet.Modules
         public LoadSceneMode mode;
         public LocalPhysicsMode physicsMode;
         public bool isPublic;
+        internal bool wasPresentFromStart;
     }
     
     public delegate void OnSceneActionEvent(SceneID scene, bool asServer);
@@ -128,22 +129,37 @@ namespace PurrNet.Modules
         {
             _asServer = asServer;
 
-            var nmScene = _networkManager.gameObject.scene;
+            var currentScene = _networkManager.gameObject.scene;
+            var originalScene = _networkManager.originalScene;
             
-            AddScene(nmScene, new PurrSceneSettings
+            AddScene(currentScene, new PurrSceneSettings
             {
                 mode = LoadSceneMode.Single,
                 isPublic = true,
-                physicsMode = LocalPhysicsMode.None
+                physicsMode = LocalPhysicsMode.None,
+                wasPresentFromStart = true
             }, GetNextID());
 
+            if (currentScene != originalScene)
+            {
+                AddScene(originalScene, new PurrSceneSettings
+                {
+                    mode = LoadSceneMode.Additive,
+                    isPublic = true,
+                    physicsMode = LocalPhysicsMode.None,
+                    wasPresentFromStart = true
+                }, GetNextID());
+            }
+            
             if (!asServer)
             {
                 _players.Subscribe<SceneActionsBatch>(OnSceneActionsBatch);
             }
             else
             {
+                _players.onPlayerJoined += OnPlayerJoined;
                 _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
+                _scenePlayers.onPlayerLeftScene += OnPlayerLeftScene;
             }
             
             SceneManager.sceneLoaded += SceneManagerOnSceneLoaded;
@@ -157,12 +173,62 @@ namespace PurrNet.Modules
             }
             else
             {
+                _players.onPlayerJoined -= OnPlayerJoined;
                 _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
+                _scenePlayers.onPlayerLeftScene -= OnPlayerLeftScene;
             }
             
             SceneManager.sceneLoaded -= SceneManagerOnSceneLoaded;
 
             DoCleanup();
+        }
+
+        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
+        {
+            if (!asserver)
+                return;
+            
+            var history = _history.GetFullHistory();
+            
+            _playerFilteredActions.Clear();
+            
+            for (var i = 0; i < history.actions.Count; i++)
+            {
+                var action = history.actions[i];
+                        
+                var target = action.type switch
+                {
+                    SceneActionType.Load => action.loadSceneAction.sceneID,
+                    SceneActionType.Unload => action.unloadSceneAction.sceneID,
+                    SceneActionType.SetActive => action.setActiveSceneAction.sceneID,
+                    _ => default
+                };
+                
+                if (_scenePlayers.IsPlayerInScene(player, target))
+                    _playerFilteredActions.Add(action);
+            }
+
+            if (_playerFilteredActions.Count > 0)
+                _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
+        }
+
+        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        {
+            if (!asserver)
+                return;
+            
+            _playerFilteredActions.Clear();
+            _playerFilteredActions.Add(new SceneAction
+            {
+                type = SceneActionType.Unload,
+                unloadSceneAction = new UnloadSceneAction
+                {
+                    sceneID = scene,
+                    options = UnloadSceneOptions.None
+                }
+            });
+
+            _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
         }
 
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
@@ -282,9 +348,9 @@ namespace PurrNet.Modules
         
         private static int SceneNameToBuildIndex(string name)
         {
-            var bidxCount = SceneManager.sceneCountInBuildSettings;
+            var bIdxCount = SceneManager.sceneCountInBuildSettings;
             
-            for (int i = 0; i < bidxCount; i++)
+            for (int i = 0; i < bIdxCount; i++)
             {
                 var path = SceneUtility.GetScenePathByBuildIndex(i);
                 var sceneName = System.IO.Path.GetFileNameWithoutExtension(path);
@@ -346,7 +412,9 @@ namespace PurrNet.Modules
                 isPublic = true
             });
         }
-        
+
+        public SceneID lastSceneId => new((ushort)(_nextSceneID - 1));
+
         public AsyncOperation LoadSceneAsync(int sceneIndex, PurrSceneSettings settings)
         {
             if (!_asServer)
@@ -465,6 +533,7 @@ namespace PurrNet.Modules
                 {
                     SceneActionType.Load => action.loadSceneAction.sceneID,
                     SceneActionType.Unload => action.unloadSceneAction.sceneID,
+                    SceneActionType.SetActive => action.setActiveSceneAction.sceneID,
                     _ => default
                 };
                 
@@ -548,6 +617,9 @@ namespace PurrNet.Modules
                 {
                     if (id == default)
                         continue;
+                    
+                    if (scene.settings.wasPresentFromStart)
+                        continue;
 
                     _pendingUnloads.Add(SceneManager.UnloadSceneAsync(scene.scene));
                 }
@@ -570,6 +642,38 @@ namespace PurrNet.Modules
         public bool TryGetSceneID(Scene scene, out SceneID o)
         {
             return _idToScene.TryGetValue(scene, out o);
+        }
+        
+        public bool TryGetScene(int buildIndex, out SceneID scene)
+        {
+            for (int i = 0; i < _rawScenes.Count; i++)
+            {
+                if (_scenes.TryGetValue(_rawScenes[i], out var state))
+                {
+                    if (state.scene.buildIndex == buildIndex)
+                    {
+                        scene = _rawScenes[i];
+                        return true;
+                    }
+                }
+            }
+
+            scene = default;
+            return false;
+        }
+
+        public bool IsSceneLoaded(int buildIndex)
+        {
+            for (int i = 0; i < _rawScenes.Count; i++)
+            {
+                if (_scenes.TryGetValue(_rawScenes[i], out var state))
+                {
+                    if (state.scene.buildIndex == buildIndex)
+                        return true;
+                }
+            }
+
+            return false;
         }
     }
 }

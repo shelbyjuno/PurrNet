@@ -58,7 +58,7 @@ namespace PurrNet.Modules
         }
     }
     
-    public delegate void OnPlayerJoinedEvent(PlayerID player, bool asserver);
+    public delegate void OnPlayerJoinedEvent(PlayerID player, bool isReconnect, bool asserver);
     
     public delegate void OnPlayerLeftEvent(PlayerID player, bool asserver);
     public delegate void OnPlayerEvent(PlayerID player);
@@ -76,6 +76,7 @@ namespace PurrNet.Modules
         private readonly Dictionary<PlayerID, Connection> _playerToConnection = new();
 
         public List<PlayerID> players { get; } = new();
+        private readonly HashSet<PlayerID> _allSeenPlayers = new();
 
         public PlayerID? localPlayerId { get; private set; }
 
@@ -294,9 +295,11 @@ namespace PurrNet.Modules
                 _playerToConnection.Add(player, conn);
             }
             
-            onPrePlayerJoined?.Invoke(player, _asServer);
-            onPlayerJoined?.Invoke(player, _asServer);
-            onPostPlayerJoined?.Invoke(player, _asServer);
+            bool isReconnect = !_allSeenPlayers.Add(player);
+            
+            onPrePlayerJoined?.Invoke(player, isReconnect, _asServer);
+            onPlayerJoined?.Invoke(player, isReconnect, _asServer);
+            onPostPlayerJoined?.Invoke(player, isReconnect, _asServer);
         }
         
         private void UnregisterPlayer(Connection conn)

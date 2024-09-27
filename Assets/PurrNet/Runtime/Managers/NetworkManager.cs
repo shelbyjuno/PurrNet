@@ -10,6 +10,7 @@ using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet
 {
@@ -37,6 +38,7 @@ namespace PurrNet
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
         [Header("Network Settings")]
+        [SerializeField] private bool _dontDestroyOnLoad;
         [SerializeField] private GenericTransport _transport;
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private NetworkRules _networkRules;
@@ -50,6 +52,8 @@ namespace PurrNet
         public IPrefabProvider prefabProvider { get; private set; }
         
         public NetworkVisibilityRuleSet visibilityRules => _visibilityRules;
+        
+        public Scene originalScene { get; private set; }
 
         /// <summary>
         /// Occurs when the server connection state changes.
@@ -158,6 +162,11 @@ namespace PurrNet
 
         private void Awake()
         {
+            if (!networkRules)
+                throw new InvalidOperationException(PurrLogger.FormatMessage("NetworkRules is not set (null)."));
+            
+            originalScene = gameObject.scene;
+
             if (_visibilityRules)
             {
                 var ogName = _visibilityRules.name;
@@ -169,6 +178,7 @@ namespace PurrNet
             if (!main)
                 main = this;
 
+            Time.fixedDeltaTime = 1f / _tickRate;
             Application.runInBackground = true;
 
             if (_networkPrefabs)
@@ -185,6 +195,9 @@ namespace PurrNet
             
             _serverModules = new ModulesCollection(this, true);
             _clientModules = new ModulesCollection(this, false);
+
+            if (_dontDestroyOnLoad)
+                DontDestroyOnLoad(gameObject);
         }
 
         private void Reset()
@@ -197,11 +210,14 @@ namespace PurrNet
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            float tickRate = 1f / _tickRate;
-            
-            if (Time.fixedDeltaTime == tickRate)
+            if (!gameObject.scene.isLoaded)
                 return;
             
+            float tickRate = 1f / _tickRate;
+            
+            if (Mathf.Approximately(Time.fixedDeltaTime, tickRate))
+                return;
+
             Time.fixedDeltaTime = tickRate;
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
@@ -274,11 +290,11 @@ namespace PurrNet
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
 
             var scenesModule = new ScenesModule(this, playersManager);
-            var scenePlayersModule = new ScenePlayersModule(scenesModule, playersManager);
+            var scenePlayersModule = new ScenePlayersModule(this, scenesModule, playersManager);
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
             var visibilityFactory = new VisibilityFactory(this, scenesModule, hierarchyModule, scenePlayersModule);
-            var ownershipModule = new GlobalOwnershipModule(hierarchyModule, playersManager, scenePlayersModule, scenesModule);
+            var ownershipModule = new GlobalOwnershipModule(this, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
             var rpcModule = new RPCModule(playersManager, hierarchyModule, ownershipModule, scenesModule, scenePlayersModule);
 

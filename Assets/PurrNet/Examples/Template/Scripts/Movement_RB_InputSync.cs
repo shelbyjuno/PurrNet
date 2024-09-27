@@ -1,5 +1,3 @@
-
-using System;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using UnityEngine;
@@ -53,16 +51,6 @@ namespace PurrNet.Examples.Template
 
         private void Update()
         {
-            if (isOwner)
-            {
-                HandleLocalRotation();
-            }
-            else
-            {
-                //TODO: Rotation is acting strange. It's slower on the clients than the server
-                transform.rotation = Quaternion.Slerp(transform.rotation, _targetRotation.value, Time.deltaTime * visualRotationSpeed);
-            }
-            
             if (isOwner && Input.GetKeyDown(KeyCode.Space))
                 Jump();
         }
@@ -73,31 +61,38 @@ namespace PurrNet.Examples.Template
             if (rotationVector == Vector3.zero)
                 return;
             var targetRotation = Quaternion.LookRotation(rotationVector, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * visualRotationSpeed);
+            _rigidbody.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * visualRotationSpeed);
         }
 
         private void OnTick()
         {
-            if (isOwner)
-                OwnerTick();
-
             if (isServer)
+            {
                 ServerTick();
+            }
+
+            if (isOwner)
+            {
+                OwnerTick();
+                HandleLocalRotation();
+            }
+            else
+            {
+                _rigidbody.rotation = Quaternion.Slerp(transform.rotation, _targetRotation.value, Time.fixedDeltaTime * visualRotationSpeed);
+            }
         }
         
         private void ServerTick()
         {
-            if(_serverInput.magnitude > 1)
+            if (_serverInput.magnitude > 1)
                 _serverInput.Normalize();
             var force = new Vector3(_serverInput.x, 0, _serverInput.y);
             _rigidbody.AddForce(force * moveForce);
 
-            Vector3 velocity;
-            
 #if UNITY_6000_0_OR_NEWER
-            velocity = _rigidbody.linearVelocity;
+            Vector3 velocity = _rigidbody.linearVelocity;
 #else
-            velocity = _rigidbody.velocity;
+            Vector3 velocity = _rigidbody.velocity;
 #endif
             
             var magnitude = new Vector3(velocity.x, 0, velocity.z).magnitude;

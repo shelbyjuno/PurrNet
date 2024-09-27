@@ -75,7 +75,7 @@ namespace PurrNet
             _sendIntervalInSeconds = sendIntervalInSeconds;
         }
 
-        [ObserversRPC(Channel.ReliableSequenced, bufferLast: true)]
+        [ObserversRPC(bufferLast: true)]
         private void SendValue(T newValue)
         {
             if (isServer)

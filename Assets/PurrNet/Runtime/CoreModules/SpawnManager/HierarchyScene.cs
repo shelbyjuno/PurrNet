@@ -150,7 +150,7 @@ namespace PurrNet.Modules
         {
             for (ushort i = 0; i < sceneObjects.Count; i++)
             {
-                if (sceneObjects[i].IsSpawned(_asServer) && !sceneObjects[i].isSceneObject)
+                if (sceneObjects[i].isSpawned && !sceneObjects[i].isSceneObject)
                     continue;
                 
                 SpawnIdentity(new SpawnAction
@@ -186,15 +186,15 @@ namespace PurrNet.Modules
             
             if (!asserver) return;
             
+            var fullHistory = _history.GetFullHistory();
+            if (fullHistory.actions.Count > 0)
+                _playersManager.Send(player, fullHistory);
+            
             _playersManager.Send(player, new SetSceneIds
             {
                 sceneId = _sceneID,
                 startingId = _sceneFirstNetworkID
             });
-            
-            var fullHistory = _history.GetFullHistory();
-            if (fullHistory.actions.Count > 0)
-                _playersManager.Send(player, fullHistory);
         }
         
         private readonly HashSet<NetworkID> _instancesAboutToBeRemoved = new ();

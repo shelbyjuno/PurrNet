@@ -10,8 +10,8 @@ namespace PurrNet
         public ConnectionAuth spawnAuth;
         public ActionAuth despawnAuth;
         
-        [Tooltip("Who gains ownership upon spawning of the identity")]
-        public DefaultOwner defaultOwner;
+        /*[Tooltip("Who gains ownership upon spawning of the identity")]
+        public DefaultOwner defaultOwner;*/
 
         [Tooltip("Propagate ownership to all children of the object")]
         public bool propagateOwnershipByDefault;
@@ -34,6 +34,12 @@ namespace PurrNet
         
         [Tooltip("If object already has an owner, should the new owner override the existing owner?")]
         public bool overrideWhenPropagating;
+    }
+    
+    [Serializable]
+    public struct NetworkSceneRules
+    {
+        public bool removePlayerFromSceneOnDisconnect;
     }
 
     [Serializable]
@@ -60,7 +66,7 @@ namespace PurrNet
         {
             despawnAuth = ActionAuth.Server | ActionAuth.Owner,
             spawnAuth = ConnectionAuth.Server,
-            defaultOwner = DefaultOwner.SpawnerIfClient,
+            // defaultOwner = DefaultOwner.SpawnerIfClient,
             propagateOwnershipByDefault = true,
             despawnIfOwnerDisconnects = true
         };
@@ -70,6 +76,11 @@ namespace PurrNet
             assignAuth = ConnectionAuth.Server,
             transferAuth = ActionAuth.Owner | ActionAuth.Server,
             overrideWhenPropagating = true
+        };
+        
+        [SerializeField] private NetworkSceneRules _defaultSceneRules = new()
+        {
+            removePlayerFromSceneOnDisconnect = false
         };
         
         [SerializeField] private NetworkIdentityRules _defaultIdentityRules = new()
@@ -85,10 +96,6 @@ namespace PurrNet
             changeParentAuth = ActionAuth.Server | ActionAuth.Owner,
             syncParent = true
         };
-        
-        public SpawnRules GetDefaultSpawnRules() => _defaultSpawnRules;
-        public OwnershipRules GetDefaultOwnershipRules() => _defaultOwnershipRules;
-        public NetworkIdentityRules GetDefaultIdentityRules() => _defaultIdentityRules;
 
         public bool HasDespawnAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
         {
@@ -161,22 +168,34 @@ namespace PurrNet
             return HasAuthority(_defaultOwnershipRules.transferAuth, networkIdentity, localPlayer, asServer);
         }
 
-        [UsedImplicitly]
         public bool HasGiveOwnershipAuthority(NetworkIdentity networkIdentity, bool asServer)
         {
             return HasAuthority(_defaultOwnershipRules.assignAuth, asServer);
         }
         
-        [UsedImplicitly]
-        public bool ShouldPropagateToChildren(NetworkIdentity networkIdentity, bool asServer)
+        public bool HasRemoveOwnershipAuthority(NetworkIdentity networkIdentity, PlayerID? localPlayer, bool asServer)
+        {
+            return HasAuthority(_defaultOwnershipRules.removeAuth, networkIdentity, localPlayer, asServer);
+        }
+        
+        public bool ShouldPropagateToChildren()
         {
             return _defaultSpawnRules.propagateOwnershipByDefault;
         }
 
-        [UsedImplicitly]
         public bool ShouldOverrideExistingOwnership(NetworkIdentity networkIdentity, bool asServer)
         {
             return _defaultOwnershipRules.overrideWhenPropagating;
+        }
+
+        public bool ShouldRemovePlayerFromSceneOnLeave()
+        {
+            return _defaultSceneRules.removePlayerFromSceneOnDisconnect;
+        }
+        
+        public bool ShouldDespawnOnOwnerDisconnect()
+        {
+            return _defaultSpawnRules.despawnIfOwnerDisconnects;
         }
     }
 }

@@ -1,7 +1,7 @@
+#if UNITY_MONO_CECIL
+
 using System;
 using Mono.Cecil;
-
-#if UNITY_MONO_CECIL
 
 namespace PurrNet.Codegen
 {

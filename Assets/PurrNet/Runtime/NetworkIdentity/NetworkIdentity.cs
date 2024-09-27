@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Utils;
@@ -8,7 +9,7 @@ using UnityEngine;
 namespace PurrNet
 {
     public delegate void OnRootChanged(NetworkIdentity identity, NetworkIdentity oldRoot, NetworkIdentity newRoot);
-    
+
     [DefaultExecutionOrder(-1000)]
     public partial class NetworkIdentity : MonoBehaviour
     {
@@ -18,8 +19,10 @@ namespace PurrNet
         /// </summary>
         public int prefabId { get; private set; } = -1;
 
+        [UsedImplicitly]
         public ushort prefabOffset { get; private set; }
 
+        [UsedImplicitly]
         public int siblingIndex { get; private set; } = -1;
 
         /// <summary>
@@ -54,8 +57,11 @@ namespace PurrNet
         internal PlayerID? internalOwnerServer;
         internal PlayerID? internalOwnerClient;
         
-        internal NetworkID? idServer { get; private set; }
-        internal NetworkID? idClient { get; private set; }
+        private TickManager _serverTickManager;
+        private TickManager _clientTickManager;
+
+        private NetworkID? idServer;
+        private NetworkID? idClient;
         
         /// <summary>
         /// Returns the owner of this object.
@@ -94,10 +100,9 @@ namespace PurrNet
             
             return lastKnown;
         }
-        
-        private TickManager _serverTickManager;
-        private TickManager _clientTickManager;
 
+        private IServerSceneEvents _serverSceneEvents;
+        
         private void InternalOnSpawn(bool asServer)
         {
             if (asServer)
@@ -110,13 +115,68 @@ namespace PurrNet
                 _clientTickManager = networkManager.GetModule<TickManager>(false);
                 _clientTickManager.onTick += ClientTick;
             }
+            
+            if (networkManager.TryGetModule<PlayersManager>(asServer, out var players))
+            {
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (this is IPlayerEvents events)
+                {
+                    players.onPlayerJoined += events.OnPlayerConnected;
+                    players.onPlayerLeft += events.OnPlayerDisconnected;
+                }
+                
+                if (networkManager.TryGetModule<ScenePlayersModule>(asServer, out var scenePlayers))
+                {
+                    // ReSharper disable once SuspiciousTypeConversion.Global
+                    if (this is IServerSceneEvents sceneEvents)
+                    {
+                        _serverSceneEvents = sceneEvents;
+                        scenePlayers.onPlayerJoinedScene += OnServerJoinedScene;
+                        scenePlayers.onPlayerLeftScene += OnServerLeftScene;
+                    }
+                }
+            }
         }
         
         private void InternalOnDespawn(bool asServer)
         {
             if (asServer)
-                 _serverTickManager.onTick -= ServerTick;
+            {
+                _serverTickManager.onTick -= ServerTick;
+            }
             else _clientTickManager.onTick -= ClientTick;
+            
+            if (networkManager.TryGetModule<PlayersManager>(asServer, out var players))
+            {
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (this is IPlayerEvents events)
+                {
+                    players.onPlayerJoined -= events.OnPlayerConnected;
+                    players.onPlayerLeft -= events.OnPlayerDisconnected;
+                }
+                
+                if (networkManager.TryGetModule<ScenePlayersModule>(asServer, out var scenePlayers))
+                {
+                    // ReSharper disable once SuspiciousTypeConversion.Global
+                    if (_serverSceneEvents != null)
+                    {
+                        scenePlayers.onPlayerJoinedScene -= OnServerJoinedScene;
+                        scenePlayers.onPlayerLeftScene -= OnServerLeftScene;
+                    }
+                }
+            }
+        }
+        
+        void OnServerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        {
+            if (scene == sceneId)
+                _serverSceneEvents?.OnPlayerJoinedScene(player);
+        }
+        
+        void OnServerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        {
+            if (scene == sceneId)
+                _serverSceneEvents?.OnPlayerLeftScene(player);
         }
 
         private void InternalOnServerTick()
@@ -133,7 +193,7 @@ namespace PurrNet
         
         private void ClientTick()
         {
-            OnTick(_serverTickManager.tickDelta, false);
+            OnTick(_clientTickManager.tickDelta, false);
         }
 
         private void ServerTick()
@@ -227,7 +287,7 @@ namespace PurrNet
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
             Hasher.PrepareType(GetType());
-
+            
             networkManager = manager;
             sceneId = scene;
             prefabId = pid;

@@ -108,7 +108,7 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnPlayerJoined(PlayerID player, bool asserver)
+        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
         {
             SendAnyStaticRPCs(player);
         }

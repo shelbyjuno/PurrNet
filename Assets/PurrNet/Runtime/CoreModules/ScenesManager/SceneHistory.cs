@@ -7,7 +7,8 @@ namespace PurrNet.Modules
     internal enum SceneActionType : byte
     {
         Load,
-        Unload
+        Unload,
+        SetActive
     }
     
     internal partial struct SceneAction : INetworkedData
