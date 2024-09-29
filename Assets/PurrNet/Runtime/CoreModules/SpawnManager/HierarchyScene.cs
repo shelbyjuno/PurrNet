@@ -965,7 +965,10 @@ namespace PurrNet.Modules
                 {
                     try
                     {
-                        _spawnedThisFrame[i].TriggerSpawnEvent(_asServer);
+                        var identity = _spawnedThisFrame[i];
+                        identity.TriggerSpawnEvent(_asServer);
+                        if (!identity.isSceneObject && _asServer && _manager.isHost)
+                            _spawnedThisFrame[i].TriggerSpawnEvent(false);
                     }
                     catch (Exception e)
                     {

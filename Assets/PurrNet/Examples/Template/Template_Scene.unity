@@ -1653,9 +1653,11 @@ MonoBehaviour:
   _startServerFlags: 9
   _startClientFlags: 7
   _cookieScope: 1
+  _dontDestroyOnLoad: 0
   _transport: {fileID: 1216416896}
   _networkPrefabs: {fileID: 11400000, guid: b7f7b36d94ccf2447b39c067fe832220, type: 2}
   _networkRules: {fileID: 11400000, guid: fbe159a2fdaa02e4bbb63b23c3085861, type: 2}
+  _visibilityRules: {fileID: 0}
   _tickRate: 20
 --- !u!4 &1216416898
 Transform:

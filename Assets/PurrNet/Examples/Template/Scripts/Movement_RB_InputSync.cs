@@ -33,22 +33,6 @@ namespace PurrNet.Examples.Template
                 PurrLogger.LogError($"Movement_RB_InputSync could not get rigidbody!", this);
         }
 
-        protected override void OnSpawned(bool asServer)
-        {
-            if (isOwner || isServer)
-            {
-                networkManager.GetModule<TickManager>(isServer).onTick += OnTick;
-            }
-            
-            _rigidbody.isKinematic = !isServer;
-        }
-
-        protected override void OnDespawned()
-        {
-            if(networkManager.TryGetModule(out TickManager tickManager, isServer))
-                tickManager.onTick -= OnTick;
-        }
-
         private void Update()
         {
             if (isOwner && Input.GetKeyDown(KeyCode.Space))
@@ -64,12 +48,10 @@ namespace PurrNet.Examples.Template
             _rigidbody.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * visualRotationSpeed);
         }
 
-        private void OnTick()
+        protected override void OnTick(float delta, bool asServer)
         {
-            if (isServer)
-            {
+            if (asServer)
                 ServerTick();
-            }
 
             if (isOwner)
             {
@@ -78,10 +60,11 @@ namespace PurrNet.Examples.Template
             }
             else
             {
-                _rigidbody.rotation = Quaternion.Slerp(transform.rotation, _targetRotation.value, Time.fixedDeltaTime * visualRotationSpeed);
+                var normalized = _targetRotation.value.normalized;
+                _rigidbody.rotation = Quaternion.Slerp(transform.rotation, normalized, delta * visualRotationSpeed);
             }
         }
-        
+
         private void ServerTick()
         {
             if (_serverInput.magnitude > 1)

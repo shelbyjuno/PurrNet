@@ -253,7 +253,6 @@ namespace PurrNet.Modules
                     if (shouldDespawn && !identity.isSceneObject)
                         toDestroy.Add(identity.gameObject);
                 }
-                else PurrLogger.LogError($"Failed to find identity {id} in scene {scene} when player {player} left.");
             }
             
             foreach (var go in toDestroy)
