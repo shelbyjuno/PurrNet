@@ -775,6 +775,9 @@ namespace PurrNet.Modules
             
             onIdentityRemoved?.Invoke(identity);
             identity.TriggerDespawnEvent(_asServer);
+            
+            if (!identity.isSceneObject && _asServer && _manager.isHost)
+                identity.TriggerDespawnEvent(false);
         }
         
         private void OnIdentityGoActivatedChanged(NetworkIdentity identity, bool active)
@@ -968,7 +971,7 @@ namespace PurrNet.Modules
                         var identity = _spawnedThisFrame[i];
                         identity.TriggerSpawnEvent(_asServer);
                         if (!identity.isSceneObject && _asServer && _manager.isHost)
-                            _spawnedThisFrame[i].TriggerSpawnEvent(false);
+                            identity.TriggerSpawnEvent(false);
                     }
                     catch (Exception e)
                     {
