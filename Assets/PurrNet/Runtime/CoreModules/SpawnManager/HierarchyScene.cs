@@ -970,8 +970,18 @@ namespace PurrNet.Modules
                     {
                         var identity = _spawnedThisFrame[i];
                         identity.TriggerSpawnEvent(_asServer);
-                        if (!identity.isSceneObject && _asServer && _manager.isHost)
+                        
+                        if (identity.id.HasValue && !identity.isSceneObject && _asServer && _manager.isHost)
+                        {
+                            identity.SetIdentity(_manager, _sceneID, 
+                                identity.prefabId, 
+                                identity.siblingIndex,
+                                identity.id.Value, identity.prefabOffset, 
+                                false
+                            );
+                            
                             identity.TriggerSpawnEvent(false);
+                        }
                     }
                     catch (Exception e)
                     {

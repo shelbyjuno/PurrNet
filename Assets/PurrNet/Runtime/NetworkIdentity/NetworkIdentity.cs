@@ -420,7 +420,6 @@ namespace PurrNet
 
         internal void TriggerDespawnEvent(bool asServer)
         {
-            Debug.Log($"Despawn event {asServer}");
             if (!IsSpawned(asServer)) return;
 
             InternalOnDespawn(asServer);
