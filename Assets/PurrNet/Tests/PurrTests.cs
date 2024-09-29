@@ -70,7 +70,7 @@ namespace Purrnet.Tests
 
         public static UDPTransport BuildSafeUDP()
         {
-            var go = new GameObject("NetworkTransport");
+            var go = new GameObject("UDPTransport");
             var udp = go.AddComponent<UDPTransport>();
             udp.serverPort = _nextPort++;
             return udp;

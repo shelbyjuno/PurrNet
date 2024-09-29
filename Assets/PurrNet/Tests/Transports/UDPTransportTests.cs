@@ -2,7 +2,6 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using PurrNet;
 using PurrNet.Transports;
 
 namespace Purrnet.Tests
