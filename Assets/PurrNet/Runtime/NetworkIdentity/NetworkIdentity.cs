@@ -42,11 +42,11 @@ namespace PurrNet
         
         public bool isSceneObject => isSpawned && prefabId == -1;
 
-        public bool isServer => isSpawned && networkManager.isServer;
+        public bool isServer => networkManager.isServer;
         
-        public bool isClient => isSpawned && networkManager.isClient;
+        public bool isClient => networkManager.isClient;
         
-        public bool isHost => isSpawned && networkManager.isHost;
+        public bool isHost => networkManager.isHost;
         
         public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         

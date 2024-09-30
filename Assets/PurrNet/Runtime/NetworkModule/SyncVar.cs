@@ -65,6 +65,7 @@ namespace PurrNet
             {
                 SendValue(_value);
                 _lastSendTime = Time.time;
+                _isDirty = false;
             }
         }
 

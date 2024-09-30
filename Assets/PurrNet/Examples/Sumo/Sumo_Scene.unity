@@ -1292,9 +1292,11 @@ MonoBehaviour:
   _startServerFlags: 9
   _startClientFlags: 7
   _cookieScope: 1
+  _dontDestroyOnLoad: 0
   _transport: {fileID: 1216416896}
   _networkPrefabs: {fileID: 11400000, guid: 6934ea60d14ebac4a8220004d5a529f5, type: 2}
   _networkRules: {fileID: 11400000, guid: b913c126c92da5a49b92f9d21679308f, type: 2}
+  _visibilityRules: {fileID: 0}
   _tickRate: 20
 --- !u!4 &1216416898
 Transform:

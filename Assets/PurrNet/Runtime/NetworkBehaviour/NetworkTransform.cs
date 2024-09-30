@@ -26,6 +26,7 @@ namespace PurrNet
 
         private Transform _trs;
         private Rigidbody _rb;
+        private CharacterController _controller;
         
         private bool _prevWasController;
 
@@ -35,6 +36,7 @@ namespace PurrNet
         {
             _trs = transform;
             _rb = GetComponent<Rigidbody>();
+            _controller = GetComponent<CharacterController>();
 
             ValidateParent();
 
@@ -59,12 +61,12 @@ namespace PurrNet
                 SendLatestTransform(ownerId, GetCurrentTransformData());
         }
 
-        private void FixedUpdate()
+        void FixedUpdate()
         {
             if (isController)
             {
                 if (isServer)
-                     SendToAll(GetCurrentTransformData());
+                    SendToAll(GetCurrentTransformData());
                 else SendTransformToServer(GetCurrentTransformData());
             }
             else if (_rb) _rb.Sleep();
@@ -88,6 +90,11 @@ namespace PurrNet
 
         private void ApplyLerpedPosition()
         {
+            bool disableController = _controller && _controller.enabled;
+            
+            if (disableController)
+                _controller.enabled = false;
+            
             if (_syncPosition)
                 _trs.position = _position.Advance(Time.deltaTime);
             
@@ -96,6 +103,9 @@ namespace PurrNet
             
             if (_syncScale)
                 _trs.localScale = _scale.Advance(Time.deltaTime);
+            
+            if (disableController)
+                _controller.enabled = true;
         }
 
         private TransformData GetCurrentTransformData()
@@ -117,10 +127,20 @@ namespace PurrNet
         }
         
         [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: true)]
-        private void SendToOthers(TransformData data) => ReceiveTransform_Internal(data);
+        private void SendToOthers(TransformData data)
+        {
+            if (isHost) return;
+            
+            ReceiveTransform_Internal(data);
+        }
 
         [ObserversRPC(Channel.UnreliableSequenced)]
-        private void SendToAll(TransformData data) => ReceiveTransform_Internal(data);
+        private void SendToAll(TransformData data)
+        {
+            if (isHost) return;
+
+            ReceiveTransform_Internal(data);
+        }
 
         private void ReceiveTransform_Internal(TransformData data)
         {

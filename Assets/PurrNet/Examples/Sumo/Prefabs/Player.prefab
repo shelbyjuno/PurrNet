@@ -130,10 +130,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  clientAuth: 0
-  syncPosition: 1
-  syncRotation: 0
-  syncScale: 0
+  _clientAuth: 0
+  _syncPosition: 1
+  _syncRotation: 0
+  _syncScale: 1
 --- !u!136 &2162121542157661916
 CapsuleCollider:
   m_ObjectHideFlags: 0

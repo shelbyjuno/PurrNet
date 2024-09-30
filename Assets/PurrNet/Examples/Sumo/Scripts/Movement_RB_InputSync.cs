@@ -1,7 +1,5 @@
-
-using System;
 using PurrNet.Logging;
-using PurrNet.Modules;
+using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet.Examples.Sumo
@@ -49,49 +47,32 @@ namespace PurrNet.Examples.Sumo
             }
         }
 
-        protected override void OnSpawned(bool asServer)
-        {
-            if (isOwner || isServer)
-            {
-                networkManager.GetModule<TickManager>(isServer).onTick += OnTick;
-            }
-            
-            _rigidbody.isKinematic = !isServer;
-        }
-
-        protected override void OnDespawned()
-        {
-            if(networkManager.TryGetModule(out TickManager tickManager, isServer))
-                tickManager.onTick -= OnTick;
-        }
-
         private void Update()
         {
-            if (isOwner)
-            {
-                HandleLocalRotation();
-            }
-            else
-            {
-                //TODO: Rotation is acting strange. It's slower on the clients than the server
-                transform.rotation = Quaternion.Slerp(transform.rotation, _targetRotation.value, Time.deltaTime * visualRotationSpeed);
-            }
-            
             if (isOwner && Input.GetKeyDown(KeyCode.Space))
                 Jump();
         }
 
-        private void HandleLocalRotation()
+        private void HandleLocalRotation(float delta)
         {
             var rotationVector = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
             if (rotationVector == Vector3.zero)
                 return;
             var targetRotation = Quaternion.LookRotation(rotationVector, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * visualRotationSpeed);
+            _rigidbody.rotation = Quaternion.Slerp(transform.rotation, targetRotation, delta * visualRotationSpeed);
         }
 
-        private void OnTick()
+        protected override void OnTick(float delta, bool asServer)
         {
+            if (isOwner)
+            {
+                HandleLocalRotation(delta);
+            }
+            else
+            {
+                _rigidbody.rotation = Quaternion.Slerp(transform.rotation, _targetRotation.value.normalized, delta * visualRotationSpeed);
+            }
+            
             if (isOwner)
                 OwnerTick();
 
@@ -135,7 +116,7 @@ namespace PurrNet.Examples.Sumo
             SendInput(input);
         }
 
-        [ServerRPC]
+        [ServerRPC(channel: Channel.Unreliable)]
         private void SendInput(Vector2 input)
         {
             _serverInput = input;
@@ -198,14 +179,17 @@ namespace PurrNet.Examples.Sumo
 
         public void ResetPosition(Vector3 position)
         {
-            _rigidbody.angularVelocity = Vector3.zero;
-            
+            if (!_rigidbody.isKinematic)
+            {
+                _rigidbody.angularVelocity = Vector3.zero;
+
 #if UNITY_6000_0_OR_NEWER
-            _rigidbody.linearVelocity = Vector3.zero;
+                _rigidbody.linearVelocity = Vector3.zero;
 #else
-            _rigidbody.velocity = Vector3.zero;
+                _rigidbody.velocity = Vector3.zero;
 #endif
-            
+            }
+
             _rigidbody.position = position;
         }
     }

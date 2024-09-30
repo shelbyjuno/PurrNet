@@ -61,7 +61,13 @@ namespace PurrNet
                 else _buffer.RemoveAt(0);
             
                 _lastValue = lerped;
-                _timer -= tickDelta;
+
+                do
+                {
+                    _timer -= tickDelta;
+                }
+                while (_timer >= tickDelta);
+
             }
             
             return lerped;
