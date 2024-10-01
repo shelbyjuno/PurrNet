@@ -97,9 +97,9 @@ namespace PurrNet
             return false;
         }
 
+        static readonly List<NetworkIdentity> _identities = new();
 #if UNITY_EDITOR
         private bool _generating;
-        static readonly List<NetworkIdentity> _identities = new();
         static readonly List<PrefabLink> _links = new();
 #endif
 
