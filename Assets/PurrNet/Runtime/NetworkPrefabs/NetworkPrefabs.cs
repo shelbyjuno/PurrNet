@@ -1,13 +1,14 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using PurrNet.Logging;
+using Object = UnityEngine.Object;
 #if UNITY_EDITOR
 using PurrNet.Utils;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
-using UnityEditor.VersionControl;
 #endif
 
 namespace PurrNet
@@ -115,128 +116,137 @@ namespace PurrNet
 
             _generating = true;
 
-            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Checking existing...", 0f);
-
-            if (folder == null || string.IsNullOrEmpty(AssetDatabase.GetAssetPath(folder)))
+            try
             {
-                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder found...", 0f);
-                if (autoGenerate && prefabs.Count > 0)
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Checking existing...", 0f);
+
+                if (folder == null || string.IsNullOrEmpty(AssetDatabase.GetAssetPath(folder)))
                 {
-                    prefabs.Clear();
-                    EditorUtility.SetDirty(this);
-                }
-
-                EditorUtility.ClearProgressBar();
-                _generating = false;
-                return;
-            }
-
-            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Found folder...", 0f);
-            string folderPath = AssetDatabase.GetAssetPath(folder);
-
-            if (string.IsNullOrEmpty(folderPath))
-            {
-                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder path...", 0f);
-
-                if (autoGenerate && prefabs.Count > 0)
-                {
-                    prefabs.Clear();
-                    EditorUtility.SetDirty(this);
-                }
-
-                EditorUtility.ClearProgressBar();
-                _generating = false;
-                PurrLogger.LogError("Exiting Generate method early due to empty folder path.");
-                return;
-            }
-
-            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Getting existing paths...", 0f);
-
-            // Track paths of existing prefabs for quick lookup
-            var existingPaths = new HashSet<string>();
-            foreach (var prefab in prefabs)
-            {
-                if (prefab)
-                {
-                    existingPaths.Add(AssetDatabase.GetAssetPath(prefab));
-                }
-            }
-
-            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Finding paths...", 0.1f);
-
-            List<GameObject> foundPrefabs = new();
-            string[] guids = AssetDatabase.FindAssets("t:GameObject", new[] { folderPath });
-            for (var i = 0; i < guids.Length; i++)
-            {
-                var guid = guids[i];
-                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-
-                if (prefab)
-                {
-                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}",
-                        0.1f + 0.7f * ((i + 1f) / guids.Length));
-
-                    if (!networkOnly)
+                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder found...", 0f);
+                    if (autoGenerate && prefabs.Count > 0)
                     {
-                        foundPrefabs.Add(prefab);
-                        continue;
+                        prefabs.Clear();
+                        EditorUtility.SetDirty(this);
                     }
 
-                    prefab.GetComponentsInChildren(true, _identities);
-
-                    if (_identities.Count > 0)
-                        foundPrefabs.Add(prefab);
+                    EditorUtility.ClearProgressBar();
+                    _generating = false;
+                    return;
                 }
-            }
 
-            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Sorting...", 0.9f);
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Found folder...", 0f);
+                string folderPath = AssetDatabase.GetAssetPath(folder);
 
-            // Order by creation time
-            foundPrefabs.Sort((a, b) =>
-            {
-                string pathA = AssetDatabase.GetAssetPath(a);
-                string pathB = AssetDatabase.GetAssetPath(b);
-
-                var fileInfoA = new FileInfo(pathA);
-                var fileInfoB = new FileInfo(pathB);
-
-                return fileInfoA.CreationTime.CompareTo(fileInfoB.CreationTime);
-            });
-
-            EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Removing invalid prefabs...", 0.95f);
-            // Remove invalid or no longer existing prefabs
-            int removed = prefabs.RemoveAll(prefab => !prefab || !File.Exists(AssetDatabase.GetAssetPath(prefab)));
-            int added = 0;
-            
-            for (int i = 0; i < prefabs.Count; i++)
-            {
-                if (!foundPrefabs.Contains(prefabs[i]))
+                if (string.IsNullOrEmpty(folderPath))
                 {
-                    prefabs.RemoveAt(i);
-                    removed++;
-                    i--;
-                }
-            }
+                    EditorUtility.DisplayProgressBar("Getting Network Prefabs", "No folder path...", 0f);
 
-            // Add new prefabs found in the folder to the list if they don't already exist
-            foreach (var foundPrefab in foundPrefabs)
-            {
-                var foundPath = AssetDatabase.GetAssetPath(foundPrefab);
-                if (!existingPaths.Contains(foundPath))
+                    if (autoGenerate && prefabs.Count > 0)
+                    {
+                        prefabs.Clear();
+                        EditorUtility.SetDirty(this);
+                    }
+
+                    EditorUtility.ClearProgressBar();
+                    _generating = false;
+                    PurrLogger.LogError("Exiting Generate method early due to empty folder path.");
+                    return;
+                }
+
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Getting existing paths...", 0f);
+
+                // Track paths of existing prefabs for quick lookup
+                var existingPaths = new HashSet<string>();
+                foreach (var prefab in prefabs)
                 {
-                    prefabs.Add(foundPrefab);
-                    added++;
+                    if (prefab)
+                    {
+                        existingPaths.Add(AssetDatabase.GetAssetPath(prefab));
+                    }
                 }
+
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Finding paths...", 0.1f);
+
+                List<GameObject> foundPrefabs = new();
+                string[] guids = AssetDatabase.FindAssets("t:GameObject", new[] { folderPath });
+                for (var i = 0; i < guids.Length; i++)
+                {
+                    var guid = guids[i];
+                    string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+                    if (prefab)
+                    {
+                        EditorUtility.DisplayProgressBar("Getting Network Prefabs", $"Looking at {prefab.name}",
+                            0.1f + 0.7f * ((i + 1f) / guids.Length));
+
+                        if (!networkOnly)
+                        {
+                            foundPrefabs.Add(prefab);
+                            continue;
+                        }
+
+                        prefab.GetComponentsInChildren(true, _identities);
+
+                        if (_identities.Count > 0)
+                            foundPrefabs.Add(prefab);
+                    }
+                }
+
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Sorting...", 0.9f);
+
+                // Order by creation time
+                foundPrefabs.Sort((a, b) =>
+                {
+                    string pathA = AssetDatabase.GetAssetPath(a);
+                    string pathB = AssetDatabase.GetAssetPath(b);
+
+                    var fileInfoA = new FileInfo(pathA);
+                    var fileInfoB = new FileInfo(pathB);
+
+                    return fileInfoA.CreationTime.CompareTo(fileInfoB.CreationTime);
+                });
+
+                EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Removing invalid prefabs...", 0.95f);
+                // Remove invalid or no longer existing prefabs
+                int removed = prefabs.RemoveAll(prefab => !prefab || !File.Exists(AssetDatabase.GetAssetPath(prefab)));
+                int added = 0;
+
+                for (int i = 0; i < prefabs.Count; i++)
+                {
+                    if (!foundPrefabs.Contains(prefabs[i]))
+                    {
+                        prefabs.RemoveAt(i);
+                        removed++;
+                        i--;
+                    }
+                }
+
+                // Add new prefabs found in the folder to the list if they don't already exist
+                foreach (var foundPrefab in foundPrefabs)
+                {
+                    var foundPath = AssetDatabase.GetAssetPath(foundPrefab);
+                    if (!existingPaths.Contains(foundPath))
+                    {
+                        prefabs.Add(foundPrefab);
+                        added++;
+                    }
+                }
+
+                PostProcess();
+
+                if (removed > 0 || added > 0)
+                    EditorUtility.SetDirty(this);
             }
-
-            PostProcess();
-
-            if (removed > 0 || added > 0)
-                EditorUtility.SetDirty(this);
-            EditorUtility.ClearProgressBar();
-
-            _generating = false;
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"An error occurred during prefab generation: {e.Message}");
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+                _generating = false;
+            }
 #endif
         }
 
