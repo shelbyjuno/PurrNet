@@ -263,6 +263,10 @@ namespace PurrNet
                     continue;
 
                 var assetPath = AssetDatabase.GetAssetPath(prefabs[i]);
+
+                if (!assetPath.EndsWith(".prefab"))
+                    continue;
+                
                 var guid = AssetDatabase.AssetPathToGUID(assetPath);
                 var prefabContents = PrefabUtility.LoadPrefabContents(assetPath);
                 
