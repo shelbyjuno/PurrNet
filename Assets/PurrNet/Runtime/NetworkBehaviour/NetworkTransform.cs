@@ -3,15 +3,36 @@ using JetBrains.Annotations;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet
 {
+    [Flags]
+    [Serializable]
+    public enum TransformSyncMode : byte
+    {
+        None,
+        Position = 1,
+        Rotation = 2,
+        Scale = 4
+    }
+    
     public sealed class NetworkTransform : NetworkIdentity
     {
-        [SerializeField, PurrLock] private bool _clientAuth = true;
-        [SerializeField, PurrLock] private bool _syncPosition = true;
-        [SerializeField, PurrLock] private bool _syncRotation = true;
-        [SerializeField, PurrLock] private bool _syncScale = true;
+        [SerializeField, PurrLock] private TransformSyncMode _syncSettings = 
+            TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
+        
+        [FormerlySerializedAs("_clientAuth")]
+        
+        [Tooltip("If true, the client can send transform data to the server. If false, the client can't send transform data to the server.")]
+        [SerializeField, PurrLock] private bool _ownerAuth = true;
+        
+        [Tooltip("The interval in ticks to send the transform data. 0 means send every tick.")]
+        [SerializeField, Min(0), PurrLock] private int _sendIntervalInTicks;
+
+        bool syncPosition => _syncSettings.HasFlag(TransformSyncMode.Position);
+        bool syncRotation => _syncSettings.HasFlag(TransformSyncMode.Rotation);
+        bool syncScale => _syncSettings.HasFlag(TransformSyncMode.Scale);
         
         Transform _lastValidParent;
         
@@ -30,7 +51,7 @@ namespace PurrNet
         
         private bool _prevWasController;
 
-        private bool isController => hasConnectedOwner ? (isOwner && _clientAuth) || (!_clientAuth && isServer) : isServer;
+        private bool isController => hasConnectedOwner ? (isOwner && _ownerAuth) || (!_ownerAuth && isServer) : isServer;
 
         private void Awake()
         {
@@ -39,15 +60,17 @@ namespace PurrNet
             _controller = GetComponent<CharacterController>();
 
             ValidateParent();
+            
+            float sendDelta = (_sendIntervalInTicks + 1) * Time.fixedDeltaTime;
 
-            if (_syncPosition)
-                _position = new Interpolated<Vector3>(Vector3.Lerp, Time.fixedDeltaTime, _trs.position);
+            if (syncPosition)
+                _position = new Interpolated<Vector3>(Vector3.Lerp, sendDelta, _trs.position);
             
-            if (_syncRotation)
-                _rotation = new Interpolated<Quaternion>(Quaternion.Lerp, Time.fixedDeltaTime, _trs.rotation);
+            if (syncRotation)
+                _rotation = new Interpolated<Quaternion>(Quaternion.Lerp, sendDelta, _trs.rotation);
             
-            if (_syncScale)
-                _scale = new Interpolated<Vector3>(Vector3.Lerp, Time.fixedDeltaTime, _trs.localScale);
+            if (syncScale)
+                _scale = new Interpolated<Vector3>(Vector3.Lerp, sendDelta, _trs.localScale);
         }
 
         protected override void OnSpawned()
@@ -60,14 +83,25 @@ namespace PurrNet
             if (asServer)
                 SendLatestTransform(ownerId, GetCurrentTransformData());
         }
+        
+        private int _ticksSinceLastSend;
 
         void FixedUpdate()
         {
             if (isController)
             {
-                if (isServer)
-                    SendToAll(GetCurrentTransformData());
-                else SendTransformToServer(GetCurrentTransformData());
+                if (_ticksSinceLastSend >= _sendIntervalInTicks)
+                {
+                    _ticksSinceLastSend = 0;
+                    
+                    if (isServer)
+                        SendToAll(GetCurrentTransformData());
+                    else SendTransformToServer(GetCurrentTransformData());
+                }
+                else
+                {
+                    _ticksSinceLastSend++;
+                }
             }
             else if (_rb) _rb.Sleep();
         }
@@ -95,13 +129,13 @@ namespace PurrNet
             if (disableController)
                 _controller.enabled = false;
             
-            if (_syncPosition)
+            if (syncPosition)
                 _trs.position = _position.Advance(Time.deltaTime);
             
-            if (_syncRotation)
+            if (syncRotation)
                 _trs.rotation = _rotation.Advance(Time.deltaTime);
             
-            if (_syncScale)
+            if (syncScale)
                 _trs.localScale = _scale.Advance(Time.deltaTime);
             
             if (disableController)
@@ -117,7 +151,7 @@ namespace PurrNet
         private void SendTransformToServer(TransformData data)
         {
             // If clientAuth is disabled, the client can't send transform data to the server
-            if (!_clientAuth) return;
+            if (!_ownerAuth) return;
             
             // Apply the transform data to the server
             ReceiveTransform_Internal(data);
@@ -158,19 +192,19 @@ namespace PurrNet
 
         private void ApplyTransformData(TransformData data, bool teleport)
         {
-            if (_syncPosition)
+            if (syncPosition)
             {
                 if (teleport) _position.Teleport(data.position);
                 else _position.Add(data.position);
             }
 
-            if (_syncRotation)
+            if (syncRotation)
             {
                 if (teleport) _rotation.Teleport(data.rotation);
                 else _rotation.Add(data.rotation);
             }
 
-            if (_syncScale)
+            if (syncScale)
             {
                 if (teleport) _scale.Teleport(data.scale);
                 else _scale.Add(data.scale);
