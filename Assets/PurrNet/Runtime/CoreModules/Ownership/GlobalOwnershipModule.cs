@@ -283,11 +283,12 @@ namespace PurrNet.Modules
 
         private static readonly List<NetworkID> _idsCache = new ();
 
-        public void GiveOwnership(NetworkIdentity nid, PlayerID player, bool? propagateToChildren = null, bool? overrideExistingOwners = null)
+        public void GiveOwnership(NetworkIdentity nid, PlayerID player, bool? propagateToChildren = null, bool? overrideExistingOwners = null, bool silent = false)
         {
             if (!nid.id.HasValue)
             {
-                PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because it isn't spawned.");
+                if (!silent)
+                    PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because it isn't spawned.");
                 return;
             }
             
@@ -295,13 +296,15 @@ namespace PurrNet.Modules
 
             if (hadOwnerPreviously && !nid.HasTransferOwnershipAuthority(_asServer) || !hadOwnerPreviously && !nid.HasGiveOwnershipAuthority(_asServer))
             {
-                PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because of missing authority.");
+                if (!silent)
+                    PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because of missing authority.");
                 return;
             }
 
             if (!_sceneOwnerships.TryGetValue(nid.sceneId, out var module))
             {
-                PurrLogger.LogError($"No ownership module avaible for scene {nid.sceneId} '{nid.gameObject.scene.name}'");
+                if (!silent)
+                    PurrLogger.LogError($"No ownership module avaible for scene {nid.sceneId} '{nid.gameObject.scene.name}'");
                 return;
             }
             
@@ -323,7 +326,8 @@ namespace PurrNet.Modules
 
                     if (!identity.HasTransferOwnershipAuthority(_asServer))
                     {
-                        PurrLogger.LogError($"Failed to override ownership of '{identity.gameObject.name}' because of missing authority.");
+                        if (!silent)
+                            PurrLogger.LogError($"Failed to override ownership of '{identity.gameObject.name}' because of missing authority.");
                         continue;
                     }
                 }
@@ -341,7 +345,8 @@ namespace PurrNet.Modules
 
             if (_idsCache.Count == 0)
             {
-                PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because no identities were affected.");
+                if (!silent)
+                    PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because no identities were affected.");
                 return;
             }
 

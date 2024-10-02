@@ -15,7 +15,7 @@ MonoBehaviour:
   _defaultSpawnRules:
     spawnAuth: 0
     despawnAuth: 3
-    defaultOwner: 1
+    defaultOwner: 0
     propagateOwnershipByDefault: 1
     despawnIfOwnerDisconnects: 1
   _defaultOwnershipRules:
@@ -23,6 +23,8 @@ MonoBehaviour:
     transferAuth: 3
     removeAuth: 3
     overrideWhenPropagating: 1
+  _defaultSceneRules:
+    removePlayerFromSceneOnDisconnect: 0
   _defaultIdentityRules:
     syncComponentActive: 1
     syncComponentAuth: 3

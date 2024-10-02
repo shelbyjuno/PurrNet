@@ -76,6 +76,12 @@ namespace PurrNet
             var rules = networkRules;
             return rules && rules.ShouldDespawnOnOwnerDisconnect();
         }
+        
+        public bool ShouldClientGiveOwnershipOnSpawn()
+        {
+            var rules = networkRules;
+            return rules && rules.ShouldClientGiveOwnershipOnSpawn();
+        }
 
         public bool ShouldSyncParent(bool asServer)
         {

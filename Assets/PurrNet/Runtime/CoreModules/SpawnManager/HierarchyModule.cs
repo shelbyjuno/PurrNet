@@ -141,6 +141,14 @@ namespace PurrNet
                 return;
             
             hierarchy.Spawn(gameObject);
+            
+            if (!_manager.isClientOnly || !_players.localPlayerId.HasValue)
+                return;
+            
+            var identity = gameObject.GetComponent<NetworkIdentity>();
+            
+            if (identity && identity.isSpawned && identity.ShouldClientGiveOwnershipOnSpawn())
+                identity.GiveOwnership(_players.localPlayerId.Value, true);
         }
 
         public void Spawn(GameObject gameObject)

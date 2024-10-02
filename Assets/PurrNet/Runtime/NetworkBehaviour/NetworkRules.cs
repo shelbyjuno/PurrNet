@@ -9,9 +9,9 @@ namespace PurrNet
     {
         public ConnectionAuth spawnAuth;
         public ActionAuth despawnAuth;
-        
-        /*[Tooltip("Who gains ownership upon spawning of the identity")]
-        public DefaultOwner defaultOwner;*/
+
+        [Tooltip("Who gains ownership upon spawning of the identity")]
+        public DefaultOwner defaultOwner;
 
         [Tooltip("Propagate ownership to all children of the object")]
         public bool propagateOwnershipByDefault;
@@ -66,7 +66,7 @@ namespace PurrNet
         {
             despawnAuth = ActionAuth.Server | ActionAuth.Owner,
             spawnAuth = ConnectionAuth.Server,
-            // defaultOwner = DefaultOwner.SpawnerIfClient,
+            defaultOwner = DefaultOwner.SpawnerIfClientOnly,
             propagateOwnershipByDefault = true,
             despawnIfOwnerDisconnects = true
         };
@@ -196,6 +196,11 @@ namespace PurrNet
         public bool ShouldDespawnOnOwnerDisconnect()
         {
             return _defaultSpawnRules.despawnIfOwnerDisconnects;
+        }
+
+        public bool ShouldClientGiveOwnershipOnSpawn()
+        {
+            return _defaultSpawnRules.defaultOwner == DefaultOwner.SpawnerIfClientOnly;
         }
     }
 }

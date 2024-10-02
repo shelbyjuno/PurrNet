@@ -49,6 +49,6 @@ namespace PurrNet
         /// <summary>
         /// If spawn requested by client then client owns the object
         /// </summary>
-        SpawnerIfClient
+        SpawnerIfClientOnly
     }
 }

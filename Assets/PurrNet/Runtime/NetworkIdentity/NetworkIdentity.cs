@@ -332,7 +332,7 @@ namespace PurrNet
         
         private PlayerID? _pendingOwnershipRequest;
         
-        public void GiveOwnership(PlayerID player)
+        public void GiveOwnership(PlayerID player, bool silent = false)
         {
             if (!networkManager)
             {
@@ -340,10 +340,10 @@ namespace PurrNet
                 return;
             }
             
-            GiveOwnershipInternal(player);
+            GiveOwnershipInternal(player, silent);
         }
         
-        private void GiveOwnershipInternal(PlayerID player)
+        private void GiveOwnershipInternal(PlayerID player, bool silent = false)
         {
             if (!networkManager)
             {
@@ -353,7 +353,7 @@ namespace PurrNet
             
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
             {
-                module.GiveOwnership(this, player);
+                module.GiveOwnership(this, player, silent: silent);
             }
             else PurrLogger.LogError("Failed to get ownership module.", this);
         }
