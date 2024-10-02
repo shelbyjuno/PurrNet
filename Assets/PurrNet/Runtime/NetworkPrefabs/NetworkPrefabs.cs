@@ -168,7 +168,7 @@ namespace PurrNet
                 EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Finding paths...", 0.1f);
 
                 List<GameObject> foundPrefabs = new();
-                string[] guids = AssetDatabase.FindAssets("t:GameObject", new[] { folderPath });
+                string[] guids = AssetDatabase.FindAssets("t:prefab", new[] { folderPath });
                 for (var i = 0; i < guids.Length; i++)
                 {
                     var guid = guids[i];
