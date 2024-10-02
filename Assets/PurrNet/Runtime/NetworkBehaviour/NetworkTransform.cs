@@ -86,7 +86,7 @@ namespace PurrNet
         
         private int _ticksSinceLastSend;
 
-        void FixedUpdate()
+        protected override void OnTick(float delta)
         {
             if (isController)
             {

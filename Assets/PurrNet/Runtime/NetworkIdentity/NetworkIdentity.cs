@@ -102,6 +102,7 @@ namespace PurrNet
         }
 
         private IServerSceneEvents _serverSceneEvents;
+        private int onTickCount;
         
         private void InternalOnSpawn(bool asServer)
         {
@@ -193,13 +194,15 @@ namespace PurrNet
         
         private void ClientTick()
         {
-            OnTick(_clientTickManager.tickDelta, false);
+            OnTick(_clientTickManager.tickDelta);
         }
 
         private void ServerTick()
         {
             InternalOnServerTick();
-            OnTick(_serverTickManager.tickDelta, true);
+
+            if (!isClient)
+                OnTick(_serverTickManager.tickDelta);
         }
 
         internal PlayerID? GetOwner(bool asServer) => asServer ? internalOwnerServer : internalOwnerClient;
@@ -212,8 +215,8 @@ namespace PurrNet
         
         protected virtual void OnSpawned(bool asServer) { }
         
-        protected virtual void OnTick(float delta, bool asServer) {}
-
+        protected virtual void OnTick(float delta) {}
+        
         protected virtual void OnInitializeModules() { }
         
         protected virtual void OnDespawned(bool asServer) { }
@@ -437,7 +440,7 @@ namespace PurrNet
             if (_spawnedCount == 0)
             {
                 OnDespawned();
-
+                
                 for (int i = 0; i < _modules.Count; i++)
                     _modules[i].OnDespawned();
 

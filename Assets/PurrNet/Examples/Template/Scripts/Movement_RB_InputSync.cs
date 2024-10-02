@@ -48,9 +48,9 @@ namespace PurrNet.Examples.Template
             _rigidbody.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * visualRotationSpeed);
         }
 
-        protected override void OnTick(float delta, bool asServer)
+        protected override void OnTick(float delta)
         {
-            if (asServer)
+            if (isServer)
                 ServerTick();
 
             if (isOwner)

@@ -62,7 +62,7 @@ namespace PurrNet.Examples.Sumo
             _rigidbody.rotation = Quaternion.Slerp(transform.rotation, targetRotation, delta * visualRotationSpeed);
         }
 
-        protected override void OnTick(float delta, bool asServer)
+        protected override void OnTick(float delta)
         {
             if (isOwner)
             {
