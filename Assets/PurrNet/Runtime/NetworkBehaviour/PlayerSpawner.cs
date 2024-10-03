@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Pooling;
 using PurrNet.Transports;
@@ -16,6 +17,16 @@ namespace PurrNet
         private void Awake()
         {
             NetworkManager.main.onServerConnectionState += OnServerConnectionState;
+            
+            for (int i = 0; i < spawnPoints.Count; i++)
+            {
+                if (!spawnPoints[i])
+                {
+                    PurrLogger.LogError($"Spawn point at index {i} is null. Removing it from the list.", this);
+                    spawnPoints.RemoveAt(i);
+                    i--;
+                }
+            }
         }
 
         private void OnServerConnectionState(ConnectionState obj)

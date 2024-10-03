@@ -14,6 +14,10 @@ namespace PurrNet.Transports
 
         [Header("Client Settings")]
         [SerializeField] private string _address = "127.0.0.1";
+        [Tooltip("The query to add to the address.\nEx: 'name=John' results in ws://localhost:5001?name=John")]
+        [SerializeField] private string _query = "";
+        [Tooltip("The path to add to the address.\nEx: '/game' results in ws://localhost:5001/game")]
+        [SerializeField] private string _path = "";
         
         [Header("SSL Settings")]
         [SerializeField] private bool _enableSSL;
@@ -28,6 +32,10 @@ namespace PurrNet.Transports
         public event OnConnectionState onConnectionState;
 
         public string address { get => _address; set => _address = value; }
+        
+        public string query { get => _query; set => _query = value; }
+        
+        public string path { get => _path; set => _path = value; }
         
         public ushort serverPort { get => _serverPort; set => _serverPort = value; }
         
@@ -219,7 +227,7 @@ namespace PurrNet.Transports
             ReconstructServer();
         }
 
-        public void Connect(string up, ushort port)
+        public void Connect(string ip, ushort port)
         {
             if (clientState is ConnectionState.Connecting or ConnectionState.Connected)
                 return;
@@ -227,8 +235,10 @@ namespace PurrNet.Transports
             var builder = new UriBuilder
             {
                 Scheme = _enableSSL ? "wss" : "ws",
-                Host = _address,
-                Port = _serverPort
+                Host = ip,
+                Port = port,
+                Query = _query,
+                Path = _path
             };
 
             clientState = ConnectionState.Connecting;

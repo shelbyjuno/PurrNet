@@ -65,7 +65,7 @@ namespace PurrNet.Transports
         }
 
 
-        public void Connect(string up, ushort port)
+        public void Connect(string ip, ushort port)
         {
             if (clientState == ConnectionState.Connected) 
                 return;

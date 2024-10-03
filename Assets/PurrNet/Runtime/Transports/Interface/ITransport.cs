@@ -66,7 +66,7 @@ namespace PurrNet.Transports
     {
         ConnectionState clientState { get; }
         
-        void Connect(string up, ushort port);
+        void Connect(string ip, ushort port);
         
         void Disconnect();
     }

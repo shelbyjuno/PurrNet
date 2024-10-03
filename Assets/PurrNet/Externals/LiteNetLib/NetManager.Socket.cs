@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using LiteNetLib.Utils;
+using UnityEngine;
 
 namespace LiteNetLib
 {
@@ -114,7 +115,7 @@ namespace LiteNetLib
             catch (Exception e)
             {
                 //protects socket receive thread
-                NetDebug.WriteError("[NM] SocketReceiveThread error: " + e );
+                Debug.LogException(e);
             }
         }
 

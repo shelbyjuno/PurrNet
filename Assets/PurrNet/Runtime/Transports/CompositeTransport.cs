@@ -308,12 +308,12 @@ namespace PurrNet.Transports
             TriggerConnectionStateEvent(false);
         }
         
-        public void Connect(string up, ushort port)
+        public void Connect(string ip, ushort port)
         {
             if (!_clientTransport || !_clientTransport.isSupported)
                 throw new NotSupportedException("No supported transport found for client.");
             
-            _clientTransport.transport.Connect(up, port);
+            _clientTransport.transport.Connect(ip, port);
             TriggerConnectionStateEvent(false);
         }
 
