@@ -13,6 +13,11 @@ namespace PurrNet
     {
         readonly List<NetAnimatorRPC> _dirty = new ();
 
+        protected override void OnObserverAdded(PlayerID player)
+        {
+            PurrLogger.Log("TODO: Implement OnObserverAdded, send current state to new observer.");
+        }
+
         protected override void OnTick(float delta)
         {
             if (!IsController(isController))
