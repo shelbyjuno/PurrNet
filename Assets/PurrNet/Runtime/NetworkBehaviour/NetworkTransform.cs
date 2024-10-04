@@ -51,7 +51,7 @@ namespace PurrNet
         
         private bool _prevWasController;
 
-        private bool isController => hasConnectedOwner ? (isOwner && _ownerAuth) || (!_ownerAuth && isServer) : isServer;
+        private new bool isController => hasConnectedOwner ? (isOwner && _ownerAuth) || (!_ownerAuth && isServer) : isServer;
 
         private void Awake()
         {

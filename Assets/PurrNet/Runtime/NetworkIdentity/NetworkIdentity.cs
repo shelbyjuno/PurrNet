@@ -42,15 +42,34 @@ namespace PurrNet
         
         public bool isSceneObject => isSpawned && prefabId == -1;
 
-        public bool isServer => networkManager.isServer;
+        public bool isServer => isSpawned && networkManager.isServer;
         
-        public bool isClient => networkManager.isClient;
+        public bool isClient => isSpawned && networkManager.isClient;
         
-        public bool isHost => networkManager.isHost;
+        public bool isHost => isSpawned && networkManager.isHost;
         
         public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
+
+        /// <summary>
+        /// Returns if you can control this object.
+        /// If the object has an owner, it will return if you are the owner.
+        /// If the object doesn't have an owner, it will return if you are the server.
+        /// </summary>
+        [UsedImplicitly]
+        public bool isController => isSpawned && (hasConnectedOwner ? isOwner : isServer);
+        
+        /// <summary>
+        /// Returns if you can control this object.
+        /// If ownerHasAuthority is true, it will return true if you are the owner.
+        /// If ownerHasAuthority is false, it will return true if you are the server.
+        /// Otherwise, similar to isController.
+        /// </summary>
+        /// <param name="ownerHasAuthority">Should owner be controller or is it server only</param>
+        /// <returns>Can you control this identity</returns>
+        [UsedImplicitly]
+        public bool IsController(bool ownerHasAuthority) => ownerHasAuthority ? isController : isServer;
         
         public bool hasConnectedOwner => owner.HasValue && networkManager.TryGetModule<PlayersManager>(isServer, out var module) && module.IsPlayerConnected(owner.Value);
 
@@ -215,6 +234,10 @@ namespace PurrNet
         
         protected virtual void OnSpawned(bool asServer) { }
         
+        /// <summary>
+        /// Similar to FixedUpdate but tailored for networked objects and it's tick system.
+        /// </summary>
+        /// <param name="delta"></param>
         protected virtual void OnTick(float delta) {}
         
         protected virtual void OnInitializeModules() { }
@@ -226,6 +249,20 @@ namespace PurrNet
         protected virtual void OnOwnerDisconnected(PlayerID ownerId, bool asServer) { }
 
         protected virtual void OnOwnerConnected(PlayerID ownerId, bool asServer) { }
+        
+        /// <summary>
+        /// Called when an observer is added.
+        /// Server only.
+        /// </summary>
+        /// <param name="player"></param>
+        protected virtual void OnObserverAdded(PlayerID player) { }
+        
+        /// <summary>
+        /// Called when an observer is removed.
+        /// Server only.
+        /// </summary>
+        /// <param name="player"></param>
+        protected virtual void OnObserverRemoved(PlayerID player) { }
 
         public bool IsNotOwnerPredicate(PlayerID player)
         {
