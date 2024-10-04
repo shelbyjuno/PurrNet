@@ -3,7 +3,6 @@ using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Pooling;
-using UnityEngine.PlayerLoop;
 
 namespace PurrNet
 {
