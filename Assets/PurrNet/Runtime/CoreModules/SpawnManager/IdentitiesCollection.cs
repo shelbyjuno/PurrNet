@@ -12,7 +12,7 @@ namespace PurrNet
         
         private ushort _nextId;
         
-        public IEnumerable<NetworkIdentity> collection => _identities.Values;
+        public ICollection<NetworkIdentity> collection => _identities.Values;
 
         public IdentitiesCollection(bool asServer)
         {

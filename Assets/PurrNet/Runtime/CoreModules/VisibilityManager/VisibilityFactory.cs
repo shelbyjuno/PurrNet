@@ -10,13 +10,15 @@ namespace PurrNet
         private readonly ScenesModule _scenes;
         private readonly HierarchyModule _hierarchy;
         private readonly ScenePlayersModule _players;
+        private readonly PlayersManager _playersManager;
 
         private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisibilityManager = new ();
         private readonly List<VisibilityManager> _visibilityManagers = new ();
 
-        public VisibilityFactory(NetworkManager manager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players)
+        public VisibilityFactory(NetworkManager manager, PlayersManager playersManager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players)
         {
             _manager = manager;
+            _playersManager = playersManager;
             _scenes = scenes;
             _hierarchy = hierarchy;
             _players = players;
@@ -53,7 +55,7 @@ namespace PurrNet
             
             if (!_sceneToVisibilityManager.ContainsKey(scene))
             {
-                var visibility = new VisibilityManager(_manager, hierarchy, _players, scene);
+                var visibility = new VisibilityManager(_manager, _playersManager, hierarchy, _players, scene);
                 
                 _visibilityManagers.Add(visibility);
                 _sceneToVisibilityManager.Add(scene, visibility);

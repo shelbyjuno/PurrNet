@@ -114,7 +114,15 @@ namespace PurrNet.Modules
 
         private void OnPlayerLeft(PlayerID player, bool asserver)
         {
-            if (!_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave()) return;
+            if (!_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave())
+            {
+                foreach (var (scene, players) in _sceneLoadedPlayers)
+                {
+                    if (players.Remove(player))
+                        onPlayerUnloadedScene?.Invoke(player, scene, _asServer);
+                }
+                return;
+            }
             
             foreach (var (scene, players) in _scenePlayers)
             {
@@ -180,7 +188,7 @@ namespace PurrNet.Modules
         /// <summary>
         /// Get all players attached to a scene, regardless of whether they have finished loading the scene or not
         /// </summary>
-        public bool TryGetPlayersAttachedToScene(SceneID scene, out IReadOnlyCollection<PlayerID> players)
+        public bool TryGetPlayersAttachedToScene(SceneID scene, out ISet<PlayerID> players)
         {
             if (_scenePlayers.TryGetValue(scene, out var data))
             {
@@ -214,7 +222,16 @@ namespace PurrNet.Modules
         private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
         {
             if (isReconnect && !_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave())
+            {
+                /*foreach (var (scene, players) in _scenePlayers)
+                {
+                    if (players.Contains(player))
+                        continue;
+                    
+                    AddPlayerToScene
+                }*/
                 return;
+            }
             
             for (var i = 0; i < _scenes.scenes.Count; i++)
             {
@@ -259,7 +276,7 @@ namespace PurrNet.Modules
             
             AddPlayerToScene(player, scene);
         }
-        
+
         public void AddPlayerToScene(PlayerID player, SceneID scene)
         {
             if (!_asServer)
@@ -267,16 +284,15 @@ namespace PurrNet.Modules
                 PurrLogger.LogError("AddPlayerToScene can only be called on the server; for now ;)");
                 return;
             }
-            
+
             if (!_scenePlayers.TryGetValue(scene, out var playersInScene))
             {
                 PurrLogger.LogError($"SceneID '{scene}' not found in scenes module; aborting AddPlayerToScene");
                 return;
             }
-            
-            playersInScene.Add(player);
-            
-            onPlayerJoinedScene?.Invoke(player, scene, _asServer);
+
+            if (playersInScene.Add(player))
+                onPlayerJoinedScene?.Invoke(player, scene, _asServer);
         }
         
         public void RemovePlayerFromScene(PlayerID player, SceneID scene)
@@ -287,16 +303,28 @@ namespace PurrNet.Modules
                 return;
             }
             
+            RemovePlayerFromLoadedScene(player, scene);
+            
             if (!_scenePlayers.TryGetValue(scene, out var playersInScene))
             {
                 PurrLogger.LogError($"SceneID '{scene}' not found in scenes module; aborting RemovePlayerFromScene");
                 return;
             }
             
-            playersInScene.Remove(player);
+            if (playersInScene.Remove(player))
+                onPlayerLeftScene?.Invoke(player, scene, _asServer);
+        }
+        
+        private void RemovePlayerFromLoadedScene(PlayerID player, SceneID scene)
+        {
+            if (!_sceneLoadedPlayers.TryGetValue(scene, out var playersInScene))
+            {
+                PurrLogger.LogError($"SceneID '{scene}' not found in scene loaded players dictionary; aborting RemovePlayerFromLoadedScene");
+                return;
+            }
             
-            onPlayerLeftScene?.Invoke(player, scene, _asServer);
-            onPlayerUnloadedScene?.Invoke(player, scene, _asServer);
+            if (playersInScene.Remove(player))
+                onPlayerUnloadedScene?.Invoke(player, scene, _asServer);
         }
 
         private void OnSceneLoaded(SceneID scene, bool asServer)

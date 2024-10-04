@@ -499,5 +499,15 @@ namespace PurrNet
         {
             OnOwnerConnected(ownerId, asServer);
         }
+
+        public void TriggerOnObserverAdded(PlayerID target)
+        {
+            OnObserverAdded(target);
+        }
+
+        public void TriggerOnObserverRemoved(PlayerID target)
+        {
+            OnObserverRemoved(target);
+        }
     }
 }
