@@ -423,14 +423,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _startServerFlags: 9
-  _startClientFlags: 6
+  _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
   _transport: {fileID: 1216416896}
   _networkPrefabs: {fileID: 0}
-  _networkRules: {fileID: 11400000, guid: 9414661460fa4574680ff123bbb2124a, type: 2}
+  _networkRules: {fileID: 11400000, guid: 33e33757d45b3024088e3c52c3af3a94, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}
-  _tickRate: 5
+  _tickRate: 20
 --- !u!4 &1216416898
 Transform:
   m_ObjectHideFlags: 0
@@ -949,22 +949,6 @@ Transform:
   - {fileID: 2214331658081957968}
   m_Father: {fileID: 9076305813008580000}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1796455686033106524
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5548725352732181327}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b598b9d8509d64abb9fdaf07fa3f6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 0}
-  _animator: {fileID: 5672926956231318123}
-  _ownerAuth: 1
 --- !u!1 &1801178370455642223
 GameObject:
   m_ObjectHideFlags: 0
@@ -1696,21 +1680,6 @@ Transform:
   - {fileID: 6933302746397346842}
   m_Father: {fileID: 9076305813008580000}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4252314897423074090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5548725352732181327}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c644a726ce5a6ee498a1c29e05dfa03e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 0}
-  _animator: {fileID: 1796455686033106524}
 --- !u!4 &4314614730811031454
 Transform:
   m_ObjectHideFlags: 0
@@ -1944,8 +1913,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5065099203881867765}
   - component: {fileID: 5672926956231318123}
-  - component: {fileID: 1796455686033106524}
-  - component: {fileID: 4252314897423074090}
+  - component: {fileID: 5672926956231318124}
+  - component: {fileID: 5672926956231318125}
   m_Layer: 0
   m_Name: Character A
   m_TagString: Untagged
@@ -1975,6 +1944,42 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5672926956231318124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5548725352732181327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9557c4d9290dd8f46b0d497415d71dcd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _animator: {fileID: 5672926956231318123}
+  _isRunning: 0
+  _runningSpeed: 0
+--- !u!114 &5672926956231318125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5548725352732181327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cb763cfb0fbf2c44b3587223c4aad1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _trackedBehaviour: {fileID: 5672926956231318124}
+  _trackedFields:
+  - type: 0
+    name: _isRunning
+  - type: 0
+    name: _runningSpeed
+  _ownerAuth: 1
 --- !u!4 &5748309736742377897
 Transform:
   m_ObjectHideFlags: 0

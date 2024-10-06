@@ -128,18 +128,7 @@ namespace PurrNet.Packets
                 int consumed = MemoryPackSerializer.Deserialize(type, span, ref data);
                 _stream.Advance(consumed);
             }
-            else MemoryPackSerializer.Serialize(_stream, data);
-        }
-        
-        public void SerializeWithType(Type type, [CanBeNull] ref object data)
-        {
-            if (isReading)
-            {
-                var span = _stream.GetSpan();
-                int consumed = MemoryPackSerializer.Deserialize(type, span, ref data);
-                _stream.Advance(consumed);
-            }
-            else MemoryPackSerializer.Serialize(_stream, data);
+            else MemoryPackSerializer.Serialize(type, _stream, data);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -329,6 +318,23 @@ namespace PurrNet.Packets
     }
 
 #pragma warning disable CS9074
+
+    [Preserve]
+    internal class ByteDataFormatter : MemoryPackFormatter<ByteData>
+    {
+        public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer,
+            ref ByteData value)
+        {
+            writer.WriteUnmanagedSpan(value.span);
+        }
+
+        public override void Deserialize(ref MemoryPackReader reader, ref ByteData value)
+        {
+            Span<byte> data = default;
+            reader.ReadUnmanagedSpan(ref data);
+            value = new ByteData(data.ToArray(), 0, data.Length);
+        }
+    }
     
     [Preserve]
     internal class NetworkedDataFormatter<T> : MemoryPackFormatter<T> where T : INetworkedData, new()

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using MemoryPack;
+using UnityEngine;
 
 namespace PurrNet.Transports
 {
@@ -20,6 +22,13 @@ namespace PurrNet.Transports
 
     public readonly struct ByteData
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Init()
+        {
+            MemoryPackFormatterProvider.Register(new Packets.ByteDataFormatter());
+            Utils.Hasher.PrepareType<ByteData>();
+        }
+        
         public readonly byte[] data;
         public readonly int length;
         public readonly int offset;
@@ -31,6 +40,14 @@ namespace PurrNet.Transports
             this.data = data;
             this.offset = offset;
             this.length = length;
+        }
+
+        public override string ToString()
+        {
+            string str = string.Empty;
+            for (int i = 0; i < length; i++)
+                str += data[i + offset].ToString("X2") + " ";
+            return str;
         }
     }
     
