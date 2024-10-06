@@ -27,8 +27,7 @@ namespace PurrNet
         
         /// <summary>
         /// Sends the current state of the animator to the observers.
-        /// This is useful when a new observer joins the scene.
-        /// Or when you need to ensure that the observers are in sync with the controller.
+        /// This is useful when you need to ensure that the observers are in sync with the controller.
         /// </summary>
         public void Reconcile()
         {

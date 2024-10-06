@@ -12,6 +12,107 @@ namespace PurrNet
         {
             var actions = new List<NetAnimatorRPC>();
 
+            SyncParameters(animator, actions);
+            SyncAnimationState(animator, actions);
+            
+            SyncIK(AvatarIKGoal.LeftFoot, animator, actions);
+            SyncIK(AvatarIKGoal.RightFoot, animator, actions);
+            SyncIK(AvatarIKGoal.LeftHand, animator, actions);
+            SyncIK(AvatarIKGoal.RightHand, animator, actions);
+            
+            SyncIKHint(AvatarIKHint.LeftKnee, animator, actions);
+            SyncIKHint(AvatarIKHint.RightKnee, animator, actions);
+            SyncIKHint(AvatarIKHint.LeftElbow, animator, actions);
+            SyncIKHint(AvatarIKHint.RightElbow, animator, actions);
+            
+            actions.Add(new NetAnimatorRPC(new SetApplyRootMotion
+            {
+                value = animator.applyRootMotion
+            }));
+            
+            actions.Add(new NetAnimatorRPC(new SetAnimatePhysics
+            {
+                value = animator.animatePhysics
+            }));
+            
+            actions.Add(new NetAnimatorRPC(new SetUpdateMode
+            {
+                value = animator.updateMode
+            }));
+            
+            actions.Add(new NetAnimatorRPC(new SetCullingMode
+            {
+                value = animator.cullingMode
+            }));
+
+            return new NetAnimatorActionBatch
+            {
+                actions = actions
+            };
+        }
+
+        private static void SyncIK(AvatarIKGoal goal, Animator animator, List<NetAnimatorRPC> actions)
+        {
+            if (animator.GetIKPositionWeight(goal) > 0)
+            {
+                actions.Add(new NetAnimatorRPC(new SetIKPositionWeight
+                {
+                    goal = goal,
+                    value = animator.GetIKPositionWeight(goal)
+                }));
+            }
+            
+            if (animator.GetIKRotationWeight(goal) > 0)
+            {
+                actions.Add(new NetAnimatorRPC(new SetIKRotationWeight
+                {
+                    goal = goal,
+                    value = animator.GetIKRotationWeight(goal)
+                }));
+            }
+            
+            if (animator.GetIKPosition(goal) != default)
+            {
+                actions.Add(new NetAnimatorRPC(new SetIKPosition
+                {
+                    goal = goal,
+                    position = animator.GetIKPosition(goal)
+                }));
+            }
+            
+            if (animator.GetIKRotation(goal) != Quaternion.identity)
+            {
+                actions.Add(new NetAnimatorRPC(new SetIKRotation
+                {
+                    goal = goal,
+                    rotation = animator.GetIKRotation(goal)
+                }));
+            }
+        }
+        
+        private static void SyncIKHint(AvatarIKHint hint, Animator animator, List<NetAnimatorRPC> actions)
+        {
+            if (animator.GetIKHintPositionWeight(hint) > 0)
+            {
+                actions.Add(new NetAnimatorRPC(new SetIKHintPositionWeight
+                {
+                    hint = hint,
+                    value = animator.GetIKHintPositionWeight(hint)
+                }));
+            }
+            
+            if (animator.GetIKHintPosition(hint) != default)
+            {
+                actions.Add(new NetAnimatorRPC(new SetIKHintPosition
+                {
+                    hint = hint,
+                    position = animator.GetIKHintPosition(hint)
+                }));
+            }
+        }
+
+        private static void SyncAnimationState(Animator animator, List<NetAnimatorRPC> actions)
+        {
             for (var i = 0; i < animator.layerCount; i++)
             {
                 var info = animator.GetCurrentAnimatorStateInfo(i);
@@ -22,9 +123,12 @@ namespace PurrNet
                     normalizedTime = info.normalizedTime
                 }));
             }
-            
+        }
+
+        private static void SyncParameters(Animator animator, List<NetAnimatorRPC> actions)
+        {
             int paramCount = animator.parameterCount;
-            
+
             for (var i = 0; i < paramCount; i++)
             {
                 var param = animator.parameters[i];
@@ -66,11 +170,6 @@ namespace PurrNet
                     }
                 }
             }
-            
-            return new NetAnimatorActionBatch
-            {
-                actions = actions
-            };
         }
     }
 }
