@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
@@ -8,11 +9,19 @@ namespace PurrNet
 {
     public class NetworkReflection : NetworkIdentity
     {
-        [SerializeField] Behaviour _trackedBehaviour;
-        [SerializeField] ReflectionData[] _trackedFields;
-        [SerializeField] private bool _ownerAuth = true;
+        [SerializeField, HideInInspector] Behaviour _trackedBehaviour;
+        [SerializeField, HideInInspector] List<ReflectionData> _trackedFields;
+        [SerializeField, HideInInspector] private bool _ownerAuth = true;
 
         private ReflectedValue[] _reflectedValues;
+        
+        public Type trackedType => _trackedBehaviour ? _trackedBehaviour.GetType() : null;
+        
+        public List<ReflectionData> trackedFields
+        {
+            get => _trackedFields;
+            set => _trackedFields = value;
+        }
 
         private void Awake()
         {
@@ -22,9 +31,9 @@ namespace PurrNet
                 return;
             }
             
-            _reflectedValues = new ReflectedValue[_trackedFields.Length];
+            _reflectedValues = new ReflectedValue[_trackedFields.Count];
 
-            for (var i = 0; i < _trackedFields.Length; i++)
+            for (var i = 0; i < _trackedFields.Count; i++)
             {
                 var value = new ReflectedValue(_trackedBehaviour, _trackedFields[i]);
                 if (value.valueType != null)

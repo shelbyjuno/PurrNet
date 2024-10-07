@@ -7,7 +7,7 @@ namespace PurrNet
     [Serializable]
     public struct ReflectionData
     {
-        [SerializeField] ReflectionType type;
+        public ReflectionType type;
         public string name;
         
         public FieldInfo GetField(Type reflectionType)

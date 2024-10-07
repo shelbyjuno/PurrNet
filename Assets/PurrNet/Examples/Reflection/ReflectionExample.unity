@@ -1979,6 +1979,10 @@ MonoBehaviour:
     name: _isRunning
   - type: 0
     name: _runningSpeed
+  - type: 1
+    name: enabled
+  - type: 1
+    name: tag
   _ownerAuth: 1
 --- !u!4 &5748309736742377897
 Transform:
