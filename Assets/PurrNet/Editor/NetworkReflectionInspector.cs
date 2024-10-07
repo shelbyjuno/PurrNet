@@ -63,7 +63,7 @@ namespace PurrNet.Editor
 
             return -1;
         }
- 
+        
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
@@ -95,6 +95,7 @@ namespace PurrNet.Editor
                 EditorUtility.SetDirty(reflection);
             }
             
+            EditorGUI.BeginProperty(Rect.zero, GUIContent.none, _trackedFields);
             EditorGUILayout.BeginVertical("helpbox");
             for (var i = 0; i < reflection.trackedFields.Count; i++)
             {
@@ -140,6 +141,7 @@ namespace PurrNet.Editor
             EditorGUILayout.EndHorizontal();
             
             EditorGUILayout.EndVertical();
+            EditorGUI.EndProperty();
             
             serializedObject.ApplyModifiedProperties();
         }
