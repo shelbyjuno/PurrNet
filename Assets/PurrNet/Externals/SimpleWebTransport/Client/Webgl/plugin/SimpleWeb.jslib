@@ -75,7 +75,7 @@ function Connect(addressPtr, openCallbackPtr, closeCallBackPtr, messageCallbackP
 function Disconnect(index) {
     var webSocket = SimpleWeb.GetWebSocket(index);
     if (webSocket) {
-        webSocket.close(1000, "Disconnect Called by Mirror");
+        webSocket.close(1000, "Disconnect Called by PurrNet");
     }
 
     SimpleWeb.RemoveSocket(index);
