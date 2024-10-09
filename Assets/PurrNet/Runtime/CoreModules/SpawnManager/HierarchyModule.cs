@@ -13,6 +13,7 @@ namespace PurrNet
         private readonly PlayersManager _players;
         private readonly ScenesModule _scenes;
         private readonly ScenePlayersModule _scenePlayers;
+        private VisibilityFactory _visibilityFactory;
         
         private readonly List<HierarchyScene> _hierarchies = new ();
         private readonly Dictionary<SceneID, HierarchyScene> _sceneToHierarchy = new ();
@@ -31,6 +32,11 @@ namespace PurrNet
             _players = players;
             _scenePlayers = scenePlayers;
             _prefabs = prefabs;
+        }
+        
+        public void SetVisibilityFactory(VisibilityFactory factory)
+        {
+            _visibilityFactory = factory;
         }
         
         public bool IsSceneReady(SceneID sceneID)

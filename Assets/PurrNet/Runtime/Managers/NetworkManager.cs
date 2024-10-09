@@ -297,7 +297,9 @@ namespace PurrNet
             var ownershipModule = new GlobalOwnershipModule(this, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             
             var rpcModule = new RPCModule(playersManager, hierarchyModule, ownershipModule, scenesModule, scenePlayersModule);
-
+            var spawnModule = new HierarchySpawningFactory(hierarchyModule, visibilityFactory, asServer);
+            
+            hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayersModule);
             playersManager.SetBroadcaster(playersBroadcast);
             
@@ -311,6 +313,7 @@ namespace PurrNet
             modules.AddModule(ownershipModule);
             modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
+            modules.AddModule(spawnModule);
             modules.AddModule(rpcModule);
         }
 

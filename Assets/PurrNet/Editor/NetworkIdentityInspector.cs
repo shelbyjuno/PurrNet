@@ -93,6 +93,12 @@ namespace PurrNet.Editor
                 EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");
                 EditorGUILayout.EndHorizontal();
             }
+            else if (Application.isPlaying)
+            {
+                EditorGUILayout.BeginHorizontal("box");
+                EditorGUILayout.LabelField("Not Spawned");
+                EditorGUILayout.EndHorizontal();
+            }
         }
     }
 }

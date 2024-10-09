@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
+using PurrNet.Pooling;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -46,6 +47,7 @@ namespace PurrNet.Modules
 
         // the id of the first network identity in the scene
         private NetworkID _sceneFirstNetworkID;
+        private int _sceneIdsCount;
         
         public string GetActionsAsString()
         {
@@ -143,6 +145,8 @@ namespace PurrNet.Modules
                     childOffset = 0,
                     transformInfo = default
                 }, sceneObjects[i], 0, true);
+                
+                _sceneIdsCount++;
             }
         }
         
@@ -189,11 +193,11 @@ namespace PurrNet.Modules
             var fullHistory = _history.GetFullHistory();
             if (fullHistory.actions.Count > 0)
                 _playersManager.Send(player, fullHistory);
-            
+
             _playersManager.Send(player, new SetSceneIds
             {
                 sceneId = _sceneID,
-                startingId = _sceneFirstNetworkID
+                startingId = _sceneFirstNetworkID,
             });
         }
         

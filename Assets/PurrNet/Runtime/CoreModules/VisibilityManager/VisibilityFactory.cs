@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using Unity.Plastic.Newtonsoft.Json.Serialization;
 
 namespace PurrNet
 {
@@ -14,7 +15,13 @@ namespace PurrNet
 
         private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisibilityManager = new ();
         private readonly List<VisibilityManager> _visibilityManagers = new ();
-
+        
+        public IReadOnlyDictionary<SceneID, VisibilityManager> sceneToVisibilityManager => _sceneToVisibilityManager;
+        
+        public event Action<SceneID, VisibilityManager> onVisibilityManagerAdded;
+        
+        public event Action<SceneID, VisibilityManager> onVisibilityManagerRemoved;
+        
         public VisibilityFactory(NetworkManager manager, PlayersManager playersManager, ScenesModule scenes, HierarchyModule hierarchy, ScenePlayersModule players)
         {
             _manager = manager;
@@ -50,7 +57,7 @@ namespace PurrNet
             return _sceneToVisibilityManager.TryGetValue(scene, out visibilityManager);
         }
 
-        private void OnSceneLoaded(SceneID scene, bool asserver)
+        public void OnSceneLoaded(SceneID scene, bool asserver)
         {
             if (!_hierarchy.TryGetHierarchy(scene, out var hierarchy))
             {
@@ -65,6 +72,7 @@ namespace PurrNet
                 _visibilityManagers.Add(visibility);
                 _sceneToVisibilityManager.Add(scene, visibility);
                 
+                onVisibilityManagerAdded?.Invoke(scene, visibility);
                 visibility.Enable(asserver);
             }
         }
@@ -73,6 +81,7 @@ namespace PurrNet
         {
             if (_sceneToVisibilityManager.TryGetValue(scene, out var hierarchy))
             {
+                onVisibilityManagerRemoved?.Invoke(scene, hierarchy);
                 hierarchy.Disable(asserver);
                 
                 _visibilityManagers.Remove(hierarchy);
