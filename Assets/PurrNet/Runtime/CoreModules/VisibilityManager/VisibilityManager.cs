@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -17,8 +16,6 @@ namespace PurrNet
         private readonly PlayersManager _playersManager;
         private readonly SceneID _sceneId;
         
-        private readonly Dictionary<NetworkID, HashSet<PlayerID>> _observers = new();
-        
         public event VisibilityChanged onObserverAdded;
         
         public event VisibilityChanged onObserverRemoved;
@@ -30,12 +27,6 @@ namespace PurrNet
             _hierarchy = hierarchy;
             _players = players;
             _sceneId = sceneId;
-        }
-        
-        public IEnumerable<PlayerID> GetObservers(NetworkID networkId)
-        {
-            return _observers.TryGetValue(networkId, out var observers) ? 
-                observers : System.Array.Empty<PlayerID>();
         }
         
         public void Enable(bool asServer)
@@ -108,15 +99,7 @@ namespace PurrNet
 
             foreach (var identity in allIdentities)
             {
-                var id = identity.id;
-                
-                if (!id.HasValue)
-                    continue;
-                
-                if (!_observers.TryGetValue(id.Value, out var observers))
-                    continue;
-
-                if (observers.Remove(player))
+                if (identity._observers.Remove(player))
                 {
                     identity.TriggerOnObserverRemoved(player);
                     onObserverRemoved?.Invoke(player, identity);
@@ -124,17 +107,6 @@ namespace PurrNet
             }
         }
         
-        public bool TryGetObservers(NetworkIdentity identity, out HashSet<PlayerID> observers)
-        {
-            if (!identity.id.HasValue)
-            {
-                observers = null;
-                return false;
-            }
-
-            return _observers.TryGetValue(identity.id.Value, out observers);
-        }
-
         private void OnIdentityAdded(NetworkIdentity identity)
         {
             if (!identity.id.HasValue)
@@ -143,9 +115,6 @@ namespace PurrNet
                 return;
             }
 
-            var collection = new HashSet<PlayerID>();
-            _observers.Add(identity.id.Value, collection);
-            
             var root = identity.root;
 
             if (_players.TryGetPlayersInScene(_sceneId, out var players))
@@ -164,15 +133,14 @@ namespace PurrNet
                 PurrLogger.LogError("Identity has no ID when being removed, can't properly clean up.");
                 return;
             }
-            if (_observers.TryGetValue(identity.id.Value, out var observers))
+            
+            foreach (var player in identity._observers)
             {
-                foreach (var player in observers)
-                {
-                    identity.TriggerOnObserverRemoved(player);
-                    onObserverRemoved?.Invoke(player, identity);
-                }
-                _observers.Remove(identity.id.Value);
+                identity.TriggerOnObserverRemoved(player);
+                onObserverRemoved?.Invoke(player, identity);
             }
+            
+            identity._observers.Clear();
         }
 
         // Isolate only roots and check roots, once one is visible, the whole tree is visible
@@ -190,29 +158,20 @@ namespace PurrNet
 
                 if (child.HasVisibility(player))
                 {
-                    PurrLogger.Log($"Player {player} is visible to root {root} due to child {child}");
                     visible = true;
                     break;
                 }
             }
-            
             
             if (visible)
             {
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
-                    
-                    if (!child.id.HasValue)
-                        continue;
-                    
-                    if (_observers.TryGetValue(child.id.Value, out var observers))
+                    if (child._observers.Add(player))
                     {
-                        if (observers.Add(player))
-                        {
-                            child.TriggerOnObserverAdded(player);
-                            onObserverAdded?.Invoke(player, child);
-                        }
+                        child.TriggerOnObserverAdded(player);
+                        onObserverAdded?.Invoke(player, child);
                     }
                 }
             }
@@ -221,17 +180,10 @@ namespace PurrNet
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
-                    
-                    if (!child.id.HasValue)
-                        continue;
-                    
-                    if (_observers.TryGetValue(child.id.Value, out var observers))
+                    if (child._observers.Remove(player))
                     {
-                        if (observers.Remove(player))
-                        {
-                            child.TriggerOnObserverRemoved(player);
-                            onObserverRemoved?.Invoke(player, child);
-                        }
+                        child.TriggerOnObserverRemoved(player);
+                        onObserverRemoved?.Invoke(player, child);
                     }
                 }
             }

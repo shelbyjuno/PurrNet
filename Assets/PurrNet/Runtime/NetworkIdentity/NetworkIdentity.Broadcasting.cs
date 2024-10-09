@@ -7,6 +7,7 @@ using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEditor.ShaderKeywordFilter;
 using UnityEngine.Scripting;
 
 namespace PurrNet
@@ -131,18 +132,26 @@ namespace PurrNet
             if (signature.excludeOwner && isOwner)
                 return false;
 
-            if (signature.type == RPCType.ServerRPC && !asServer)
+            if (signature.type == RPCType.ServerRPC)
             {
-                PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' on client. Aborting RPC call.", this);
-                return false;
+                if (!asServer)
+                {
+                    PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' on client. Aborting RPC call.", this);
+                    return false;
+                }
+
+                if (!_observers.Contains(info.sender) && signature.channel == Channel.ReliableOrdered)
+                {
+                    PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' by player '{info.sender}' which is not an observer. Aborting RPC call.", this);
+                    return false;
+                }
             }
-            
-            if (signature.type != RPCType.ServerRPC && asServer)
+            else if (asServer)
             {
                 PurrLogger.LogError($"Trying to receive client RPC '{signature.rpcName}' from '{name}' on server. Aborting RPC call.", this);
                 return false;
             }
-
+            
             return true;
         }
         
@@ -150,28 +159,19 @@ namespace PurrNet
 
         public void SendToObservers<T>(T packet, [CanBeNull] Func<PlayerID, bool> predicate, Channel method = Channel.ReliableOrdered)
         {
-            if (!networkManager.TryGetModule<ScenePlayersModule>(isServer, out var scene))
-            {
-                PurrLogger.LogError("Trying to send packet to observers without scene module.", this);
-                return;
-            }
-                
-            if (scene.TryGetPlayersInScene(sceneId, out var playersInScene))
+            if (predicate != null)
             {
                 _players.Clear();
-                _players.AddRange(playersInScene);
-
-                if (predicate != null)
+                _players.AddRange(_observers);
+                
+                for (int i = 0; i < _players.Count; i++)
                 {
-                    for (int i = 0; i < _players.Count; i++)
-                    {
-                        if (!predicate(_players[i]))
-                            _players.RemoveAt(i--);
-                    }
+                    if (!predicate(_players[i]))
+                        _players.RemoveAt(i--);
                 }
-
                 Send(_players, packet, method);
             }
+            else Send(_observers, packet, method);
         }
 
         public void Send<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
@@ -183,6 +183,12 @@ namespace PurrNet
         [Preserve]
         public void SendToTarget<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
         {
+            if (!_observers.Contains(player))
+            {
+                PurrLogger.LogError($"Trying to send TargetRPC to player '{player}' which is not observing '{name}'.", this);
+                return;
+            }
+            
             Send(player, packet, method);
         }
         

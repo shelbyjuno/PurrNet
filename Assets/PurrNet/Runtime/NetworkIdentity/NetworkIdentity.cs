@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using JetBrains.Annotations;
 using PurrNet.Logging;
@@ -102,6 +103,10 @@ namespace PurrNet
         private bool _lastEnabledState;
         private GameObjectEvents _events;
         private GameObject _gameObject;
+        
+        internal readonly HashSet<PlayerID> _observers = new ();
+        
+        public IReadOnlyCollection<PlayerID> observers => _observers;
 
         /// <summary>
         /// The root identity is the topmost parent that has a NetworkIdentity.
@@ -330,14 +335,16 @@ namespace PurrNet
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
-            
             Hasher.PrepareType(GetType());
             
             networkManager = manager;
 
-            var rules = visibilityRules;
-            if (rules)
-                rules.Setup(manager);
+            if (_visitiblityRules && !_visitiblityRules.isInitialized)
+            {
+                _visitiblityRules = Instantiate(_visitiblityRules);
+                _visitiblityRules.Setup(manager);
+            }
+            
             sceneId = scene;
             prefabId = pid;
             siblingIndex = siblingIdx;
@@ -524,14 +531,7 @@ namespace PurrNet
         {
             if (networkManager.TryGetModule<VisibilityFactory>(isServer, out var factory) && factory.TryGetVisibilityManager(sceneId, out var manager))
             {
-                if (manager.TryGetObservers(this, out var observers))
-                {
-                    Debug.Log("Observers: " + string.Join(", ", observers));
-                }
-                else
-                {
-                    Debug.Log("No observers.");
-                }
+                Debug.Log("Observers: " + string.Join(", ", _observers));
             }
             else
             {

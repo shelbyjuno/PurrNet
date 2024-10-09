@@ -67,9 +67,11 @@ namespace PurrNet.Editor
                 
                 label += ")";
             }
-            
+
+            var old = GUI.enabled;
+            GUI.enabled = true;
             _foldoutVisible = EditorGUILayout.BeginFoldoutHeaderGroup(_foldoutVisible, label);
-            
+            GUI.enabled = old;
             if (_foldoutVisible)
             {
                 EditorGUI.indentLevel++;

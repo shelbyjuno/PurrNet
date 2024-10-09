@@ -127,7 +127,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 107841502}
-  - component: {fileID: 107841501}
+  - component: {fileID: 107841503}
   m_Layer: 0
   m_Name: TEST (1)
   m_TagString: Untagged
@@ -135,20 +135,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &107841501
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 107841500}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 11400000, guid: 64e0b06f037496f4bbaece335b3dd1d3, type: 2}
 --- !u!4 &107841502
 Transform:
   m_ObjectHideFlags: 0
@@ -164,6 +150,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &107841503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107841500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56408ba6a605f9a40bfd565b95774f70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 11400000, guid: 64e0b06f037496f4bbaece335b3dd1d3, type: 2}
+  someRef: {fileID: 0}
+  _testChild:
+    _value: 0
+  _testChild2:
+    _value: 70
+  _testChild3:
+    _value: 0
 --- !u!1 &358453800
 GameObject:
   m_ObjectHideFlags: 0
@@ -655,11 +662,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1914607934}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Script: {fileID: 11500000, guid: 56408ba6a605f9a40bfd565b95774f70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 11400000, guid: 64e0b06f037496f4bbaece335b3dd1d3, type: 2}
+  someRef: {fileID: 0}
+  _testChild:
+    _value: 0
+  _testChild2:
+    _value: 70
+  _testChild3:
+    _value: 0
 --- !u!1 &106612316474048446
 GameObject:
   m_ObjectHideFlags: 0

@@ -10,15 +10,15 @@ namespace PurrNet
         [SerializeField] private NetworkVisibilityRule[] _rules;
         
         private readonly List<INetworkVisibilityRule> _raw_rules = new ();
-        
-        private bool _initialized;
+
+        public bool isInitialized { get; private set; }
 
         public void Setup(NetworkManager manager)
         {
-            if (_initialized)
+            if (isInitialized)
                 return;
             
-            _initialized = true;
+            isInitialized = true;
             
             for (int i = 0; i < _rules.Length; i++)
             {
