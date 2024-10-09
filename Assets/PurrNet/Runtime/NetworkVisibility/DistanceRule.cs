@@ -6,7 +6,9 @@ namespace PurrNet
     public class DistanceRule : NetworkVisibilityRule
     {
         [SerializeField] private float _distance = 30f;
-        
+
+        public override int complexity => 100;
+
         public override bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
         {
             if (identity.owner == playerId)

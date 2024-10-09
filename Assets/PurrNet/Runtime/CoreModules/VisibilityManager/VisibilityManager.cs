@@ -68,19 +68,6 @@ namespace PurrNet
             
             _playersManager.onPlayerLeft -= OnPlayerLeft;
         }
-        
-        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
-        {
-            if (_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave()) return;
-
-            if (!_players.TryGetPlayersAttachedToScene(_sceneId, out var players))
-                return;
-            
-            if (players.Contains(player))
-                return;
-            
-            OnPlayerJoinedScene(player, _sceneId, asserver);
-        }
 
         private void OnPlayerLeft(PlayerID player, bool asserver)
         {
@@ -95,26 +82,21 @@ namespace PurrNet
             OnPlayerLeftScene(player, _sceneId, asserver);
         }
 
-        
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneId)
                 return;
 
             var allIdentities = _hierarchy.identities.collection;
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
             
             foreach (var identity in allIdentities)
-            {
-                var id = identity.id;
-
-                if (!id.HasValue)
-                    continue;
-                
-                if (!_observers.TryGetValue(id.Value, out var observers))
-                    continue;
-                
-                EvaluateVisibility(player, identity, observers);
-            }
+                roots.Add(identity.root);
+            
+            foreach (var root in roots)
+                EvaluateVisibilityTree(player, root);
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
         private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
@@ -141,6 +123,17 @@ namespace PurrNet
                 }
             }
         }
+        
+        public bool TryGetObservers(NetworkIdentity identity, out HashSet<PlayerID> observers)
+        {
+            if (!identity.id.HasValue)
+            {
+                observers = null;
+                return false;
+            }
+
+            return _observers.TryGetValue(identity.id.Value, out observers);
+        }
 
         private void OnIdentityAdded(NetworkIdentity identity)
         {
@@ -153,7 +146,15 @@ namespace PurrNet
             var collection = new HashSet<PlayerID>();
             _observers.Add(identity.id.Value, collection);
             
-            EvaluateVisibility(identity, collection);
+            var root = identity.root;
+
+            if (_players.TryGetPlayersInScene(_sceneId, out var players))
+            {
+                foreach (var player in players)
+                {
+                    EvaluateVisibilityTree(player, root);
+                }
+            }
         }
 
         private void OnIdentityRemoved(NetworkIdentity identity)
@@ -174,76 +175,73 @@ namespace PurrNet
             }
         }
 
-        private void EvaluateVisibility(NetworkIdentity nid, HashSet<PlayerID> collection)
+        // Isolate only roots and check roots, once one is visible, the whole tree is visible
+        private void EvaluateVisibilityTree(PlayerID player, NetworkIdentity root)
         {
-            if (!_players.TryGetPlayersInScene(_sceneId, out var playersInScene))
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            
+            root.GetComponentsInChildren(children);
+            
+            bool visible = false;
+            
+            for (var i = 0; i < children.Count; i++)
             {
-                foreach (var player in collection)
-                {
-                    nid.TriggerOnObserverRemoved(player);
-                    onObserverRemoved?.Invoke(player, nid);
-                }
-                collection.Clear();
-                return;
-            }
+                var child = children[i];
 
-            RemoveOld(nid, collection, playersInScene);
-            
-            foreach (var player in playersInScene)
-            {
-                if (!_playersManager.IsPlayerConnected(player))
+                if (child.HasVisibility(player))
                 {
-                    PurrLogger.LogError($"Player {player} is in scene {_sceneId} but is not connected.");
-                    continue;
+                    PurrLogger.Log($"Player {player} is visible to root {root} due to child {child}");
+                    visible = true;
+                    break;
                 }
-                
-                EvaluateVisibility(player, nid, collection);
-            }
-        }
-
-        private void RemoveOld(NetworkIdentity nid, HashSet<PlayerID> collection, HashSet<PlayerID> playersInScene)
-        {
-            var collectionCopy = HashSetPool<PlayerID>.Instantiate();
-            collectionCopy.UnionWith(collection);
-            
-            foreach (var player in collectionCopy)
-            {
-                if (playersInScene.Contains(player) && _playersManager.IsPlayerConnected(player))
-                    continue;
-                
-                collection.Remove(player);
-                
-                nid.TriggerOnObserverRemoved(player);
-                onObserverRemoved?.Invoke(player, nid);
             }
             
-            HashSetPool<PlayerID>.Destroy(collectionCopy);
-        }
-        
-        private void EvaluateVisibility(PlayerID target, NetworkIdentity nid, HashSet<PlayerID> collection)
-        {
-            if (nid.HasVisibility(target, nid))
+            
+            if (visible)
             {
-                if (collection.Add(target))
+                for (var i = 0; i < children.Count; i++)
                 {
-                    nid.TriggerOnObserverAdded(target);
-                    onObserverAdded?.Invoke(target, nid);
-                    //PropagateVisibility(target, nid); // TODO: This is an issue when removing observers
+                    var child = children[i];
+                    
+                    if (!child.id.HasValue)
+                        continue;
+                    
+                    if (_observers.TryGetValue(child.id.Value, out var observers))
+                    {
+                        if (observers.Add(player))
+                        {
+                            child.TriggerOnObserverAdded(player);
+                            onObserverAdded?.Invoke(player, child);
+                        }
+                    }
                 }
             }
             else
             {
-                if (collection.Remove(target))
+                for (var i = 0; i < children.Count; i++)
                 {
-                    nid.TriggerOnObserverRemoved(target);
-                    onObserverRemoved?.Invoke(target, nid);
+                    var child = children[i];
+                    
+                    if (!child.id.HasValue)
+                        continue;
+                    
+                    if (_observers.TryGetValue(child.id.Value, out var observers))
+                    {
+                        if (observers.Remove(player))
+                        {
+                            child.TriggerOnObserverRemoved(player);
+                            onObserverRemoved?.Invoke(player, child);
+                        }
+                    }
                 }
             }
+            
+            ListPool<NetworkIdentity>.Destroy(children);
         }
-
+        
         public void FixedUpdate()
         {
-            // TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
+            /* TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
             var allIdentities = _hierarchy.identities.collection;
 
             foreach (var identity in allIdentities)
@@ -257,7 +255,7 @@ namespace PurrNet
                     continue;
                 
                 EvaluateVisibility(identity, observers);
-            }
+            }*/
         }
     }
 }

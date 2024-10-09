@@ -102,8 +102,12 @@ namespace PurrNet
         private bool _lastEnabledState;
         private GameObjectEvents _events;
         private GameObject _gameObject;
-        private NetworkIdentity _root;
-        
+
+        /// <summary>
+        /// The root identity is the topmost parent that has a NetworkIdentity.
+        /// </summary>
+        public NetworkIdentity root { get; private set; }
+
         private NetworkIdentity GetRootIdentity()
         {
             var lastKnown = this;
@@ -201,13 +205,13 @@ namespace PurrNet
 
         private void InternalOnServerTick()
         {
-            var root = GetRootIdentity();
+            var rootId = GetRootIdentity();
 
-            if (root != _root)
+            if (rootId != root)
             {
-                var oldRoot = _root;
-                _root = root;
-                onRootChanged?.Invoke(this, oldRoot, root);
+                var oldRoot = root;
+                root = rootId;
+                onRootChanged?.Invoke(this, oldRoot, rootId);
             }
         }
         
@@ -326,9 +330,14 @@ namespace PurrNet
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
+            
             Hasher.PrepareType(GetType());
             
             networkManager = manager;
+
+            var rules = visibilityRules;
+            if (rules)
+                rules.Setup(manager);
             sceneId = scene;
             prefabId = pid;
             siblingIndex = siblingIdx;
@@ -508,6 +517,26 @@ namespace PurrNet
         public void TriggerOnObserverRemoved(PlayerID target)
         {
             OnObserverRemoved(target);
+        }
+        
+        [ContextMenu("Network Debugging/Print Observers")]
+        public void PrintObservers()
+        {
+            if (networkManager.TryGetModule<VisibilityFactory>(isServer, out var factory) && factory.TryGetVisibilityManager(sceneId, out var manager))
+            {
+                if (manager.TryGetObservers(this, out var observers))
+                {
+                    Debug.Log("Observers: " + string.Join(", ", observers));
+                }
+                else
+                {
+                    Debug.Log("No observers.");
+                }
+            }
+            else
+            {
+                Debug.Log("No visibility manager.");
+            }
         }
     }
 }

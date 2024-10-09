@@ -10,6 +10,8 @@ namespace PurrNet
         {
             manager = nmanager;
         }
+
+        public abstract int complexity { get; }
         
         public abstract bool HasVisiblity(PlayerID playerId, NetworkIdentity identity);
     }

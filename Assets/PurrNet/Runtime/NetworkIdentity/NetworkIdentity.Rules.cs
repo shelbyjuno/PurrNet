@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace PurrNet
@@ -12,18 +13,20 @@ namespace PurrNet
         /// Whitelist of players that can interact with this identity.
         /// This doesn't block visibility for others but rather enforces visibility for these players.
         /// </summary>
+        [UsedImplicitly]
         public readonly HashSet<PlayerID> whitelist = new();
         
         /// <summary>
         /// Blacklist of players that can't interact with this identity.
         /// </summary>
+        [UsedImplicitly]
         public readonly HashSet<PlayerID> blacklist = new();
 
         private NetworkRules networkRules => _networkRules ? _networkRules : networkManager.networkRules;
         
         private NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
 
-        public bool HasVisibility(PlayerID playerId, NetworkIdentity identity)
+        public bool HasVisibility(PlayerID playerId)
         {
             if (blacklist.Contains(playerId))
                 return false;
@@ -32,7 +35,7 @@ namespace PurrNet
                 return true;
             
             var rules = visibilityRules;
-            return rules && rules.HasVisiblity(playerId, identity);
+            return rules && rules.HasVisiblity(playerId, this);
         }
         
         public bool HasDespawnAuthority(PlayerID player, bool asServer)

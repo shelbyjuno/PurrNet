@@ -44,6 +44,11 @@ namespace PurrNet
             _scenes.onPreSceneLoaded -= OnSceneLoaded;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
         }
+        
+        public bool TryGetVisibilityManager(SceneID scene, out VisibilityManager visibilityManager)
+        {
+            return _sceneToVisibilityManager.TryGetValue(scene, out visibilityManager);
+        }
 
         private void OnSceneLoaded(SceneID scene, bool asserver)
         {
