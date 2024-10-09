@@ -7,14 +7,16 @@ using UnityEngine;
 namespace PurrNet.Editor
 {
     [CustomEditor(typeof(NetworkReflection), true)]
-    public class NetworkReflectionInspector : UnityEditor.Editor
+    public class NetworkReflectionInspector : NetworkIdentityInspector
     {
         private SerializedProperty _trackedBehaviour;
         private SerializedProperty _trackedFields;
         private SerializedProperty _ownerAuth;
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
+            base.OnEnable();
+            
             _trackedBehaviour = serializedObject.FindProperty("_trackedBehaviour");
             _trackedFields = serializedObject.FindProperty("_trackedFields");
             _ownerAuth = serializedObject.FindProperty("_ownerAuth");
@@ -66,7 +68,8 @@ namespace PurrNet.Editor
         
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
+            // base.OnInspectorGUI();
+            DrawDefaultInspector();
             
             var reflection = (NetworkReflection)target;
             var trackedType = reflection.trackedType;
@@ -142,6 +145,8 @@ namespace PurrNet.Editor
             
             EditorGUILayout.EndVertical();
             EditorGUI.EndProperty();
+            
+            DrawIdentityInspector();
             
             serializedObject.ApplyModifiedProperties();
         }

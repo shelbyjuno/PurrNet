@@ -9,7 +9,7 @@ namespace PurrNet.Editor
         private SerializedProperty _networkRules;
         private SerializedProperty _visitiblityRules;
         
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             _networkRules = serializedObject.FindProperty("_networkRules");
             _visitiblityRules = serializedObject.FindProperty("_visitiblityRules");
@@ -18,9 +18,16 @@ namespace PurrNet.Editor
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-
-            GUILayout.Space(5);
             
+            DrawIdentityInspector();
+            
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        protected void DrawIdentityInspector()
+        {
+            GUILayout.Space(5);
+
             var identity = (NetworkIdentity)target;
             
             if (!identity)
@@ -28,11 +35,9 @@ namespace PurrNet.Editor
                 EditorGUILayout.LabelField("Invalid identity");
                 return;
             }
-
+            
             HandleOverrides(identity);
             HandleStatus(identity);
-            
-            serializedObject.ApplyModifiedProperties();
         }
         
         private bool _foldoutVisible;
