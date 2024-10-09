@@ -54,10 +54,7 @@ namespace PurrNet
         public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
         {
             if (_raw_rules == null || _raw_rules.Count == 0)
-            {
-                PurrLogger.LogWarning("No visibility rules found, defaulting to true");
                 return true;
-            }
 
             if (identity.owner == playerId)
                 return true;
