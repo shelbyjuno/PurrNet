@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using Newtonsoft.Json.Linq;
 using PurrNet.Logging;
-using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -12,12 +11,12 @@ namespace PurrNet.Editor
 {
     public class AddonLibrary : EditorWindow
     {
-        private static List<Addon> _addons = new();
-        private static List<Addon> _exampleAddons = new();
-        private static List<Addon> _transportAddons = new();
-        private static List<Addon> _toolAddons = new();
-        private static List<Addon> _systemAddons = new();
-        private static List<UnityWebRequest> _imageRequests = new();
+        private static readonly List<Addon> _addons = new();
+        private static readonly List<Addon> _exampleAddons = new();
+        private static readonly List<Addon> _transportAddons = new();
+        private static readonly List<Addon> _toolAddons = new();
+        private static readonly List<Addon> _systemAddons = new();
+        private static readonly List<UnityWebRequest> _imageRequests = new();
 
         private static bool _fetchedAddons;
         private UnityWebRequest _request;
@@ -25,9 +24,9 @@ namespace PurrNet.Editor
         private Texture2D defaultIcon;
         private int selectedTab = 0;
 
-        private static int imageWidth = 100;
-        private static int sectionOneWidth = 250;
-        private static int sectionTwoWidth = 100;
+        private const int imageWidth = 100;
+        private const int sectionOneWidth = 250;
+        private const int sectionTwoWidth = 100;
 
         private GUIStyle wrapStyle;
         
@@ -37,7 +36,7 @@ namespace PurrNet.Editor
             _fetchedAddons = false;
             _imageRequests.Clear();
          
-            int width = (imageWidth + sectionOneWidth + sectionTwoWidth) * 2;
+            const int width = (imageWidth + sectionOneWidth + sectionTwoWidth) * 2;
             var window = GetWindow<AddonLibrary>("PurrNet Addon Library");
             window.minSize = new Vector2(width, 300);
             window.maxSize = new Vector2(width, 9999);
