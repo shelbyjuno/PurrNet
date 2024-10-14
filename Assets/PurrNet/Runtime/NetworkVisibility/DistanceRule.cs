@@ -8,6 +8,8 @@ namespace PurrNet
         [SerializeField] private float _distance = 30f;
 
         public override int complexity => 100;
+        
+        public override bool constant => false;
 
         public override bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
         {
