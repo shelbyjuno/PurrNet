@@ -38,8 +38,20 @@ namespace PurrNet.Modules
         private readonly ScenePlayersModule _scenePlayers;
         public readonly IdentitiesCollection identities;
 
+        /// <summary>
+        /// Called for each identity that is removed from the hierarchy.
+        /// </summary>
         public event Action<NetworkIdentity> onIdentityRemoved;
+        
+        /// <summary>
+        /// Called for each identity that is added to the hierarchy.
+        /// </summary>
         public event Action<NetworkIdentity> onIdentityAdded;
+        
+        /// <summary>
+        /// Called only for the root of the identity that was spawned.
+        /// </summary>
+        public event Action<NetworkIdentity> onIdentitySpawned;
         
         private readonly SceneID _sceneID;
         private readonly bool _asServer;
@@ -128,6 +140,8 @@ namespace PurrNet.Modules
         private void SpawnSceneObjectsServer(IReadOnlyList<NetworkIdentity> sceneObjects)
         {
             _isReady = true;
+            
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
 
             for (int i = 0; i < sceneObjects.Count; i++)
             {
@@ -147,11 +161,20 @@ namespace PurrNet.Modules
                 }, sceneObjects[i], 0, true);
                 
                 _sceneIdsCount++;
+                
+                roots.Add(sceneObjects[i]);
             }
+            
+            foreach (var root in roots)
+                onIdentitySpawned?.Invoke(root);
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
         }
         
         private void SpawnSceneObjectsClient(IReadOnlyList<NetworkIdentity> sceneObjects, NetworkID id)
         {
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+            
             for (ushort i = 0; i < sceneObjects.Count; i++)
             {
                 if (sceneObjects[i].isSpawned && !sceneObjects[i].isSceneObject)
@@ -165,7 +188,14 @@ namespace PurrNet.Modules
                     childOffset = 0,
                     transformInfo = default
                 }, sceneObjects[i], i, false);
+                
+                roots.Add(sceneObjects[i].root);
             }
+
+            foreach (var root in roots)
+                onIdentitySpawned?.Invoke(root);
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
         public void Disable(bool asServer)
@@ -432,6 +462,9 @@ namespace PurrNet.Modules
                 var child = CACHE[i];
                 SpawnIdentity(action, child, (ushort)i, _asServer);
             }
+            
+            if (CACHE.Count > 0)
+                onIdentitySpawned?.Invoke(CACHE[0]);
 
             if (!trsInfo.activeInHierarchy)
                 go.SetActive(false);
@@ -590,6 +623,8 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find networked components for '{instance.name}'");
                 return;
             }
+            
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
 
             for (int i = 0; i < CACHE.Count; i++)
             {
@@ -618,12 +653,18 @@ namespace PurrNet.Modules
                 if (child is NetworkTransform transform)
                     transform.onParentChanged += OnIdentityParentChanged;
             }
-
+            
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
                 child.PostSetIdentity();
+                roots.Add(child.root);
             }
+            
+            foreach (var root in roots)
+                onIdentitySpawned?.Invoke(root);
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
 
             var action = new SpawnAction
             {

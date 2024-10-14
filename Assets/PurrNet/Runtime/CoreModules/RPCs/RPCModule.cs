@@ -660,7 +660,7 @@ namespace PurrNet.Modules
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
             }
-            else PurrLogger.LogError($"Can't find identity with id {packet.networkId} in scene {packet.sceneId}.");
+            // else PurrLogger.LogError($"Can't find identity with id {packet.networkId} in scene {packet.sceneId}.");
             
             FreeStream(stream);
         }

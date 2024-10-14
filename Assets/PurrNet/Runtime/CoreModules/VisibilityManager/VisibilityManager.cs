@@ -34,10 +34,9 @@ namespace PurrNet
             if (!asServer)
                 return;
 
-            foreach (var existingIdentity in _hierarchy.identities.collection)
-                OnIdentityAdded(existingIdentity);
+            HandleExistingObjects();
             
-            _hierarchy.onIdentityAdded += OnIdentityAdded;
+            _hierarchy.onIdentitySpawned += OnIdentityAdded;
             _hierarchy.onIdentityRemoved += OnIdentityRemoved;
             
             _players.onPlayerLoadedScene += OnPlayerJoinedScene;
@@ -51,13 +50,25 @@ namespace PurrNet
             if (!asServer)
                 return;
             
-            _hierarchy.onIdentityAdded -= OnIdentityAdded;
+            _hierarchy.onIdentitySpawned -= OnIdentityAdded;
             _hierarchy.onIdentityRemoved -= OnIdentityRemoved;
             
             _players.onPlayerLoadedScene -= OnPlayerJoinedScene;
             _players.onPlayerLeftScene -= OnPlayerLeftScene;
             
             _playersManager.onPlayerLeft -= OnPlayerLeft;
+        }
+
+        private void HandleExistingObjects()
+        {
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+            foreach (var existingIdentity in _hierarchy.identities.collection)
+                roots.Add(existingIdentity.root);
+
+            foreach (var root in roots)
+                OnIdentityAdded(root);
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
         private void OnPlayerLeft(PlayerID player, bool asserver)
@@ -114,7 +125,7 @@ namespace PurrNet
                 PurrLogger.LogError("Identity has no ID when being added, won't keep track of observers.");
                 return;
             }
-
+            
             var root = identity.root;
 
             if (_players.TryGetPlayersInScene(_sceneId, out var players))
@@ -148,7 +159,7 @@ namespace PurrNet
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             
-            root.GetComponentsInChildren(children);
+            root.GetComponentsInChildren(true, children);
             
             bool visible = false;
             

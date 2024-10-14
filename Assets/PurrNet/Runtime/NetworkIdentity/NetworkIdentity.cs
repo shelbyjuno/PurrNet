@@ -112,10 +112,10 @@ namespace PurrNet
         /// The root identity is the topmost parent that has a NetworkIdentity.
         /// </summary>
         public NetworkIdentity root { get; private set; }
-
+        
         private NetworkIdentity GetRootIdentity()
         {
-            var lastKnown = this;
+            var lastKnown = gameObject.GetComponent<NetworkIdentity>();
             var current = transform.parent;
 
             while (current)
@@ -357,8 +357,14 @@ namespace PurrNet
             else idClient = identityId;
 
             if (asServer)
-                 internalOwnerServer = null;
-            else internalOwnerClient = null;
+            {
+                internalOwnerServer = null;
+                InternalOnServerTick();
+            }
+            else
+            {
+                internalOwnerClient = null;
+            }
             
             _lastEnabledState = enabled;
             _gameObject = gameObject;

@@ -82,11 +82,19 @@ namespace PurrNet.Editor
             
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
+        
+        private bool _debuggingVisible;
+        private bool _observersVisible;
 
-        private static void HandleStatus(NetworkIdentity identity)
+        private void HandleStatus(NetworkIdentity identity)
         {
             if (identity.isSpawned)
             {
+                var old = GUI.enabled;
+                GUI.enabled = true;
+                PrintObserversDropdown(identity);
+                GUI.enabled = old;
+
                 EditorGUILayout.BeginHorizontal("box");
                 EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
                 EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
@@ -99,6 +107,25 @@ namespace PurrNet.Editor
                 EditorGUILayout.LabelField("Not Spawned");
                 EditorGUILayout.EndHorizontal();
             }
+        }
+
+        private void PrintObserversDropdown(NetworkIdentity identity)
+        {
+            _observersVisible = EditorGUILayout.BeginFoldoutHeaderGroup(_observersVisible, $"Observers ({identity.observers.Count})");
+
+            if (_observersVisible)
+            {
+                EditorGUI.indentLevel++;
+                foreach (var observer in identity.observers)
+                {
+                    EditorGUILayout.BeginHorizontal("box");
+                    EditorGUILayout.LabelField(observer.ToString());
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
     }
 }
