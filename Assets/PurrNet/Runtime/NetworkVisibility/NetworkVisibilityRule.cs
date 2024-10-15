@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -12,18 +13,21 @@ namespace PurrNet
         }
 
         /// <summary>
-        /// Complexity of the rule.
-        /// Lower complexity means that the rule will be checked first.
-        /// If a rule is cheaper to check, it should have a lower complexity.
+        /// The higher the complexity the later the rule will be checked.
+        /// We will prioritize rules with lower complexity first.
         /// </summary>
         public abstract int complexity { get; }
         
-        /// <summary>
-        /// If the rule is constant, it will be checked only once.
-        /// This is useful for rules that are not dependent on the state of the game.
-        /// </summary>
-        public abstract bool constant { get; }
+        public virtual bool? hardCodedValue => null;
         
-        public abstract bool HasVisiblity(PlayerID playerId, NetworkIdentity identity);
+        /// <summary>
+        /// What can the player see?
+        /// </summary>
+        public abstract void GetObservedIdentities(IList<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId);
+        
+        /// <summary>
+        /// Who can see the identity?
+        /// </summary>
+        public abstract void GetObservers(IList<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity);
     }
 }

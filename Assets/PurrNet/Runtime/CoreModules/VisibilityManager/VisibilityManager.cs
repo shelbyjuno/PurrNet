@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -84,21 +85,54 @@ namespace PurrNet
             OnPlayerLeftScene(player, _sceneId, asserver);
         }
 
+        // GetObservedIdentities(List<NetworkCluster> result, HashSet<NetworkCluster> scope, PlayerID playerId)
+
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneId)
                 return;
 
             var allIdentities = _hierarchy.identities.collection;
-            var roots = HashSetPool<NetworkIdentity>.Instantiate();
             
+            var result = ListPool<NetworkCluster>.Instantiate();
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+            var clusters = HashSetPool<NetworkCluster>.Instantiate();
+
             foreach (var identity in allIdentities)
                 roots.Add(identity.root);
             
             foreach (var root in roots)
-                EvaluateVisibilityTree(player, root);
+            {
+                var children = ListPool<NetworkIdentity>.Instantiate();
+                root.GetComponentsInChildren(true, children);
+
+                var cluster = new NetworkCluster(children);
+                clusters.Add(cluster);
+            }
+
+            // evaluate global rules
+            var rules = _manager.visibilityRules;
             
+            if (!rules)
+                 result.AddRange(clusters);
+            else rules.GetObservedIdentities(result, clusters, player);
+            
+            // TODO: if we have missing things in result, we need to evaluate them individually
+            /*var leftOver = HashSetPool<NetworkCluster>.Instantiate();
+            leftOver.UnionWith(clusters);
+            leftOver.ExceptWith(result);*/
+            
+            // cleanup
+            foreach (var cluster in clusters)
+            {
+                UpdateVisiblityCluster(cluster, player);
+                ListPool<NetworkIdentity>.Destroy(cluster.children);
+            }
+            
+            HashSetPool<NetworkCluster>.Destroy(clusters);
             HashSetPool<NetworkIdentity>.Destroy(roots);
+            ListPool<NetworkCluster>.Destroy(result);
+            // HashSetPool<NetworkCluster>.Destroy(leftOver); TODO: dont forget to uncomment this
         }
 
         private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
@@ -130,11 +164,89 @@ namespace PurrNet
 
             if (_players.TryGetPlayersInScene(_sceneId, out var players))
             {
-                foreach (var player in players)
+                var result = ListPool<PlayerID>.Instantiate();
+
+                var rules = identity.visibilityRules;
+
+                if (!rules)
                 {
-                    EvaluateVisibilityTree(player, root);
+                    result.AddRange(players);
                 }
+                else
+                {
+                    rules.GetObservers(result, players, root);
+                    // TODO: if we have missing players, we need to evaluate them individually
+                }
+
+                UpdateVisiblityTree(identity, result);
+                ListPool<PlayerID>.Destroy(result);
             }
+        }
+        
+        private void UpdateVisiblityTree(NetworkIdentity identity, List<PlayerID> players)
+        {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            identity.GetComponentsInChildren(true, children);
+            UpdateVisiblityCluster(new NetworkCluster(children), players);
+            ListPool<NetworkIdentity>.Destroy(children);
+        }
+        
+        private void UpdateVisiblityCluster(NetworkCluster cluster, List<PlayerID> players)
+        {
+            var children = cluster.children;
+            var count = children.Count;
+            
+            for (var childIdx = 0; childIdx < count; childIdx++)
+                UpdateVisiblity(children[childIdx], players);
+        }
+        
+        private void UpdateVisiblityCluster(NetworkCluster cluster, PlayerID player)
+        {
+            var children = cluster.children;
+            var count = children.Count;
+            
+            for (var childIdx = 0; childIdx < count; childIdx++)
+                UpdateVisiblity(children[childIdx], player);
+        }
+        
+        private void UpdateVisiblity(NetworkIdentity identity, PlayerID player)
+        {
+            if (identity._observers.Add(player))
+            {
+                identity.TriggerOnObserverAdded(player);
+                onObserverAdded?.Invoke(player, identity);
+            }
+        }
+
+        private void UpdateVisiblity(NetworkIdentity identity, List<PlayerID> players)
+        {
+            var oldPlayers = HashSetPool<PlayerID>.Instantiate();
+            
+            oldPlayers.UnionWith(identity._observers);
+            oldPlayers.ExceptWith(players);
+                        
+            foreach (var player in oldPlayers)
+            {
+                identity._observers.Remove(player);
+                identity.TriggerOnObserverRemoved(player);
+                onObserverRemoved?.Invoke(player, identity);
+            }
+            
+            HashSetPool<PlayerID>.Destroy(oldPlayers);
+
+            var newPlayers = HashSetPool<PlayerID>.Instantiate();
+
+            newPlayers.UnionWith(players);
+            newPlayers.ExceptWith(identity._observers);
+            
+            foreach (var player in newPlayers)
+            {
+                identity._observers.Add(player);
+                identity.TriggerOnObserverAdded(player);
+                onObserverAdded?.Invoke(player, identity);
+            }
+            
+            HashSetPool<PlayerID>.Destroy(newPlayers);
         }
 
         private void OnIdentityRemoved(NetworkIdentity identity)
@@ -155,7 +267,7 @@ namespace PurrNet
         }
 
         // Isolate only roots and check roots, once one is visible, the whole tree is visible
-        private void EvaluateVisibilityTree(PlayerID player, NetworkIdentity root)
+        /*private void EvaluateVisibilityTree(PlayerID player, NetworkIdentity root)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             
@@ -200,7 +312,7 @@ namespace PurrNet
             }
             
             ListPool<NetworkIdentity>.Destroy(children);
-        }
+        }*/
         
         public void FixedUpdate()
         {

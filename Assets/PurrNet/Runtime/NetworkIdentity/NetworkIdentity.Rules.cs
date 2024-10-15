@@ -24,19 +24,8 @@ namespace PurrNet
 
         private NetworkRules networkRules => _networkRules ? _networkRules : networkManager.networkRules;
         
-        private NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
-
-        public bool HasVisibility(PlayerID playerId)
-        {
-            if (blacklist.Contains(playerId))
-                return false;
-            
-            if (whitelist.Contains(playerId))
-                return true;
-            
-            var rules = visibilityRules;
-            return rules && rules.HasVisiblity(playerId, this);
-        }
+        [UsedImplicitly]
+        public NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
         
         public bool HasDespawnAuthority(PlayerID player, bool asServer)
         {

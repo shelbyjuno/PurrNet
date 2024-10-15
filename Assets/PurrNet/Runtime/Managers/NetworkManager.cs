@@ -259,15 +259,14 @@ namespace PurrNet
             return ownershipModule.GetAllPlayerOwnedIds(player);
         }
         
+        public int playerCount => GetModule<PlayersManager>(isServer).players.Count;
+        
+        public IReadOnlyList<PlayerID> players => GetModule<PlayersManager>(isServer).players;
+        
         public IEnumerable<NetworkIdentity> EnumerateAllPlayerOwnedIds(PlayerID player, bool asServer)
         {
             var ownershipModule = GetModule<GlobalOwnershipModule>(asServer);
             return ownershipModule.EnumerateAllPlayerOwnedIds(player);
-        }
-        
-        public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
-        {
-            return _visibilityRules && _visibilityRules.HasVisiblity(playerId, identity);
         }
         
         public void AddVisibilityRule(NetworkManager manager, INetworkVisibilityRule rule)

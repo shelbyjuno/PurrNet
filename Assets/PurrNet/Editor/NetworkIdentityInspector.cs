@@ -90,10 +90,13 @@ namespace PurrNet.Editor
         {
             if (identity.isSpawned)
             {
-                var old = GUI.enabled;
-                GUI.enabled = true;
-                PrintObserversDropdown(identity);
-                GUI.enabled = old;
+                if (identity.isServer)
+                {
+                    var old = GUI.enabled;
+                    GUI.enabled = true;
+                    PrintObserversDropdown(identity);
+                    GUI.enabled = old;
+                }
 
                 EditorGUILayout.BeginHorizontal("box");
                 EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));

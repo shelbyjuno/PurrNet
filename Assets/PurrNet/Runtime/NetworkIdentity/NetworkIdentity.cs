@@ -338,13 +338,6 @@ namespace PurrNet
             Hasher.PrepareType(GetType());
             
             networkManager = manager;
-
-            if (_visitiblityRules && !_visitiblityRules.isInitialized)
-            {
-                _visitiblityRules = Instantiate(_visitiblityRules);
-                _visitiblityRules.Setup(manager);
-            }
-            
             sceneId = scene;
             prefabId = pid;
             siblingIndex = siblingIdx;
@@ -382,6 +375,12 @@ namespace PurrNet
             {
                 OnInitializeModules();
                 CallInitMethods();
+            }
+            
+            if (_visitiblityRules && !_visitiblityRules.isInitialized)
+            {
+                _visitiblityRules = Instantiate(_visitiblityRules);
+                _visitiblityRules.Setup(manager);
             }
         }
 

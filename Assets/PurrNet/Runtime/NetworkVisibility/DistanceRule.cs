@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -9,25 +10,56 @@ namespace PurrNet
 
         public override int complexity => 100;
         
-        public override bool constant => false;
-
-        public override bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
+        public override void GetObservedIdentities(IList<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId)
         {
-            if (identity.owner == playerId)
-                return true;
-            
-            var ownedIds = manager.EnumerateAllPlayerOwnedIds(playerId, true);
-            var myPos = identity.transform.position;
-            
-            foreach (var id in ownedIds)
+            foreach(var rootIdentity in scope)
             {
-                var distance = Vector3.Distance(myPos, id.transform.position);
-                
-                if (distance <= _distance)
-                    return true;
+                if (result.Contains(rootIdentity))
+                    continue;
+
+                foreach (var playerIdentity in manager.EnumerateAllPlayerOwnedIds(playerId, true))
+                {
+                    var playerPos = playerIdentity.transform.position;
+                    
+                    for (var childIdx = 0; childIdx < rootIdentity.children.Count; childIdx++)
+                    {
+                        var childIdentity = rootIdentity.children[childIdx];
+                        if (childIdentity.owner == playerId)
+                        {
+                            result.Add(rootIdentity);
+                            break;
+                        }
+                        
+                        var distance = Vector3.Distance(playerPos, childIdentity.transform.position);
+
+                        if (distance <= _distance)
+                        {
+                            result.Add(rootIdentity);
+                            break;
+                        }
+                    }
+                }
             }
-            
-            return false;
+        }
+
+        public override void GetObservers(IList<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity)
+        {
+            var myPos = networkIdentity.transform.position;
+
+            foreach(var player in players)
+            {
+                foreach (var playerIdentity in manager.EnumerateAllPlayerOwnedIds(player, true))
+                {
+                    var playerPos = playerIdentity.transform.position;
+                    var distance = Vector3.Distance(myPos, playerPos);
+
+                    if (distance <= _distance)
+                    {
+                        result.Add(player);
+                        break;
+                    }
+                }
+            }
         }
     }
 }

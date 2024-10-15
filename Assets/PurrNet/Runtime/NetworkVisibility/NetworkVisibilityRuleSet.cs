@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using PurrNet.Logging;
+using PurrNet.Pooling;
 using UnityEngine;
 
 namespace PurrNet
@@ -50,23 +50,56 @@ namespace PurrNet
         {
             _raw_rules.Remove(rule);
         }
-        
-        public bool HasVisiblity(PlayerID playerId, NetworkIdentity identity)
+
+        public void GetObservedIdentities(List<NetworkCluster> result, HashSet<NetworkCluster> scope, PlayerID playerId)
         {
-            if (_raw_rules == null || _raw_rules.Count == 0)
-                return true;
-
-            if (identity.owner == playerId)
-                return true;
-
+            using var tmpPool = new DisposableHashSet<NetworkCluster>(scope.Count);
+            tmpPool.UnionWith(scope);
+            
             for (int i = 0; i < _raw_rules.Count; i++)
             {
                 var rule = _raw_rules[i];
-                if (!rule.HasVisiblity(playerId, identity))
-                    return false;
-            }
+                
+                if (rule.hardCodedValue == true)
+                {
+                    result.AddRange(tmpPool);
+                    break;
+                }
+                
+                var resultTmp = ListPool<NetworkCluster>.Instantiate();
+                _raw_rules[i].GetObservedIdentities(resultTmp, tmpPool, playerId);
 
-            return true;
+                tmpPool.ExceptWith(resultTmp);
+
+                result.AddRange(resultTmp);
+                ListPool<NetworkCluster>.Destroy(resultTmp);
+            }
+        }
+
+        public void GetObservers(List<PlayerID> result, HashSet<PlayerID> players,
+            NetworkIdentity networkIdentity)
+        {
+            using var tmpPool = new DisposableHashSet<PlayerID>(players.Count);
+            tmpPool.UnionWith(players);
+            
+            for (int i = 0; i < _raw_rules.Count; i++)
+            {
+                var rule = _raw_rules[i];
+                
+                if (rule.hardCodedValue == true)
+                {
+                    result.AddRange(tmpPool);
+                    break;
+                }
+                
+                var resultTmp = ListPool<PlayerID>.Instantiate();
+                _raw_rules[i].GetObservers(resultTmp, tmpPool, networkIdentity);
+
+                tmpPool.ExceptWith(resultTmp);
+                
+                result.AddRange(resultTmp);
+                ListPool<PlayerID>.Destroy(resultTmp);
+            }
         }
     }
 }

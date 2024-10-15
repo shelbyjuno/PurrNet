@@ -59,7 +59,6 @@ namespace PurrNet.Modules
 
         // the id of the first network identity in the scene
         private NetworkID _sceneFirstNetworkID;
-        private int _sceneIdsCount;
         
         public string GetActionsAsString()
         {
@@ -159,8 +158,6 @@ namespace PurrNet.Modules
                     childOffset = 0,
                     transformInfo = default
                 }, sceneObjects[i], 0, true);
-                
-                _sceneIdsCount++;
                 
                 roots.Add(sceneObjects[i]);
             }
