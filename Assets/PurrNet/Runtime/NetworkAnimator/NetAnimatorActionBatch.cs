@@ -8,43 +8,48 @@ namespace PurrNet
     {
         public List<NetAnimatorRPC> actions;
         
-        public static NetAnimatorActionBatch CreateReconcile(Animator animator)
+        public static NetAnimatorActionBatch CreateReconcile(Animator animator, bool ik)
         {
             var actions = new List<NetAnimatorRPC>();
 
-            SyncParameters(animator, actions);
-            SyncAnimationState(animator, actions);
-            
-            SyncIK(AvatarIKGoal.LeftFoot, animator, actions);
-            SyncIK(AvatarIKGoal.RightFoot, animator, actions);
-            SyncIK(AvatarIKGoal.LeftHand, animator, actions);
-            SyncIK(AvatarIKGoal.RightHand, animator, actions);
-            
-            SyncIKHint(AvatarIKHint.LeftKnee, animator, actions);
-            SyncIKHint(AvatarIKHint.RightKnee, animator, actions);
-            SyncIKHint(AvatarIKHint.LeftElbow, animator, actions);
-            SyncIKHint(AvatarIKHint.RightElbow, animator, actions);
-            
-            actions.Add(new NetAnimatorRPC(new SetApplyRootMotion
+            if (ik)
             {
-                value = animator.applyRootMotion
-            }));
-            
-            actions.Add(new NetAnimatorRPC(new SetAnimatePhysics
-            {
-                value = animator.animatePhysics
-            }));
-            
-            actions.Add(new NetAnimatorRPC(new SetUpdateMode
-            {
-                value = animator.updateMode
-            }));
-            
-            actions.Add(new NetAnimatorRPC(new SetCullingMode
-            {
-                value = animator.cullingMode
-            }));
+                SyncIK(AvatarIKGoal.LeftFoot, animator, actions);
+                SyncIK(AvatarIKGoal.RightFoot, animator, actions);
+                SyncIK(AvatarIKGoal.LeftHand, animator, actions);
+                SyncIK(AvatarIKGoal.RightHand, animator, actions);
 
+                SyncIKHint(AvatarIKHint.LeftKnee, animator, actions);
+                SyncIKHint(AvatarIKHint.RightKnee, animator, actions);
+                SyncIKHint(AvatarIKHint.LeftElbow, animator, actions);
+                SyncIKHint(AvatarIKHint.RightElbow, animator, actions);
+            }
+            else
+            {
+                SyncParameters(animator, actions);
+                SyncAnimationState(animator, actions);
+
+                actions.Add(new NetAnimatorRPC(new SetApplyRootMotion
+                {
+                    value = animator.applyRootMotion
+                }));
+
+                actions.Add(new NetAnimatorRPC(new SetAnimatePhysics
+                {
+                    value = animator.animatePhysics
+                }));
+
+                actions.Add(new NetAnimatorRPC(new SetUpdateMode
+                {
+                    value = animator.updateMode
+                }));
+
+                actions.Add(new NetAnimatorRPC(new SetCullingMode
+                {
+                    value = animator.cullingMode
+                }));
+            }
+            
             return new NetAnimatorActionBatch
             {
                 actions = actions
@@ -113,6 +118,9 @@ namespace PurrNet
 
         private static void SyncAnimationState(Animator animator, List<NetAnimatorRPC> actions)
         {
+            if (!animator.runtimeAnimatorController)
+                return;
+            
             for (var i = 0; i < animator.layerCount; i++)
             {
                 var info = animator.GetCurrentAnimatorStateInfo(i);
@@ -127,6 +135,9 @@ namespace PurrNet
 
         private static void SyncParameters(Animator animator, List<NetAnimatorRPC> actions)
         {
+            if (!animator.runtimeAnimatorController)
+                return;
+            
             int paramCount = animator.parameterCount;
 
             for (var i = 0; i < paramCount; i++)
