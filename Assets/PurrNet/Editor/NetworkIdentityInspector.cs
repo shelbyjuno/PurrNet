@@ -98,9 +98,8 @@ namespace PurrNet.Editor
                     GUI.enabled = old;
                 }
 
-                bool sameId = identity.idServer == identity.idClient;
                 EditorGUILayout.BeginHorizontal("box");
-                EditorGUILayout.LabelField($"ID: {(sameId ? identity.id : $"S:{identity.idServer} | C: {identity.idClient}")}", GUILayout.Width(120));
+                EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
                 EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
                 EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");
                 EditorGUILayout.EndHorizontal();
