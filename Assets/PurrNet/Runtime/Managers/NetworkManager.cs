@@ -45,6 +45,18 @@ namespace PurrNet
         [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
         [SerializeField] private int _tickRate = 20;
 
+        public CookieScope cookieScope
+        {
+            get => _cookieScope;
+            set
+            {
+                if (isOffline)
+                    _cookieScope = value;
+                else
+                    PurrLogger.LogError("Failed to update cookie scope since a connection is active.");
+            }
+        }
+
         public StartFlags startServerFlags { get => _startServerFlags; set => _startServerFlags = value; }
 
         public StartFlags startClientFlags { get => _startClientFlags; set => _startClientFlags = value; }
