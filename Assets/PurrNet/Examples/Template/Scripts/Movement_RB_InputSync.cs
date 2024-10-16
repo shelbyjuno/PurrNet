@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PurrNet.Examples.Template
 {
-    public class Movement_RB_InputSync : NetworkBehaviour
+    public class Movement_RB_InputSync : NetworkBehaviour, ITick
     {
         [Header("Settings")]
         [SerializeField] private float moveForce = 5f;
@@ -48,7 +48,7 @@ namespace PurrNet.Examples.Template
             _rigidbody.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * visualRotationSpeed);
         }
 
-        protected override void OnTick(float delta)
+        public void OnTick(float delta)
         {
             if (isServer)
                 ServerTick();

@@ -17,7 +17,7 @@ namespace PurrNet
         Scale = 4
     }
     
-    public sealed class NetworkTransform : NetworkIdentity
+    public sealed class NetworkTransform : NetworkIdentity, ITick
     {
         [SerializeField, PurrLock] private TransformSyncMode _syncSettings = 
             TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
@@ -86,7 +86,7 @@ namespace PurrNet
         
         private int _ticksSinceLastSend;
 
-        protected override void OnTick(float delta)
+        public void OnTick(float delta)
         {
             if (isController)
             {

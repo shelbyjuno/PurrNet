@@ -95,10 +95,10 @@ namespace PurrNet
         public PlayerID? localPlayer => isSpawned && networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
             ? module.localPlayerId.Value : null;
         
-        internal event OnRootChanged onRootChanged;
-        internal event Action<NetworkIdentity> onRemoved;
-        internal event Action<NetworkIdentity, bool> onEnabledChanged;
-        internal event Action<NetworkIdentity, bool> onActivatedChanged;
+        public event OnRootChanged onRootChanged;
+        public event Action<NetworkIdentity> onRemoved;
+        public event Action<NetworkIdentity, bool> onEnabledChanged;
+        public event Action<NetworkIdentity, bool> onActivatedChanged;
         
         private bool _lastEnabledState;
         private GameObjectEvents _events;
@@ -131,15 +131,20 @@ namespace PurrNet
 
         private IServerSceneEvents _serverSceneEvents;
         private int onTickCount;
+        private ITick _ticker;
         
         private void InternalOnSpawn(bool asServer)
         {
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            if (_ticker == null && this is ITick ticker)
+                _ticker = ticker;
+            
             if (asServer)
             {
                 _serverTickManager = networkManager.GetModule<TickManager>(true);
                 _serverTickManager.onTick += ServerTick;
             }
-            else
+            else if (_ticker != null)
             {
                 _clientTickManager = networkManager.GetModule<TickManager>(false);
                 _clientTickManager.onTick += ClientTick;
@@ -173,27 +178,26 @@ namespace PurrNet
             {
                 _serverTickManager.onTick -= ServerTick;
             }
-            else _clientTickManager.onTick -= ClientTick;
-            
-            if (networkManager.TryGetModule<PlayersManager>(asServer, out var players))
+            else if (_ticker != null) 
             {
-                // ReSharper disable once SuspiciousTypeConversion.Global
-                if (this is IPlayerEvents events)
-                {
-                    players.onPlayerJoined -= events.OnPlayerConnected;
-                    players.onPlayerLeft -= events.OnPlayerDisconnected;
-                }
-                
-                if (networkManager.TryGetModule<ScenePlayersModule>(asServer, out var scenePlayers))
-                {
-                    // ReSharper disable once SuspiciousTypeConversion.Global
-                    if (_serverSceneEvents != null)
-                    {
-                        scenePlayers.onPlayerJoinedScene -= OnServerJoinedScene;
-                        scenePlayers.onPlayerLeftScene -= OnServerLeftScene;
-                    }
-                }
+                _clientTickManager.onTick -= ClientTick;
             }
+
+            if (!networkManager.TryGetModule<PlayersManager>(asServer, out var players)) return;
+            
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            if (this is IPlayerEvents events)
+            {
+                players.onPlayerJoined -= events.OnPlayerConnected;
+                players.onPlayerLeft -= events.OnPlayerDisconnected;
+            }
+
+            if (!networkManager.TryGetModule<ScenePlayersModule>(asServer, out var scenePlayers)) return;
+            
+            if (_serverSceneEvents == null) return;
+            
+            scenePlayers.onPlayerJoinedScene -= OnServerJoinedScene;
+            scenePlayers.onPlayerLeftScene -= OnServerLeftScene;
         }
         
         void OnServerJoinedScene(PlayerID player, SceneID scene, bool asserver)
@@ -222,32 +226,27 @@ namespace PurrNet
         
         private void ClientTick()
         {
-            OnTick(_clientTickManager.tickDelta);
+            _ticker.OnTick(_clientTickManager.tickDelta);
         }
 
         private void ServerTick()
         {
             InternalOnServerTick();
 
-            if (!isClient)
-                OnTick(_serverTickManager.tickDelta);
+            if (!isClient && _ticker != null)
+                _ticker.OnTick(_serverTickManager.tickDelta);
         }
 
         internal PlayerID? GetOwner(bool asServer) => asServer ? internalOwnerServer : internalOwnerClient;
 
-        internal bool IsSpawned(bool asServer) => asServer ? idServer.HasValue : idClient.HasValue;
+        [UsedImplicitly]
+        public bool IsSpawned(bool asServer) => asServer ? idServer.HasValue : idClient.HasValue;
 
         protected virtual void OnSpawned() { }
         
         protected virtual void OnDespawned() { }
         
         protected virtual void OnSpawned(bool asServer) { }
-        
-        /// <summary>
-        /// Similar to FixedUpdate but tailored for networked objects and it's tick system.
-        /// </summary>
-        /// <param name="delta"></param>
-        protected virtual void OnTick(float delta) {}
         
         protected virtual void OnInitializeModules() { }
         
@@ -326,11 +325,10 @@ namespace PurrNet
 
         internal void PostSetIdentity()
         {
-            if (_pendingOwnershipRequest.HasValue)
-            {
-                GiveOwnershipInternal(_pendingOwnershipRequest.Value);
-                _pendingOwnershipRequest = null;
-            }
+            if (!_pendingOwnershipRequest.HasValue) return;
+            
+            GiveOwnershipInternal(_pendingOwnershipRequest.Value);
+            _pendingOwnershipRequest = null;
         }
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
@@ -529,19 +527,6 @@ namespace PurrNet
         public void TriggerOnObserverRemoved(PlayerID target)
         {
             OnObserverRemoved(target);
-        }
-        
-        [ContextMenu("Network Debugging/Print Observers")]
-        public void PrintObservers()
-        {
-            if (networkManager.TryGetModule<VisibilityFactory>(isServer, out var factory) && factory.TryGetVisibilityManager(sceneId, out var manager))
-            {
-                Debug.Log("Observers: " + string.Join(", ", _observers));
-            }
-            else
-            {
-                Debug.Log("No visibility manager.");
-            }
         }
     }
 }

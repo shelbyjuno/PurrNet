@@ -46,16 +46,14 @@ namespace PurrNet
         /// </summary>
         int complexity { get; }
         
-        bool? hardCodedValue { get; }
-        
         /// <summary>
         /// What can the player see?
         /// </summary>
-        void GetObservedIdentities(IList<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId);
+        void GetObservedIdentities(List<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId);
 
         /// <summary>
         /// Who can see the identity?
         /// </summary>
-        void GetObservers(IList<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity);
+        void GetObservers(List<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity);
     }
 }

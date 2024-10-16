@@ -26,6 +26,11 @@ namespace PurrNet
         
         [UsedImplicitly]
         public NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
+
+        public NetworkVisibilityRuleSet GetOverrideOrDefault(NetworkVisibilityRuleSet defaultValue)
+        {
+            return _visitiblityRules ? _visitiblityRules : defaultValue;
+        }
         
         public bool HasDespawnAuthority(PlayerID player, bool asServer)
         {

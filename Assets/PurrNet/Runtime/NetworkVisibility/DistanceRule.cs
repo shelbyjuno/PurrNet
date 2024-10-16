@@ -10,7 +10,7 @@ namespace PurrNet
 
         public override int complexity => 100;
         
-        public override void GetObservedIdentities(IList<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId)
+        public override void GetObservedIdentities(List<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId)
         {
             foreach(var rootIdentity in scope)
             {
@@ -24,6 +24,7 @@ namespace PurrNet
                     for (var childIdx = 0; childIdx < rootIdentity.children.Count; childIdx++)
                     {
                         var childIdentity = rootIdentity.children[childIdx];
+                        
                         if (childIdentity.owner == playerId)
                         {
                             result.Add(rootIdentity);
@@ -42,7 +43,7 @@ namespace PurrNet
             }
         }
 
-        public override void GetObservers(IList<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity)
+        public override void GetObservers(List<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity)
         {
             var myPos = networkIdentity.transform.position;
 
@@ -53,11 +54,9 @@ namespace PurrNet
                     var playerPos = playerIdentity.transform.position;
                     var distance = Vector3.Distance(myPos, playerPos);
 
-                    if (distance <= _distance)
-                    {
-                        result.Add(player);
-                        break;
-                    }
+                    if (!(distance <= _distance)) continue;
+                    result.Add(player);
+                    break;
                 }
             }
         }

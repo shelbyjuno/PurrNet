@@ -51,31 +51,6 @@ namespace PurrNet
             _raw_rules.Remove(rule);
         }
 
-        public void GetObservedIdentities(List<NetworkCluster> result, HashSet<NetworkCluster> scope, PlayerID playerId)
-        {
-            using var tmpPool = new DisposableHashSet<NetworkCluster>(scope.Count);
-            tmpPool.UnionWith(scope);
-            
-            for (int i = 0; i < _raw_rules.Count; i++)
-            {
-                var rule = _raw_rules[i];
-                
-                if (rule.hardCodedValue == true)
-                {
-                    result.AddRange(tmpPool);
-                    break;
-                }
-                
-                var resultTmp = ListPool<NetworkCluster>.Instantiate();
-                _raw_rules[i].GetObservedIdentities(resultTmp, tmpPool, playerId);
-
-                tmpPool.ExceptWith(resultTmp);
-
-                result.AddRange(resultTmp);
-                ListPool<NetworkCluster>.Destroy(resultTmp);
-            }
-        }
-
         public void GetObservers(List<PlayerID> result, HashSet<PlayerID> players,
             NetworkIdentity networkIdentity)
         {
@@ -85,20 +60,11 @@ namespace PurrNet
             for (int i = 0; i < _raw_rules.Count; i++)
             {
                 var rule = _raw_rules[i];
+                rule.GetObservers(result, tmpPool, networkIdentity);
+                tmpPool.ExceptWith(result);
                 
-                if (rule.hardCodedValue == true)
-                {
-                    result.AddRange(tmpPool);
+                if (tmpPool.Count == 0)
                     break;
-                }
-                
-                var resultTmp = ListPool<PlayerID>.Instantiate();
-                _raw_rules[i].GetObservers(resultTmp, tmpPool, networkIdentity);
-
-                tmpPool.ExceptWith(resultTmp);
-                
-                result.AddRange(resultTmp);
-                ListPool<PlayerID>.Destroy(resultTmp);
             }
         }
     }

@@ -4,6 +4,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+#pragma warning disable CS0618 // Type or member is obsolete
 
 namespace AssetStoreTools.Uploader.UIElements
 {

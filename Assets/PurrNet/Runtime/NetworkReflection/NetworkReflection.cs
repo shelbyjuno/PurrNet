@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace PurrNet
 {
-    public class NetworkReflection : NetworkIdentity
+    public class NetworkReflection : NetworkIdentity, ITick
     {
         [SerializeField, HideInInspector] Behaviour _trackedBehaviour;
         [SerializeField, HideInInspector] List<ReflectionData> _trackedFields;
@@ -51,7 +51,7 @@ namespace PurrNet
             }
         }
 
-        protected override void OnTick(float delta)
+        public void OnTick(float delta)
         {
             if (!IsController(_ownerAuth)) return;
             

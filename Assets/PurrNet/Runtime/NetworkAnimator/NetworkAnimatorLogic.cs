@@ -4,7 +4,7 @@ using PurrNet.Logging;
 
 namespace PurrNet
 {
-    public partial class NetworkAnimator
+    public sealed partial class NetworkAnimator : ITick
     {
         readonly List<NetAnimatorRPC> _dirty = new ();
         readonly List<NetAnimatorRPC> _ikActions = new ();
@@ -17,7 +17,7 @@ namespace PurrNet
             _reconcilePlayers.Add(player);
         }
 
-        protected override void OnTick(float delta)
+        public void OnTick(float delta)
         {
             if (!IsController(isController))
             {
@@ -96,7 +96,7 @@ namespace PurrNet
             _dirty.Clear();
         }
 
-        protected virtual void OnAnimatorIK(int layerIndex)
+        private void OnAnimatorIK(int layerIndex)
         {
             if (IsController(isController))
             {

@@ -6,7 +6,7 @@ using UnityEngine.Playables;
 
 namespace PurrNet
 {
-    public partial class NetworkAnimator : NetworkIdentity
+    public sealed partial class NetworkAnimator : NetworkIdentity
     {
         [Tooltip("The animator to sync")]
         [SerializeField, PurrLock] private Animator _animator;
@@ -33,9 +33,9 @@ namespace PurrNet
         
         private void IfSameTypeReplace(NetAnimatorRPC action)
         {
-            if (_dirty.Count > 0 && _dirty[_dirty.Count - 1].type == action.type)
+            if (_dirty.Count > 0 && _dirty[^1].type == action.type)
             {
-                _dirty[_dirty.Count - 1] = action;
+                _dirty[^1] = action;
             }
             else
             {
@@ -45,11 +45,11 @@ namespace PurrNet
         
         private void IfSameReplace(NetAnimatorRPC action, Func<NetAnimatorRPC, NetAnimatorRPC, bool> predicate)
         {
-            if (_dirty.Count > 0 && _dirty[_dirty.Count - 1].type == action.type)
+            if (_dirty.Count > 0 && _dirty[^1].type == action.type)
             {
-                var other = _dirty[_dirty.Count - 1];
+                var other = _dirty[^1];
                 if (predicate(action, other))
-                    _dirty[_dirty.Count - 1] = action;
+                    _dirty[^1] = action;
                 else _dirty.Add(action);
             }
             else
