@@ -1,7 +1,5 @@
 using System;
-using System.Data;
 using JetBrains.Annotations;
-using PurrNet.Logging;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
@@ -32,9 +30,19 @@ namespace PurrNet
         [Tooltip("The interval in ticks to send the transform data. 0 means send every tick.")]
         [SerializeField, Min(0), PurrLock] private int _sendIntervalInTicks;
 
-        bool syncPosition => _syncSettings.HasFlag(TransformSyncMode.Position);
-        bool syncRotation => _syncSettings.HasFlag(TransformSyncMode.Rotation);
-        bool syncScale => _syncSettings.HasFlag(TransformSyncMode.Scale);
+        public bool syncPosition => _syncSettings.HasFlag(TransformSyncMode.Position);
+        
+        public bool syncRotation => _syncSettings.HasFlag(TransformSyncMode.Rotation);
+        
+        public bool syncScale => _syncSettings.HasFlag(TransformSyncMode.Scale);
+        
+        public bool ownerAuth => _ownerAuth;
+
+        public int sendIntervalInTicks
+        {
+            get => _sendIntervalInTicks;
+            set => _sendIntervalInTicks = value;
+        }
         
         Transform _lastValidParent;
         
