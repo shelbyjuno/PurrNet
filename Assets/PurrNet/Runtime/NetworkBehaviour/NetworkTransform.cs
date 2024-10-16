@@ -22,6 +22,9 @@ namespace PurrNet
         [SerializeField, PurrLock] private TransformSyncMode _syncSettings = 
             TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
         
+        [SerializeField, PurrLock] private TransformSyncMode _interpolateSettings = 
+            TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
+        
         [FormerlySerializedAs("_clientAuth")]
         
         [Tooltip("If true, the client can send transform data to the server. If false, the client can't send transform data to the server.")]
@@ -35,6 +38,12 @@ namespace PurrNet
         public bool syncRotation => _syncSettings.HasFlag(TransformSyncMode.Rotation);
         
         public bool syncScale => _syncSettings.HasFlag(TransformSyncMode.Scale);
+        
+        public bool interpolatePosition => _interpolateSettings.HasFlag(TransformSyncMode.Position);
+        
+        public bool interpolateRotation => _interpolateSettings.HasFlag(TransformSyncMode.Rotation);
+        
+        public bool interpolateScale => _interpolateSettings.HasFlag(TransformSyncMode.Scale);
         
         public bool ownerAuth => _ownerAuth;
 
@@ -62,6 +71,10 @@ namespace PurrNet
         private bool _prevWasController;
 
         private new bool isController => hasConnectedOwner ? (isOwner && _ownerAuth) || (!_ownerAuth && isServer) : isServer;
+        
+        static Vector3 NoInterpolation(Vector3 a, Vector3 b, float t) => b;
+        
+        static Quaternion NoInterpolation(Quaternion a, Quaternion b, float t) => b;
 
         private void Awake()
         {
@@ -72,15 +85,15 @@ namespace PurrNet
             ValidateParent();
             
             float sendDelta = (_sendIntervalInTicks + 1) * Time.fixedDeltaTime;
-
+            
             if (syncPosition)
-                _position = new Interpolated<Vector3>(Vector3.Lerp, sendDelta, _trs.position);
+                _position = new Interpolated<Vector3>(interpolatePosition ? Vector3.Lerp : NoInterpolation, sendDelta, _trs.position);
             
             if (syncRotation)
-                _rotation = new Interpolated<Quaternion>(Quaternion.Lerp, sendDelta, _trs.rotation);
+                _rotation = new Interpolated<Quaternion>(interpolateRotation ? Quaternion.Lerp : NoInterpolation, sendDelta, _trs.rotation);
             
             if (syncScale)
-                _scale = new Interpolated<Vector3>(Vector3.Lerp, sendDelta, _trs.localScale);
+                _scale = new Interpolated<Vector3>(interpolateScale ? Vector3.Lerp : NoInterpolation, sendDelta, _trs.localScale);
         }
 
         protected override void OnSpawned()
