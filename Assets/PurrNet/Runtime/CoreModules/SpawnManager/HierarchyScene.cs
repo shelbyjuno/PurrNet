@@ -291,6 +291,8 @@ namespace PurrNet.Modules
                 case HierarchyActionType.SetEnabled:
                     HandleSetEnabled(player, data.setEnabledAction);
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

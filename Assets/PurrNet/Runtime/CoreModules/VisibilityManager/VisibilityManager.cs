@@ -184,11 +184,10 @@ namespace PurrNet
             ListPool<PlayerID>.Destroy(result);
         }
         
-        private void EvaluateVisibilityForAllPlayers(NetworkIdentity identity, HashSet<PlayerID> players)
+        private void EvaluateVisibilityForAllPlayers(NetworkIdentity root, HashSet<PlayerID> players)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             var result = ListPool<PlayerID>.Instantiate();
-            var root = identity.root;
             var rules = _manager.visibilityRules;
 
             root.GetComponentsInChildren(true, children);
@@ -294,21 +293,25 @@ namespace PurrNet
 
         public void FixedUpdate()
         {
-            /* TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
+            if (!_players.TryGetPlayersInScene(_sceneId, out var players))
+                return;
+            
+            // TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
             var allIdentities = _hierarchy.identities.collection;
-
+            
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+            var copy = HashSetPool<PlayerID>.Instantiate();
+            copy.UnionWith(players);
+            
             foreach (var identity in allIdentities)
             {
-                var id = identity.id;
-                
-                if (!id.HasValue)
-                    continue;
-                
-                if (!_observers.TryGetValue(id.Value, out var observers))
-                    continue;
-                
-                EvaluateVisibility(identity, observers);
-            }*/
+                var root = identity.root;
+                if (!roots.Add(root)) continue;
+                EvaluateVisibilityForAllPlayers(root, copy);
+            }
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
+            HashSetPool<PlayerID>.Destroy(copy);
         }
     }
 }
