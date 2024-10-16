@@ -80,8 +80,8 @@ namespace PurrNet
         private TickManager _serverTickManager;
         private TickManager _clientTickManager;
 
-        private NetworkID? idServer;
-        private NetworkID? idClient;
+        public NetworkID? idServer;
+        public NetworkID? idClient;
         
         /// <summary>
         /// Returns the owner of this object.
@@ -434,6 +434,9 @@ namespace PurrNet
             if (_ignoreNextDestroy)
             {
                 _ignoreNextDestroy = false;
+                
+                TriggerDespawnEvent(true);
+                TriggerDespawnEvent(false);
                 return;
             }
             
@@ -441,6 +444,11 @@ namespace PurrNet
                 return;
 
             onRemoved?.Invoke(this);
+            
+            TriggerDespawnEvent(true);
+            TriggerDespawnEvent(false);
+
+            _ticker = null;
         }
         
         private bool _ignoreNextActivation;
