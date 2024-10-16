@@ -47,11 +47,6 @@ namespace PurrNet
         int complexity { get; }
         
         /// <summary>
-        /// What can the player see?
-        /// </summary>
-        void GetObservedIdentities(List<NetworkCluster> result, ISet<NetworkCluster> scope, PlayerID playerId);
-
-        /// <summary>
         /// Who can see the identity?
         /// </summary>
         void GetObservers(List<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity);

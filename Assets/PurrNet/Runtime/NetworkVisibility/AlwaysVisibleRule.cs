@@ -8,12 +8,6 @@ namespace PurrNet
     {
         public override int complexity => 0;
 
-        public override void GetObservedIdentities(List<NetworkCluster> result, ISet<NetworkCluster> scope,
-            PlayerID playerId)
-        {
-            result.AddRange(scope);
-        }
-
         public override void GetObservers(List<PlayerID> result, ISet<PlayerID> players,
             NetworkIdentity networkIdentity)
         {

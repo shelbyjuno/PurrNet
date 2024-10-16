@@ -87,8 +87,6 @@ namespace PurrNet
             OnPlayerLeftScene(player, _sceneId, asserver);
         }
 
-        // GetObservedIdentities(List<NetworkCluster> result, HashSet<NetworkCluster> scope, PlayerID playerId)
-
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneId)
