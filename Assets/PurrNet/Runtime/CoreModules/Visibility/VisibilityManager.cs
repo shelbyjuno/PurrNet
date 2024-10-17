@@ -156,13 +156,6 @@ namespace PurrNet
             for (int i = 0; i < children.Count; ++i)
             {
                 var child = children[i];
-                
-                if (child.isOwner)
-                {
-                    result.AddRange(players);
-                    break;
-                }
-                
                 rules = child.GetOverrideOrDefault(rules);
 
                 if (!rules)
@@ -193,21 +186,14 @@ namespace PurrNet
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             var result = ListPool<PlayerID>.Instantiate();
-            var rules = _manager.visibilityRules;
+            var globalRules = _manager.visibilityRules;
 
             root.GetComponentsInChildren(true, children);
-
+            
             for (int i = 0; i < children.Count; ++i)
             {
                 var child = children[i];
-
-                if (child.isOwner)
-                {
-                    result.AddRange(players);
-                    break;
-                }
-                
-                rules = child.GetOverrideOrDefault(rules);
+                var rules = child.GetOverrideOrDefault(globalRules);
                     
                 if (!rules)
                 {
@@ -269,21 +255,19 @@ namespace PurrNet
                 onObserverRemoved?.Invoke(player, identity);
             }
             
-            HashSetPool<PlayerID>.Destroy(oldPlayers);
+            oldPlayers.Clear();
 
-            var newPlayers = HashSetPool<PlayerID>.Instantiate();
-
-            newPlayers.UnionWith(players);
-            newPlayers.ExceptWith(identity._observers);
+            oldPlayers.UnionWith(players);
+            oldPlayers.ExceptWith(identity._observers);
             
-            foreach (var player in newPlayers)
+            foreach (var player in oldPlayers)
             {
                 identity._observers.Add(player);
                 identity.TriggerOnObserverAdded(player);
                 onObserverAdded?.Invoke(player, identity);
             }
             
-            HashSetPool<PlayerID>.Destroy(newPlayers);
+            HashSetPool<PlayerID>.Destroy(oldPlayers);
         }
 
         private void OnIdentityRemoved(NetworkIdentity identity)
@@ -305,25 +289,24 @@ namespace PurrNet
 
         public void FixedUpdate()
         {
-            /*if (!_players.TryGetPlayersInScene(_sceneId, out var players))
+            if (!_players.TryGetPlayersInScene(_sceneId, out var players))
                 return;
             
-            // TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
             var allIdentities = _hierarchy.identities.collection;
-            
             var roots = HashSetPool<NetworkIdentity>.Instantiate();
             var copy = HashSetPool<PlayerID>.Instantiate();
-            copy.UnionWith(players);
             
             foreach (var identity in allIdentities)
             {
                 var root = identity.root;
                 if (!roots.Add(root)) continue;
+                
+                copy.UnionWith(players);
                 EvaluateVisibilityForAllPlayers(root, copy);
             }
             
             HashSetPool<NetworkIdentity>.Destroy(roots);
-            HashSetPool<PlayerID>.Destroy(copy);*/
+            HashSetPool<PlayerID>.Destroy(copy);
         }
     }
 }

@@ -7,7 +7,7 @@ namespace PurrNet.Pooling
     public struct DisposableHashSet<T> : ISet<T>, IDisposable
     {
         private bool _disposed;
-        private readonly ISet<T> _set;
+        private readonly HashSet<T> _set;
 
         public DisposableHashSet(int capacity)
         {
@@ -24,7 +24,7 @@ namespace PurrNet.Pooling
         {
             if (_disposed) return;
 
-            HashSetPool<T>.Destroy((HashSet<T>)_set);
+            HashSetPool<T>.Destroy(_set);
             _disposed = true;
         }
 
