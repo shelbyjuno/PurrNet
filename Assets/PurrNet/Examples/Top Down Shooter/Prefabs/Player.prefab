@@ -243,9 +243,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncSettings: 255
+  _syncSettings: 7
+  _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
+    redundancyTicks: 5
 --- !u!1 &5717227225040451160
 GameObject:
   m_ObjectHideFlags: 0

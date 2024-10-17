@@ -16,6 +16,17 @@ namespace PurrNet
         Rotation = 2,
         Scale = 4
     }
+
+    [Serializable]
+    public struct Tolerances
+    {
+        [Tooltip("How far the position can be from the target position before it is considered out of sync.")]
+        [Min(0)] public float positionTolerance;
+        [Tooltip("How far the rotation angle can be from the target rotation angle before it is considered out of sync.")]
+        [Min(0)] public float rotationAngleTolerance;
+        [Tooltip("How far the scale can be from the target scale before it is considered out of sync.")]
+        [Min(0)] public float scaleTolerance;
+    }
     
     public sealed class NetworkTransform : NetworkIdentity, ITick
     {
@@ -31,7 +42,20 @@ namespace PurrNet
         [SerializeField, PurrLock] private bool _ownerAuth = true;
         
         [Tooltip("The interval in ticks to send the transform data. 0 means send every tick.")]
-        [SerializeField, Min(0), PurrLock] private int _sendIntervalInTicks;
+        [SerializeField, Min(0)] private int _sendIntervalInTicks;
+
+        [SerializeField] private Tolerances _tolerances = new()
+        {
+            rotationAngleTolerance = 1,
+            positionTolerance = 0.1f,
+            scaleTolerance = 0.05f
+        };
+
+        public Tolerances tolerances
+        {
+            get => _tolerances;
+            set => _tolerances = value;
+        }
 
         public bool syncPosition => _syncSettings.HasFlag(TransformSyncMode.Position);
         
@@ -101,13 +125,14 @@ namespace PurrNet
             _isFirstTransform = true;
         }
 
-        protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
+        protected override void OnObserverAdded(PlayerID player)
         {
-            if (asServer)
-                SendLatestTransform(ownerId, GetCurrentTransformData());
+            SendLatestTransform(player, GetCurrentTransformData());
         }
-        
+
         private int _ticksSinceLastSend;
+        private bool _wasLastDirty;
+        private NetworkTransformData _lastSentData;
 
         public void OnTick(float delta)
         {
@@ -116,10 +141,26 @@ namespace PurrNet
                 if (_ticksSinceLastSend >= _sendIntervalInTicks)
                 {
                     _ticksSinceLastSend = 0;
-                    
-                    if (isServer)
-                        SendToAll(GetCurrentTransformData());
-                    else SendTransformToServer(GetCurrentTransformData());
+
+                    var data = GetCurrentTransformData();
+
+                    if (!data.Equals(_lastSentData, _tolerances))
+                    {
+                        if (isServer)
+                             SendToAll(data);
+                        else SendTransformToServer(data);
+
+                        _wasLastDirty = true;
+                        _lastSentData = data;
+                    }
+                    else if (_wasLastDirty)
+                    {
+                        if (isServer)
+                             SendToAllReliable(data);
+                        else SendTransformToServerReliably(data);
+                        
+                        _wasLastDirty = false;
+                    }
                 }
                 else
                 {
@@ -165,13 +206,15 @@ namespace PurrNet
                 _controller.enabled = true;
         }
 
-        private TransformData GetCurrentTransformData()
+        private ushort _id;
+        
+        private NetworkTransformData GetCurrentTransformData()
         {
-            return new TransformData(_trs.position, _trs.rotation, _trs.localScale);
+            return new NetworkTransformData(_id++, _trs.position, _trs.rotation, _trs.localScale);
         }
         
-        [ServerRPC(Channel.UnreliableSequenced, requireOwnership: true)]
-        private void SendTransformToServer(TransformData data)
+        [ServerRPC(Channel.Unreliable, requireOwnership: true)]
+        private void SendTransformToServer(NetworkTransformData data)
         {
             // If clientAuth is disabled, the client can't send transform data to the server
             if (!_ownerAuth) return;
@@ -183,24 +226,64 @@ namespace PurrNet
             SendToOthers(data);
         }
         
-        [ObserversRPC(Channel.UnreliableSequenced, excludeOwner: true)]
-        private void SendToOthers(TransformData data)
+        [ServerRPC(Channel.ReliableUnordered, requireOwnership: true)]
+        private void SendTransformToServerReliably(NetworkTransformData data)
+        {
+            // If clientAuth is disabled, the client can't send transform data to the server
+            if (!_ownerAuth) return;
+            
+            // Apply the transform data to the server
+            ReceiveTransform_Internal(data);
+            
+            // Send the transform data to others expect the owner
+            SendToOthersReliably(data);
+        }
+        
+        [ObserversRPC(Channel.ReliableUnordered, excludeOwner: true)]
+        private void SendToOthersReliably(NetworkTransformData data)
         {
             if (isHost) return;
             
             ReceiveTransform_Internal(data);
         }
-
-        [ObserversRPC(Channel.UnreliableSequenced)]
-        private void SendToAll(TransformData data)
+        
+        [ObserversRPC(Channel.Unreliable, excludeOwner: true)]
+        private void SendToOthers(NetworkTransformData data)
+        {
+            if (isHost) return;
+            
+            ReceiveTransform_Internal(data);
+        }
+        
+        [ObserversRPC(Channel.ReliableUnordered)]
+        private void SendToAllReliable(NetworkTransformData data)
         {
             if (isHost) return;
 
             ReceiveTransform_Internal(data);
         }
 
-        private void ReceiveTransform_Internal(TransformData data)
+        [ObserversRPC(Channel.Unreliable)]
+        private void SendToAll(NetworkTransformData data)
         {
+            if (isHost) return;
+
+            ReceiveTransform_Internal(data);
+        }
+        
+        private void ReceiveTransform_Internal(NetworkTransformData data)
+        {
+            if (isController)
+                return;
+
+            // if we receive an old transform, ignore it
+            if (data.id <= _id)
+                return;
+            
+            // update the last received id in case we switch to a new owner
+            // that way the new owner will send the latest transform
+            _id = data.id;
+            
             if (_isFirstTransform)
             {
                 _isFirstTransform = false;
@@ -213,7 +296,7 @@ namespace PurrNet
             }
         }
 
-        private void ApplyTransformData(TransformData data, bool teleport)
+        private void ApplyTransformData(NetworkTransformData data, bool teleport)
         {
             if (syncPosition)
             {
@@ -235,8 +318,10 @@ namespace PurrNet
         }
 
         [TargetRPC]
-        private void SendLatestTransform([UsedImplicitly] PlayerID player, TransformData data)
+        private void SendLatestTransform([UsedImplicitly] PlayerID player, NetworkTransformData data)
         {
+            _id = data.id;
+            
             ApplyTransformData(data, true);
             ApplyLerpedPosition();
         }
@@ -273,20 +358,6 @@ namespace PurrNet
         internal void StopIgnoreParentChanged()
         {
             _isResettingParent = false;
-        }
-    }
-
-    public struct TransformData
-    {
-        public Vector3 position;
-        public Quaternion rotation;
-        public Vector3 scale;
-        
-        public TransformData(Vector3 position, Quaternion rotation, Vector3 scale)
-        {
-            this.position = position;
-            this.rotation = rotation;
-            this.scale = scale;
         }
     }
 }
