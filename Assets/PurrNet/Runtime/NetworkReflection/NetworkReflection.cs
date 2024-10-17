@@ -4,12 +4,13 @@ using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet
 {
     public class NetworkReflection : NetworkIdentity, ITick
     {
-        [SerializeField, HideInInspector] Behaviour _trackedBehaviour;
+        [SerializeField, HideInInspector] Object _trackedBehaviour;
         [SerializeField, HideInInspector] List<ReflectionData> _trackedFields;
         [SerializeField, HideInInspector] private bool _ownerAuth = true;
 

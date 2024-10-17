@@ -13,7 +13,7 @@ namespace PurrNet
         
         public object lastValue { get; private set; }
         
-        public ReflectedValue(Behaviour target, ReflectionData data)
+        public ReflectedValue(UnityEngine.Object target, ReflectionData data)
         {
             var type = target.GetType();
 

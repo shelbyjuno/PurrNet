@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using UnityEngine;
 
 namespace PurrNet
 {
@@ -38,7 +37,7 @@ namespace PurrNet
             return null;
         }
 
-        public Action<object> GetSetter(Behaviour target, Type reflectionType, out Type valueType)
+        public Action<object> GetSetter(UnityEngine.Object target, Type reflectionType, out Type valueType)
         {
             switch (type)
             {
@@ -70,7 +69,7 @@ namespace PurrNet
             }
         }
         
-        public Func<object> GetGetter(Behaviour target, Type reflectionType)
+        public Func<object> GetGetter(UnityEngine.Object target, Type reflectionType)
         {
             switch (type)
             {
