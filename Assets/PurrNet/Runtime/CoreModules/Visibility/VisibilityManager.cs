@@ -93,19 +93,17 @@ namespace PurrNet
                 return;
 
             var allIdentities = _hierarchy.identities.collection;
-            
             var roots = HashSetPool<NetworkIdentity>.Instantiate();
-            var players = HashSetPool<PlayerID>.Instantiate();
 
             foreach (var identity in allIdentities)
             {
                 var root = identity.root;
                 if (!roots.Add(root)) continue;
+                
                 EvaluateVisibilityForNewPlayer(root, player);
             }
             
             HashSetPool<NetworkIdentity>.Destroy(roots);
-            HashSetPool<PlayerID>.Destroy(players);
         }
 
         private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
@@ -158,6 +156,13 @@ namespace PurrNet
             for (int i = 0; i < children.Count; ++i)
             {
                 var child = children[i];
+                
+                if (child.isOwner)
+                {
+                    result.AddRange(players);
+                    break;
+                }
+                
                 rules = child.GetOverrideOrDefault(rules);
 
                 if (!rules)
@@ -195,6 +200,13 @@ namespace PurrNet
             for (int i = 0; i < children.Count; ++i)
             {
                 var child = children[i];
+
+                if (child.isOwner)
+                {
+                    result.AddRange(players);
+                    break;
+                }
+                
                 rules = child.GetOverrideOrDefault(rules);
                     
                 if (!rules)
@@ -293,7 +305,7 @@ namespace PurrNet
 
         public void FixedUpdate()
         {
-            if (!_players.TryGetPlayersInScene(_sceneId, out var players))
+            /*if (!_players.TryGetPlayersInScene(_sceneId, out var players))
                 return;
             
             // TODO: This is a very naive implementation, we should only evaluate the visibility of identities that have changed.
@@ -311,7 +323,7 @@ namespace PurrNet
             }
             
             HashSetPool<NetworkIdentity>.Destroy(roots);
-            HashSetPool<PlayerID>.Destroy(copy);
+            HashSetPool<PlayerID>.Destroy(copy);*/
         }
     }
 }
