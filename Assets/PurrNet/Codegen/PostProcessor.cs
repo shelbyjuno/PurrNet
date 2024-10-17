@@ -98,7 +98,7 @@ namespace PurrNet.Codegen
             
             foreach (var attribute in method.CustomAttributes)
             {
-                if (attribute.AttributeType.FullName == typeof(ServerRPCAttribute).FullName)
+                if (attribute.AttributeType.FullName == typeof(ServerRpcAttribute).FullName)
                 {
                     if (attribute.ConstructorArguments.Count != 3)
                     {
@@ -123,7 +123,7 @@ namespace PurrNet.Codegen
                     };
                     rpcCount++;
                 }
-                else if (attribute.AttributeType.FullName == typeof(ObserversRPCAttribute).FullName)
+                else if (attribute.AttributeType.FullName == typeof(ObserversRpcAttribute).FullName)
                 {
                     if (attribute.ConstructorArguments.Count != 5)
                     {
@@ -150,7 +150,7 @@ namespace PurrNet.Codegen
                     };
                     rpcCount++;
                 }
-                else if (attribute.AttributeType.FullName == typeof(TargetRPCAttribute).FullName)
+                else if (attribute.AttributeType.FullName == typeof(TargetRpcAttribute).FullName)
                 {
                     if (attribute.ConstructorArguments.Count != 4)
                     {

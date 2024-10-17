@@ -113,7 +113,7 @@ namespace PurrNet
                 _ikActions[i].Apply(_animator);
         }
 
-        [TargetRPC]
+        [TargetRpc]
         private void ReconcileState([UsedImplicitly] PlayerID player, NetAnimatorActionBatch actions)
         {
             if (IsController(_ownerAuth))
@@ -122,21 +122,21 @@ namespace PurrNet
             ExecuteBatch(actions);
         }
         
-        [ServerRPC]
+        [ServerRpc]
         private void ForwardThroughServerToTarget(PlayerID target, NetAnimatorActionBatch actions)
         {
             if (_ownerAuth)
                 ReconcileState(target, actions);
         }
         
-        [ServerRPC]
+        [ServerRpc]
         private void ForwardThroughServer(NetAnimatorActionBatch actions)
         {
             if (_ownerAuth)
                 ApplyActionsOnObservers(actions);
         }
         
-        [ObserversRPC]
+        [ObserversRpc]
         private void ApplyActionsOnObservers(NetAnimatorActionBatch actions)
         {
             if (IsController(_ownerAuth))

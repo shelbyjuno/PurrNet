@@ -48,7 +48,7 @@ namespace Purrnet.Tests
             Assert.AreEqual(25, _received);
         }
 
-        [ObserversRPC(bufferLast: true)]
+        [ObserversRpc(bufferLast: true)]
         private static void BufferedRPCTest(int value)
         {
             _received = value;

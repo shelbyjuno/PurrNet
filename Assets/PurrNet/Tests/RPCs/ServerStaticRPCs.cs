@@ -25,7 +25,7 @@ namespace Purrnet.Tests
             Assert.AreEqual(true, _receivedServerRPC);
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private static void ServerRPCExample()
         {
             _receivedServerRPC = true;
@@ -44,7 +44,7 @@ namespace Purrnet.Tests
             Assert.AreEqual(69, _receivedNumber);
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private static void ServerRPCExample(int number)
         {
             _receivedNumber = number;
@@ -75,7 +75,7 @@ namespace Purrnet.Tests
             Assert.AreEqual("72", _receivedString4);
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private static void ServerRPCExample(int number, int number2, float number3, string number4)
         {
             _receivedNumber0 = number;

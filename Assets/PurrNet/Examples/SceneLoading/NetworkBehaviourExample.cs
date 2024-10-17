@@ -44,13 +44,13 @@ public class NetworkBehaviourExample : NetworkBehaviour
         }
     }
     
-    [ServerRPC(requireOwnership: false)]
+    [ServerRpc(requireOwnership: false)]
     private void Test(string test)
     {
         Debug.Log(test);
     }
 
-    [ObserversRPC(bufferLast: true)]
+    [ObserversRpc(bufferLast: true)]
     private static void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
     {
         Debug.Log("Observers: " + data + " " + info.sender);
@@ -61,7 +61,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
             Debug.Log("No ref");
     }
 
-    [TargetRPC(bufferLast: true)]
+    [TargetRpc(bufferLast: true)]
     private void SendToTarget<T>([UsedImplicitly] PlayerID target, T message)
     {
         Debug.Log("Targeted: " + message + " " + typeof(T).Name);

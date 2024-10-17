@@ -88,14 +88,14 @@ namespace PurrNet
             ByteBufferPool.Free(buffer);
         }
         
-        [ServerRPC]
+        [ServerRpc]
         private void ForwardThroughServer(int index, ByteData data)
         {
             if (_ownerAuth)
                 ObserversRpc(index, data);
         }
         
-        [ObserversRPC]
+        [ObserversRpc]
         private void ObserversRpc(int index, ByteData data)
         {
             if (index < 0 || index >= _reflectedValues.Length)

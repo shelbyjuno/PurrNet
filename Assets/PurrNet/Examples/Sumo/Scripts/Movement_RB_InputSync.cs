@@ -116,13 +116,13 @@ namespace PurrNet.Examples.Sumo
             SendInput(input);
         }
 
-        [ServerRPC(channel: Channel.Unreliable)]
+        [ServerRpc(channel: Channel.Unreliable)]
         private void SendInput(Vector2 input)
         {
             _serverInput = input;
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void Jump()
         {
             if(IsGrounded())

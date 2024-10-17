@@ -76,7 +76,7 @@ namespace PurrNet
             _sendIntervalInSeconds = sendIntervalInSeconds;
         }
 
-        [ObserversRPC(bufferLast: true)]
+        [ObserversRpc(bufferLast: true)]
         private void SendValue(T newValue)
         {
             if (isServer)

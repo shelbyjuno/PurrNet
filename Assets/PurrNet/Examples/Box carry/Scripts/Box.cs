@@ -56,13 +56,13 @@ namespace PurrNet.Examples.BoxCarry
             BoxPickedUp_Server();
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void BoxPickedUp_Server()
         {
             BoxPickedUp();
         }
         
-        [ObserversRPC(excludeOwner:true)]
+        [ObserversRpc(excludeOwner:true)]
         private void BoxPickedUp()
         {
             if(!InstanceHandler.TryGetInstance<PlayerPickUp>(out var playerPickUp))

@@ -37,7 +37,7 @@ namespace PurrNet.Examples.TopDownShooter
             ChangeHealth_Server(change);
         }
 
-        [ServerRPC(requireOwnership: false)]
+        [ServerRpc(requireOwnership: false)]
         private void ChangeHealth_Server(int change)
         {
             _health.value += change;

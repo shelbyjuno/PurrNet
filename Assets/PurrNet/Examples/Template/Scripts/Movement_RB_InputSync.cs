@@ -106,13 +106,13 @@ namespace PurrNet.Examples.Template
             SendInput(input);
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void SendInput(Vector2 input)
         {
             _serverInput = input;
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void Jump()
         {
             if(IsGrounded())

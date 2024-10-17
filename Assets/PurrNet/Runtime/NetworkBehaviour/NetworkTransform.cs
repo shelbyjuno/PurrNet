@@ -213,7 +213,7 @@ namespace PurrNet
             return new NetworkTransformData(_id++, _trs.position, _trs.rotation, _trs.localScale);
         }
         
-        [ServerRPC(Channel.Unreliable, requireOwnership: true)]
+        [ServerRpc(Channel.Unreliable, requireOwnership: true)]
         private void SendTransformToServer(NetworkTransformData data)
         {
             // If clientAuth is disabled, the client can't send transform data to the server
@@ -226,7 +226,7 @@ namespace PurrNet
             SendToOthers(data);
         }
         
-        [ServerRPC(Channel.ReliableUnordered, requireOwnership: true)]
+        [ServerRpc(Channel.ReliableUnordered, requireOwnership: true)]
         private void SendTransformToServerReliably(NetworkTransformData data)
         {
             // If clientAuth is disabled, the client can't send transform data to the server
@@ -239,7 +239,7 @@ namespace PurrNet
             SendToOthersReliably(data);
         }
         
-        [ObserversRPC(Channel.ReliableUnordered, excludeOwner: true)]
+        [ObserversRpc(Channel.ReliableUnordered, excludeOwner: true)]
         private void SendToOthersReliably(NetworkTransformData data)
         {
             if (isHost) return;
@@ -247,7 +247,7 @@ namespace PurrNet
             ReceiveTransform_Internal(data);
         }
         
-        [ObserversRPC(Channel.Unreliable, excludeOwner: true)]
+        [ObserversRpc(Channel.Unreliable, excludeOwner: true)]
         private void SendToOthers(NetworkTransformData data)
         {
             if (isHost) return;
@@ -255,7 +255,7 @@ namespace PurrNet
             ReceiveTransform_Internal(data);
         }
         
-        [ObserversRPC(Channel.ReliableUnordered)]
+        [ObserversRpc(Channel.ReliableUnordered)]
         private void SendToAllReliable(NetworkTransformData data)
         {
             if (isHost) return;
@@ -263,7 +263,7 @@ namespace PurrNet
             ReceiveTransform_Internal(data);
         }
 
-        [ObserversRPC(Channel.Unreliable)]
+        [ObserversRpc(Channel.Unreliable)]
         private void SendToAll(NetworkTransformData data)
         {
             if (isHost) return;
@@ -317,7 +317,7 @@ namespace PurrNet
             }
         }
 
-        [TargetRPC]
+        [TargetRpc]
         private void SendLatestTransform([UsedImplicitly] PlayerID player, NetworkTransformData data)
         {
             _id = data.id;
