@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
-using PurrNet.Pooling;
 using PurrNet.Transports;
 using UnityEngine;
 
@@ -29,6 +29,12 @@ namespace PurrNet
             }
         }
 
+        private void OnValidate()
+        {
+            if (playerPrefab != null && playerPrefab is not PrefabLink)
+                playerPrefab = playerPrefab.GetComponent<PrefabLink>();
+        }
+
         private void OnServerConnectionState(ConnectionState obj)
         {
             if (obj != ConnectionState.Connected)
@@ -51,7 +57,7 @@ namespace PurrNet
 
             bool isDestroyOnDisconnectEnabled = NetworkManager.main.networkRules.ShouldDespawnOnOwnerDisconnect();
 
-            if (!isDestroyOnDisconnectEnabled && NetworkManager.main.TryGetModule(out GlobalOwnershipModule ownership, asServer) && 
+            if (!isDestroyOnDisconnectEnabled && NetworkManager.main.TryGetModule(out GlobalOwnershipModule ownership, true) && 
                 ownership.PlayerOwnsSomething(player))
                 return;
             
