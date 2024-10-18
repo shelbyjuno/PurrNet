@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: DefaultDistance
   m_EditorClassIdentifier: 
   _distance: 5
+  _deadZone: 1

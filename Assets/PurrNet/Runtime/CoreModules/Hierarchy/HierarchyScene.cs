@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Pooling;
@@ -37,6 +36,9 @@ namespace PurrNet.Modules
         private readonly HierarchyHistory _history;
         private readonly ScenePlayersModule _scenePlayers;
         public readonly IdentitiesCollection identities;
+        
+        private VisibilityFactory _visibilityFactory;
+        private VisibilityManager _visibilityManager;
 
         /// <summary>
         /// Called for each identity that is removed from the hierarchy.
@@ -78,7 +80,8 @@ namespace PurrNet.Modules
             return _history.GetHistoryThatAffects(roots);
         }
         
-        public HierarchyScene(bool asServer, SceneID sceneId, ScenesModule scenes, NetworkManager manager, PlayersManager playersManager, ScenePlayersModule scenePlayers, IPrefabProvider prefabs)
+        public HierarchyScene(bool asServer, SceneID sceneId, ScenesModule scenes, NetworkManager manager, 
+            PlayersManager playersManager, ScenePlayersModule scenePlayers, IPrefabProvider prefabs)
         {
             _manager = manager;
             _playersManager = playersManager;
@@ -94,6 +97,9 @@ namespace PurrNet.Modules
         
         public void Enable(bool asServer)
         {
+            _visibilityManager.onObserverAdded += AddedObserverToIdentity;
+            _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
+            
             _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
 
             if (!asServer)
@@ -197,6 +203,9 @@ namespace PurrNet.Modules
 
         public void Disable(bool asServer)
         {
+            _visibilityManager.onObserverAdded -= AddedObserverToIdentity;
+            _visibilityManager.onObserverRemoved -= RemovedObserverFromIdentity;
+            
             if (asServer)
                  _scenePlayers.onPlayerLoadedScene -= OnPlayerJoinedScene;
             else
@@ -209,22 +218,53 @@ namespace PurrNet.Modules
 
             identities.DestroyAllNonSceneObjects();
         }
+
+        readonly Dictionary<PlayerID, DisposableList<NetworkIdentity>> _identitiesToSpawn = new ();
+        readonly Dictionary<PlayerID, DisposableList<NetworkIdentity>> _identitiesToDespawn = new ();
+        
+        private void AddedObserverToIdentity(PlayerID player, NetworkIdentity identity)
+        {
+            if (_identitiesToSpawn.TryGetValue(player, out var actual))
+            {
+                actual.Add(identity);
+            }
+            else
+            {
+                var list = new DisposableList<NetworkIdentity>(16);
+                list.Add(identity);
+                _identitiesToSpawn.Add(player, list);
+            }
+        }
+        
+        private void RemovedObserverFromIdentity(PlayerID player, NetworkIdentity identity)
+        {
+            if (!identity.IsSpawned(true))
+                return;
+            
+            if (_identitiesToDespawn.TryGetValue(player, out var actual))
+            {
+                actual.Add(identity);
+            }
+            else
+            {
+                var list = new DisposableList<NetworkIdentity>(16);
+                list.Add(identity);
+                _identitiesToDespawn.Add(player, list);
+            }
+        }
         
         private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneID)
                 return;
-            
-            if (!asserver) return;
-            
-            var fullHistory = _history.GetFullHistory();
-            if (fullHistory.actions.Count > 0)
-                _playersManager.Send(player, fullHistory);
 
+            if (!asserver) return;
+
+            // TODO: take visibility into account here, or separate this from the actual spawning?
             _playersManager.Send(player, new SetSceneIds
             {
                 sceneId = _sceneID,
-                startingId = _sceneFirstNetworkID,
+                startingId = _sceneFirstNetworkID
             });
         }
         
@@ -340,7 +380,6 @@ namespace PurrNet.Modules
             if (_asServer) _history.AddSetActiveAction(dataSetActiveAction, player);
         }
 
-        [UsedImplicitly]
         private void HandleChangeParent(PlayerID player, ChangeParentAction action)
         {
             if (!identities.TryGetIdentity(action.identityId, out var identity))
@@ -490,7 +529,7 @@ namespace PurrNet.Modules
             component.onEnabledChanged += OnIdentityEnabledChanged;
             component.onActivatedChanged += OnIdentityGoActivatedChanged;
 
-            if (component is NetworkTransform transform)
+            if (component is NetworkTransform { syncParent: false } transform)
                 transform.onParentChanged += OnIdentityParentChanged;
         }
 
@@ -509,7 +548,7 @@ namespace PurrNet.Modules
             return CACHE[child].gameObject;
         }
         
-        private static void RemoveChildren(Transform childTrs, int childIdx)
+        private static void RemoveChildrenFromCache(Transform childTrs, int childIdx)
         {
             for (int i = childIdx + 1; i < CACHE.Count; i++)
             {
@@ -519,7 +558,6 @@ namespace PurrNet.Modules
             }
         }
 
-        [UsedImplicitly]
         private void HandleDespawn(PlayerID player, DespawnAction action)
         {
             if (!identities.TryGetIdentity(action.identityId, out var identity))
@@ -546,7 +584,7 @@ namespace PurrNet.Modules
                     if (child.id.HasValue && !_instancesAboutToBeRemoved.Contains(child.id.Value))
                     {
                         var trs = child.transform;
-                        RemoveChildren(trs, i);
+                        RemoveChildrenFromCache(trs, i);
                         trs.SetParent(safeParent);
                         continue;
                     }
@@ -946,7 +984,6 @@ namespace PurrNet.Modules
                 active = active
             }, actor);
         }
-        
 
         public void PreFixedUpdate()
         {
@@ -987,22 +1024,7 @@ namespace PurrNet.Modules
             }
             
             if (_history.hasUnflushedActions)
-            {
-                var delta = _history.GetDelta();
-
-                if (_asServer)
-                {
-                    if (_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
-                        _playersManager.Send(players, delta);
-                    
-                    _history.Flush();
-                }
-                else
-                {
-                    _playersManager.SendToServer(delta);
-                    _history.Clear();
-                }
-            }
+                SendDeltaToPlayers(_history.GetDelta());
             
             var spawnedThisFrameCount = _spawnedThisFrame.Count;
 
@@ -1034,11 +1056,178 @@ namespace PurrNet.Modules
                 }
                 _spawnedThisFrame.Clear();
             }
+
+            if (_identitiesToSpawn.Count > 0)
+            {
+                HandleIdentitiesThatNeedToBeSpawned(_identitiesToSpawn);
+                _identitiesToSpawn.Clear();
+            }
+            
+            if (_identitiesToDespawn.Count > 0)
+            {
+                HandleIdentitiesThatNeedToBeDespawned(_identitiesToDespawn);
+                _identitiesToDespawn.Clear();
+            }
+        }
+
+        private void SendDeltaToPlayers(HierarchyActionBatch delta)
+        {
+            // if client, no filtering is needed
+            if (!_asServer)
+            {
+                _playersManager.SendToServer(delta);
+                _history.Clear();
+                return;
+            }
+
+            if (!_scenePlayers.TryGetPlayersInScene(_sceneID, out var players))
+            {
+                PurrLogger.LogError($"Failed to find players in scene {_sceneID}");
+                return;
+            }
+
+            if (players.Count == 0)
+            {
+                _history.Flush();
+                return;
+            }
+
+            var filtered = ListPool<HierarchyAction>.Instantiate();
+
+            foreach (var player in players)
+            {
+                FilterActions(delta.actions, filtered, player);
+                _playersManager.Send(player, delta);
+                filtered.Clear();
+            }
+            
+            ListPool<HierarchyAction>.Destroy(filtered);
+
+            _history.Flush();
+        }
+
+        private void FilterActions(List<HierarchyAction> original, List<HierarchyAction> filtered, PlayerID target)
+        {
+            for (int i = 0; i < original.Count; i++)
+            {
+                var action = original[i];
+                var netId = action.GetIdentityId();
+                
+                if (!netId.HasValue)
+                    continue;
+
+                if (identities.TryGetIdentity(netId.Value, out var id) && id.observers.Contains(target))
+                    filtered.Add(action);
+            }
+        }
+
+        private void HandleIdentitiesThatNeedToBeSpawned(Dictionary<PlayerID, DisposableList<NetworkIdentity>> identitiesToSpawn)
+        {
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+            var rootsList = ListPool<NetworkIdentity>.Instantiate();
+
+            foreach (var (player, all) in identitiesToSpawn)
+            {
+                roots.Clear();
+                rootsList.Clear();
+                
+                for (var i = 0; i < all.Count; i++)
+                {
+                    var id = all[i].root;
+
+                    if (!roots.Add(id))
+                        continue;
+
+                    rootsList.Add(id);
+                }
+
+                var actions = GetActionsToSpawnTarget(rootsList);
+                _playersManager.Send(player, actions);
+
+                for (var i = 0; i < all.Count; i++)
+                {
+                    var id = all[i];
+                    _visibilityFactory.TriggerLateObserverAdded(player, id);
+                    id.TriggerOnObserverAdded(player);
+                }
+                
+                all.Dispose();
+            }
+            
+            ListPool<NetworkIdentity>.Destroy(rootsList);
+            HashSetPool<NetworkIdentity>.Destroy(roots);
+        }
+
+        private static readonly List<HierarchyAction> _actionsCache = new ();
+        
+        private void HandleIdentitiesThatNeedToBeDespawned(Dictionary<PlayerID, DisposableList<NetworkIdentity>> identitiesToDespawn)
+        {
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+
+            foreach (var (player, all) in identitiesToDespawn)
+            {
+                roots.Clear();
+                _actionsCache.Clear();
+                
+                var actions = new HierarchyActionBatch
+                {
+                    actions = _actionsCache,
+                    isDelta = true,
+                    sceneId = _sceneID
+                };
+
+                for (var i = 0; i < all.Count; i++)
+                {
+                    var root = all[i].root;
+
+                    if (!roots.Add(root))
+                        continue;
+                    
+                    AddDespawnActionForAllChildren(root, _actionsCache);
+                }
+                
+                _playersManager.Send(player, actions);
+
+                for (var i = 0; i < all.Count; i++)
+                    all[i].TriggerOnObserverRemoved(player);
+
+                all.Dispose();
+            }
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
+        }
+
+        private static void AddDespawnActionForAllChildren(NetworkIdentity root, List<HierarchyAction> actions)
+        {
+            root.gameObject.GetComponentsInChildren(true, CACHE);
+            
+            for (int i = 0; i < CACHE.Count; i++)
+            {
+                var child = CACHE[i];
+                if (child.id.HasValue)
+                {
+                    actions.Add(new HierarchyAction
+                    {
+                        type = HierarchyActionType.Despawn,
+                        despawnAction = new DespawnAction
+                        {
+                            identityId = child.id.Value,
+                            despawnType = DespawnType.GameObject
+                        }
+                    });
+                }
+            }
         }
 
         public bool TryGetIdentity(NetworkID id, out NetworkIdentity identity)
         {
             return identities.TryGetIdentity(id, out identity);
+        }
+
+        public void SetVisibilityManager(VisibilityFactory factory, VisibilityManager vmanager)
+        {
+            _visibilityFactory = factory;
+            _visibilityManager = vmanager;
         }
     }
 }

@@ -12,15 +12,15 @@ namespace PurrNet.Modules
         readonly HierarchyModule _hierarchyModule;
         readonly PlayersManager _playersManager;
         readonly ScenesModule _scenes;
-        readonly ScenePlayersModule _scenePlayers;
         readonly GlobalOwnershipModule _ownership;
+        readonly VisibilityFactory _visibilityFactory;
 
-        public RPCModule(PlayersManager playersManager, HierarchyModule hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes, ScenePlayersModule scenePlayers)
+        public RPCModule(PlayersManager playersManager, VisibilityFactory visibilityFactory, HierarchyModule hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
         {
             _playersManager = playersManager;
+            _visibilityFactory = visibilityFactory;
             _hierarchyModule = hierarchyModule;
             _scenes = scenes;
-            _scenePlayers = scenePlayers;
             _ownership = ownerships;
         }
         
@@ -29,9 +29,9 @@ namespace PurrNet.Modules
             _playersManager.Subscribe<RPCPacket>(ReceiveRPC);
             _playersManager.Subscribe<StaticRPCPacket>(ReceiveStaticRPC);
             _playersManager.Subscribe<ChildRPCPacket>(ReceiveChildRPC);
-
+            
+            _visibilityFactory.onLateObserverAdded += OnObserverAdded;
             _playersManager.onPlayerJoined += OnPlayerJoined;
-            _scenePlayers.onPostPlayerLoadedScene += OnPlayerJoinedScene;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved += OnIdentityRemoved;
         }
@@ -42,10 +42,16 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<StaticRPCPacket>(ReceiveStaticRPC);
             _playersManager.Unsubscribe<ChildRPCPacket>(ReceiveChildRPC);
             
+            _visibilityFactory.onLateObserverAdded -= OnObserverAdded;
             _playersManager.onPlayerJoined -= OnPlayerJoined;
-            _scenePlayers.onPostPlayerLoadedScene -= OnPlayerJoinedScene;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
             _hierarchyModule.onIdentityRemoved -= OnIdentityRemoved;
+        }
+
+        private void OnObserverAdded(PlayerID player, NetworkIdentity identity)
+        {
+            SendAnyInstanceRPCs(player, identity);
+            SendAnyChildRPCs(player, identity);
         }
 
         // Clean up buffered RPCs when an identity is removed
@@ -111,12 +117,6 @@ namespace PurrNet.Modules
         private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
         {
             SendAnyStaticRPCs(player);
-        }
-
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
-        {
-            SendAnyInstanceRPCs(player, scene);
-            SendAnyChildRPCs(player, scene);
         }
         
         [UsedByIL]
@@ -237,22 +237,17 @@ namespace PurrNet.Modules
             gmethod.Invoke(null, rpcHeader.values);
         }
 
-        private void SendAnyChildRPCs(PlayerID player, SceneID scene)
+        private void SendAnyChildRPCs(PlayerID player, NetworkIdentity identity)
         {
             for (int i = 0; i < _bufferedChildRpcsDatas.Count; i++)
             {
                 var data = _bufferedChildRpcsDatas[i];
 
-                if (data.rpcid.sceneId != scene)
-                {
+                if (data.rpcid.sceneId != identity.sceneId)
                     continue;
-                }
-
-                if (!_hierarchyModule.TryGetIdentity(data.packet.sceneId, data.packet.networkId, out var identity))
-                {
-                    PurrLogger.LogError($"Can't find identity with id {data.packet.networkId} in scene {data.packet.sceneId}.");
+                
+                if (data.rpcid.networkId != identity.id)
                     continue;
-                }
 
                 if (data.sig.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
                     continue;
@@ -279,26 +274,25 @@ namespace PurrNet.Modules
 
                             break;
                         }
+                    case RPCType.ServerRPC:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
         }
 
-        private void SendAnyInstanceRPCs(PlayerID player, SceneID scene)
+        private void SendAnyInstanceRPCs(PlayerID player, NetworkIdentity identity)
         {
             for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
             {
                 var data = _bufferedRpcsDatas[i];
 
-                if (data.rpcid.sceneId != scene)
-                {
+                if (data.rpcid.sceneId != identity.sceneId)
                     continue;
-                }
-
-                if (!_hierarchyModule.TryGetIdentity(data.packet.sceneId, data.packet.networkId, out var identity))
-                {
-                    PurrLogger.LogError($"Can't find identity with id {data.packet.networkId} in scene {data.packet.sceneId}.");
+                
+                if (data.rpcid.networkId != identity.id)
                     continue;
-                }
 
                 if (data.sig.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
                     continue;

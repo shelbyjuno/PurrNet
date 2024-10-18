@@ -1,146 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using PurrNet.Logging;
 using PurrNet.Pooling;
-using UnityEngine;
 
 namespace PurrNet.Modules
 {
-    public class HierarchyNode : IDisposable
-    {
-        public HierarchyNode parent;
-        private readonly List<HierarchyNode> children = ListPool<HierarchyNode>.Instantiate();
-        private readonly HashSet<NetworkID> components = HashSetPool<NetworkID>.Instantiate();
-        
-        public HierarchyNode(HierarchyNode parent)
-        {
-            this.parent = parent;
-        }
-        
-        public HierarchyNode GetChild(NetworkID id)
-        {
-            foreach (var child in children)
-            {
-                return child.components.Contains(id) ? child : child.GetChild(id);
-            }
-            
-            return null;
-        }
-        
-        public bool IsChildOf(HierarchyNode node)
-        {
-            return parent == node || (parent != null && parent.IsChildOf(node));
-        }
-        
-        public bool ContainsComponent(NetworkID id)
-        {
-            if (components.Contains(id))
-                return true;
-            
-            foreach (var child in children)
-            {
-                if (child.ContainsComponent(id))
-                    return true;
-            }
-            
-            return false;
-        }
-        
-        public void AddChild(HierarchyNode child)
-        {
-            children.Add(child);
-        }
-        
-        public void RemoveChild(HierarchyNode child)
-        {
-            children.Remove(child);
-        }
-        
-        public bool RemoveNodeInHierarchy(NetworkID id)
-        {
-            if (components.Contains(id))
-            {
-                parent?.RemoveChild(this);
-                Dispose();
-                return true;
-            }
-            
-            for (int i = 0; i < children.Count; i++)
-            {
-                if (children[i].RemoveNodeInHierarchy(id))
-                    return true;
-            }
-            
-            return false;
-        }
-        
-        public bool RemoveComponentInHierarchy(NetworkID id)
-        {
-            if (components.Contains(id))
-            {
-                components.Remove(id);
-                return true;
-            }
-            
-            for (int i = 0; i < children.Count; i++)
-            {
-                if (children[i].RemoveComponentInHierarchy(id))
-                    return true;
-            }
-            
-            return false;
-        }
-        
-        public void AddComponentRange(NetworkID start, int count)
-        {
-            for (ushort i = 0; i < count; ++i)
-            {
-                components.Add(new NetworkID(start, i));
-            }
-        }
-        
-        public void AddComponent(NetworkID id)
-        {
-            components.Add(id);
-        }
-        
-        public void RemoveComponent(NetworkID id)
-        {
-            components.Remove(id);
-        }
-
-        public void Dispose()
-        {
-            foreach (var child in children)
-                child.Dispose();
-            
-            ListPool<HierarchyNode>.Destroy(children);
-            HashSetPool<NetworkID>.Destroy(components);
-        }
-
-        public void Decouple()
-        {
-            if (parent != null)
-            {
-                parent.RemoveChild(this);
-                parent = null;
-            }
-        }
-
-        public void PrintHierarchy(int indent = 0)
-        {
-            PurrLogger.Log(parent == null
-                ? $"Root {components.Count}"
-                : $"{new string('-', indent)}Node: {components.Count} components (first: {(components.Count > 0 ? components.First().ToString() : "none")})");
-
-            foreach (var child in children)
-            {
-                child.PrintHierarchy(indent + 1);
-            }
-        }
-    }
-    
     public class HierarchyHistory
     {
         readonly List<HierarchyAction> _actions = new ();
@@ -168,48 +31,6 @@ namespace PurrNet.Modules
             };
         }
         
-        static void AddPrefabNode(NetworkManager nm, int prefabId, NetworkID rootId, HierarchyNode parent)
-        {
-            if (!nm.prefabProvider.TryGetPrefab(prefabId, out var prefab))
-            {
-                PurrLogger.LogError($"Failed to get prefab with id {prefabId}");
-                return;
-            }
-            
-            var node = new HierarchyNode(parent);
-            AddPrefabNode(prefab, node, rootId);
-            parent.AddChild(node);
-        }
-
-        static int AddPrefabNode(GameObject gameObject, HierarchyNode node, NetworkID rootId)
-        {
-            var trs = gameObject.transform;
-            
-            var components = ListPool<NetworkIdentity>.Instantiate();
-            gameObject.GetComponents(components);
-            var componentsCount = components.Count;
-            ListPool<NetworkIdentity>.Destroy(components);
-
-            node.AddComponentRange(rootId, componentsCount);
-
-            var childCount = trs.childCount;
-            
-            for (int i = 0; i < childCount; ++i)
-            {
-                var child = trs.GetChild(i).GetComponentInChildren<NetworkIdentity>();
-                if (!child) continue;
-                
-                var nextId = new NetworkID(rootId, (ushort)componentsCount);
-                var childNode = new HierarchyNode(node);
-                
-                componentsCount += AddPrefabNode(child.gameObject, childNode, nextId);
-                
-                node.AddChild(childNode);
-            }
-            
-            return componentsCount;
-        }
-        
         internal HierarchyActionBatch GetHistoryThatAffects(List<NetworkIdentity> roots)
         {
             var actions = new List<HierarchyAction>();
@@ -223,8 +44,9 @@ namespace PurrNet.Modules
                 var rootIdentity = roots[rootIdx];
                 rootIdentity.GetComponentsInChildren(true, tmp);
 
-                foreach (var nid in tmp)
+                for (var index = 0; index < tmp.Count; index++)
                 {
+                    var nid = tmp[index];
                     if (nid.id.HasValue)
                         relevant.Add(nid.id.Value);
                 }
@@ -295,6 +117,8 @@ namespace PurrNet.Modules
                             actions.Add(action);
                         break;
                     }
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
             

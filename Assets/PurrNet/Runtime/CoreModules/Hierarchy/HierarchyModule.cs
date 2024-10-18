@@ -71,6 +71,7 @@ namespace PurrNet
         {
             if (_sceneToHierarchy.TryGetValue(scene, out var hierarchy))
             {
+                _visibilityFactory.OnSceneUnloaded(scene, asserver);
                 hierarchy.onIdentityAdded -= TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved -= TriggerOnEntityRemoved;
                 
@@ -91,6 +92,10 @@ namespace PurrNet
                 
                 _hierarchies.Add(hierarchy);
                 _sceneToHierarchy.Add(scene, hierarchy);
+
+                if (!_visibilityFactory.OnSceneLoaded(scene, asserver, out var vmanager))
+                     PurrLogger.LogError("Failed to create visibility manager for scene " + scene);
+                else hierarchy.SetVisibilityManager(_visibilityFactory, vmanager);
                 
                 hierarchy.Enable(asserver);
             }

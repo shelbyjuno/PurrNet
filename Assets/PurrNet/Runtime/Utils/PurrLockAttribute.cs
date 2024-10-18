@@ -20,9 +20,10 @@ namespace PurrNet.Utils
 
             if (shouldLock)
             {
-                GUI.enabled = false;
+                var old = GUI.enabled;
+                if (old) GUI.enabled = false;
                 EditorGUI.PropertyField(position, property, label);
-                GUI.enabled = true;
+                if (old) GUI.enabled = true;
             }
             else
             {

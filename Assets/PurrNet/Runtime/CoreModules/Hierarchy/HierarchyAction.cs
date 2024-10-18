@@ -83,6 +83,19 @@ namespace PurrNet.Modules
                     break;
             }
         }
+        
+        public NetworkID? GetIdentityId()
+        {
+            return type switch
+            {
+                HierarchyActionType.Spawn => spawnAction.identityId,
+                HierarchyActionType.Despawn => despawnAction.identityId,
+                HierarchyActionType.ChangeParent => changeParentAction.identityId,
+                HierarchyActionType.SetActive => setActiveAction.identityId,
+                HierarchyActionType.SetEnabled => setEnabledAction.identityId,
+                _ => null
+            };
+        }
     }
     
     internal partial struct HierarchyActionBatch : IAutoNetworkedData

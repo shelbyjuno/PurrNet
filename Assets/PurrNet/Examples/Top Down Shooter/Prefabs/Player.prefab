@@ -152,8 +152,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817f00a8b1748484fa837fad3cb9ac28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layer: 0
   _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 0}
+  _visitiblityRules: {fileID: 11400000, guid: 61bfdc7c387406945b02e80f829030d1, type: 2}
   moveSpeed: 4
   acceleration: 4
   jumpForce: 1.5
@@ -170,6 +171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7993de99671eec42ad040029a9f6593, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   bulletPrefab: {fileID: 6263184292926161676, guid: e013d4a382956084e907feb2a3501cf8, type: 3}
@@ -185,6 +187,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f888c0a97f882af4b9ff62f84d211951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   maxHealth: 100
@@ -226,6 +229,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _guid: 20ec334e1da5edf44ac0079941c62c2b
@@ -241,6 +245,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncSettings: 7
@@ -251,7 +256,77 @@ MonoBehaviour:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
     scaleTolerance: 0.05
-    redundancyTicks: 5
+--- !u!1 &4524263293768573260
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6003499898361529640}
+  - component: {fileID: 7080770355303842957}
+  - component: {fileID: 1194575452784413963}
+  m_Layer: 0
+  m_Name: Test
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6003499898361529640
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4524263293768573260}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6183224292089968140}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7080770355303842957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4524263293768573260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  layer: 0
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+--- !u!114 &1194575452784413963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4524263293768573260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  layer: 0
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _syncSettings: 7
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!1 &5717227225040451160
 GameObject:
   m_ObjectHideFlags: 0
@@ -386,6 +461,7 @@ Transform:
   - {fileID: 1599962796381844036}
   - {fileID: 2340768514705598068}
   - {fileID: 8140307410169494927}
+  - {fileID: 6003499898361529640}
   m_Father: {fileID: 6956860889567420228}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5347730777669328160
@@ -400,6 +476,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbe775319f3e9a249829cec13ab24f7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   bodies:

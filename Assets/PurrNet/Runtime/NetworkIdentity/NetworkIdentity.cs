@@ -106,14 +106,14 @@ namespace PurrNet
         
         internal readonly HashSet<PlayerID> _observers = new ();
         
-        public IReadOnlyCollection<PlayerID> observers => _observers;
+        public ISet<PlayerID> observers => _observers;
 
         /// <summary>
         /// The root identity is the topmost parent that has a NetworkIdentity.
         /// </summary>
         public NetworkIdentity root { get; private set; }
         
-        private NetworkIdentity GetRootIdentity()
+        public NetworkIdentity GetRootIdentity()
         {
             var lastKnown = gameObject.GetComponent<NetworkIdentity>();
             var current = transform.parent;
@@ -330,11 +330,18 @@ namespace PurrNet
             GiveOwnershipInternal(_pendingOwnershipRequest.Value);
             _pendingOwnershipRequest = null;
         }
+
+        /// <summary>
+        /// The layer of this object. Avoids gameObject.layer.
+        /// Only available when spawned.
+        /// </summary>
+        public int layer;
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
             Hasher.PrepareType(GetType());
             
+            layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
             prefabId = pid;

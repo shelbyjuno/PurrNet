@@ -40,6 +40,7 @@ namespace PurrNet
         
         [Tooltip("If true, the client can send transform data to the server. If false, the client can't send transform data to the server.")]
         [SerializeField, PurrLock] private bool _ownerAuth = true;
+        [SerializeField, PurrLock] private bool _syncParent = true;
         
         [Tooltip("The interval in ticks to send the transform data. 0 means send every tick.")]
         [SerializeField, Min(0)] private int _sendIntervalInTicks;
@@ -57,6 +58,8 @@ namespace PurrNet
             set => _tolerances = value;
         }
 
+        public bool syncParent => _syncParent;
+        
         public bool syncPosition => _syncSettings.HasFlag(TransformSyncMode.Position);
         
         public bool syncRotation => _syncSettings.HasFlag(TransformSyncMode.Rotation);

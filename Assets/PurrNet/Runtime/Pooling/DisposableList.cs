@@ -154,9 +154,11 @@ namespace PurrNet.Pooling
     {
         private readonly bool _shouldDispose;
         private bool _disposed;
-        private readonly IList<T> _list;
+        private readonly List<T> _list;
+        
+        public List<T> list => _list;
 
-        public DisposableList(IList<T> list)
+        public DisposableList(List<T> list)
         {
             _list = list;
             _disposed = false;
@@ -187,7 +189,7 @@ namespace PurrNet.Pooling
             if (_disposed) return;
             
             if (_shouldDispose)
-                ListPool<T>.Destroy((List<T>)_list);
+                ListPool<T>.Destroy(_list);
             _disposed = true;
         }
 

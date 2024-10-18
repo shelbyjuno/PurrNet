@@ -116,8 +116,6 @@ namespace PurrNet
             foreach (var identity in allIdentities)
             {
                 if (!identity._observers.Remove(player)) continue;
-                
-                identity.TriggerOnObserverRemoved(player);
                 onObserverRemoved?.Invoke(player, identity);
             }
         }
@@ -186,14 +184,14 @@ namespace PurrNet
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             var result = ListPool<PlayerID>.Instantiate();
-            var globalRules = _manager.visibilityRules;
+            var rules = _manager.visibilityRules;
 
             root.GetComponentsInChildren(true, children);
             
             for (int i = 0; i < children.Count; ++i)
             {
                 var child = children[i];
-                var rules = child.GetOverrideOrDefault(globalRules);
+                rules = child.GetOverrideOrDefault(rules);
                     
                 if (!rules)
                 {
@@ -236,8 +234,6 @@ namespace PurrNet
         private void AddPlayerAsObserver(NetworkIdentity identity, PlayerID player)
         {
             if (!identity._observers.Add(player)) return;
-            
-            identity.TriggerOnObserverAdded(player);
             onObserverAdded?.Invoke(player, identity);
         }
 
@@ -251,7 +247,6 @@ namespace PurrNet
             foreach (var player in oldPlayers)
             {
                 identity._observers.Remove(player);
-                identity.TriggerOnObserverRemoved(player);
                 onObserverRemoved?.Invoke(player, identity);
             }
             
@@ -263,14 +258,13 @@ namespace PurrNet
             foreach (var player in oldPlayers)
             {
                 identity._observers.Add(player);
-                identity.TriggerOnObserverAdded(player);
                 onObserverAdded?.Invoke(player, identity);
             }
             
             HashSetPool<PlayerID>.Destroy(oldPlayers);
         }
 
-        private void OnIdentityRemoved(NetworkIdentity identity)
+        private static void OnIdentityRemoved(NetworkIdentity identity)
         {
             if (!identity.id.HasValue)
             {
@@ -279,10 +273,7 @@ namespace PurrNet
             }
             
             foreach (var player in identity._observers)
-            {
                 identity.TriggerOnObserverRemoved(player);
-                onObserverRemoved?.Invoke(player, identity);
-            }
             
             identity._observers.Clear();
         }

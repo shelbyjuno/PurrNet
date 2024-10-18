@@ -1,10 +1,11 @@
+using PurrNet.Utils;
 using UnityEngine;
 
 namespace PurrNet
 {
     public sealed class PrefabLink : NetworkIdentity
     {
-        [SerializeField] private string _guid;
+        [SerializeField, PurrReadOnly] private string _guid;
 
         static bool _muteAutoSpawn;
         
