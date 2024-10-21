@@ -1,9 +1,16 @@
 using System;
 using JetBrains.Annotations;
+using PurrNet.Utils;
 using UnityEngine;
 
 namespace PurrNet
 {
+    [Serializable]
+    public struct VisibilityRules
+    {
+        public VisibilityMode VisibilityMode;
+    }
+    
     [Serializable]
     public struct SpawnRules
     {
@@ -69,6 +76,12 @@ namespace PurrNet
             defaultOwner = DefaultOwner.SpawnerIfClientOnly,
             propagateOwnershipByDefault = true,
             despawnIfOwnerDisconnects = true
+        };
+        
+        [PurrReadOnly]
+        [SerializeField] private VisibilityRules _defaultVisibilityRules = new()
+        {
+            VisibilityMode = VisibilityMode.SpawnDespawn
         };
         
         [SerializeField] private OwnershipRules _defaultOwnershipRules = new()

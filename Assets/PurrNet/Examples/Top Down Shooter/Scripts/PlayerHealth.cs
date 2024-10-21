@@ -1,3 +1,4 @@
+using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Examples.TopDownShooter
@@ -12,6 +13,10 @@ namespace PurrNet.Examples.TopDownShooter
         {
             if (asServer)
                 _health.value = maxHealth;
+            else
+            {
+                UpdateHealthUI();
+            }
         }
 
         private void Update()
@@ -21,9 +26,14 @@ namespace PurrNet.Examples.TopDownShooter
             healthText.transform.rotation = Quaternion.LookRotation(direction);
         }
 
-        private void FixedUpdate()
+        private void UpdateHealthUI()
         {
             healthText.text = _health.value.ToString();
+        }
+
+        private void FixedUpdate()
+        {
+            UpdateHealthUI();
         }
         
         public void ChangeHealth(int change)

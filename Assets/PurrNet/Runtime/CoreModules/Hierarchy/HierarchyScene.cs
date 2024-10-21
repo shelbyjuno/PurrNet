@@ -451,7 +451,7 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Spawn failed from '{player}' for prefab '{prefab.name}' due to lack of permissions.");
                 return;
             }
-            
+
             if (identities.TryGetIdentity(action.identityId, out _))
                 return;
 
