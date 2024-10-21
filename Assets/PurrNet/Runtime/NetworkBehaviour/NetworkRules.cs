@@ -8,7 +8,8 @@ namespace PurrNet
     [Serializable]
     public struct VisibilityRules
     {
-        public VisibilityMode VisibilityMode;
+        [UsedImplicitly]
+        public VisibilityMode visibilityMode;
     }
     
     [Serializable]
@@ -81,7 +82,7 @@ namespace PurrNet
         [PurrReadOnly]
         [SerializeField] private VisibilityRules _defaultVisibilityRules = new()
         {
-            VisibilityMode = VisibilityMode.SpawnDespawn
+            visibilityMode = VisibilityMode.SpawnDespawn
         };
         
         [SerializeField] private OwnershipRules _defaultOwnershipRules = new()

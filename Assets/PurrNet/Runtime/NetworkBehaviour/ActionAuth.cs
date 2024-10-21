@@ -11,19 +11,9 @@ namespace PurrNet
         SpawnDespawn,
         
         /// <summary>
-        /// Set root gameobject to active when visible and inactive when not visible
-        /// </summary>
-        SetActive,
-        
-        /// <summary>
         /// Pool the object when it is not visible
         /// </summary>
-        Pool,
-        
-        /// <summary>
-        /// Only stops network updates
-        /// </summary>
-        Nothing
+        Pool
     }
     
     [Flags]
