@@ -71,8 +71,8 @@ namespace PurrNet.Logging
         {
             string fileName = System.IO.Path.GetFileName(filePath).Replace(".cs", "");
             
-            var prefix = logStyle.headerColor.HasValue ? $"<color=#{ColorUtility.ToHtmlStringRGB(logStyle.headerColor.Value)}>[{fileName}]</color>" :
-                $"[{fileName}]";
+            var prefix = logStyle.headerColor.HasValue ? $"<color=#{ColorUtility.ToHtmlStringRGB(logStyle.headerColor.Value)}>[{fileName}:{Time.frameCount}]</color>" :
+                $"[{fileName}:{Time.frameCount}]";
             
             var text = logStyle.textColor.HasValue ? $"<color=#{ColorUtility.ToHtmlStringRGB(logStyle.textColor.Value)}>{message}</color>" :
                 message;

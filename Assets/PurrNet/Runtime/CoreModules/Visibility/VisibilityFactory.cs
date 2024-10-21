@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -16,12 +15,12 @@ namespace PurrNet
         private readonly List<VisibilityManager> _visibilityManagers = new ();
         
         public event VisibilityChanged onLateObserverAdded;
+        public event VisibilityChanged onLateObserverRemoved;
         
-        public void TriggerLateObserverAdded(PlayerID player, NetworkIdentity id)
-        {
-            onLateObserverAdded?.Invoke(player, id);
-        }
-        
+        public void TriggerLateObserverAdded(PlayerID player, NetworkIdentity id) => onLateObserverAdded?.Invoke(player, id);
+
+        public void TriggerLateObserverRemoved(PlayerID player, NetworkIdentity id) => onLateObserverRemoved?.Invoke(player, id);
+
         public VisibilityFactory(NetworkManager manager, PlayersManager playersManager, HierarchyModule hierarchy, ScenePlayersModule players)
         {
             _manager = manager;

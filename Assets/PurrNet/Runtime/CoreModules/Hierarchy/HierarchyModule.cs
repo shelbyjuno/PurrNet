@@ -17,7 +17,8 @@ namespace PurrNet
         
         private readonly List<HierarchyScene> _hierarchies = new ();
         private readonly Dictionary<SceneID, HierarchyScene> _sceneToHierarchy = new ();
-        
+
+        internal event Action<SceneID> onBeforeSpawnTrigger;
         public event Action<NetworkIdentity> onIdentityRemoved;
         public event Action<NetworkIdentity> onIdentityAdded;
 
@@ -74,7 +75,8 @@ namespace PurrNet
                 _visibilityFactory.OnSceneUnloaded(scene, asserver);
                 hierarchy.onIdentityAdded -= TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved -= TriggerOnEntityRemoved;
-                
+                hierarchy.onBeforeSpawnTrigger -= TriggerOnBeforeSpawnTrigger;
+
                 hierarchy.Disable(asserver);
                 _hierarchies.Remove(hierarchy);
                 _sceneToHierarchy.Remove(scene);
@@ -89,6 +91,7 @@ namespace PurrNet
                 
                 hierarchy.onIdentityAdded += TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved += TriggerOnEntityRemoved;
+                hierarchy.onBeforeSpawnTrigger += TriggerOnBeforeSpawnTrigger;
                 
                 _hierarchies.Add(hierarchy);
                 _sceneToHierarchy.Add(scene, hierarchy);
@@ -99,6 +102,11 @@ namespace PurrNet
                 
                 hierarchy.Enable(asserver);
             }
+        }
+
+        private void TriggerOnBeforeSpawnTrigger(SceneID id)
+        {
+            onBeforeSpawnTrigger?.Invoke(id);
         }
 
         private void TriggerOnEntityAdded(NetworkIdentity obj) => onIdentityAdded?.Invoke(obj);

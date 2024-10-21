@@ -8,10 +8,10 @@ namespace PurrNet
     {
         private readonly List<INetworkModule> _modules;
         private readonly List<IConnectionListener> _connectionListeners;
-        private readonly List<IConnectionStateListener> _connectionStateListeners;
         private readonly List<IDataListener> _dataListeners;
         private readonly List<IFixedUpdate> _fixedUpdatesListeners;
         private readonly List<IPreFixedUpdate> _preFixedUpdatesListeners;
+        private readonly List<IPostFixedUpdate> _postFixedUpdatesListeners;
         private readonly List<IUpdate> _updateListeners;
         private readonly List<ICleanup> _cleanupListeners;
 
@@ -22,8 +22,8 @@ namespace PurrNet
         {
             _modules = new List<INetworkModule>();
             _connectionListeners = new List<IConnectionListener>();
-            _connectionStateListeners = new List<IConnectionStateListener>();
             _preFixedUpdatesListeners = new List<IPreFixedUpdate>();
+            _postFixedUpdatesListeners = new List<IPostFixedUpdate>();
             _dataListeners = new List<IDataListener>();
             _updateListeners = new List<IUpdate>();
             _fixedUpdatesListeners = new List<IFixedUpdate>();
@@ -63,33 +63,27 @@ namespace PurrNet
             {
                 _modules[i].Enable(_asServer);
                 
-                // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IConnectionListener connectionListener)
                     _connectionListeners.Add(connectionListener);
                 
-                // ReSharper disable once SuspiciousTypeConversion.Global
-                if (_modules[i] is IConnectionStateListener connectionStateListener)
-                    _connectionStateListeners.Add(connectionStateListener);
-                
-                // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IDataListener dataListener)
                     _dataListeners.Add(dataListener);
 
-                // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IFixedUpdate fixedUpdate)
                     _fixedUpdatesListeners.Add(fixedUpdate);
 
-                // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IUpdate update)
                     _updateListeners.Add(update);
                 
-                // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is ICleanup cleanup)
                     _cleanupListeners.Add(cleanup);
                 
-                // ReSharper disable once SuspiciousTypeConversion.Global
                 if (_modules[i] is IPreFixedUpdate preFixedUpdate)
                     _preFixedUpdatesListeners.Add(preFixedUpdate);
+                
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (_modules[i] is IPostFixedUpdate postFixedUpdate)
+                    _postFixedUpdatesListeners.Add(postFixedUpdate);
             }
         }
         
@@ -111,12 +105,6 @@ namespace PurrNet
                 _dataListeners[i].OnDataReceived(conn, data, asserver);
         }
 
-        public void OnConnectionState(ConnectionState state, bool asserver)
-        {
-            for (int i = 0; i < _connectionStateListeners.Count; i++)
-                _connectionStateListeners[i].OnConnectionState(state, asserver);
-        }
-
         public void TriggerOnUpdate()
         {
             for (int i = 0; i < _updateListeners.Count; i++)
@@ -133,6 +121,12 @@ namespace PurrNet
         {
             for (int i = 0; i < _preFixedUpdatesListeners.Count; i++)
                 _preFixedUpdatesListeners[i].PreFixedUpdate();
+        }
+        
+        public void TriggerOnPostFixedUpdate()
+        {
+            for (int i = 0; i < _postFixedUpdatesListeners.Count; i++)
+                _postFixedUpdatesListeners[i].PostFixedUpdate();
         }
 
         public bool Cleanup()
@@ -157,7 +151,6 @@ namespace PurrNet
             
             _modules.Clear();
             _connectionListeners.Clear();
-            _connectionStateListeners.Clear();
             _dataListeners.Clear();
             _updateListeners.Clear();
             _fixedUpdatesListeners.Clear();

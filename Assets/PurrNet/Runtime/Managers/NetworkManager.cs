@@ -305,7 +305,7 @@ namespace PurrNet
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
             var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayersModule);
-            var ownershipModule = new GlobalOwnershipModule(this, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
+            var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
             
             hierarchyModule.SetVisibilityFactory(visibilityFactory);
@@ -319,9 +319,11 @@ namespace PurrNet
             modules.AddModule(networkCookies);
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
+            
+            modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
             modules.AddModule(ownershipModule);
-            modules.AddModule(hierarchyModule);
+            
             modules.AddModule(rpcModule);
         }
 
@@ -353,20 +355,29 @@ namespace PurrNet
 
         private void FixedUpdate()
         {
-            if (serverState == ConnectionState.Connected)
+            bool serverConnected = serverState == ConnectionState.Connected;
+            bool clientConnected = clientState == ConnectionState.Connected;
+            
+            if (serverConnected)
                 _serverModules.TriggerOnPreFixedUpdate();
             
-            if (clientState == ConnectionState.Connected)
+            if (clientConnected)
                 _clientModules.TriggerOnPreFixedUpdate();
             
             if (_transport)
                 _transport.transport.UpdateEvents(Time.fixedDeltaTime);
             
-            if (serverState == ConnectionState.Connected)
+            if (serverConnected)
                 _serverModules.TriggerOnFixedUpdate();
             
-            if (clientState == ConnectionState.Connected)
+            if (clientConnected)
                 _clientModules.TriggerOnFixedUpdate();
+            
+            if (serverConnected)
+                _serverModules.TriggerOnPostFixedUpdate();
+            
+            if (clientConnected)
+                _clientModules.TriggerOnPostFixedUpdate();
 
             if (_isCleaningClient && _clientModules.Cleanup())
             {
@@ -429,10 +440,6 @@ namespace PurrNet
 
         private void OnConnectionState(ConnectionState state, bool asserver)
         {
-            if (asserver)
-                 _serverModules.OnConnectionState(state, true);
-            else _clientModules.OnConnectionState(state, false);
-            
             if (asserver)
                  onServerConnectionState?.Invoke(state);
             else onClientConnectionState?.Invoke(state);

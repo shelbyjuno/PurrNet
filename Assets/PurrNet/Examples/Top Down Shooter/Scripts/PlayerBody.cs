@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using PurrNet.Logging;
 
 namespace PurrNet.Examples.TopDownShooter
 {
@@ -11,7 +12,7 @@ namespace PurrNet.Examples.TopDownShooter
         {
             if (!owner.HasValue)
             {
-                Debug.LogError($"No owner for player {asServer}", this);
+                PurrLogger.LogError($"No owner for player {asServer}", this);
                 return;
             }
 

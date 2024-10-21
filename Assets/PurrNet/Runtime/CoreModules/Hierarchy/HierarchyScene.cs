@@ -9,6 +9,8 @@ using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
+    internal struct TriggerQueuedSpawnEvents { }
+    
     internal struct ComponentGameObjectPair
     {
         public GameObject gameObject;
@@ -27,7 +29,7 @@ namespace PurrNet.Modules
         public NetworkID startingId;
     }
     
-    internal class HierarchyScene : INetworkModule, IPreFixedUpdate
+    internal class HierarchyScene : INetworkModule
     {
         private readonly NetworkManager _manager;
         private readonly IPrefabProvider _prefabs;
@@ -39,6 +41,8 @@ namespace PurrNet.Modules
         
         private VisibilityFactory _visibilityFactory;
         private VisibilityManager _visibilityManager;
+
+        internal event Action<SceneID> onBeforeSpawnTrigger;
 
         /// <summary>
         /// Called for each identity that is removed from the hierarchy.
@@ -101,7 +105,8 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
             
             _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
-
+            _playersManager.Subscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
+            
             if (!asServer)
             {
                 _playersManager.Subscribe<SetSceneIds>(OnSetSceneIds);
@@ -125,6 +130,11 @@ namespace PurrNet.Modules
                 
                 _scenePlayers.onPrePlayerloadedScene += OnPlayerJoinedScene;
             }
+        }
+
+        private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
+        {
+            TriggerSpawnEvents();
         }
 
         public bool IsSceneReady() => _isReady;
@@ -984,7 +994,7 @@ namespace PurrNet.Modules
                 active = active
             }, actor);
         }
-
+        
         public void PreFixedUpdate()
         {
             if (_toggledLastFrame.Count > 0)
@@ -1026,6 +1036,21 @@ namespace PurrNet.Modules
             if (_history.hasUnflushedActions)
                 SendDeltaToPlayers(_history.GetDelta());
             
+            if (_identitiesToSpawn.Count > 0)
+            {
+                HandleIdentitiesThatNeedToBeSpawned(_identitiesToSpawn);
+                _identitiesToSpawn.Clear();
+            }
+            
+            if (_identitiesToDespawn.Count > 0)
+            {
+                HandleIdentitiesThatNeedToBeDespawned(_identitiesToDespawn);
+                _identitiesToDespawn.Clear();
+            }
+        }
+
+        private void TriggerSpawnEvents()
+        {
             var spawnedThisFrameCount = _spawnedThisFrame.Count;
 
             if (spawnedThisFrameCount > 0)
@@ -1055,18 +1080,6 @@ namespace PurrNet.Modules
                     }
                 }
                 _spawnedThisFrame.Clear();
-            }
-
-            if (_identitiesToSpawn.Count > 0)
-            {
-                HandleIdentitiesThatNeedToBeSpawned(_identitiesToSpawn);
-                _identitiesToSpawn.Clear();
-            }
-            
-            if (_identitiesToDespawn.Count > 0)
-            {
-                HandleIdentitiesThatNeedToBeDespawned(_identitiesToDespawn);
-                _identitiesToDespawn.Clear();
             }
         }
 
@@ -1151,6 +1164,11 @@ namespace PurrNet.Modules
                     id.TriggerOnObserverAdded(player);
                 }
                 
+                onBeforeSpawnTrigger?.Invoke(_sceneID);
+                
+                TriggerSpawnEvents();
+                _playersManager.Send(player, new TriggerQueuedSpawnEvents());
+                
                 all.Dispose();
             }
             
@@ -1189,7 +1207,10 @@ namespace PurrNet.Modules
                 _playersManager.Send(player, actions);
 
                 for (var i = 0; i < all.Count; i++)
+                {
+                    _visibilityFactory.TriggerLateObserverRemoved(player, all[i]);
                     all[i].TriggerOnObserverRemoved(player);
+                }
 
                 all.Dispose();
             }

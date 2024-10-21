@@ -40,7 +40,7 @@ namespace PurrNet
             _hierarchy.onIdentitySpawned += OnIdentityAdded;
             _hierarchy.onIdentityRemoved += OnIdentityRemoved;
             
-            _players.onPlayerLoadedScene += OnPlayerJoinedScene;
+            _players.onPrePlayerloadedScene += OnPlayerJoinedScene;
             _players.onPlayerLeftScene += OnPlayerLeftScene;
 
             _playersManager.onPlayerLeft += OnPlayerLeft;
@@ -54,7 +54,7 @@ namespace PurrNet
             _hierarchy.onIdentitySpawned -= OnIdentityAdded;
             _hierarchy.onIdentityRemoved -= OnIdentityRemoved;
             
-            _players.onPlayerLoadedScene -= OnPlayerJoinedScene;
+            _players.onPrePlayerloadedScene -= OnPlayerJoinedScene;
             _players.onPlayerLeftScene -= OnPlayerLeftScene;
             
             _playersManager.onPlayerLeft -= OnPlayerLeft;
@@ -276,6 +276,11 @@ namespace PurrNet
                 identity.TriggerOnObserverRemoved(player);
             
             identity._observers.Clear();
+        }
+        
+        public void FlushPackets()
+        {
+            throw new System.NotImplementedException();
         }
 
         public void FixedUpdate()

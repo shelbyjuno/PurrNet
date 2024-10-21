@@ -154,25 +154,24 @@ namespace PurrNet.Pooling
     {
         private readonly bool _shouldDispose;
         private bool _disposed;
-        private readonly List<T> _list;
-        
-        public List<T> list => _list;
+
+        public List<T> list { get; }
 
         public DisposableList(List<T> list)
         {
-            _list = list;
+            this.list = list;
             _disposed = false;
             _shouldDispose = false;
         }
         
         public DisposableList(int capacity)
         {
-            var list = ListPool<T>.Instantiate();
+            var newList = ListPool<T>.Instantiate();
             
-            if (list.Capacity < capacity)
-                list.Capacity = capacity;
+            if (newList.Capacity < capacity)
+                newList.Capacity = capacity;
             
-            _list = list;
+            list = newList;
             _disposed = false;
             _shouldDispose = true;
         }
@@ -181,7 +180,7 @@ namespace PurrNet.Pooling
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
             foreach (var item in collection)
-                _list.Add(item);
+                list.Add(item);
         }
         
         public void Dispose()
@@ -189,14 +188,14 @@ namespace PurrNet.Pooling
             if (_disposed) return;
             
             if (_shouldDispose)
-                ListPool<T>.Destroy(_list);
+                ListPool<T>.Destroy(list);
             _disposed = true;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            return _list.GetEnumerator();
+            return list.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -208,31 +207,31 @@ namespace PurrNet.Pooling
         public void Add(T item)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            _list.Add(item);
+            list.Add(item);
         }
 
         public void Clear()
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            _list.Clear();
+            list.Clear();
         }
 
         public bool Contains(T item)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            return _list.Contains(item);
+            return list.Contains(item);
         }
 
         public void CopyTo(T[] array, int arrayIndex)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            _list.CopyTo(array, arrayIndex);
+            list.CopyTo(array, arrayIndex);
         }
 
         public bool Remove(T item)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            return _list.Remove(item);
+            return list.Remove(item);
         }
 
         public int Count
@@ -240,7 +239,7 @@ namespace PurrNet.Pooling
             get
             {
                 if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-                return _list.Count;
+                return list.Count;
             }
         }
 
@@ -256,19 +255,19 @@ namespace PurrNet.Pooling
         public int IndexOf(T item)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            return _list.IndexOf(item);
+            return list.IndexOf(item);
         }
 
         public void Insert(int index, T item)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            _list.Insert(index, item);
+            list.Insert(index, item);
         }
 
         public void RemoveAt(int index)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-            _list.RemoveAt(index);
+            list.RemoveAt(index);
         }
 
         public T this[int index]
@@ -276,12 +275,12 @@ namespace PurrNet.Pooling
             get
             {
                 if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-                return _list[index];
+                return list[index];
             }
             set
             {
                 if (_disposed) throw new ObjectDisposedException(nameof(DisposableList<T>));
-                _list[index] = value;
+                list[index] = value;
             }
         }
     }
