@@ -247,14 +247,6 @@ namespace PurrNet
 
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
         {
-            switch (asServer)
-            {
-                case true when !isServer:
-                case false when !isClient:
-                    module = default;
-                    return false;
-            }
-
             return asServer ?
                 _serverModules.TryGetModule(out module) :
                 _clientModules.TryGetModule(out module);

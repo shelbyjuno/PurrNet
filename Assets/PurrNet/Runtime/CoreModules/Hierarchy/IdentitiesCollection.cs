@@ -30,6 +30,11 @@ namespace PurrNet
             return id.HasValue && TryGetIdentity(id.Value, out identity);
         }
         
+        public bool TryRegisterIdentity(NetworkIdentity identity)
+        {
+            return identity.id.HasValue && _identities.TryAdd(identity.id.Value, identity);
+        }
+        
         public void RegisterIdentity(NetworkIdentity identity)
         {
             if (identity.id.HasValue)
@@ -37,6 +42,11 @@ namespace PurrNet
                 if (!_identities.TryAdd(identity.id.Value, identity))
                     PurrLogger.LogError($"Identity with id {identity.id} already exists.");
             }
+        }
+        
+        public void RegisterIdentity(NetworkIdentity identity, NetworkID id)
+        {
+            _identities.TryAdd(id, identity);
         }
         
         public bool UnregisterIdentity(NetworkIdentity identity)

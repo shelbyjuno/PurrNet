@@ -614,6 +614,7 @@ GameObject:
   m_Component:
   - component: {fileID: 574345987}
   - component: {fileID: 574345988}
+  - component: {fileID: 574345989}
   m_Layer: 0
   m_Name: GameObject (1)
   m_TagString: Untagged
@@ -650,6 +651,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
+--- !u!114 &574345989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 574345986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _syncSettings: 7
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _syncParent: 1
+  _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!1001 &575050556
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1781,6 +1805,7 @@ GameObject:
   - component: {fileID: 1216416897}
   - component: {fileID: 1216416896}
   - component: {fileID: 1216416899}
+  - component: {fileID: 1216416900}
   m_Layer: 0
   m_Name: Network
   m_TagString: Untagged
@@ -1857,6 +1882,19 @@ MonoBehaviour:
   - {fileID: 667181804}
   - {fileID: 171128654}
   - {fileID: 148014638}
+--- !u!114 &1216416900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216416895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef882a0e84c58df4885b0e1e59320b49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  checkInterval: 0.33
 --- !u!1 &1247646078
 GameObject:
   m_ObjectHideFlags: 0
@@ -2386,6 +2424,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1630726037}
   - component: {fileID: 1630726038}
+  - component: {fileID: 1630726039}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -2423,6 +2462,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
+--- !u!114 &1630726039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630726036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _syncSettings: 7
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _syncParent: 1
+  _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!1001 &1742787430
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2722,6 +2784,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1911406981}
   - component: {fileID: 1911406982}
+  - component: {fileID: 1911406983}
   m_Layer: 0
   m_Name: GameObject (1)
   m_TagString: Untagged
@@ -2759,6 +2822,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
+--- !u!114 &1911406983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1911406980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _syncSettings: 7
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _syncParent: 1
+  _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!1 &1927695205
 GameObject:
   m_ObjectHideFlags: 0

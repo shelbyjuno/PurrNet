@@ -39,9 +39,9 @@ namespace PurrNet
         /// <summary>
         /// Is spawned over the network.
         /// </summary>
-        public bool isSpawned => id.HasValue;
+        public bool isSpawned => _isSpawnedServer || _isSpawnedClient;
         
-        public bool isSceneObject => isSpawned && prefabId <= -1;
+        public bool isSceneObject => prefabId <= -1;
 
         public bool isServer => isSpawned && networkManager.isServer;
         
@@ -80,6 +80,9 @@ namespace PurrNet
         private TickManager _serverTickManager;
         private TickManager _clientTickManager;
 
+        private bool _isSpawnedClient;
+        private bool _isSpawnedServer;
+        
         public NetworkID? idServer;
         public NetworkID? idClient;
         
@@ -337,7 +340,7 @@ namespace PurrNet
         /// </summary>
         public int layer { get; private set; }
         
-        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
+        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer, bool isInitialSceneObject = false)
         {
             Hasher.PrepareType(GetType());
             
@@ -348,11 +351,18 @@ namespace PurrNet
             siblingIndex = siblingIdx;
             prefabOffset = offset;
 
-            bool wasAlreadySpawned = isSpawned;
-            
+            bool wasAlreadySpawned = isSpawned || isInitialSceneObject;
+
             if (asServer)
-                 idServer = identityId;
-            else idClient = identityId;
+            {
+                _isSpawnedServer = !isInitialSceneObject;
+                idServer = identityId;
+            }
+            else
+            {
+                _isSpawnedClient = !isInitialSceneObject;
+                idClient = identityId;
+            }
 
             if (asServer)
             {
@@ -391,9 +401,14 @@ namespace PurrNet
 
         private bool _ignoreNextDestroy;
         
-        public void IgnoreNextDestroyCallback()
+        internal void IgnoreNextDestroyCallback()
         {
             _ignoreNextDestroy = true;
+        }
+        
+        internal void ResetIgnoreNextDestroy()
+        {
+            _ignoreNextDestroy = false;
         }
         
         private PlayerID? _pendingOwnershipRequest;
@@ -511,11 +526,16 @@ namespace PurrNet
 
             for (int i = 0; i < _modules.Count; i++)
                 _modules[i].OnDespawned(asServer);
-            
+
             if (asServer)
-                 idServer = null;
-            else idClient = null;
-            
+            {
+                _isSpawnedServer = false;
+            }
+            else
+            {
+                _isSpawnedClient = false;
+            }
+
             _spawnedCount--;
 
             if (_spawnedCount == 0)
