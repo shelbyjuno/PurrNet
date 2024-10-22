@@ -1,0 +1,17 @@
+Component: PurrNet/Externals/7zip
+License: PurrNet/Externals/7zip/LICENSE.txt (Public Domain)
+
+--
+
+Component: PurrNet/Externals/LiteNetLib
+License: PurrNet/Externals/LiteNetLib/LICENSE.txt (MIT)
+
+--
+
+Component: PurrNet/Externals/MemoryPack
+License: PurrNet/Externals/MemoryPack/LICENSE.txt (MIT)
+
+--
+
+Component: PurrNet/Externals/SimpleWebTransport
+License: PurrNet/Externals/SimpleWebTransport/LICENSE.txt (MIT)
