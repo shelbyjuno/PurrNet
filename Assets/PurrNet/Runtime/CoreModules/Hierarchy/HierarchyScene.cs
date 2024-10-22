@@ -440,10 +440,7 @@ namespace PurrNet.Modules
             }
 
             if (identities.TryGetIdentity(action.identityId, out _))
-            {
-                PurrLogger.LogError($"Identity with id {action.identityId} is already spawned");
                 return;
-            }
 
             if (action.childOffset != 0)
             {
