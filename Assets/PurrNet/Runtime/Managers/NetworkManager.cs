@@ -66,7 +66,7 @@ namespace PurrNet
         public NetworkVisibilityRuleSet visibilityRules => _visibilityRules;
         
         public Scene originalScene { get; private set; }
-
+        
         /// <summary>
         /// Occurs when the server connection state changes.
         /// </summary>
@@ -176,7 +176,7 @@ namespace PurrNet
         {
             if (!networkRules)
                 throw new InvalidOperationException(PurrLogger.FormatMessage("NetworkRules is not set (null)."));
-            
+
             originalScene = gameObject.scene;
 
             if (_visibilityRules)

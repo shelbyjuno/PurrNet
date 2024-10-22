@@ -156,14 +156,14 @@ namespace PurrNet.Modules
     public partial struct TransformInfo : IAutoNetworkedData
     {
         public NetworkID? parentId { get; set; }
-        public bool activeInHierarchy { get; set; }
+        public bool activeSelf { get; set; }
         public Vector3 localPos { get; set; }
         public Quaternion localRot { get; set; }
         public Vector3 localScale { get; set; }
 
         public TransformInfo(Transform trs)
         {
-            activeInHierarchy = trs.gameObject.activeInHierarchy;
+            activeSelf = trs.gameObject.activeSelf;
 
             var parent = trs.parent;
 

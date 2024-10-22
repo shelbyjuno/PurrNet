@@ -648,7 +648,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!1001 &575050556
@@ -1889,7 +1888,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7b598b9d8509d64abb9fdaf07fa3f6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 11400000, guid: 61bfdc7c387406945b02e80f829030d1, type: 2}
   _animator: {fileID: 1247646080}
@@ -2192,7 +2190,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!1001 &1492589980
@@ -2424,7 +2421,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!1001 &1742787430
@@ -2761,7 +2757,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!1 &1927695205

@@ -40,11 +40,6 @@ namespace PurrNet
             _visibilityFactory = factory;
         }
         
-        public bool IsSceneReady(SceneID sceneID)
-        {
-            return _sceneToHierarchy.TryGetValue(sceneID, out var hierarchy) && hierarchy.IsSceneReady();
-        }
-
         public void Enable(bool asServer)
         {
             _asServer = asServer;
@@ -156,9 +151,6 @@ namespace PurrNet
                 return;
             }
 
-            if (!hierarchy.IsSceneReady())
-                return;
-            
             hierarchy.Spawn(gameObject);
             
             if (!_manager.isClientOnly || !_players.localPlayerId.HasValue)

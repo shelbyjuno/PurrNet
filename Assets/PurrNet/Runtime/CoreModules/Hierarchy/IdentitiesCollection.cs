@@ -49,6 +49,11 @@ namespace PurrNet
             return _identities.Remove(id);
         }
 
+        public void SkipIds(ushort count)
+        {
+            _nextId += count;
+        }
+        
         public ushort GetNextId()
         {
             return _nextId++;

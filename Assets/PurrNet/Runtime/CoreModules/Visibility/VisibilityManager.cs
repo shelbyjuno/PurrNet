@@ -37,7 +37,7 @@ namespace PurrNet
 
             HandleExistingObjects();
             
-            _hierarchy.onIdentitySpawned += OnIdentityAdded;
+            _hierarchy.onIdentityRootSpawned += OnIdentityRootAdded;
             _hierarchy.onIdentityRemoved += OnIdentityRemoved;
             
             _players.onPrePlayerloadedScene += OnPlayerJoinedScene;
@@ -51,7 +51,7 @@ namespace PurrNet
             if (!asServer)
                 return;
             
-            _hierarchy.onIdentitySpawned -= OnIdentityAdded;
+            _hierarchy.onIdentityRootSpawned -= OnIdentityRootAdded;
             _hierarchy.onIdentityRemoved -= OnIdentityRemoved;
             
             _players.onPrePlayerloadedScene -= OnPlayerJoinedScene;
@@ -68,7 +68,7 @@ namespace PurrNet
             {
                 var root = existingIdentity.root;
                 if (roots.Add(root))
-                    OnIdentityAdded(root);
+                    OnIdentityRootAdded(root);
             }
 
             HashSetPool<NetworkIdentity>.Destroy(roots);
@@ -120,7 +120,7 @@ namespace PurrNet
             }
         }
         
-        private void OnIdentityAdded(NetworkIdentity identity)
+        private void OnIdentityRootAdded(NetworkIdentity identity)
         {
             if (!identity.id.HasValue)
             {

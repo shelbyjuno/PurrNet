@@ -41,7 +41,7 @@ namespace PurrNet
         /// </summary>
         public bool isSpawned => id.HasValue;
         
-        public bool isSceneObject => isSpawned && prefabId == -1;
+        public bool isSceneObject => isSpawned && prefabId <= -1;
 
         public bool isServer => isSpawned && networkManager.isServer;
         
@@ -335,7 +335,7 @@ namespace PurrNet
         /// The layer of this object. Avoids gameObject.layer.
         /// Only available when spawned.
         /// </summary>
-        public int layer;
+        public int layer { get; private set; }
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
@@ -469,6 +469,16 @@ namespace PurrNet
         internal void IgnoreNextEnableCallback()
         {
             _ignoreNextEnable = true;
+        }
+        
+        internal void ResetIgnoreNextActivation()
+        {
+            _ignoreNextActivation = false;
+        }
+        
+        internal void ResetIgnoreNextEnable()
+        {
+            _ignoreNextEnable = false;
         }
         
         private int _spawnedCount;
