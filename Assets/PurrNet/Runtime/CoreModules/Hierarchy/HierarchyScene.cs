@@ -342,6 +342,12 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to find identity with id {action.identityId}");
                 return;
             }
+            
+            if (parent && !parent.isSceneObject && trs.isSceneObject)
+            {
+                PurrLogger.LogError($"Failed to change parent of '{trs.name}' to '{parent.name}' because scene objects can't be parented to non-scene objects.", trs);
+                return;
+            }
 
             trs.StartIgnoreParentChanged();
             identity.transform.SetParent(parent ? parent.transform : null);
