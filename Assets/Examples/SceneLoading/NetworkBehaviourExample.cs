@@ -1,25 +1,25 @@
+using System;
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Logging;
 using UnityEngine;
 using Random = UnityEngine.Random;
+
+[Serializable]
+struct TestStruct
+{
+    public int a;
+    public int b;
+}
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
     [SerializeField] private NetworkIdentity someRef;
 
     [SerializeField]
-    private SyncVar<int> _testChild; 
-
-    [SerializeField]
     private SyncVar<int> _testChild2 = new (70);
 
-    [SerializeField]
-    private SyncVar<int> _testChild3;
-
-    protected override void OnInitializeModules()
-    {
-        _testChild = new SyncVar<int>(69);
-    }
+    [SerializeField] private bool _keepChanging;
 
     protected override void OnSpawned(bool asServer)
     {
@@ -36,14 +36,18 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                _testChild.value = Random.Range(0, 100);
                 _testChild2.value = Random.Range(0, 100);
-                _testChild3.value = Random.Range(0, 100);
                 // ObserversRPCTest(Time.time, someRef);
             }
         }
     }
-    
+
+    private void FixedUpdate()
+    {
+        if (_keepChanging)
+            _testChild2.value = Random.Range(0, 100);
+    }
+
     [ServerRpc(requireOwnership: false)]
     private void Test(string test)
     {

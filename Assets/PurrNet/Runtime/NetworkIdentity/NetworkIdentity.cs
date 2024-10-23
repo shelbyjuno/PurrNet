@@ -552,26 +552,41 @@ namespace PurrNet
         internal void TriggerOnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) 
         {
             OnOwnerChanged(oldOwner, newOwner, asServer);
+            
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnOwnerChanged(oldOwner, newOwner, asServer);
         }
 
         internal void TriggerOnOwnerDisconnected(PlayerID ownerId, bool asServer)
         {
             OnOwnerDisconnected(ownerId, asServer);
+            
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnOwnerDisconnected(ownerId, asServer);
         }
 
         internal void TriggerOnOwnerReconnected(PlayerID ownerId, bool asServer)
         {
             OnOwnerConnected(ownerId, asServer);
+            
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnOwnerConnected(ownerId, asServer);
         }
 
         public void TriggerOnObserverAdded(PlayerID target)
         {
             OnObserverAdded(target);
+            
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnObserverAdded(target);
         }
 
         public void TriggerOnObserverRemoved(PlayerID target)
         {
             OnObserverRemoved(target);
+            
+            for (int i = 0; i < _modules.Count; i++)
+                _modules[i].OnObserverRemoved(target);
         }
     }
 }

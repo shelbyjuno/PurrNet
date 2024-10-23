@@ -10,30 +10,32 @@ namespace PurrNet
     public class NetworkModule
     {
         protected NetworkIdentity parent { get; private set; }
+        
+        public string name { get; private set; }
 
         private byte index { get; set; } = 255;
 
-        protected NetworkManager networkManager => parent.networkManager;
+        protected NetworkManager networkManager => parent ? parent.networkManager : null;
         
-        protected bool isSceneObject => parent.isSceneObject;
+        protected bool isSceneObject => parent && parent.isSceneObject;
         
-        protected bool isOwner => parent.isOwner;
+        protected bool isOwner => parent && parent.isOwner;
         
-        protected bool isClient => parent.isClient;
+        protected bool isClient => parent && parent.isClient;
 
-        protected bool isServer => parent.isServer;
+        protected bool isServer => parent && parent.isServer;
         
-        protected bool isHost => parent.isHost;
+        protected bool isHost => parent && parent.isHost;
         
-        protected bool isSpawned => parent.isSpawned;
+        protected bool isSpawned => parent && parent.isSpawned;
         
         protected bool hasOwner => parent.hasOwner;
         
-        protected bool hasConnectedOwner => parent.hasConnectedOwner;
+        protected bool hasConnectedOwner => parent && parent.hasConnectedOwner;
         
-        protected PlayerID? localPlayer => parent.localPlayer;
+        protected PlayerID? localPlayer => parent ? parent.localPlayer : null;
         
-        protected PlayerID? owner => parent.owner;
+        protected PlayerID? owner => parent ? parent.owner : null;
 
         public virtual void OnSpawn() { }
 
@@ -43,11 +45,31 @@ namespace PurrNet
         
         public virtual void OnDespawned(bool asServer) { }
 
-        [UsedByIL]
-        public void SetParent(NetworkIdentity p, byte i)
+        /// <summary>
+        /// Called when an observer is added.
+        /// Server only.
+        /// </summary>
+        /// <param name="player"></param>
+        public virtual void OnObserverAdded(PlayerID player) { }
+        
+        /// <summary>
+        /// Called when an observer is removed.
+        /// Server only.
+        /// </summary>
+        /// <param name="player"></param>
+        public virtual void OnObserverRemoved(PlayerID player) { }
+        
+        public virtual void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) { }
+
+        public virtual void OnOwnerDisconnected(PlayerID ownerId, bool asServer) { }
+
+        public virtual void OnOwnerConnected(PlayerID ownerId, bool asServer) { }
+        
+        public void SetComponentParent(NetworkIdentity p, byte i, string moduleName)
         {
             parent = p;
             index = i;
+            name = moduleName;
         }
 
         [UsedByIL]

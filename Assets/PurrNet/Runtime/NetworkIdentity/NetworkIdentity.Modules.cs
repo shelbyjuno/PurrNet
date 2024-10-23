@@ -9,15 +9,15 @@ namespace PurrNet
         private readonly List<NetworkModule> _modules = new ();
 
         [UsedByIL]
-        protected void RegisterModuleInternal(string name, string type, NetworkModule module)
+        protected void RegisterModuleInternal(string moduleName, string type, NetworkModule module)
         {
             if (module == null)
             {
-                PurrLogger.LogError($"Module in {GetType().Name} is null: <i>{type}</i> {name};\nEnsure it isn't null once identity is spawned. A good place to initialize it could be in Awake().", this);
+                PurrLogger.LogError($"Module in {GetType().Name} is null: <i>{type}</i> {moduleName};\nEnsure it isn't null once identity is spawned. A good place to initialize it could be in Awake().", this);
                 return;
             }
 
-            module.SetParent(this, (byte)_modules.Count);
+            module.SetComponentParent(this, (byte)_modules.Count, moduleName);
             _modules.Add(module);
         }
     }

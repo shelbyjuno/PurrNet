@@ -323,6 +323,9 @@ namespace PurrNet
         [TargetRpc]
         private void SendLatestTransform([UsedImplicitly] PlayerID player, NetworkTransformData data)
         {
+            if (isServer)
+                return;
+            
             _id = data.id;
             
             ApplyTransformData(data, true);

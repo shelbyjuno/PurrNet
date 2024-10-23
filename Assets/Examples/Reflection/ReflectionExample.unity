@@ -2689,6 +2689,7 @@ MonoBehaviour:
   _syncSettings: 7
   _interpolateSettings: 7
   _ownerAuth: 1
+  _syncParent: 1
   _sendIntervalInTicks: 0
   _tolerances:
     positionTolerance: 0.1
