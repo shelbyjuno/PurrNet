@@ -32,24 +32,28 @@ namespace PurrNet
             for (var i = 0; i < _toActivate.Length; i++)
             {
                 var go = _toActivate[i];
+                if(!go) continue;
                 go.SetActive(asOwner);
             }
 
             for (var i = 0; i < _toDeactivate.Length; i++)
             {
                 var go = _toDeactivate[i];
+                if(!go) continue;
                 go.SetActive(!asOwner);
             }
 
             for (var i = 0; i < _toEnable.Length; i++)
             {
                 var comp = _toEnable[i];
+                if (!comp) continue;
                 comp.enabled = asOwner;
             }
 
             for (var i = 0; i < _toDisable.Length; i++)
             {
                 var comp = _toDisable[i];
+                if (!comp) continue;
                 comp.enabled = !asOwner;
             }
         }
