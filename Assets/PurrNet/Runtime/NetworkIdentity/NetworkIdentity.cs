@@ -95,8 +95,7 @@ namespace PurrNet
         
         public NetworkManager networkManager { get; private set; }
         
-        public PlayerID? localPlayer => isSpawned && networkManager.TryGetModule<PlayersManager>(false, out var module) && module.localPlayerId.HasValue 
-            ? module.localPlayerId.Value : null;
+        public PlayerID? localPlayer { get; private set; }
         
         public event OnRootChanged onRootChanged;
         public event Action<NetworkIdentity> onRemoved;
@@ -350,6 +349,9 @@ namespace PurrNet
             prefabId = pid;
             siblingIndex = siblingIdx;
             prefabOffset = offset;
+            
+            if (!asServer)
+                localPlayer = networkManager.GetModule<PlayersManager>(false).localPlayerId;
 
             bool wasAlreadySpawned = isSpawned || isInitialSceneObject;
 

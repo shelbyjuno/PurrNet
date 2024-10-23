@@ -69,7 +69,6 @@ namespace PurrNet
         {
             _tickManager = networkManager.GetModule<TickManager>(isServer);
             _tickManager.onTick += OnTick;
-            
         }
 
         public override void OnDespawned()
@@ -79,7 +78,7 @@ namespace PurrNet
         
         public override void OnObserverAdded(PlayerID player)
         {
-            SendLatestState(player, _id, _value);
+            SendLatestState(player, _id++, _value);
         }
 
         private float _lastSendTime;
@@ -173,7 +172,7 @@ namespace PurrNet
         [ObserversRpc(Channel.Unreliable, excludeOwner: true)]
         private void SendToOthers(ushort packetId, T newValue)
         {
-            if (!isHost) OnReceivedValue(packetId, newValue);
+            if (!isServer) OnReceivedValue(packetId, newValue);
         }
         
         [ObserversRpc(Channel.ReliableUnordered, excludeOwner: true)]
@@ -182,13 +181,13 @@ namespace PurrNet
             if (!isHost) OnReceivedValue(packetId, newValue);
         }
         
-        [ObserversRpc(Channel.Unreliable, excludeOwner: true)]
+        [ObserversRpc(Channel.Unreliable)]
         private void SendToAll(ushort packetId, T newValue)
         {
             if (!isHost) OnReceivedValue(packetId, newValue);
         }
         
-        [ObserversRpc(Channel.ReliableUnordered, excludeOwner: true)]
+        [ObserversRpc(Channel.ReliableUnordered)]
         private void SendToAllReliably(ushort packetId, T newValue)
         {
             if (!isHost) OnReceivedValue(packetId, newValue);
@@ -197,17 +196,23 @@ namespace PurrNet
         private void OnReceivedValue(ushort packetId, T newValue)
         {
             bool isController = parent.IsController(_ownerAuth);
-            
+
             if (isController)
+            {
                 return;
-            
+            }
+
             if (packetId <= _id)
+            {
                 return;
+            }
             
             _id = packetId;
-            
+
             if (_value.Equals(newValue))
+            {
                 return;
+            }
             
             _value = newValue;
             onChanged?.Invoke(value);
