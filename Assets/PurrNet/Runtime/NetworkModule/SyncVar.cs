@@ -143,7 +143,6 @@ namespace PurrNet
         {
             if (isServer) return;
             
-            PurrLogger.Log($"Received latest state of '{name}' {newValue}.", parent);
             _id = packetId;
             
             if (_value.Equals(newValue))
