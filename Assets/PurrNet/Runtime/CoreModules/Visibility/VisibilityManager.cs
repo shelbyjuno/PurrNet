@@ -21,6 +21,8 @@ namespace PurrNet
         
         public event VisibilityChanged onObserverRemoved;
         
+        public event System.Action onTickChangesDone;
+        
         internal VisibilityManager(NetworkManager manager, PlayersManager playersManager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
             _playersManager = playersManager;
@@ -118,6 +120,8 @@ namespace PurrNet
                 if (!identity._observers.Remove(player)) continue;
                 onObserverRemoved?.Invoke(player, identity);
             }
+            
+            onTickChangesDone?.Invoke();
         }
         
         private void OnIdentityRootAdded(NetworkIdentity identity)
@@ -138,6 +142,8 @@ namespace PurrNet
             copy.UnionWith(players);
             EvaluateVisibilityForAllPlayers(identity, copy);
             HashSetPool<PlayerID>.Destroy(copy);
+            
+            onTickChangesDone?.Invoke();
         }
 
         private void EvaluateVisibilityForNewPlayer(NetworkIdentity root, PlayerID player)
@@ -303,6 +309,8 @@ namespace PurrNet
             
             HashSetPool<NetworkIdentity>.Destroy(roots);
             HashSetPool<PlayerID>.Destroy(copy);
+            
+            onTickChangesDone?.Invoke();
         }
     }
 }

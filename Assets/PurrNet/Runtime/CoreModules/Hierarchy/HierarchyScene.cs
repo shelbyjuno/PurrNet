@@ -94,6 +94,7 @@ namespace PurrNet.Modules
         {
             _visibilityManager.onObserverAdded += AddedObserverToIdentity;
             _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
+            _visibilityManager.onTickChangesDone += PostObserverEvents;
             
             _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Subscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
@@ -111,7 +112,8 @@ namespace PurrNet.Modules
         {
             _visibilityManager.onObserverAdded -= AddedObserverToIdentity;
             _visibilityManager.onObserverRemoved -= RemovedObserverFromIdentity;
-            
+            _visibilityManager.onTickChangesDone -= PostObserverEvents;
+
             _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Unsubscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
 
@@ -1044,7 +1046,10 @@ namespace PurrNet.Modules
                 HandleIdentitiesThatNeedToBeSpawned(_identitiesToSpawn);
                 _identitiesToSpawn.Clear();
             }
-            
+        }
+        
+        private void PostObserverEvents()
+        {
             if (_identitiesToDespawn.Count > 0)
             {
                 HandleIdentitiesThatNeedToBeDespawned(_identitiesToDespawn);
