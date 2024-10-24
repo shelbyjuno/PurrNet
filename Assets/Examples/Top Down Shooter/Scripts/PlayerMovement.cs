@@ -21,8 +21,9 @@ namespace PurrNet.Examples.TopDownShooter
                 PurrLogger.LogError($"Failed to get component '{nameof(CharacterController)}' on '{name}'.", this);
         }
 
-        protected override void OnSpawned(bool asServer)
+        protected override void OnSpawned()
         {
+            PurrLogger.Log($"Owner: '{owner}', {localPlayer ?? new PlayerID((ushort)69, false)}");
             enabled = isOwner;
         }
 

@@ -349,9 +349,9 @@ namespace PurrNet
             prefabId = pid;
             siblingIndex = siblingIdx;
             prefabOffset = offset;
-            
-            if (!asServer)
-                localPlayer = networkManager.GetModule<PlayersManager>(false).localPlayerId;
+
+            if (!localPlayer.HasValue && networkManager.TryGetModule<PlayersManager>(false, out var playersManager))
+                localPlayer = playersManager.localPlayerId;
 
             bool wasAlreadySpawned = isSpawned || isInitialSceneObject;
 
