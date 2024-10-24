@@ -627,13 +627,15 @@ namespace PurrNet.Modules
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
         
-        public void Spawn(GameObject instance)
+        public void Spawn(ref GameObject instance)
         {
             MakeSureAwakeIsCalled(instance);
 
             if (!_manager.networkRules.HasSpawnAuthority(_manager, _asServer))
             {
                 PurrLogger.LogError($"Failed to spawn '{instance.name}' due to lack of permissions.");
+                instance = null;
+                Object.Destroy(instance);
                 return;
             }
             
