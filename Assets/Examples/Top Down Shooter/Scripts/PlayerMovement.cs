@@ -23,7 +23,6 @@ namespace PurrNet.Examples.TopDownShooter
 
         protected override void OnSpawned()
         {
-            PurrLogger.Log($"Owner: '{owner}', {localPlayer ?? new PlayerID((ushort)69, false)}");
             enabled = isOwner;
         }
 
