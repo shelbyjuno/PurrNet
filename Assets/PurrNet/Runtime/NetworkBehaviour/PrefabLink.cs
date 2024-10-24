@@ -1,3 +1,4 @@
+using PurrNet.Logging;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -33,9 +34,11 @@ namespace PurrNet
                 return;
             
             bool anyConnected = manager.isClient || manager.isServer;
-            
+
             if (!anyConnected)
+            {
                 return;
+            }
 
             var prefab = manager.prefabProvider.GetPrefabFromGuid(_guid);
 

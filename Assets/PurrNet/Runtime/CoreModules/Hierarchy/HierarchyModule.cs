@@ -150,13 +150,18 @@ namespace PurrNet
                 PurrLogger.LogError($"Failed to find hierarchy for scene '{sceneID}'.");
                 return;
             }
-            
-            if (!_manager.isClientOnly || !_players.localPlayerId.HasValue)
-                return;
+
+            string name = gameObject.name;
 
             hierarchy.Spawn(ref gameObject);
+
+            if (gameObject == null)
+            {
+                PurrLogger.LogError($"Failed to spawn '{name}'.");
+                return;
+            }
             
-            if (!gameObject)
+            if (!_manager.isClientOnly || !_players.localPlayerId.HasValue)
                 return;
             
             var identity = gameObject.GetComponent<NetworkIdentity>();
