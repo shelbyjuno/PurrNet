@@ -136,8 +136,7 @@ namespace PurrNet
                 case RPCType.TargetRPC: 
                     if (isServer)
                          SendToTarget(signature.targetPlayer!.Value, packet, signature.channel);
-                    else throw new NotImplementedException("TargetRPC can only be called on server right now.");
-                    
+                    else SendToServer(packet, signature.channel);
                     break;
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -182,20 +181,23 @@ namespace PurrNet
 
             Func<PlayerID, bool> predicate = ShouldSend;
 
-            var rawData = BroadcastModule.GetImmediateData(data);
 
             switch (signature.type)
             {
                 case RPCType.ServerRPC: throw new InvalidOperationException("ServerRPC should be handled by server.");
 
                 case RPCType.ObserversRPC:
+                {
+                    var rawData = BroadcastModule.GetImmediateData(data);
                     SendToObservers(rawData, predicate, signature.channel);
                     return !isClient;
-                
+                }
                 case RPCType.TargetRPC:
+                {
+                    var rawData = BroadcastModule.GetImmediateData(data);
                     SendToTarget(data.senderPlayerId, rawData, signature.channel);
                     return false;
-
+                }
                 default: throw new ArgumentOutOfRangeException(nameof(signature.type));
             }
 

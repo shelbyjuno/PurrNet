@@ -20,15 +20,19 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private SyncVar<int> _testChild2 = new (70);
 
     [SerializeField] private bool _keepChanging;
+    
+    static bool _sentOnce;
 
     protected override void OnSpawned(bool asServer)
     {
         PurrLogger.Log($"Spawned as server: {asServer}");
-        if (!asServer)
+        if (!asServer && !_sentOnce)
         {
             // this will be sent to the server as per usual
             PurrLogger.Log("Sending to observers");
             Test("Test 3");
+            
+            _sentOnce = true;
         }
     }
     
@@ -50,7 +54,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
             _testChild2.value = Random.Range(0, 100);
     }
 
-    [ObserversRpc(requireServer: false)]
+    [ObserversRpc(requireServer: false, bufferLast: true)]
     private void Test(string test)
     {
         Debug.Log(test);

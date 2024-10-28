@@ -169,24 +169,89 @@ namespace PurrNet.Modules
             
             switch (signature.type)
             {
-                case RPCType.ServerRPC: nm.GetModule<PlayersManager>(false).SendToServer(packet, signature.channel); break;
-                case RPCType.ObserversRPC: nm.GetModule<PlayersManager>(true).SendToAll(packet, signature.channel); break;
-                case RPCType.TargetRPC: nm.GetModule<PlayersManager>(true).Send(signature.targetPlayer!.Value, packet, signature.channel); break;
+                case RPCType.ServerRPC:
+                {
+                    if (nm.TryGetModule<PlayersManager>(false, out var players))
+                        players.SendToServer(packet, signature.channel);
+                    break;
+                }
+                case RPCType.ObserversRPC:
+                {
+                    if (nm.isServer)
+                         nm.GetModule<PlayersManager>(true).SendToAll(packet, signature.channel);
+                    else nm.GetModule<PlayersManager>(false).SendToServer(packet, signature.channel);
+                    break;
+                }
+                case RPCType.TargetRPC:
+                {
+                    if (nm.isServer)
+                         nm.GetModule<PlayersManager>(true).Send(signature.targetPlayer!.Value, packet, signature.channel); 
+                    else nm.GetModule<PlayersManager>(false).SendToServer(packet, signature.channel);
+                    break;
+                }
                 default: throw new ArgumentOutOfRangeException();
             }
         }
         
-        [UsedByIL]
-        public static bool ValidateReceivingStaticRPC(RPCInfo info, RPCSignature signature, INetworkedData data, bool asServer)
+        static readonly List<PlayerID> _observers = new();
+
+        static IEnumerable<PlayerID> GetImmediateExcept(PlayersManager players, PlayerID except)
         {
-            if (signature.type == RPCType.ServerRPC && !asServer ||
-                signature.type != RPCType.ServerRPC && asServer)
+            _observers.Clear();
+            _observers.AddRange(players.players);
+            _observers.Remove(except);
+            return _observers;
+        }
+        
+        [UsedByIL]
+        public static bool ValidateReceivingStaticRPC(RPCInfo info, RPCSignature signature, IRpc data, bool asServer)
+        {
+            var nm = NetworkManager.main;
+
+            if (!nm)
             {
-                PurrLogger.LogError($"Trying to receive {signature.type} '{signature.rpcName}' on {(asServer ? "server" : "client")}. Aborting RPC call.");
+                PurrLogger.LogError($"Aborted RPC '{signature.rpcName}'. NetworkManager not found.");
+                return false;
+            }
+
+            if (!asServer)
+            {
+                if (signature.type == RPCType.ServerRPC)
+                {
+                    PurrLogger.LogError($"Aborted RPC {signature.type} '{signature.rpcName}' on client. ServerRpc are meant for server only.");
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            if (signature.requireServer)
+            {
+                PurrLogger.LogError($"Aborted RPC {signature.type} '{signature.rpcName}' which requires server from client.");
                 return false;
             }
             
-            return true;
+            switch (signature.type)
+            {
+                case RPCType.ServerRPC:  return true;
+                case RPCType.ObserversRPC:
+                {
+                    var players = nm.GetModule<PlayersManager>(true);
+                    var rawData = BroadcastModule.GetImmediateData(data);
+                    var collection = GetImmediateExcept(players, info.sender);
+                    players.SendRaw(collection, rawData, signature.channel);
+                    return !nm.isClient;
+                }
+                case RPCType.TargetRPC:
+                {
+                    var players = nm.GetModule<PlayersManager>(true);
+                    var rawData = BroadcastModule.GetImmediateData(data);
+                    players.SendRaw(data.senderPlayerId, rawData, signature.channel);
+                    return false;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         readonly struct StaticGenericKey : IEquatable<StaticGenericKey>

@@ -114,20 +114,24 @@ namespace PurrNet
             module.AppendToBufferedRPCs(packet, signature);
 
             Func<PlayerID, bool> predicate = null;
-
+            
             if (signature.excludeOwner)
                 predicate = parent.IsNotOwnerPredicate;
 
             switch (signature.type)
             {
-                case RPCType.ServerRPC:
-                    parent.SendToServer(packet, signature.channel);
-                    break;
+                case RPCType.ServerRPC: parent.SendToServer(packet, signature.channel); break;
                 case RPCType.ObserversRPC:
-                    parent.SendToObservers(packet, predicate, signature.channel);
+                {
+                    if (isServer)
+                        parent.SendToObservers(packet, predicate, signature.channel);
+                    else parent.SendToServer(packet, signature.channel);
                     break;
-                case RPCType.TargetRPC:
-                    parent.SendToTarget(signature.targetPlayer!.Value, packet, signature.channel);
+                }
+                case RPCType.TargetRPC: 
+                    if (isServer)
+                        parent.SendToTarget(signature.targetPlayer!.Value, packet, signature.channel);
+                    else parent.SendToServer(packet, signature.channel);
                     break;
                 default: throw new ArgumentOutOfRangeException();
             }
