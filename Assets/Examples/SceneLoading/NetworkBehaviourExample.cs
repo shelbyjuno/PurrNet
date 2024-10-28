@@ -23,6 +23,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     protected override void OnSpawned(bool asServer)
     {
+        PurrLogger.Log($"Spawned as server: {asServer}");
         if (!asServer)
         {
             // this will be sent to the server as per usual

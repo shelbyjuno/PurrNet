@@ -154,14 +154,14 @@ namespace PurrNet.Modules
 
                 for (int j = 0; j < CACHE.Count; ++j)
                 {
-                    //if (_asServer || !isHost)
-                    //{
-                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
-                    /*}
+                    if (_asServer || !isHost)
+                    {
+                        SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
+                    }
                     else
                     {
                         CACHE[j].TriggerSpawnEvent(_asServer);
-                    }*/
+                    }
                 }
 
                 if (_asServer)
