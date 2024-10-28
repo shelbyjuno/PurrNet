@@ -160,7 +160,8 @@ namespace PurrNet.Modules
                     }
                     else
                     {
-                        CACHE[j].TriggerSpawnEvent(_asServer);
+                        _spawnedThisFrame.Add(CACHE[j]);
+                        // CACHE[j].TriggerSpawnEvent(_asServer);
                     }
                 }
 
