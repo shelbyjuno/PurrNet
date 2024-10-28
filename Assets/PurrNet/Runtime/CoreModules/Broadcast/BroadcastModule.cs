@@ -6,6 +6,7 @@ using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEngine.PlayerLoop;
 
 namespace PurrNet.Modules
 {
@@ -78,11 +79,33 @@ namespace PurrNet.Modules
             return typeId;
         }
         
-        internal static ByteData GetData<T>(T data)
+        public static ByteData GetImmediateData(object data)
         {
             var dataStream = ByteBufferPool.Alloc();
             var stream = new NetworkStream(dataStream, false);
+            var dataType = data.GetType();
             
+            WriteHeader(stream, dataType);
+
+            try
+            {
+                stream.Serialize(dataType, ref data);
+            }
+            catch (MemoryPackSerializationException e)
+            {
+                throw new MemoryPackSerializationException(PurrLogger.FormatMessage($"Cannot serialize {dataType.Name}, add the IAutoNetworkedData interface to the class.\n{e.Message}"));
+            }
+
+            var value = dataStream.ToByteData();
+            ByteBufferPool.Free(dataStream);
+            return value;
+        }
+
+        private static ByteData GetData<T>(T data)
+        {
+            var dataStream = ByteBufferPool.Alloc();
+            var stream = new NetworkStream(dataStream, false);
+
             WriteHeader(stream, typeof(T));
 
             try
@@ -131,6 +154,14 @@ namespace PurrNet.Modules
             AssertIsServer("Cannot send data to player from client.");
             
             var byteData = GetData(data);
+            
+            foreach (var connection in conn)
+                _transport.SendToClient(connection, byteData, method);
+        }
+        
+        public void Send(IEnumerable<Connection> conn, ByteData byteData, Channel method = Channel.ReliableOrdered)
+        {
+            AssertIsServer("Cannot send data to player from client.");
             
             foreach (var connection in conn)
                 _transport.SendToClient(connection, byteData, method);

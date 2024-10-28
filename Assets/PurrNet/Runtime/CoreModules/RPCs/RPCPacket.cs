@@ -1,19 +1,29 @@
-﻿using PurrNet.Packets;
+﻿using System;
+using PurrNet.Packets;
 using PurrNet.Transports;
 
 namespace PurrNet
 {
-    public partial struct RPCPacket : INetworkedData
+    public interface IRpc
+    {
+        PlayerID senderPlayerId { get; }
+    }
+    
+    public partial struct RPCPacket : INetworkedData, IRpc
     {
         public NetworkID networkId;
         public SceneID sceneId;
+        public PlayerID senderId;
         public byte rpcId;
         public ByteData data;
+        
+        public PlayerID senderPlayerId => senderId;
         
         public void Serialize(NetworkStream packer)
         {
             packer.Serialize(ref networkId);
             packer.Serialize(ref sceneId);
+            packer.Serialize(ref senderId);
             packer.Serialize(ref rpcId);
             
             if (packer.isReading)
@@ -31,18 +41,22 @@ namespace PurrNet
         }
     }
     
-    public partial struct ChildRPCPacket : INetworkedData
+    public partial struct ChildRPCPacket : INetworkedData, IRpc
     {
         public NetworkID networkId;
         public SceneID sceneId;
+        public PlayerID senderId;
         public byte rpcId;
         public byte childId;
         public ByteData data;
+        
+        public PlayerID senderPlayerId => senderId;
         
         public void Serialize(NetworkStream packer)
         {
             packer.Serialize(ref networkId);
             packer.Serialize(ref sceneId);
+            packer.Serialize(ref senderId);
             packer.Serialize(ref rpcId);
             packer.Serialize(ref childId);
             
@@ -61,16 +75,20 @@ namespace PurrNet
         }
     }
     
-    public partial struct StaticRPCPacket : INetworkedData
+    public partial struct StaticRPCPacket : INetworkedData, IRpc
     {
         public uint typeHash;
         public byte rpcId;
+        public PlayerID senderId;
         public ByteData data;
         
+        public PlayerID senderPlayerId => senderId;
+
         public void Serialize(NetworkStream packer)
         {
             packer.Serialize(ref typeHash);
             packer.Serialize(ref rpcId);
+            packer.Serialize(ref senderId);
             
             if (packer.isReading)
             {
@@ -87,11 +105,12 @@ namespace PurrNet
         }
     }
     
-    internal readonly struct RPC_ID
+    internal readonly struct RPC_ID : IEquatable<RPC_ID>
     {
         public readonly uint typeHash;
         public readonly SceneID sceneId;
         public readonly NetworkID networkId;
+        public readonly PlayerID senderId;
         private readonly byte rpcId;
         private readonly byte childId;
 
@@ -100,6 +119,7 @@ namespace PurrNet
             sceneId = packet.sceneId;
             networkId = packet.networkId;
             rpcId = packet.rpcId;
+            senderId = packet.senderId;
             typeHash = default;
             childId = default;
         }
@@ -110,6 +130,7 @@ namespace PurrNet
             networkId = default;
             rpcId = packet.rpcId;
             typeHash = packet.typeHash;
+            senderId = packet.senderId;
             childId = default;
         }
 
@@ -120,11 +141,31 @@ namespace PurrNet
             rpcId = packet.rpcId;
             typeHash = default;
             childId = packet.childId;
+            senderId = packet.senderId;
         }
 
         public override int GetHashCode()
         {
-            return sceneId.GetHashCode() ^ networkId.GetHashCode() ^ rpcId.GetHashCode() ^ typeHash.GetHashCode() ^ childId.GetHashCode();
+            return sceneId.GetHashCode() ^ 
+                   networkId.GetHashCode() ^ 
+                   rpcId.GetHashCode() ^ 
+                   typeHash.GetHashCode() ^ 
+                   childId.GetHashCode();
+        }
+
+        public bool Equals(RPC_ID other)
+        {
+            return typeHash == other.typeHash && 
+                   sceneId.Equals(other.sceneId) && 
+                   networkId.Equals(other.networkId) && 
+                   senderId.Equals(other.senderId) && 
+                   rpcId == other.rpcId && 
+                   childId == other.childId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is RPC_ID other && Equals(other);
         }
     }
 

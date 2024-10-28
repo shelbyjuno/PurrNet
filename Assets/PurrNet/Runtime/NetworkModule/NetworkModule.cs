@@ -134,9 +134,9 @@ namespace PurrNet
         }
         
         [UsedByIL]
-        protected bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
+        protected bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, IRpc data, bool asServer)
         {
-            return parent && parent.ValidateReceivingRPC(info, signature, asServer);
+            return parent && parent.ValidateReceivingRPC(info, signature, data, asServer);
         }
         
         [UsedByIL]
@@ -170,7 +170,8 @@ namespace PurrNet
                 sceneId = parent.sceneId,
                 childId = index,
                 rpcId = rpcId,
-                data = data.buffer.ToByteData()
+                data = data.buffer.ToByteData(),
+                senderId = RPCModule.GetLocalPlayer(networkManager)
             };
 
             return rpc;

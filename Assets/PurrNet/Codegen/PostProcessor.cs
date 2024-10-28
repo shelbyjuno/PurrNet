@@ -264,7 +264,7 @@ namespace PurrNet.Codegen
                 var code = newMethod.Body.GetILProcessor();
                 var end = Instruction.Create(OpCodes.Ret);
                 
-                ValidateReceivingRPC(module, isNetworkClass, originalRpcs[i], code, info, asServer, end);
+                ValidateReceivingRPC(module, isNetworkClass, originalRpcs[i], code, info, packet, asServer, end);
 
                 try
                 {
@@ -282,7 +282,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void ValidateReceivingRPC(ModuleDefinition module, bool isNetworkClass, RPCMethod originalRpc, ILProcessor code, ParameterDefinition info, ParameterDefinition asServer, Instruction end)
+        private static void ValidateReceivingRPC(ModuleDefinition module, bool isNetworkClass, RPCMethod originalRpc, ILProcessor code, ParameterDefinition info, ParameterDefinition data, ParameterDefinition asServer, Instruction end)
         {
             MethodReference validateReceivingRPC;
             if (originalRpc.Signature.isStatic)
@@ -307,8 +307,11 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
             }
             
+            // RPCInfo info, RPCSignature signature, INetworkedData data, bool asServer
             code.Append(Instruction.Create(OpCodes.Ldarg, info)); // info
             ReturnRPCSignature(module, code, originalRpc);
+            code.Append(Instruction.Create(OpCodes.Ldarg, data)); // data
+            code.Append(Instruction.Create(OpCodes.Box, data.ParameterType));
             code.Append(Instruction.Create(OpCodes.Ldarg, asServer)); // asServer
             code.Append(Instruction.Create(OpCodes.Call, validateReceivingRPC));
 

@@ -154,9 +154,14 @@ namespace PurrNet.Modules
 
                 for (int j = 0; j < CACHE.Count; ++j)
                 {
-                    if (_asServer || (!_asServer && !isHost))
-                         SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
-                    else CACHE[j].TriggerSpawnEvent(false);
+                    //if (_asServer || !isHost)
+                    //{
+                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
+                    /*}
+                    else
+                    {
+                        CACHE[j].TriggerSpawnEvent(_asServer);
+                    }*/
                 }
 
                 if (_asServer)
@@ -521,8 +526,6 @@ namespace PurrNet.Modules
         {
             component.SetIdentity(_manager, _sceneID, prefabId, siblingId, new NetworkID(nid, offset), offset, asServer, isInitialSceneObject);
 
-            _spawnedThisFrame.Add(component);
-            
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
 
@@ -532,6 +535,12 @@ namespace PurrNet.Modules
 
             if (component is NetworkTransform { syncParent: true } transform)
                 transform.onParentChanged += OnIdentityParentChanged;
+
+            if (!isInitialSceneObject)
+            {
+                _spawnedThisFrame.Add(component);
+                //component.TriggerSpawnEvent(asServer);
+            }
         }
 
         internal static readonly List<NetworkIdentity> CACHE = new ();

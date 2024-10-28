@@ -132,6 +132,16 @@ namespace PurrNet.Modules
             return players.localPlayerId ?? default;
         }
         
+        public static PlayerID GetLocalPlayer(NetworkManager nm)
+        {
+            if (!nm) return default;
+
+            if (nm.TryGetModule<PlayersManager>(false, out var players))
+                return default;
+
+            return players.localPlayerId ?? default;
+        }
+        
         [UsedByIL]
         public static void SendStaticRPC(StaticRPCPacket packet, RPCSignature signature)
         {
@@ -167,7 +177,7 @@ namespace PurrNet.Modules
         }
         
         [UsedByIL]
-        public static bool ValidateReceivingStaticRPC(RPCInfo info, RPCSignature signature, bool asServer)
+        public static bool ValidateReceivingStaticRPC(RPCInfo info, RPCSignature signature, INetworkedData data, bool asServer)
         {
             if (signature.type == RPCType.ServerRPC && !asServer ||
                 signature.type != RPCType.ServerRPC && asServer)
@@ -470,7 +480,8 @@ namespace PurrNet.Modules
                 networkId = networkId!.Value,
                 rpcId = rpcId,
                 sceneId = id,
-                data = data.buffer.ToByteData()
+                data = data.buffer.ToByteData(),
+                senderId = GetLocalPlayer()
             };
 
             return rpc;
@@ -485,7 +496,8 @@ namespace PurrNet.Modules
             {
                 rpcId = rpcId,
                 data = data.buffer.ToByteData(),
-                typeHash = hash
+                typeHash = hash,
+                senderId = GetLocalPlayer()
             };
 
             return rpc;

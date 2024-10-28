@@ -65,9 +65,9 @@ namespace PurrNet
             }
         }
 
-        public override void OnSpawn()
+        public override void OnSpawn(bool asServer)
         {
-            _tickManager = networkManager.GetModule<TickManager>(isServer);
+            _tickManager = networkManager.GetModule<TickManager>(asServer);
             _tickManager.onTick += OnTick;
         }
 

@@ -7,14 +7,13 @@ using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEditor.ShaderKeywordFilter;
 using UnityEngine.Scripting;
 
 namespace PurrNet
 {
     public partial class NetworkIdentity
     {
-        internal readonly struct InstanceGenericKey
+        internal readonly struct InstanceGenericKey : IEquatable<InstanceGenericKey>
         {
             readonly string _methodName;
             readonly int _typesHash;
@@ -32,6 +31,16 @@ namespace PurrNet
             }
         
             public override int GetHashCode() => _methodName.GetHashCode() ^ _typesHash ^ _callerHash;
+
+            public bool Equals(InstanceGenericKey other)
+            {
+                return _methodName == other._methodName && _typesHash == other._typesHash && _callerHash == other._callerHash;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is InstanceGenericKey other && Equals(other);
+            }
         }
         
         internal static readonly Dictionary<InstanceGenericKey, MethodInfo> genericMethods = new ();
@@ -117,14 +126,25 @@ namespace PurrNet
             switch (signature.type)
             {
                 case RPCType.ServerRPC: SendToServer(packet, signature.channel); break;
-                case RPCType.ObserversRPC: SendToObservers(packet, predicate, signature.channel); break;
-                case RPCType.TargetRPC: SendToTarget(signature.targetPlayer!.Value, packet, signature.channel); break;
+                case RPCType.ObserversRPC:
+                {
+                    if (isServer)
+                         SendToObservers(packet, predicate, signature.channel);
+                    else SendToServer(packet, signature.channel);
+                    break;
+                }
+                case RPCType.TargetRPC: 
+                    if (isServer)
+                         SendToTarget(signature.targetPlayer!.Value, packet, signature.channel);
+                    else throw new NotImplementedException("TargetRPC can only be called on server right now.");
+                    
+                    break;
                 default: throw new ArgumentOutOfRangeException();
             }
         }
         
         [UsedByIL]
-        public bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, bool asServer)
+        public bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, IRpc data, bool asServer)
         {
             if (signature.requireOwnership && info.sender != owner)
                 return false;
@@ -145,17 +165,68 @@ namespace PurrNet
                     PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' by player '{info.sender}' which is not an observer. Aborting RPC call.", this);
                     return false;
                 }
+                
+                return true;
             }
-            else if (asServer)
+
+            if (!asServer)
+                return true;
+            
+            if (signature.requireServer)
             {
-                PurrLogger.LogError($"Trying to receive client RPC '{signature.rpcName}' from '{name}' on server. Aborting RPC call.", this);
+                PurrLogger.LogError(
+                    $"Trying to receive client RPC '{signature.rpcName}' from '{name}' on server. " +
+                    "If you want automatic forwarding use 'requireServer: false'.", this);
                 return false;
             }
-            
-            return true;
+
+            Func<PlayerID, bool> predicate = ShouldSend;
+
+            var rawData = BroadcastModule.GetImmediateData(data);
+
+            switch (signature.type)
+            {
+                case RPCType.ServerRPC: throw new InvalidOperationException("ServerRPC should be handled by server.");
+
+                case RPCType.ObserversRPC:
+                    SendToObservers(rawData, predicate, signature.channel);
+                    return !isClient;
+                
+                case RPCType.TargetRPC:
+                    SendToTarget(data.senderPlayerId, rawData, signature.channel);
+                    return false;
+
+                default: throw new ArgumentOutOfRangeException(nameof(signature.type));
+            }
+
+            bool ShouldSend(PlayerID player)
+            {
+                if (player == info.sender)
+                    return false;
+
+                return !signature.excludeOwner || IsNotOwnerPredicate(player);
+            }
         }
         
         static readonly List<PlayerID> _players = new ();
+
+        public void SendToObservers(ByteData packet, [CanBeNull] Func<PlayerID, bool> predicate,
+            Channel method = Channel.ReliableOrdered)
+        {
+            if (predicate != null)
+            {
+                _players.Clear();
+                _players.AddRange(_observers);
+                
+                for (int i = 0; i < _players.Count; i++)
+                {
+                    if (!predicate(_players[i]))
+                        _players.RemoveAt(i--);
+                }
+                Send(_players, packet, method);
+            }
+            else Send(_observers, packet, method);
+        }
 
         public void SendToObservers<T>(T packet, [CanBeNull] Func<PlayerID, bool> predicate, Channel method = Channel.ReliableOrdered)
         {
@@ -196,6 +267,12 @@ namespace PurrNet
         {
             if (networkManager.isServer)
                 networkManager.GetModule<PlayersManager>(true).Send(players, data, method);
+        }
+        
+        public void Send(IEnumerable<PlayerID> players, ByteData data, Channel method = Channel.ReliableOrdered)
+        {
+            if (networkManager.isServer)
+                networkManager.GetModule<PlayersManager>(true).SendRaw(players, data, method);
         }
         
         public void SendToServer<T>(T packet, Channel method = Channel.ReliableOrdered)

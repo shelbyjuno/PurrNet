@@ -26,6 +26,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         if (!asServer)
         {
             // this will be sent to the server as per usual
+            PurrLogger.Log("Sending to observers");
             Test("Test 3");
         }
     }
@@ -48,13 +49,13 @@ public class NetworkBehaviourExample : NetworkBehaviour
             _testChild2.value = Random.Range(0, 100);
     }
 
-    [ServerRpc(requireOwnership: false)]
+    [ObserversRpc(requireServer: false)]
     private void Test(string test)
     {
         Debug.Log(test);
     }
 
-    [ObserversRpc(bufferLast: true)]
+    [ObserversRpc(bufferLast: true), UsedImplicitly]
     private static void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
     {
         Debug.Log("Observers: " + data + " " + info.sender);
