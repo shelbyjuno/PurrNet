@@ -178,11 +178,13 @@ namespace PurrNet
         {
             if (asServer)
             {
-                _serverTickManager.onTick -= ServerTick;
+                if (_serverTickManager != null)
+                    _serverTickManager.onTick -= ServerTick;
             }
             else if (_ticker != null) 
             {
-                _clientTickManager.onTick -= ClientTick;
+                if (_clientTickManager != null)
+                    _clientTickManager.onTick -= ClientTick;
             }
 
             if (!networkManager.TryGetModule<PlayersManager>(asServer, out var players)) return;

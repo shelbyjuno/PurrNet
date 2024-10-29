@@ -270,25 +270,21 @@ namespace PurrNet
             HashSetPool<PlayerID>.Destroy(oldPlayers);
         }
 
-        private static void OnIdentityRemoved(NetworkIdentity identity)
+        private void OnIdentityRemoved(NetworkIdentity identity)
         {
             if (!identity.id.HasValue)
             {
                 PurrLogger.LogError("Identity has no ID when being removed, can't properly clean up.");
                 return;
             }
-            
+
             foreach (var player in identity._observers)
+            {
                 identity.TriggerOnObserverRemoved(player);
-            
-            identity._observers.Clear();
+                onObserverRemoved?.Invoke(player, identity);
+            }
         }
         
-        public void FlushPackets()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public void FixedUpdate()
         {
             if (!_players.TryGetPlayersInScene(_sceneId, out var players))

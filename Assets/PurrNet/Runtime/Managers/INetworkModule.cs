@@ -54,4 +54,9 @@ namespace PurrNet.Modules
     {
         void Update();
     }
+    
+    internal interface ILateUpdate
+    {
+        void LateUpdate();
+    }
 }

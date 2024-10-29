@@ -13,6 +13,7 @@ namespace PurrNet
         private readonly List<IPreFixedUpdate> _preFixedUpdatesListeners;
         private readonly List<IPostFixedUpdate> _postFixedUpdatesListeners;
         private readonly List<IUpdate> _updateListeners;
+        private readonly List<ILateUpdate> _lateUpdateListeners;
         private readonly List<ICleanup> _cleanupListeners;
 
         private readonly NetworkManager _manager;
@@ -26,6 +27,7 @@ namespace PurrNet
             _postFixedUpdatesListeners = new List<IPostFixedUpdate>();
             _dataListeners = new List<IDataListener>();
             _updateListeners = new List<IUpdate>();
+            _lateUpdateListeners = new List<ILateUpdate>();
             _fixedUpdatesListeners = new List<IFixedUpdate>();
             _cleanupListeners = new List<ICleanup>();
             _manager = manager;
@@ -75,6 +77,9 @@ namespace PurrNet
                 if (_modules[i] is IUpdate update)
                     _updateListeners.Add(update);
                 
+                if (_modules[i] is ILateUpdate lateUpdate)
+                    _lateUpdateListeners.Add(lateUpdate);
+                
                 if (_modules[i] is ICleanup cleanup)
                     _cleanupListeners.Add(cleanup);
                 
@@ -109,6 +114,12 @@ namespace PurrNet
         {
             for (int i = 0; i < _updateListeners.Count; i++)
                 _updateListeners[i].Update();
+        }
+        
+        public void TriggerOnLateUpdate()
+        {
+            for (int i = 0; i < _lateUpdateListeners.Count; i++)
+                _lateUpdateListeners[i].LateUpdate();
         }
 
         public void TriggerOnFixedUpdate()
@@ -153,6 +164,7 @@ namespace PurrNet
             _connectionListeners.Clear();
             _dataListeners.Clear();
             _updateListeners.Clear();
+            _lateUpdateListeners.Clear();
             _fixedUpdatesListeners.Clear();
             _cleanupListeners.Clear();
             _preFixedUpdatesListeners.Clear();

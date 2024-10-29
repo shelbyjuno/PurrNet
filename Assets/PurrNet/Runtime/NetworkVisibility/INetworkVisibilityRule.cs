@@ -1,8 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
+using PurrNet.Logging;
+using PurrNet.Pooling;
 
 namespace PurrNet
 {
+    public class NetworkNodes
+    {
+        public readonly Dictionary<NetworkID, HashSet<NetworkID>> children = new();
+        
+        public void Add(NetworkIdentity node)
+        {
+            var root = node.root;
+            
+            if (!root.id.HasValue)
+                return;
+
+            if (!children.TryGetValue(root.id.Value, out var set))
+            {
+                set = new HashSet<NetworkID>();
+                children[root.id.Value] = set;
+            }
+
+            var childrenList = ListPool<NetworkIdentity>.Instantiate();
+            root.GetComponentsInChildren(childrenList);
+
+            for (var i = 0; i < childrenList.Count; i++)
+            {
+                var child = childrenList[i];
+                
+                if (child.id.HasValue)
+                    set.Add(child.id.Value);
+            }
+
+            ListPool<NetworkIdentity>.Destroy(childrenList);
+        }
+    }
+    
     public readonly struct NetworkCluster : IEquatable<NetworkCluster>
     {
         public readonly NetworkID firstId;
