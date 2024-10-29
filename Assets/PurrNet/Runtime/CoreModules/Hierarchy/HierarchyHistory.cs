@@ -26,8 +26,7 @@ namespace PurrNet.Modules
             return new HierarchyActionBatch
             {
                 sceneId = _sceneId,
-                actions = _actions,
-                isDelta = false
+                actions = _actions
             };
         }
         
@@ -144,8 +143,7 @@ namespace PurrNet.Modules
             return new HierarchyActionBatch
             {
                 sceneId = _sceneId,
-                actions = actions,
-                isDelta = true
+                actions = actions
             };
         }
 
@@ -154,8 +152,7 @@ namespace PurrNet.Modules
             return new HierarchyActionBatch
             {
                 sceneId = _sceneId,
-                actions = _pending,
-                isDelta = true
+                actions = _pending
             };
         }
 

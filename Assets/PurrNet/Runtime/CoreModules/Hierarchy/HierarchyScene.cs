@@ -228,27 +228,24 @@ namespace PurrNet.Modules
             for (int i = 0; i < data.actions.Count; i++)
             {
                 var action = data.actions[i];
-                OnHierarchyAction(player, ref action, data.isDelta);
+                OnHierarchyAction(player, ref action);
                 data.actions[i] = action;
             }
         }
         
-        private void OnHierarchyAction(PlayerID player, ref HierarchyAction data, bool isDelta)
+        readonly Queue<HierarchyActionType> _ignoreActions = new ();
+        
+        private void OnHierarchyAction(PlayerID player, ref HierarchyAction data)
         {
-            if (!_asServer && isDelta)
+            var localPlayer = _playersManager.localPlayerId;
+
+            if (_ignoreActions.Count > 0 && localPlayer.HasValue && data.actor == localPlayer.Value &&
+                _ignoreActions.Peek() == data.type)
             {
-                var localPlayer = _playersManager.localPlayerId;
-
-                if (!localPlayer.HasValue)
-                {
-                    PurrLogger.LogError("Received hierarchy actions before having logged in. Ignoring them.");
-                    return;
-                }
-                
-                if (data.actor == localPlayer)
-                    return;
+                _ignoreActions.Dequeue();
+                return;
             }
-
+            
             switch (data.type)
             {
                 case HierarchyActionType.Despawn:
@@ -424,10 +421,7 @@ namespace PurrNet.Modules
             }
 
             if (!isScenePrefab && identities.TryGetIdentity(action.identityId, out _))
-            {
-                // PurrLogger.LogError($"Identity with id {action.identityId} is already");
                 return;
-            }
 
             if (action.childOffset != 0)
             {
@@ -1049,9 +1043,11 @@ namespace PurrNet.Modules
                     OnIdentityRemoved(_removedLastFrame[i]);
                 _removedLastFrame.Clear();
             }
-            
+
             if (_history.hasUnflushedActions)
+            {
                 SendDeltaToPlayers(_history.GetDelta());
+            }
             
             if (_identitiesToSpawn.Count > 0)
             {
@@ -1108,6 +1104,9 @@ namespace PurrNet.Modules
             // if client, no filtering is needed
             if (!_asServer)
             {
+                for (int i = 0; i < delta.actions.Count; i++)
+                    _ignoreActions.Enqueue(delta.actions[i].type);
+                
                 _playersManager.SendToServer(delta);
                 _history.Clear();
                 return;
@@ -1214,7 +1213,6 @@ namespace PurrNet.Modules
                 var actions = new HierarchyActionBatch
                 {
                     actions = _actionsCache,
-                    isDelta = true,
                     sceneId = _sceneID
                 };
 

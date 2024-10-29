@@ -102,7 +102,6 @@ namespace PurrNet.Modules
     {
         public SceneID sceneId;
         public List<HierarchyAction> actions;
-        public bool isDelta;
     }
 
     internal partial struct DespawnAction : IAutoNetworkedData
