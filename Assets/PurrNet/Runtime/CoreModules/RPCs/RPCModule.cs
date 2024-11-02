@@ -158,8 +158,11 @@ namespace PurrNet.Modules
                 PurrLogger.LogError("Failed to get RPC module while sending static RPC.", nm);
                 return;
             }
+
+            var rules = nm.networkRules;
+            bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
             
-            if (signature.requireServer && !nm.isServer)
+            if (!shouldIgnore && signature.requireServer && !nm.isServer)
             {
                 PurrLogger.LogError($"Trying to send static RPC '{signature.rpcName}' of type {signature.type} without server.");
                 return;
@@ -225,7 +228,10 @@ namespace PurrNet.Modules
                 return true;
             }
             
-            if (signature.requireServer)
+            var rules = nm.networkRules;
+            bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
+            
+            if (!shouldIgnore && signature.requireServer)
             {
                 PurrLogger.LogError($"Aborted RPC {signature.type} '{signature.rpcName}' which requires server from client.");
                 return false;

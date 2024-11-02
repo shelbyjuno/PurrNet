@@ -13,6 +13,14 @@ namespace PurrNet
     }
     
     [Serializable]
+    public struct RpcRules
+    {
+        [UsedImplicitly]
+        [Tooltip("This allows client to call any ObserversRpc or TargetRpc without the need to set requireServer to false")]
+        public bool ignoreRequireServerAttribute;
+    }
+    
+    [Serializable]
     public struct SpawnRules
     {
         public ConnectionAuth spawnAuth;
@@ -79,6 +87,11 @@ namespace PurrNet
             defaultOwner = DefaultOwner.SpawnerIfClientOnly,
             propagateOwnershipByDefault = true,
             despawnIfOwnerDisconnects = true
+        };
+        
+        [SerializeField] private RpcRules _defaultRpcRules = new()
+        {
+            ignoreRequireServerAttribute = false
         };
         
         [PurrReadOnly]
@@ -223,6 +236,11 @@ namespace PurrNet
         public bool ShouldPlayRPCsWhenDisabled()
         {
             return _defaultIdentityRules.executeRpcsWhenDisabled;
+        }
+
+        public bool ShouldIgnoreRequireServer()
+        {
+            return _defaultRpcRules.ignoreRequireServerAttribute;
         }
     }
 }

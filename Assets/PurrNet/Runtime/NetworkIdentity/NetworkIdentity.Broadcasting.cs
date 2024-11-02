@@ -110,7 +110,10 @@ namespace PurrNet
                 return;
             }
             
-            if (signature.requireServer && !networkManager.isServer)
+            var rules = networkManager.networkRules;
+            bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
+            
+            if (!shouldIgnore && signature.requireServer && !networkManager.isServer)
             {
                 PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without server.", this);
                 return;
@@ -171,7 +174,10 @@ namespace PurrNet
             if (!asServer)
                 return true;
             
-            if (signature.requireServer)
+            var rules = networkManager.networkRules;
+            bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
+            
+            if (!shouldIgnore && signature.requireServer)
             {
                 PurrLogger.LogError(
                     $"Trying to receive client RPC '{signature.rpcName}' from '{name}' on server. " +
