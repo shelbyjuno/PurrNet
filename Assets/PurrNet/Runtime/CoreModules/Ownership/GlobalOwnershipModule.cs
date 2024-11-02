@@ -566,8 +566,13 @@ namespace PurrNet.Modules
         
         private void HandlePendingChanges(SceneID scope)
         {
+            var toRemove = ListPool<PlayerSceneID>.Instantiate();
+            
             foreach (var (player, changes) in _pendingOwnershipChanges)
             {
+                if (player.scene != scope)
+                    continue;
+                
                 _playersManager.Send(player.player, new OwnershipChangeBatch
                 {
                     scene = player.scene,
@@ -575,9 +580,13 @@ namespace PurrNet.Modules
                 });
                 
                 changes.Dispose();
+                toRemove.Add(player);
             }
+
+            foreach (var remove in toRemove)
+                _pendingOwnershipChanges.Remove(remove);
             
-            _pendingOwnershipChanges.Clear();
+            ListPool<PlayerSceneID>.Destroy(toRemove);
         }
 
         private void HandleOwenshipBatch(OwnershipChangeBatch data)

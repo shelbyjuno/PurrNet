@@ -187,6 +187,7 @@ namespace PurrNet.Modules
             {
                 var set = new DisposableHashSet<NetworkID>(16);
                 set.Add(identity.id!.Value);
+                
                 _identitiesToSpawnHashset.Add(player, set);
             }
             
@@ -1078,12 +1079,10 @@ namespace PurrNet.Modules
                 _removedLastFrame.Clear();
                 PostObserverEvents();
             }
-
-            if (_history.hasUnflushedActions)
-            {
-                SendDeltaToPlayers(_history.GetDelta());
-            }
             
+            if (_history.hasUnflushedActions)
+                SendDeltaToPlayers(_history.GetDelta());
+
             if (_identitiesToSpawn.Count > 0)
             {
                 HandleIdentitiesThatNeedToBeSpawned(_identitiesToSpawn);
@@ -1118,10 +1117,7 @@ namespace PurrNet.Modules
                         var identity = _spawnedThisFrame[i];
 
                         if (!identity)
-                        {
-                            PurrLogger.LogError($"Identity at index {i} is null, aborting spawn event.");
                             continue;
-                        }
                         
                         identity.TriggerSpawnEvent(_asServer);
                         
@@ -1220,8 +1216,8 @@ namespace PurrNet.Modules
                 
                 bool isSceneObject = identities.TryGetIdentity(netId.Value, out var identity) && identity.isSceneObject;
 
-                if ((isSceneObject || _visibilityManager.TryGetObservers(netId.Value, out var observers) &&
-                    observers.Contains(target)) && !toSpawnSet.Contains(netId.Value))
+                if (isSceneObject || _visibilityManager.TryGetObservers(netId.Value, out var observers) &&
+                    observers.Contains(target))
                 {
                     filtered.Add(action);
                 }
@@ -1274,7 +1270,6 @@ namespace PurrNet.Modules
                 onBeforeSpawnTrigger?.Invoke(_sceneID);
                 
                 TriggerSpawnEvents();
-                
                 _playersManager.Send(player, new TriggerQueuedSpawnEvents());
                 
                 all.Dispose();
