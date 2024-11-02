@@ -80,6 +80,12 @@ namespace PurrNet
             return rules && rules.ShouldClientGiveOwnershipOnSpawn();
         }
 
+        public bool ShouldPlayRPCsWhenDisabled()
+        {
+            var rules = networkRules;
+            return rules && rules.ShouldPlayRPCsWhenDisabled();
+        }
+
         public bool ShouldSyncParent(bool asServer)
         {
             var rules = networkRules;

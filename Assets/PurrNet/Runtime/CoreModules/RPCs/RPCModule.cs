@@ -671,6 +671,12 @@ namespace PurrNet.Modules
             
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
             {
+                if (!identity.enabled && !identity.ShouldPlayRPCsWhenDisabled())
+                {
+                    FreeStream(stream);
+                    return;
+                }
+                
                 var networkClass = GetNetworkClass(identity, packet.childId);
                 
                 if (networkClass == null)
@@ -714,6 +720,12 @@ namespace PurrNet.Modules
 
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
             {
+                if (!identity.enabled && !identity.ShouldPlayRPCsWhenDisabled())
+                {
+                    FreeStream(stream);
+                    return;
+                }
+                
                 var rpcHandlerPtr = GetRPCHandler(identity.GetType(), packet.rpcId);
 
                 if (rpcHandlerPtr != IntPtr.Zero)

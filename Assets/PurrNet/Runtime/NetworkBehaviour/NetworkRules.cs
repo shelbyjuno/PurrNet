@@ -58,6 +58,8 @@ namespace PurrNet
 
         public bool syncGameObjectActive;
         public ActionAuth syncGameObjectActiveAuth;
+        
+        public bool executeRpcsWhenDisabled;
     }
 
     [Serializable]
@@ -102,7 +104,8 @@ namespace PurrNet
             syncComponentActive = true,
             syncComponentAuth = ActionAuth.Server | ActionAuth.Owner,
             syncGameObjectActive = true,
-            syncGameObjectActiveAuth = ActionAuth.Server | ActionAuth.Owner
+            syncGameObjectActiveAuth = ActionAuth.Server | ActionAuth.Owner,
+            executeRpcsWhenDisabled = false
         };
         
         [SerializeField] private NetworkTransformRules _defaultTransformRules = new()
@@ -215,6 +218,11 @@ namespace PurrNet
         public bool ShouldClientGiveOwnershipOnSpawn()
         {
             return _defaultSpawnRules.defaultOwner == DefaultOwner.SpawnerIfClientOnly;
+        }
+
+        public bool ShouldPlayRPCsWhenDisabled()
+        {
+            return _defaultIdentityRules.executeRpcsWhenDisabled;
         }
     }
 }
