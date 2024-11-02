@@ -75,5 +75,18 @@ namespace PurrNet
             for (var i = 0; i < _visibilityManagers.Count; i++)
                 _visibilityManagers[i].FixedUpdate();
         }
+
+        internal static readonly HashSet<PlayerID> EMPTY_OBSERVERS = new();
+
+        public HashSet<PlayerID> GetObservers(SceneID sceneId, NetworkID id)
+        {
+            return _sceneToVisibilityManager.TryGetValue(sceneId, out var visibility) ? visibility.GetObservers(id) : EMPTY_OBSERVERS;
+        }
+        
+        public bool TryGetObservers(SceneID sceneId, NetworkID id, out HashSet<PlayerID> player)
+        {
+            player = null;
+            return _sceneToVisibilityManager.TryGetValue(sceneId, out var visibility) && visibility.TryGetObservers(id, out player);
+        }
     }
 }

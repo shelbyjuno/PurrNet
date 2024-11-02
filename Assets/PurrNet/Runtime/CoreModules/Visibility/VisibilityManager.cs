@@ -23,6 +23,8 @@ namespace PurrNet
         
         public event System.Action onTickChangesDone;
         
+        private readonly Dictionary<NetworkID, HashSet<PlayerID>> _observers = new();
+        
         internal VisibilityManager(NetworkManager manager, PlayersManager playersManager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
             _playersManager = playersManager;
@@ -114,12 +116,27 @@ namespace PurrNet
                 return;
             
             var allIdentities = _hierarchy.identities.collection;
-
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+            
             foreach (var identity in allIdentities)
             {
-                if (!identity._observers.Remove(player)) continue;
+                var root = identity.root;
+                
+                if (!roots.Add(root)) continue;
+                
+                if (!root.id.HasValue)
+                    continue;
+                
+                if (!_observers.TryGetValue(root.id.Value, out var observers))
+                    continue;
+                
+                if (!observers.Remove(player))
+                    continue;
+                
                 onObserverRemoved?.Invoke(player, identity);
             }
+            
+            HashSetPool<NetworkIdentity>.Destroy(roots);
             
             onTickChangesDone?.Invoke();
         }
@@ -137,7 +154,7 @@ namespace PurrNet
                 PurrLogger.LogError("No players in scene, can't evaluate visibility.");
                 return;
             }
-
+            
             var copy = HashSetPool<PlayerID>.Instantiate();
             copy.UnionWith(players);
             EvaluateVisibilityForAllPlayers(identity, copy);
@@ -207,7 +224,7 @@ namespace PurrNet
                     
                 rules.GetObservers(result, players, child);
                 players.ExceptWith(result);
-                    
+
                 if (players.Count == 0)
                     break;
             }
@@ -224,8 +241,42 @@ namespace PurrNet
             var children = cluster.children;
             var count = children.Count;
             
+            if (!_observers.TryGetValue(cluster.firstId, out var observers))
+            {
+                observers = new HashSet<PlayerID>(players.Count);
+                _observers.Add(cluster.firstId, observers);
+            }
+            
+            var oldPlayers = HashSetPool<PlayerID>.Instantiate();
+
+            oldPlayers.UnionWith(observers);
+            oldPlayers.ExceptWith(players);
+
             for (var childIdx = 0; childIdx < count; childIdx++)
-                SetObservers(children[childIdx], players);
+            {
+                foreach (var player in oldPlayers)
+                {
+                    var identity = children[childIdx];
+                    if (observers.Remove(player))
+                        onObserverRemoved?.Invoke(player, identity);
+                }
+            }
+            
+            oldPlayers.Clear();
+            oldPlayers.UnionWith(players);
+            oldPlayers.ExceptWith(observers);
+            
+            for (var childIdx = 0; childIdx < count; childIdx++)
+            {
+                foreach (var player in oldPlayers)
+                {
+                    var identity = children[childIdx];
+                    if (observers.Add(player))
+                        onObserverAdded?.Invoke(player, identity);
+                }
+            }
+            
+            HashSetPool<PlayerID>.Destroy(oldPlayers);
         }
         
         private void AddPlayerAsObserver(NetworkCluster cluster, PlayerID player)
@@ -233,41 +284,19 @@ namespace PurrNet
             var children = cluster.children;
             var count = children.Count;
             
-            for (var childIdx = 0; childIdx < count; childIdx++)
-                AddPlayerAsObserver(children[childIdx], player);
-        }
-        
-        private void AddPlayerAsObserver(NetworkIdentity identity, PlayerID player)
-        {
-            if (!identity._observers.Add(player)) return;
-            onObserverAdded?.Invoke(player, identity);
-        }
-
-        private void SetObservers(NetworkIdentity identity, List<PlayerID> players)
-        {
-            var oldPlayers = HashSetPool<PlayerID>.Instantiate();
-            
-            oldPlayers.UnionWith(identity._observers);
-            oldPlayers.ExceptWith(players);
-                        
-            foreach (var player in oldPlayers)
+            if (!_observers.TryGetValue(cluster.firstId, out var observers))
             {
-                identity._observers.Remove(player);
-                onObserverRemoved?.Invoke(player, identity);
+                observers = new HashSet<PlayerID>(1);
+                _observers.Add(cluster.firstId, observers);
             }
             
-            oldPlayers.Clear();
+            if (!observers.Add(player)) return;
 
-            oldPlayers.UnionWith(players);
-            oldPlayers.ExceptWith(identity._observers);
-            
-            foreach (var player in oldPlayers)
+            for (var childIdx = 0; childIdx < count; childIdx++)
             {
-                identity._observers.Add(player);
+                var identity = children[childIdx];
                 onObserverAdded?.Invoke(player, identity);
             }
-            
-            HashSetPool<PlayerID>.Destroy(oldPlayers);
         }
 
         private void OnIdentityRemoved(NetworkIdentity identity)
@@ -278,11 +307,13 @@ namespace PurrNet
                 return;
             }
 
-            foreach (var player in identity._observers)
-            {
+            var root = identity.root.id;
+            
+            if (!root.HasValue || !_observers.TryGetValue(root.Value, out var observers))
+                return;
+
+            foreach (var player in observers)
                 identity.TriggerOnObserverRemoved(player);
-                onObserverRemoved?.Invoke(player, identity);
-            }
         }
         
         public void FixedUpdate()
@@ -307,6 +338,16 @@ namespace PurrNet
             HashSetPool<PlayerID>.Destroy(copy);
             
             onTickChangesDone?.Invoke();
+        }
+
+        public HashSet<PlayerID> GetObservers(NetworkID id)
+        {
+            return _observers.TryGetValue(id, out var observers) ? observers : VisibilityFactory.EMPTY_OBSERVERS;
+        }
+        
+        public bool TryGetObservers(NetworkID id, out HashSet<PlayerID> observers)
+        {
+            return _observers.TryGetValue(id, out observers);
         }
     }
 }

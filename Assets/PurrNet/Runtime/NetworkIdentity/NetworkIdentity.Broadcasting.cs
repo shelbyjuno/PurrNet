@@ -162,7 +162,15 @@ namespace PurrNet
                     return false;
                 }
 
-                if (!_observers.Contains(info.sender) && signature.channel == Channel.ReliableOrdered)
+                var idObservers = observers;
+
+                if (idObservers == null)
+                {
+                    PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' but failed to get observers.", this);
+                    return false;
+                }
+
+                if (!idObservers.Contains(info.sender) && signature.channel == Channel.ReliableOrdered)
                 {
                     PurrLogger.LogError($"Trying to receive server RPC '{signature.rpcName}' from '{name}' by player '{info.sender}' which is not an observer. Aborting RPC call.", this);
                     return false;
@@ -224,7 +232,7 @@ namespace PurrNet
             if (predicate != null)
             {
                 _players.Clear();
-                _players.AddRange(_observers);
+                _players.AddRange(observers);
                 
                 for (int i = 0; i < _players.Count; i++)
                 {
@@ -233,7 +241,7 @@ namespace PurrNet
                 }
                 Send(_players, packet, method);
             }
-            else Send(_observers, packet, method);
+            else Send(observers, packet, method);
         }
 
         public void SendToObservers<T>(T packet, [CanBeNull] Func<PlayerID, bool> predicate, Channel method = Channel.ReliableOrdered)
@@ -241,7 +249,7 @@ namespace PurrNet
             if (predicate != null)
             {
                 _players.Clear();
-                _players.AddRange(_observers);
+                _players.AddRange(observers);
                 
                 for (int i = 0; i < _players.Count; i++)
                 {
@@ -250,7 +258,7 @@ namespace PurrNet
                 }
                 Send(_players, packet, method);
             }
-            else Send(_observers, packet, method);
+            else Send(observers, packet, method);
         }
 
         public void Send<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
@@ -262,7 +270,7 @@ namespace PurrNet
         [Preserve]
         public void SendToTarget<T>(PlayerID player, T packet, Channel method = Channel.ReliableOrdered)
         {
-            if (!_observers.Contains(player))
+            if (!observers.Contains(player))
             {
                 PurrLogger.LogError($"Trying to send TargetRPC to player '{player}' which is not observing '{name}'.", this);
                 return;

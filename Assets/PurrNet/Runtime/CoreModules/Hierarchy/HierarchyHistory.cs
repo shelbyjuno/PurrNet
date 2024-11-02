@@ -41,6 +41,9 @@ namespace PurrNet.Modules
             for (var rootIdx = 0; rootIdx < roots.Count; rootIdx++)
             {
                 var rootIdentity = roots[rootIdx];
+                
+                if (!rootIdentity) continue;
+                
                 rootIdentity.GetComponentsInChildren(true, tmp);
 
                 for (var index = 0; index < tmp.Count; index++)

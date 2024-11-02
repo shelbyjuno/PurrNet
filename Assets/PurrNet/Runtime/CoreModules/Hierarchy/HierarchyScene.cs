@@ -1116,6 +1116,13 @@ namespace PurrNet.Modules
                     try
                     {
                         var identity = _spawnedThisFrame[i];
+
+                        if (!identity)
+                        {
+                            PurrLogger.LogError($"Identity at index {i} is null, aborting spawn event.");
+                            continue;
+                        }
+                        
                         identity.TriggerSpawnEvent(_asServer);
                         
                         if (identity.id.HasValue && !identity.isSceneObject && _asServer && _manager.isHost)
@@ -1205,9 +1212,16 @@ namespace PurrNet.Modules
                 if (!netId.HasValue)
                     continue;
                 
-                if (identities.TryGetIdentity(netId.Value, out var id) &&
-                    (id.isSceneObject || id.observers.Contains(target)) &&
-                    !toSpawnSet.Contains(netId.Value))
+                if (action.type == HierarchyActionType.Spawn && toSpawnSet.Contains(netId.Value))
+                {
+                    filtered.Add(action);
+                    continue;
+                }
+                
+                bool isSceneObject = identities.TryGetIdentity(netId.Value, out var identity) && identity.isSceneObject;
+
+                if ((isSceneObject || _visibilityManager.TryGetObservers(netId.Value, out var observers) &&
+                    observers.Contains(target)) && !toSpawnSet.Contains(netId.Value))
                 {
                     filtered.Add(action);
                 }
@@ -1243,10 +1257,17 @@ namespace PurrNet.Modules
                 {
                     var id = all[i];
 
-                    if (id.observers.Contains(player))
+                    if (id && id.observers.Contains(player))
                     {
-                        _visibilityFactory.TriggerLateObserverAdded(player, id);
-                        id.TriggerOnObserverAdded(player);
+                        var children = ListPool<NetworkIdentity>.Instantiate();
+                        id.GetComponentsInChildren(true, children);
+                        
+                        for (var j = 0; j < children.Count; j++)
+                        {
+                            var child = children[j];
+                            _visibilityFactory.TriggerLateObserverAdded(player, child);
+                            child.TriggerOnObserverAdded(player);
+                        }
                     }
                 }
                 

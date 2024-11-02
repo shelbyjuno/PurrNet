@@ -67,7 +67,7 @@ namespace PurrNet
         public bool syncGameObjectActive;
         public ActionAuth syncGameObjectActiveAuth;
         
-        public bool executeRpcsWhenDisabled;
+        public bool receiveRpcsWhenDisabled;
     }
 
     [Serializable]
@@ -118,7 +118,7 @@ namespace PurrNet
             syncComponentAuth = ActionAuth.Server | ActionAuth.Owner,
             syncGameObjectActive = true,
             syncGameObjectActiveAuth = ActionAuth.Server | ActionAuth.Owner,
-            executeRpcsWhenDisabled = false
+            receiveRpcsWhenDisabled = true
         };
         
         [SerializeField] private NetworkTransformRules _defaultTransformRules = new()
@@ -235,7 +235,7 @@ namespace PurrNet
 
         public bool ShouldPlayRPCsWhenDisabled()
         {
-            return _defaultIdentityRules.executeRpcsWhenDisabled;
+            return _defaultIdentityRules.receiveRpcsWhenDisabled;
         }
 
         public bool ShouldIgnoreRequireServer()

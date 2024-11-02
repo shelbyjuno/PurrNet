@@ -106,9 +106,24 @@ namespace PurrNet
         private GameObjectEvents _events;
         private GameObject _gameObject;
         
-        internal readonly HashSet<PlayerID> _observers = new ();
-        
-        public ISet<PlayerID> observers => _observers;
+        public ISet<PlayerID> observers
+        {
+            get
+            {
+                root = GetRootIdentity();
+                
+                if (!root || !root.isSpawned || !root.id.HasValue)
+                    return VisibilityFactory.EMPTY_OBSERVERS;
+                
+                if (!networkManager.TryGetModule<VisibilityFactory>(true, out var factory))
+                    return VisibilityFactory.EMPTY_OBSERVERS;
+                
+                if (factory.TryGetObservers(sceneId, root.id.Value, out var result))
+                    return result;
+                
+                return VisibilityFactory.EMPTY_OBSERVERS;
+            }
+        }
 
         /// <summary>
         /// The root identity is the topmost parent that has a NetworkIdentity.
