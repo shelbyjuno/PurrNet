@@ -126,7 +126,7 @@ namespace PurrNet.Modules
 
             if (!nm) return default;
 
-            if (nm.TryGetModule<PlayersManager>(false, out var players))
+            if (!nm.TryGetModule<PlayersManager>(false, out var players))
                 return default;
 
             return players.localPlayerId ?? default;
