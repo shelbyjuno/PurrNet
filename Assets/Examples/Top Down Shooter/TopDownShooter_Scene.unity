@@ -717,10 +717,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncSettings: 7
+  _syncPosition: 0
+  _syncRotation: 0
+  _syncScale: 0
+  _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
-  _syncParent: 1
   _sendIntervalInTicks: 0
   _tolerances:
     positionTolerance: 0.1
@@ -2528,10 +2530,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncSettings: 7
+  _syncPosition: 0
+  _syncRotation: 0
+  _syncScale: 0
+  _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
-  _syncParent: 1
   _sendIntervalInTicks: 0
   _tolerances:
     positionTolerance: 0.1
@@ -2888,10 +2892,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncSettings: 7
+  _syncPosition: 0
+  _syncRotation: 0
+  _syncScale: 0
+  _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
-  _syncParent: 1
   _sendIntervalInTicks: 0
   _tolerances:
     positionTolerance: 0.1

@@ -151,7 +151,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817f00a8b1748484fa837fad3cb9ac28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 11400000, guid: 61bfdc7c387406945b02e80f829030d1, type: 2}
   moveSpeed: 4
@@ -170,7 +169,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7993de99671eec42ad040029a9f6593, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   bulletPrefab: {fileID: 6263184292926161676, guid: e013d4a382956084e907feb2a3501cf8, type: 3}
@@ -186,7 +184,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f888c0a97f882af4b9ff62f84d211951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   maxHealth: 100
@@ -228,7 +225,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _guid: 20ec334e1da5edf44ac0079941c62c2b
@@ -244,13 +240,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncSettings: 7
+  _syncPosition: 1
+  _syncRotation: 1
+  _syncScale: 0
+  _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
-  _syncParent: 1
   _sendIntervalInTicks: 0
   _tolerances:
     positionTolerance: 0.1
@@ -301,7 +298,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!114 &1194575452784413963
@@ -316,13 +312,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncSettings: 7
+  _syncPosition: 0
+  _syncRotation: 0
+  _syncScale: 0
+  _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
-  _syncParent: 1
   _sendIntervalInTicks: 0
   _tolerances:
     positionTolerance: 0.1
@@ -377,7 +374,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbe775319f3e9a249829cec13ab24f7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layer: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   bodies:

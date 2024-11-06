@@ -16,6 +16,13 @@ namespace PurrNet
         Rotation = 2,
         Scale = 4
     }
+    
+    public enum SyncMode : byte
+    {
+        No,
+        World,
+        Space
+    }
 
     [Serializable]
     public struct Tolerances
@@ -30,17 +37,21 @@ namespace PurrNet
     
     public sealed class NetworkTransform : NetworkIdentity, ITick
     {
-        [SerializeField, PurrLock] private TransformSyncMode _syncSettings = 
-            TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
+        [Header("What to Sync")] 
+        [SerializeField] private SyncMode _syncPosition = SyncMode.World;
+        [SerializeField] private SyncMode _syncRotation = SyncMode.World;
+        [SerializeField] private bool _syncScale = true;
+        [SerializeField, PurrLock] private bool _syncParent = true;
         
+        [Header("How to Sync")]
         [SerializeField, PurrLock] private TransformSyncMode _interpolateSettings = 
             TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
-        
+
+        [Header("When to Sync")]
         [FormerlySerializedAs("_clientAuth")]
         
         [Tooltip("If true, the client can send transform data to the server. If false, the client can't send transform data to the server.")]
         [SerializeField, PurrLock] private bool _ownerAuth = true;
-        [SerializeField, PurrLock] private bool _syncParent = true;
         
         [Tooltip("The interval in ticks to send the transform data. 0 means send every tick.")]
         [SerializeField, Min(0)] private int _sendIntervalInTicks;
@@ -60,11 +71,11 @@ namespace PurrNet
 
         public bool syncParent => _syncParent;
         
-        public bool syncPosition => _syncSettings.HasFlag(TransformSyncMode.Position);
+        public bool syncPosition => _syncPosition != SyncMode.No;
         
-        public bool syncRotation => _syncSettings.HasFlag(TransformSyncMode.Rotation);
+        public bool syncRotation => _syncRotation != SyncMode.No;
         
-        public bool syncScale => _syncSettings.HasFlag(TransformSyncMode.Scale);
+        public bool syncScale => _syncScale;
         
         public bool interpolatePosition => _interpolateSettings.HasFlag(TransformSyncMode.Position);
         
@@ -112,12 +123,16 @@ namespace PurrNet
             ValidateParent();
             
             float sendDelta = (_sendIntervalInTicks + 1) * Time.fixedDeltaTime;
-            
+
             if (syncPosition)
-                _position = new Interpolated<Vector3>(interpolatePosition ? Vector3.Lerp : NoInterpolation, sendDelta, _trs.position);
+            {
+                _position = new Interpolated<Vector3>(interpolatePosition ? Vector3.Lerp : NoInterpolation, sendDelta, 
+                    _syncPosition == SyncMode.World ? _trs.position : _trs.localPosition);
+            }
             
             if (syncRotation)
-                _rotation = new Interpolated<Quaternion>(interpolateRotation ? Quaternion.Lerp : NoInterpolation, sendDelta, _trs.rotation);
+                _rotation = new Interpolated<Quaternion>(interpolateRotation ? Quaternion.Lerp : NoInterpolation, sendDelta, 
+                    _syncRotation == SyncMode.World ? _trs.rotation : _trs.localRotation);
             
             if (syncScale)
                 _scale = new Interpolated<Vector3>(interpolateScale ? Vector3.Lerp : NoInterpolation, sendDelta, _trs.localScale);
@@ -195,12 +210,20 @@ namespace PurrNet
             
             if (disableController)
                 _controller.enabled = false;
-            
+
             if (syncPosition)
-                _trs.position = _position.Advance(Time.deltaTime);
-            
+            {
+                if (_syncPosition == SyncMode.World)
+                     _trs.position = _position.Advance(Time.deltaTime);
+                else _trs.localPosition = _position.Advance(Time.deltaTime);
+            }
+
             if (syncRotation)
-                _trs.rotation = _rotation.Advance(Time.deltaTime);
+            {
+                if (_syncRotation == SyncMode.World)
+                     _trs.rotation = _rotation.Advance(Time.deltaTime);
+                else _trs.localRotation = _rotation.Advance(Time.deltaTime);
+            }
             
             if (syncScale)
                 _trs.localScale = _scale.Advance(Time.deltaTime);
