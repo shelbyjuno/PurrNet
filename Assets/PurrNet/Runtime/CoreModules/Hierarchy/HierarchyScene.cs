@@ -799,6 +799,10 @@ namespace PurrNet.Modules
             for (int i = 0; i < _components.Count; i++)
             {
                 var child = _components[i];
+                
+                if (!child)
+                    continue;
+                
                 if (!child.gameObject.activeSelf)
                 {
                     _cache.Add(new BehaviourState
