@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -208,6 +209,14 @@ namespace PurrNet.Codegen
                     File = file
                 });
             }
+            else
+            {
+                messages.Add(new DiagnosticMessage
+                {
+                    DiagnosticType = DiagnosticType.Error,
+                    MessageData = $"[{method.DeclaringType.FullName}] {message}"
+                });
+            }
         }
         
         static bool ShouldIgnore(RPCType rpcType, ParameterReference param, int index, int count, out SpecialParamType type)
@@ -237,7 +246,8 @@ namespace PurrNet.Codegen
                 if (originalRpcs[i].Signature.isStatic)
                     attributes |= MethodAttributes.Static;
                 
-                var newMethod = new MethodDefinition($"HandleRPCGenerated_{offset + i}", attributes, originalRpcs[i].originalMethod.ReturnType);
+                var voidType = module.TypeSystem.Void;
+                var newMethod = new MethodDefinition($"HandleRPCGenerated_{offset + i}", attributes, voidType);
                 
                 var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
                 var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
@@ -271,6 +281,9 @@ namespace PurrNet.Codegen
                     if (originalRpcs[i].originalMethod.HasGenericParameters)
                          HandleGenericRPCReceiver(module, originalRpcs[i], newMethod, stream, info, isNetworkClass);
                     else HandleNonGenericRPCReceiver(module, originalRpcs[i], newMethod, stream, info);
+                    
+                    if (originalRpcs[i].originalMethod.ReturnType != module.TypeSystem.Void)
+                        code.Append(Instruction.Create(OpCodes.Pop));
                 }
                 catch (Exception e)
                 {
@@ -541,14 +554,47 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
             }
         }
+        
+        static bool ValidateReturnType(MethodDefinition method, out bool isAsync)
+        {
+            isAsync = false;
+            
+            if (method.ReturnType.FullName == typeof(void).FullName)
+                return true;
+            
+            bool isTask = method.ReturnType.FullName == typeof(Task).FullName;
+
+            if (isTask)
+            {
+                isAsync = true;
+                return true;
+            }
+            
+            bool inheritsFromTask = method.ReturnType.Resolve().BaseType?.FullName == typeof(Task).FullName;
+
+            if (inheritsFromTask)
+            {
+                isAsync = true;
+                return true;
+            }
+            
+            return false;
+        }
 
         private MethodDefinition HandleRPC(ModuleDefinition module, int id, RPCMethod methodRpc, bool isNetworkClass, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             var method = methodRpc.originalMethod;
+            bool isValidReturn = ValidateReturnType(method, out var isTask);
             
-            if (method.ReturnType.FullName != typeof(void).FullName)
+            if (!isValidReturn)
             {
-                Error(messages, "ServerRPC method must return void", method);
+                Error(messages, $"RPC '{method.Name}' method must return void or Task", method);
+                return null;
+            }
+            
+            if (isTask && methodRpc.Signature.type == RPCType.ObserversRPC)
+            {
+                Error(messages, $"ObserversRPC '{method.Name}' method cannot return Task", method);
                 return null;
             }
             
@@ -607,7 +653,7 @@ namespace PurrNet.Codegen
             
             if (methodRpc.Signature.runLocally)
             {
-                MethodReference callMethod = GetOriginalMethod(method);
+                var callMethod = GetOriginalMethod(method);
                 
                 if (method.HasGenericParameters)
                 {
@@ -632,6 +678,10 @@ namespace PurrNet.Codegen
                 }
 
                 code.Append(Instruction.Create(OpCodes.Call, callMethod)); // Call original method
+                
+                // Pop return value if not void for now
+                if (callMethod.ReturnType != module.TypeSystem.Void)
+                    code.Append(Instruction.Create(OpCodes.Pop));
             }
             
             code.Append(Instruction.Create(OpCodes.Ldc_I4, 0));
@@ -745,6 +795,12 @@ namespace PurrNet.Codegen
             
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
             code.Append(Instruction.Create(OpCodes.Call, freeStreamMethod));
+            
+            if (isTask)
+            {
+                code.Append(Instruction.Create(OpCodes.Ldnull));
+                code.Append(Instruction.Create(OpCodes.Ret));
+            }
 
             code.Append(Instruction.Create(OpCodes.Ret));
 
@@ -1001,7 +1057,7 @@ namespace PurrNet.Codegen
                             try
                             {
                                 var method = type.Methods[i];
-                                
+
                                 if (method.DeclaringType.FullName != type.FullName)
                                     continue;
                                 
@@ -1015,7 +1071,7 @@ namespace PurrNet.Codegen
                                     Error(messages, "RPC must be static if not inheriting from NetworkIdentity or NetworkClass", method);
                                     continue;
                                 }
-
+                                
                                 _rpcMethods.Add(new RPCMethod
                                 {
                                     Signature = rpcType.Value, originalMethod = method, ogName = method.Name
@@ -1048,7 +1104,7 @@ namespace PurrNet.Codegen
                         for (var index = 0; index < _rpcMethods.Count; index++)
                         {
                             var method = _rpcMethods[index].originalMethod;
-
+                            
                             try
                             {
                                 var newMethod = HandleRPC(module, idOffset + index, _rpcMethods[index], inheritsFromNetworkClass, messages);

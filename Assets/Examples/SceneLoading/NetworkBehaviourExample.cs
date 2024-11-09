@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
 using UnityEngine;
@@ -20,16 +21,16 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     [SerializeField] private bool _keepChanging;
     
-    static bool _sentOnce;
-
     protected override void OnSpawned(bool asServer)
     {
-        if (!asServer && !_sentOnce)
+        if (!asServer)
         {
+
+            _ = CoolRPCTest();
+            _ = CoolRPCTest2();
+            
             // this will be sent to the server as per usual
             // Test("Test 3");
-            
-            _sentOnce = true;
         }
     }
     
@@ -43,6 +44,23 @@ public class NetworkBehaviourExample : NetworkBehaviour
                 ObserversRPCTest(Time.time, someRef);
             }
         }
+    }
+
+    [ServerRpc(requireOwnership: false)]
+    Task<bool> CoolRPCTest()
+    {
+        Debug.Log("CoolRPCTest");
+        return Task.FromResult(Random.Range(0, 2) == 0);
+    }
+    
+    [ServerRpc(requireOwnership: false)]
+    async Task<bool> CoolRPCTest2()
+    {
+        Debug.Log("Waiting for 1 second");
+        await Task.Delay(1000);
+        Debug.Log("Done waiting");
+
+        return Random.Range(0, 2) == 0;
     }
     
     [ObserversRpc(bufferLast: true), UsedImplicitly]
