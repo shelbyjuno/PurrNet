@@ -1,7 +1,6 @@
 using System;
 using JetBrains.Annotations;
 using PurrNet;
-using PurrNet.Logging;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -14,7 +13,7 @@ struct TestStruct
 
 public class NetworkBehaviourExample : NetworkBehaviour
 {
-    [SerializeField] private NetworkIdentity someRef;
+    [SerializeField] private Transform someRef;
 
     [SerializeField]
     private SyncVar<int> _testChild2 = new (70);
@@ -41,9 +40,20 @@ public class NetworkBehaviourExample : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 _testChild2.value = Random.Range(0, 100);
-                // ObserversRPCTest(Time.time, someRef);
+                ObserversRPCTest(Time.time, someRef);
             }
         }
+    }
+    
+    [ObserversRpc(bufferLast: true), UsedImplicitly]
+    private static void ObserversRPCTest<T>(T data, Transform someNetRef, RPCInfo info = default)
+    {
+        Debug.Log("Observers: " + data + " " + info.sender);
+        
+        if (someNetRef)
+            Debug.Log(someNetRef.name);
+        else
+            Debug.Log("No ref");
     }
 
     private void FixedUpdate()
@@ -56,17 +66,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private void Test(string test)
     {
         Debug.Log(test);
-    }
-
-    [ObserversRpc(bufferLast: true), UsedImplicitly]
-    private static void ObserversRPCTest<T>(T data, NetworkIdentity someNetRef, RPCInfo info = default)
-    {
-        Debug.Log("Observers: " + data + " " + info.sender);
-        
-        if (someNetRef)
-            Debug.Log(someNetRef.name);
-        else
-            Debug.Log("No ref");
     }
 
     [TargetRpc(bufferLast: true)]

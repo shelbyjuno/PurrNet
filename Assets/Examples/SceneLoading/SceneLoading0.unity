@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -128,7 +129,6 @@ GameObject:
   m_Component:
   - component: {fileID: 77383853}
   - component: {fileID: 77383854}
-  - component: {fileID: 77383855}
   m_Layer: 0
   m_Name: Behaviour
   m_TagString: Untagged
@@ -165,25 +165,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  someRef: {fileID: 0}
-  _testChild:
-    _value: -69
+  someRef: {fileID: 1238428650}
   _testChild2:
     _value: -69
-  _testChild3:
-    _value: 12
---- !u!114 &77383855
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 77383852}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0547009a3015c7c44bb12381626864cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+    _ownerAuth: 0
+    _sendIntervalInSeconds: 0
+  _keepChanging: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -473,10 +460,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _clientAuth: 1
   _syncPosition: 1
   _syncRotation: 1
   _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!4 &470262661
 Transform:
   m_ObjectHideFlags: 0
@@ -604,10 +598,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _clientAuth: 1
   _syncPosition: 1
   _syncRotation: 1
   _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!4 &1238428650
 Transform:
   m_ObjectHideFlags: 0
@@ -671,6 +672,7 @@ MonoBehaviour:
   _startServerFlags: 9
   _startClientFlags: 7
   _cookieScope: 1
+  _dontDestroyOnLoad: 0
   _transport: {fileID: 1386555453}
   _networkPrefabs: {fileID: 11400000, guid: d5daa8c5cd9771a4da0c623682b0c9a3, type: 2}
   _networkRules: {fileID: 11400000, guid: 57ad4cc976c21074181652c4f7179d44, type: 2}
