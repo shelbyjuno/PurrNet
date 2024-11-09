@@ -25,7 +25,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
     {
         if (!asServer)
         {
-
+            CoolRPCTestNoReturnValue();
             _ = CoolRPCTest();
             _ = CoolRPCTest2();
             
@@ -44,6 +44,13 @@ public class NetworkBehaviourExample : NetworkBehaviour
                 ObserversRPCTest(Time.time, someRef);
             }
         }
+    }
+    
+    [ServerRpc(requireOwnership: false)]
+    async void CoolRPCTestNoReturnValue()
+    {
+        await Task.Delay(1000);
+        Debug.Log("CoolRPCTestNoReturnValue");
     }
 
     [ServerRpc(requireOwnership: false)]
