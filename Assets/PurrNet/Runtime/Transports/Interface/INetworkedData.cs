@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using MemoryPack;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -303,6 +302,13 @@ namespace PurrNet.Packets
 
     public class NetworkRegister
     {
+        [RuntimeInitializeOnLoadMethod]
+        static void Init()
+        {
+            MemoryPackFormatterProvider.Register(new GameObjectFormatter());
+            MemoryPackFormatterProvider.Register(new TransformFormatter());
+        }
+        
         [UsedByIL]
         public static void Register<T>() where T : NetworkIdentity
         {
@@ -398,21 +404,27 @@ namespace PurrNet.Packets
         public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref T value)
         {
             bool isNull = value == null;
-            writer.WriteUnmanaged(isNull);
+
+            if (isNull)
+            {
+                writer.WriteUnmanaged(true);
+                return;
+            }
             
-            if (isNull) return;
-        
             var id = value.id;
             bool hasId = id.HasValue;
-            
-            writer.WriteUnmanaged(hasId);
 
-            if (hasId)
+            if (!hasId)
             {
-                var idValue = id!.Value;
-                writer.WriteUnmanaged(idValue);
-                writer.WriteUnmanaged(value.sceneId);
+                writer.WriteUnmanaged(true);
+                return;
             }
+            
+            writer.WriteUnmanaged(false);
+            
+            var idValue = id!.Value;
+            writer.WriteUnmanaged(idValue);
+            writer.WriteUnmanaged(value.sceneId);
         }
 
         public override void Deserialize(ref MemoryPackReader reader, ref T value)
@@ -422,11 +434,6 @@ namespace PurrNet.Packets
             if (reader.ReadUnmanaged<bool>())
                 return;
         
-            bool hasId = reader.ReadUnmanaged<bool>();
-            
-            if (!hasId)
-                return;
-            
             var networkId = reader.ReadUnmanaged<NetworkID>();
             var sceneId = reader.ReadUnmanaged<SceneID>();
             
@@ -440,6 +447,62 @@ namespace PurrNet.Packets
         }
     }
     
+    [Preserve]
+    public class GameObjectFormatter : MemoryPackFormatter<GameObject>
+    {
+        public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref GameObject value)
+        {
+            if (!value || !value.TryGetComponent<NetworkIdentity>(out var netId))
+            {
+                writer.WriteUnmanaged(true);
+                return;
+            }
+            
+            writer.WriteUnmanaged(false);
+            writer.GetFormatter<NetworkIdentity>().Serialize(ref writer, ref netId);
+        }
+
+        public override void Deserialize(ref MemoryPackReader reader, ref GameObject value)
+        {
+            value = null;
+
+            if (reader.ReadUnmanaged<bool>())
+                return;
+        
+            NetworkIdentity identity = null;
+            reader.GetFormatter<NetworkIdentity>().Deserialize(ref reader, ref identity);
+            value = identity.gameObject;
+        }
+    }
+    
+    [Preserve]
+    public class TransformFormatter : MemoryPackFormatter<Transform>
+    {
+        public override void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, ref Transform value)
+        {
+            if (!value || !value.TryGetComponent<NetworkIdentity>(out var netId))
+            {
+                writer.WriteUnmanaged(true);
+                return;
+            }
+            
+            writer.WriteUnmanaged(false);
+            writer.GetFormatter<NetworkIdentity>().Serialize(ref writer, ref netId);
+        }
+
+        public override void Deserialize(ref MemoryPackReader reader, ref Transform value)
+        {
+            value = null;
+
+            if (reader.ReadUnmanaged<bool>())
+                return;
+        
+            NetworkIdentity identity = null;
+            reader.GetFormatter<NetworkIdentity>().Deserialize(ref reader, ref identity);
+            value = identity.transform;
+        }
+    }
+
     [Preserve]
     internal sealed class UnmanagedFormatterUnsage<T> : MemoryPackFormatter<T>
     {
