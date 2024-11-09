@@ -863,32 +863,60 @@ namespace PurrNet.Codegen
 
         private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
         {
-            var newRef = new MethodReference(@new.Name, @new.ReturnType,
-                methodReference.DeclaringType)
+            // Check if methodReference is a MethodDefinition for a deeper copy if possible
+            var methodDefinition = methodReference.Resolve();
+
+            // Start with a MethodReference pointing to the new definition, copying name and return type
+            var newRef = new MethodReference(@new.Name, @new.ReturnType, @new.DeclaringType)
             {
                 HasThis = methodReference.HasThis,
                 ExplicitThis = methodReference.ExplicitThis,
                 CallingConvention = methodReference.CallingConvention,
             };
 
-            foreach (var parameter in methodReference.Parameters)
+            // Clone parameters with exact types and attributes
+            foreach (var parameter in methodDefinition.Parameters)
             {
-                newRef.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes,
-                    parameter.ParameterType));
+                var newParameterType = parameter.ParameterType;
+                if (newParameterType is GenericParameter && newRef.GenericParameters.Count > 0)
+                {
+                    // Ensure matching GenericParameter
+                    var matchedParameter = newRef.GenericParameters.FirstOrDefault(p => p.Name == newParameterType.Name);
+                    if (matchedParameter != null) newParameterType = matchedParameter;
+                }
+                newRef.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, newParameterType));
             }
 
-            foreach (var parameter in methodReference.GenericParameters)
+            // Handle generic parameters exactly as defined in the MethodDefinition
+            foreach (var genericParameter in methodDefinition.GenericParameters)
             {
-                newRef.GenericParameters.Add(new GenericParameter(parameter.Name, parameter.Owner));
+                var newGenericParameter = new GenericParameter(genericParameter.Name, newRef);
+                newRef.GenericParameters.Add(newGenericParameter);
             }
 
+            // If the methodReference is a GenericInstanceMethod, convert newRef to match
             if (methodReference is GenericInstanceMethod genericInstanceMethod)
             {
                 var newGenericInstanceMethod = new GenericInstanceMethod(newRef);
 
+                // Match each generic argument exactly
                 foreach (var argument in genericInstanceMethod.GenericArguments)
-                    newGenericInstanceMethod.GenericArguments.Add(argument);
+                {
+                    TypeReference newArgument = argument;
 
+                    // Match argument with the corresponding parameter if it's a GenericParameter
+                    if (argument is GenericParameter genericParam)
+                    {
+                        var matchingParam = newRef.GenericParameters.FirstOrDefault(p => p.Name == genericParam.Name);
+                        if (matchingParam != null)
+                        {
+                            newArgument = matchingParam;
+                        }
+                    }
+                    newGenericInstanceMethod.GenericArguments.Add(newArgument);
+                }
+
+                // Assign the generic instance method back to newRef
                 newRef = newGenericInstanceMethod;
             }
 
