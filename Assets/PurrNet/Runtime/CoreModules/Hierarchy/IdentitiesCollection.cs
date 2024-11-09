@@ -80,7 +80,7 @@ namespace PurrNet
             {
                 identity.TriggerDespawnEvent(_asServer);
                 
-                if (identity && identity.gameObject && identity.prefabId != -1)
+                if (identity && identity.gameObject && !identity.isSceneObject)
                 {
                     identity.IgnoreNextDestroyCallback();
                     Object.Destroy(identity.gameObject);
