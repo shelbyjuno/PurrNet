@@ -85,7 +85,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [ServerRpc(requireOwnership: false)]
     Task<bool> CoolRPCTest(string fuck)
     {
-        Debug.Log("CoolRPCTest");
+        Debug.Log("CoolRPCTest " + fuck);
         return Task.FromResult(Random.Range(0, 2) == 0);
     }
     
