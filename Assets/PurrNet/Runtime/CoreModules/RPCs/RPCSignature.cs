@@ -1,5 +1,6 @@
 ﻿using JetBrains.Annotations;
 using PurrNet.Transports;
+using UnityEngine.PlayerLoop;
 
 namespace PurrNet
 {
@@ -26,10 +27,11 @@ namespace PurrNet
         public bool requireServer;
         public bool excludeOwner;
         public string rpcName;
+        public float asyncTimeoutInSec;
         public PlayerID? targetPlayer;
 
         [UsedImplicitly]
-        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic)
+        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, float asyncTimoutInSec)
         {
             return new RPCSignature
             {
@@ -42,26 +44,17 @@ namespace PurrNet
                 excludeOwner = excludeOwner,
                 targetPlayer = null,
                 isStatic = isStatic,
-                rpcName = name
+                rpcName = name,
+                asyncTimeoutInSec = asyncTimoutInSec
             };
         }
         
         [UsedImplicitly]
-        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, PlayerID playerID)
+        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, float asyncTimoutInSec, PlayerID playerID)
         {
-            return new RPCSignature
-            {
-                type = type,
-                channel = channel,
-                runLocally = runLocally,
-                requireOwnership = requireOwnership,
-                bufferLast = bufferLast,
-                requireServer = requireServer,
-                excludeOwner = excludeOwner,
-                rpcName = name,
-                isStatic = isStatic,
-                targetPlayer = playerID
-            };
+            var rpc = Make(type, channel, runLocally, requireOwnership, bufferLast, requireServer, excludeOwner, name, isStatic, asyncTimoutInSec);
+            rpc.targetPlayer = playerID;
+            return rpc;
         }
     }
 }

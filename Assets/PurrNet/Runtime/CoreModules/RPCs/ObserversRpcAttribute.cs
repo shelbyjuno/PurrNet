@@ -5,6 +5,11 @@ namespace PurrNet
 {
     public class ObserversRpcAttribute : Attribute
     {
-        public ObserversRpcAttribute(Channel channel = Channel.ReliableOrdered, bool runLocally = false, bool bufferLast = false, bool requireServer = true, bool excludeOwner = false) { }
+        public ObserversRpcAttribute(Channel channel = Channel.ReliableOrdered, 
+            bool runLocally = false,
+            bool bufferLast = false,
+            bool requireServer = true, 
+            bool excludeOwner = false,
+            float asyncTimeoutInSec = 5f) { }
     }
 }

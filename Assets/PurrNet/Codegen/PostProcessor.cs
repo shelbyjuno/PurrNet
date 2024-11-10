@@ -1,5 +1,6 @@
 #if UNITY_MONO_CECIL
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -101,15 +102,16 @@ namespace PurrNet.Codegen
             {
                 if (attribute.AttributeType.FullName == typeof(ServerRpcAttribute).FullName)
                 {
-                    if (attribute.ConstructorArguments.Count != 3)
+                    if (attribute.ConstructorArguments.Count != 4)
                     {
-                        Error(messages, "ServerRPC attribute must have 3 arguments", method);
+                        Error(messages, "ServerRPC attribute must have 4 arguments", method);
                         return null;
                     }
                     
                     var channel = (Channel)attribute.ConstructorArguments[0].Value;
                     var runLocally = (bool)attribute.ConstructorArguments[1].Value;
                     var requireOwnership = (bool)attribute.ConstructorArguments[2].Value;
+                    var asyncTimeoutInSec = (float)attribute.ConstructorArguments[3].Value;
                     
                     data = new RPCSignature
                     {
@@ -120,15 +122,16 @@ namespace PurrNet.Codegen
                         requireServer = false,
                         bufferLast = false,
                         excludeOwner = false,
-                        isStatic = method.IsStatic
+                        isStatic = method.IsStatic,
+                        asyncTimeoutInSec = asyncTimeoutInSec
                     };
                     rpcCount++;
                 }
                 else if (attribute.AttributeType.FullName == typeof(ObserversRpcAttribute).FullName)
                 {
-                    if (attribute.ConstructorArguments.Count != 5)
+                    if (attribute.ConstructorArguments.Count != 6)
                     {
-                        Error(messages, "ObserversRPC attribute must have 5 arguments", method);
+                        Error(messages, "ObserversRPC attribute must have 6 arguments", method);
                         return null;
                     }
                     
@@ -137,7 +140,8 @@ namespace PurrNet.Codegen
                     var bufferLast = (bool)attribute.ConstructorArguments[2].Value;
                     var requireServer = (bool)attribute.ConstructorArguments[3].Value;
                     var excludeOwner = (bool)attribute.ConstructorArguments[4].Value;
-                    
+                    var asyncTimeoutInSec = (float)attribute.ConstructorArguments[5].Value;
+
                     data = new RPCSignature
                     {
                         type = RPCType.ObserversRPC,
@@ -147,15 +151,16 @@ namespace PurrNet.Codegen
                         requireServer = requireServer,
                         requireOwnership = false,
                         excludeOwner = excludeOwner,
-                        isStatic = method.IsStatic
+                        isStatic = method.IsStatic,
+                        asyncTimeoutInSec = asyncTimeoutInSec
                     };
                     rpcCount++;
                 }
                 else if (attribute.AttributeType.FullName == typeof(TargetRpcAttribute).FullName)
                 {
-                    if (attribute.ConstructorArguments.Count != 4)
+                    if (attribute.ConstructorArguments.Count != 5)
                     {
-                        Error(messages, "TargetRPC attribute must have 4 arguments", method);
+                        Error(messages, "TargetRPC attribute must have 5 arguments", method);
                         return null;
                     }
                     
@@ -163,7 +168,8 @@ namespace PurrNet.Codegen
                     var runLocally = (bool)attribute.ConstructorArguments[1].Value;
                     var bufferLast = (bool)attribute.ConstructorArguments[2].Value;
                     var requireServer = (bool)attribute.ConstructorArguments[3].Value;
-                    
+                    var asyncTimeoutInSec = (float)attribute.ConstructorArguments[4].Value;
+
                     data = new RPCSignature
                     {
                         type = RPCType.TargetRPC,
@@ -173,7 +179,8 @@ namespace PurrNet.Codegen
                         requireServer = requireServer,
                         requireOwnership = false,
                         excludeOwner = false,
-                        isStatic = method.IsStatic
+                        isStatic = method.IsStatic,
+                        asyncTimeoutInSec = asyncTimeoutInSec
                     };
                     rpcCount++;
                 }
@@ -555,18 +562,33 @@ namespace PurrNet.Codegen
             }
         }
         
-        static bool ValidateReturnType(MethodDefinition method, out bool isAsync)
+        public enum ReturnMode
         {
-            isAsync = false;
+            Void,
+            Task,
+            IEnumerator
+        }
+        
+        static bool ValidateReturnType(MethodDefinition method, out ReturnMode mode)
+        {
+            mode = ReturnMode.Void;
             
             if (method.ReturnType.FullName == typeof(void).FullName)
                 return true;
+            
+            bool isIEnumerator = method.ReturnType.FullName == typeof(IEnumerator).FullName;
+            
+            if (isIEnumerator)
+            {
+                mode = ReturnMode.IEnumerator;
+                return true;
+            }
             
             bool isTask = method.ReturnType.FullName == typeof(Task).FullName;
 
             if (isTask)
             {
-                isAsync = true;
+                mode = ReturnMode.Task;
                 return true;
             }
             
@@ -574,7 +596,7 @@ namespace PurrNet.Codegen
 
             if (inheritsFromTask)
             {
-                isAsync = true;
+                mode = ReturnMode.Task;
                 return true;
             }
             
@@ -584,15 +606,21 @@ namespace PurrNet.Codegen
         private MethodDefinition HandleRPC(ModuleDefinition module, int id, RPCMethod methodRpc, bool isNetworkClass, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
             var method = methodRpc.originalMethod;
-            bool isValidReturn = ValidateReturnType(method, out var isTask);
+            bool isValidReturn = ValidateReturnType(method, out var returnMode);
             
             if (!isValidReturn)
             {
                 Error(messages, $"RPC '{method.Name}' method must return void or Task", method);
                 return null;
             }
+
+            if (returnMode == ReturnMode.IEnumerator)
+            {
+                Error(messages, $"RPC '{method.Name}' IEnumerator is not supported (yet)", method);
+                return null;
+            }
             
-            if (isTask && methodRpc.Signature.type == RPCType.ObserversRPC)
+            if (returnMode == ReturnMode.Task && methodRpc.Signature.type == RPCType.ObserversRPC)
             {
                 Error(messages, $"ObserversRPC '{method.Name}' method cannot return Task", method);
                 return null;
@@ -743,7 +771,6 @@ namespace PurrNet.Codegen
                 
                 // BuildStaticRawRPC(int rpcId, NetworkStream stream)
                 code.Append(Instruction.Create(OpCodes.Call, genericInstanceMethod));
-                code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
             }
             else if (isNetworkClass)
             {
@@ -753,7 +780,6 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Ldc_I4, id));
                 code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
                 code.Append(Instruction.Create(OpCodes.Call, buildChildRpc));
-                code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
             }
             else
             {
@@ -768,8 +794,9 @@ namespace PurrNet.Codegen
 
                 // BuildRawRPC(int networkId, SceneID sceneId, byte rpcId, NetworkStream stream, RPCDetails details)
                 code.Append(Instruction.Create(OpCodes.Call, buildRawRPCMethod));
-                code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
             }
+
+            code.Append(Instruction.Create(OpCodes.Stloc, rpcDataVariable)); // rpcPacket
 
             if (!methodRpc.Signature.isStatic)
                 code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
@@ -796,7 +823,7 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
             code.Append(Instruction.Create(OpCodes.Call, freeStreamMethod));
             
-            if (isTask)
+            if (returnMode != ReturnMode.Void)
             {
                 code.Append(Instruction.Create(OpCodes.Ldnull));
                 code.Append(Instruction.Create(OpCodes.Ret));
@@ -823,6 +850,7 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.excludeOwner ? 1 : 0));
             code.Append(Instruction.Create(OpCodes.Ldstr, rpc.ogName));
             code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.isStatic ? 1 : 0));
+            code.Append(Instruction.Create(OpCodes.Ldc_R4, rpc.Signature.asyncTimeoutInSec));
 
             if (rpc.Signature.type == RPCType.TargetRPC)
             {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -88,7 +89,33 @@ namespace PurrNet
 
             gmethod.Invoke(this, rpcHeader.values);
         }
-        
+
+        [UsedByIL]
+        protected Task<T> GetNextId<T>(Connection? target, float timeout, out RpcRequest request)
+        {
+            request = default;
+
+            if (!target.HasValue)
+            {
+                return Task.FromException<T>(new InvalidOperationException(
+                    "LocalPlayer value isn't ready."));
+            }
+
+            if (!networkManager)
+            {
+                return Task.FromException<T>(new InvalidOperationException(
+                    "NetworkIdentity is not spawned."));
+            }
+
+            if (!networkManager.TryGetModule<RpcRequestResponseModule>(networkManager.isServer, out var module))
+            {
+                return Task.FromException<T>(new InvalidOperationException(
+                    "RpcRequestResponseModule module is missing."));
+            }
+
+            return module.GetNextId<T>(target.Value, timeout, out request);
+        }
+
         [UsedByIL]
         protected void SendRPC(RPCPacket packet, RPCSignature signature)
         {

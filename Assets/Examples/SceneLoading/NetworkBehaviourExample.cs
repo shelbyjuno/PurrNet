@@ -1,7 +1,11 @@
 using System;
+using System.Collections;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Modules;
+using PurrNet.Packets;
+using PurrNet.Transports;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -25,14 +29,31 @@ public class NetworkBehaviourExample : NetworkBehaviour
     {
         if (!asServer)
         {
+            //StartCoroutine(CoolRPC_Coroutines());
             CoolRPCTestNoReturnValue();
-            _ = CoolRPCTest();
-            _ = CoolRPCTest2();
-            
+            /*_ = CoolRPCTest();
+            _ = CoolRPCTest2();*/
+
             // this will be sent to the server as per usual
             // Test("Test 3");
         }
     }
+    
+    public Task<bool> CoolRPCTestNoReturnValue3()
+    {
+        var task = GetNextId<bool>(networkManager.localClientConnection, 5, out var request);
+        
+        NetworkStream networkStream = RPCModule.AllocStream(reading: false);
+
+        networkStream.Serialize<uint>(ref request.id);
+        
+        RPCPacket packet = RPCModule.BuildRawRPC(base.id, base.sceneId, 0, networkStream);
+        SendRPC(packet, RPCSignature.Make(RPCType.ServerRPC, Channel.ReliableOrdered, runLocally: false, requireOwnership: false, bufferLast: false, requireServer: false, excludeOwner: false, "CoolRPCTestNoReturnValue", isStatic: false, 5f));
+        RPCModule.FreeStream(networkStream);
+
+        return task;
+    }
+
     
     private void Update()
     {
@@ -45,6 +66,14 @@ public class NetworkBehaviourExample : NetworkBehaviour
             }
         }
     }
+    
+    /*[ServerRpc(requireOwnership: false)]
+    IEnumerator CoolRPC_Coroutines()
+    {
+        Debug.Log("CoolRPC_Coroutines");
+        yield return new WaitForSeconds(1);
+        Debug.Log("CoolRPC_Coroutines Done");
+    }*/
     
     [ServerRpc(requireOwnership: false)]
     async void CoolRPCTestNoReturnValue()

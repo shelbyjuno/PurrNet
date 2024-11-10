@@ -44,6 +44,8 @@ namespace PurrNet
         [SerializeField] private NetworkRules _networkRules;
         [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
         [SerializeField] private int _tickRate = 20;
+        
+        public Connection? localClientConnection { get; private set; }
 
         public CookieScope cookieScope
         {
@@ -299,6 +301,7 @@ namespace PurrNet
             var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayersModule);
             var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
+            var rpcRequestResponseModule = new RpcRequestResponseModule();
             
             hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayersModule);
@@ -317,6 +320,7 @@ namespace PurrNet
             modules.AddModule(ownershipModule);
             
             modules.AddModule(rpcModule);
+            modules.AddModule(rpcRequestResponseModule);
         }
 
         static bool ShouldStart(StartFlags flags)
@@ -409,6 +413,8 @@ namespace PurrNet
         
         public void StartClient()
         {
+            localClientConnection = null;
+            
             if (!_transport)
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
             _clientModules.RegisterModules();
@@ -419,14 +425,25 @@ namespace PurrNet
         {
             if (asserver)
                  _serverModules.OnNewConnection(conn, true);
-            else _clientModules.OnNewConnection(conn, false);
+            else
+            {
+                if (localClientConnection.HasValue)
+                    PurrLogger.LogError($"A client connection already exists '{localClientConnection}', overwriting it with {conn}.");
+                
+                localClientConnection = conn;
+                _clientModules.OnNewConnection(conn, false);
+            }
         }
 
         private void OnLostConnection(Connection conn, DisconnectReason reason, bool asserver)
         {
             if (asserver)
                  _serverModules.OnLostConnection(conn, true);
-            else _clientModules.OnLostConnection(conn, false);
+            else
+            {
+                localClientConnection = null;
+                _clientModules.OnLostConnection(conn, false);
+            }
         }
 
         private void OnDataReceived(Connection conn, ByteData data, bool asserver)
