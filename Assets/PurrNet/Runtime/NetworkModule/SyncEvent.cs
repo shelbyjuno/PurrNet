@@ -75,7 +75,9 @@ namespace PurrNet
         [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
         private void SendToOthers()
         {
-            if (!isServer) InvokeLocal();
+            if (isServer && !isHost) 
+                return;
+            InvokeLocal();
         }
 
         [ObserversRpc(Channel.ReliableOrdered)]
@@ -140,11 +142,11 @@ namespace PurrNet
         [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
         private void SendToOthers(T arg)
         {
-            if (!isServer)
-            {
-                _lastArg = arg;
-                InvokeLocal();
-            }
+            if (isServer && !isHost) 
+                return;
+            
+            _lastArg = arg;
+            InvokeLocal();
         }
 
         [ObserversRpc(Channel.ReliableOrdered)]
@@ -221,12 +223,12 @@ namespace PurrNet
         [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
         private void SendToOthers(T1 arg1, T2 arg2)
         {
-            if (!isServer)
-            {
-                _lastArg1 = arg1;
-                _lastArg2 = arg2;
-                InvokeLocal();
-            }
+            if (isServer && !isHost) 
+                return;
+            
+            _lastArg1 = arg1;
+            _lastArg2 = arg2;
+            InvokeLocal();
         }
 
         [ObserversRpc(Channel.ReliableOrdered)]
