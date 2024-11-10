@@ -654,7 +654,8 @@ namespace PurrNet.Codegen
             var rpcType = module.GetTypeDefinition<RPCModule>();
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
             var hahserType = module.GetTypeDefinition<Hasher>();
-
+            var rpcRequestType = module.GetTypeDefinition<RpcRequest>();
+            var reqRespModule = module.GetTypeDefinition<RpcRequestResponseModule>();
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             var freeStreamMethod = rpcType.GetMethod("FreeStream").Import(module);
@@ -662,6 +663,11 @@ namespace PurrNet.Codegen
             var getId = identityType.GetProperty("id");
             var getSceneId = identityType.GetProperty("sceneId");
             var getStableHashU32 = hahserType.GetMethod("GetStableHashU32", true).Import(module);
+            var getNetworkManager = identityType.GetProperty("networkManager").GetMethod.Import(module);
+            var getLocalClientConnectionFromNetworkManager = module.GetTypeDefinition<NetworkManager>().GetProperty("localClientConnection").GetMethod.Import(module);
+            var getNextId = identityType.GetMethod("GetNextId", true).Import(module);
+            var getNextIdStatic = reqRespModule.GetMethod("GetNextIdStatic", true).Import(module);
+            var reqIdField = rpcRequestType.GetField("id").Import(module);
             
             // Declare local variables
             newMethod.Body.InitLocals = true;
@@ -672,6 +678,13 @@ namespace PurrNet.Codegen
             var streamVariable = new VariableDefinition(streamType.Import(module));
             var rpcDataVariable = new VariableDefinition(packetType.Import(module));
             var typeHash = new VariableDefinition(module.TypeSystem.UInt32);
+            var rpcRequest = new VariableDefinition(rpcRequestType.Import(module));
+            var taskWithReturnType = new VariableDefinition(newMethod.ReturnType);
+            
+            if (returnMode != ReturnMode.Void)
+                newMethod.Body.Variables.Add(taskWithReturnType);
+            if (returnMode != ReturnMode.Void)
+                newMethod.Body.Variables.Add(rpcRequest);
             
             newMethod.Body.Variables.Add(streamVariable);
             newMethod.Body.Variables.Add(rpcDataVariable);
@@ -711,10 +724,77 @@ namespace PurrNet.Codegen
                 if (callMethod.ReturnType != module.TypeSystem.Void)
                     code.Append(Instruction.Create(OpCodes.Pop));
             }
-            
+
+            if (returnMode != ReturnMode.Void)
+            {
+                // Task<bool> nextId = GetNextId<bool>(base.networkManager.localClientConnection, 5f, out request);
+
+                if (methodRpc.Signature.isStatic)
+                {
+                    if (newMethod.ReturnType is GenericInstanceType genericInstance)
+                    {
+                        if (genericInstance.GenericArguments.Count != 1)
+                        {
+                            Error(messages, "Task must have a single generic argument", method);
+                            return null;
+                        }
+
+                        var param = genericInstance.GenericArguments[0];
+
+                        var newGetNextId = new GenericInstanceMethod(getNextIdStatic);
+                        newGetNextId.GenericArguments.Add(param);
+                        getNextIdStatic = newGetNextId;
+                    }
+                    
+                    code.Append(Instruction.Create(OpCodes.Ldc_R4, methodRpc.Signature.asyncTimeoutInSec)); // timeout
+                    code.Append(Instruction.Create(OpCodes.Ldloca, rpcRequest)); // out request
+                    code.Append(Instruction.Create(OpCodes.Call, getNextIdStatic)); // GetNextIdStatic
+                }
+                else
+                {
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Call, getNetworkManager)); // networkManager
+                    code.Append(Instruction.Create(OpCodes.Call,
+                        getLocalClientConnectionFromNetworkManager)); // localClientConnection
+                    code.Append(Instruction.Create(OpCodes.Ldc_R4, methodRpc.Signature.asyncTimeoutInSec)); // timeout
+                    code.Append(Instruction.Create(OpCodes.Ldloca, rpcRequest)); // out request
+
+                    if (newMethod.ReturnType is GenericInstanceType genericInstance)
+                    {
+                        if (genericInstance.GenericArguments.Count != 1)
+                        {
+                            Error(messages, "Task must have a single generic argument", method);
+                            return null;
+                        }
+
+                        var param = genericInstance.GenericArguments[0];
+
+                        var newGetNextId = new GenericInstanceMethod(getNextId);
+                        newGetNextId.GenericArguments.Add(param);
+                        getNextId = newGetNextId;
+                    }
+
+                    code.Append(Instruction.Create(OpCodes.Call, getNextId)); // GetNextId
+                }
+
+                code.Append(Instruction.Create(OpCodes.Stloc, taskWithReturnType)); // taskWithReturnType
+            }
+
             code.Append(Instruction.Create(OpCodes.Ldc_I4, 0));
             code.Append(Instruction.Create(OpCodes.Call, allocStreamMethod));
             code.Append(Instruction.Create(OpCodes.Stloc, streamVariable));
+
+            if (returnMode != ReturnMode.Void)
+            {
+                var serializeGenericMethod = new GenericInstanceMethod(serializeMethod);
+                serializeGenericMethod.GenericArguments.Add(module.TypeSystem.UInt32);
+                
+                code.Append(Instruction.Create(OpCodes.Ldloca, streamVariable));
+                code.Append(Instruction.Create(OpCodes.Ldloca, rpcRequest));
+                code.Append(Instruction.Create(OpCodes.Ldflda, reqIdField));
+                code.Append(Instruction.Create(OpCodes.Call, serializeGenericMethod));
+            }
 
             for (var i = 0; i < newMethod.GenericParameters.Count; i++)
             {
@@ -825,7 +905,7 @@ namespace PurrNet.Codegen
             
             if (returnMode != ReturnMode.Void)
             {
-                code.Append(Instruction.Create(OpCodes.Ldnull));
+                code.Append(Instruction.Create(OpCodes.Ldloc, taskWithReturnType));
                 code.Append(Instruction.Create(OpCodes.Ret));
             }
 
