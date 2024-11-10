@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
@@ -25,14 +26,13 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     [SerializeField] private bool _keepChanging;
     
-    protected override void OnSpawned(bool asServer)
+    protected override async void OnSpawned(bool asServer)
     {
         if (!asServer)
         {
             //StartCoroutine(CoolRPC_Coroutines());
-            CoolRPCTestNoReturnValue();
-            /*_ = CoolRPCTest();
-            _ = CoolRPCTest2();*/
+            await CoolRPCTest("fefes");
+            // _ = CoolRPCTest2();
 
             // this will be sent to the server as per usual
             // Test("Test 3");
@@ -83,9 +83,9 @@ public class NetworkBehaviourExample : NetworkBehaviour
     }
 
     [ServerRpc(requireOwnership: false)]
-    Task<bool> CoolRPCTest()
+    Task<bool> CoolRPCTest(string fuck)
     {
-        Debug.Log("CoolRPCTest");
+        Debug.Log("CoolRPCTest " + fuck);
         return Task.FromResult(Random.Range(0, 2) == 0);
     }
     
