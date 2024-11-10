@@ -230,6 +230,31 @@ namespace PurrNet
         {
             onChanged?.Invoke(change);
         }
+        
+        /// <summary>
+        /// Forces the list to be synced again at the given index. Good for when you modify something inside the list
+        /// </summary>
+        /// <param name="index">Index to set dirty</param>
+        public void SetDirty(int index)
+        {
+            if (!isSpawned) return;
+    
+            ValidateAuthority();
+    
+            if (index < 0 || index >= _list.Count)
+            {
+                PurrLogger.LogError($"Invalid index {index} for SetDirty in SyncList. List count: {_list.Count}", parent);
+                return;
+            }
+    
+            var value = _list[index];
+            InvokeChange(new SyncListChange<T>(SyncListOperation.Set, value, index));
+    
+            if (isServer)
+                SendSetDirtyToAll(index, value);
+            else
+                SendSetDirtyToServer(index, value);
+        }
 
         #region RPCs
         [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
@@ -403,44 +428,37 @@ namespace PurrNet
                 InvokeChange(new SyncListChange<T>(SyncListOperation.Insert, item, index));
             }
         }
-        
-        /// <summary>
-        /// Forces the list to be synced again. Good for when you modify something inside the list
-        /// </summary>
-        public void SetDirty()
-        {
-            if (!isSpawned) return;
-            
-            InvokeChange(new SyncListChange<T>(SyncListOperation.Set));
-            
-            if (isServer)
-                SendSetDirtyToAll();
-            else
-                SendSetDirtyToServer();
-        }
-        
+
         [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
-        private void SendSetDirtyToServer()
+        private void SendSetDirtyToServer(int index, T value)
         {
             if (!_ownerAuth) return;
-            SendSetDirtyToOthers();
+            SendSetDirtyToOthers(index, value);
         }
-        
+
         [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
-        private void SendSetDirtyToOthers()
+        private void SendSetDirtyToOthers(int index, T value)
         {
             if (!isServer || isHost)
             {
-                InvokeChange(new SyncListChange<T>(SyncListOperation.Set));
+                if (index >= 0 && index < _list.Count)
+                {
+                    _list[index] = value;
+                    InvokeChange(new SyncListChange<T>(SyncListOperation.Set, value, index));
+                }
             }
         }
-        
+
         [ObserversRpc(Channel.ReliableOrdered)]
-        private void SendSetDirtyToAll()
+        private void SendSetDirtyToAll(int index, T value)
         {
             if (!isHost)
             {
-                InvokeChange(new SyncListChange<T>(SyncListOperation.Set));
+                if (index >= 0 && index < _list.Count)
+                {
+                    _list[index] = value;
+                    InvokeChange(new SyncListChange<T>(SyncListOperation.Set, value, index));
+                }
             }
         }
         #endregion
