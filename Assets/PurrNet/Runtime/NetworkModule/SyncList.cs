@@ -4,7 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using PurrNet.Transports;
-using PurrNet.Utils;
 
 namespace PurrNet
 {
@@ -46,12 +45,8 @@ namespace PurrNet
     [Serializable]
     public class SyncList<T> : NetworkModule, IList<T>
     {
-        [SerializeField, PurrLock]
-        private bool _ownerAuth;
-        
-        [SerializeField]
-        private SerializableList<T> _serializableList = new SerializableList<T>();
-        private List<T> _list => _serializableList.List;
+        [SerializeField] private bool _ownerAuth;
+        [SerializeField] private List<T> _list = new List<T>();
         
         public delegate void SyncListChanged<T>(SyncListChange<T> change);
         
@@ -74,21 +69,6 @@ namespace PurrNet
         public SyncList(bool ownerAuth = false)
         {
             _ownerAuth = ownerAuth;
-        }
-
-        // Serializable wrapper for List<T>
-        [Serializable]
-        private class SerializableList<TItem>
-        {
-            [SerializeField]
-            private List<TItem> list = new List<TItem>();
-            
-            public List<TItem> List => list;
-            
-            public SerializableList()
-            {
-                list = new List<TItem>();
-            }
         }
 
         public T this[int index]
