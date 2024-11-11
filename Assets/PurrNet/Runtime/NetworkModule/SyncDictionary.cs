@@ -48,7 +48,7 @@ namespace PurrNet
         [SerializeField] private SerializableDictionary<TKey, TValue> _serializedDict = new();
         private Dictionary<TKey, TValue> _dict = new ();
         
-        public delegate void SyncDictionaryChanged<TKey, TValue>(SyncDictionaryChange<TKey, TValue> change);
+        public delegate void SyncDictionaryChanged<Key, Value>(SyncDictionaryChange<Key, Value> change);
         
         /// <summary>
         /// Event that is invoked when the dictionary is changed
@@ -278,9 +278,8 @@ namespace PurrNet
         {
             if (!isHost)
             {
-                if (_dict.TryGetValue(key, out TValue value))
+                if (_dict.Remove(key, out TValue value))
                 {
-                    _dict.Remove(key);
                     InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Removed, key, value));
                 }
             }

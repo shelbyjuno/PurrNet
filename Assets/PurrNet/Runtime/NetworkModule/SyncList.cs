@@ -48,7 +48,7 @@ namespace PurrNet
         [SerializeField] private bool _ownerAuth;
         [SerializeField] private List<T> _list = new List<T>();
         
-        public delegate void SyncListChanged<T>(SyncListChange<T> change);
+        public delegate void SyncListChanged<TYPE>(SyncListChange<TYPE> change);
         
         /// <summary>
         /// Event that is invoked when the list is changed

@@ -45,7 +45,7 @@ namespace PurrNet
         [SerializeField] private List<T> _serializedSet = new();
         private HashSet<T> _set = new();
         
-        public delegate void SyncHashSetChanged<T>(SyncHashSetChange<T> change);
+        public delegate void SyncHashSetChanged<Key>(SyncHashSetChange<Key> change);
         
         /// <summary>
         /// Event that is invoked when the hash set is changed
