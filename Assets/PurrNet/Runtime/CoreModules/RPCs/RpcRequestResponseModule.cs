@@ -63,12 +63,8 @@ namespace PurrNet.Modules
             _broadcastModule = broadcastModule;
         }
         
-        private bool _asServer;
-
         public void Enable(bool asServer)
         {
-            _asServer = asServer;
-            
             _broadcastModule.Subscribe<RpcResponse>(OnRpcResponse);
         }
 
