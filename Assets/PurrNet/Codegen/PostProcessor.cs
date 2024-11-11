@@ -828,7 +828,9 @@ namespace PurrNet.Codegen
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
             var hahserType = module.GetTypeDefinition<Hasher>();
             var rpcRequestType = module.GetTypeDefinition<RpcRequest>();
+            var rpcSignatureType = module.GetTypeDefinition<RPCSignature>();
             var reqRespModule = module.GetTypeDefinition<RpcRequestResponseModule>();
+            
             var allocStreamMethod = rpcType.GetMethod("AllocStream").Import(module);
             var serializeMethod = streamType.GetMethod("Serialize", true).Import(module);
             var freeStreamMethod = rpcType.GetMethod("FreeStream").Import(module);
@@ -855,6 +857,7 @@ namespace PurrNet.Codegen
             var typeHash = new VariableDefinition(module.TypeSystem.UInt32);
             var rpcRequest = new VariableDefinition(rpcRequestType.Import(module));
             var taskWithReturnType = new VariableDefinition(newMethod.ReturnType);
+            var rpcSignature = new VariableDefinition(rpcSignatureType.Import(module));
             
             if (returnMode != ReturnMode.Void)
                 newMethod.Body.Variables.Add(taskWithReturnType);
@@ -864,41 +867,50 @@ namespace PurrNet.Codegen
             newMethod.Body.Variables.Add(streamVariable);
             newMethod.Body.Variables.Add(rpcDataVariable);
             newMethod.Body.Variables.Add(typeHash);
+            newMethod.Body.Variables.Add(rpcSignature);
 
             var paramCount = newMethod.Parameters.Count;
             
-            if (methodRpc.Signature.runLocally)
+            ReturnRPCSignature(module, code, methodRpc); // rpcDetails
+            code.Append(Instruction.Create(OpCodes.Stloc, rpcSignature));
+            
+            var endOfRunLocallyCheck = Instruction.Create(OpCodes.Nop);
+            
+            code.Append(Instruction.Create(OpCodes.Ldloc, rpcSignature));
+            code.Append(Instruction.Create(OpCodes.Ldfld, module.GetTypeDefinition<RPCSignature>().GetField("runLocally").Import(module)));
+            code.Append(Instruction.Create(OpCodes.Brfalse, endOfRunLocallyCheck));
+            
+            var callMethod = GetOriginalMethod(method);
+            
+            if (method.HasGenericParameters)
             {
-                var callMethod = GetOriginalMethod(method);
-                
-                if (method.HasGenericParameters)
+                var genericInstanceMethod = new GenericInstanceMethod(callMethod);
+
+                for (var i = 0; i < method.GenericParameters.Count; i++)
                 {
-                    var genericInstanceMethod = new GenericInstanceMethod(callMethod);
-
-                    for (var i = 0; i < method.GenericParameters.Count; i++)
-                    {
-                        var gp = method.GenericParameters[i];
-                        genericInstanceMethod.GenericArguments.Add(gp);
-                    }
-
-                    callMethod = genericInstanceMethod;
+                    var gp = method.GenericParameters[i];
+                    genericInstanceMethod.GenericArguments.Add(gp);
                 }
 
-                if (!methodRpc.Signature.isStatic)
-                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-
-                for (int i = 0; i < paramCount; ++i)
-                {
-                    var param = newMethod.Parameters[i];
-                    code.Append(Instruction.Create(OpCodes.Ldarg, param)); // param
-                }
-
-                code.Append(Instruction.Create(OpCodes.Call, callMethod)); // Call original method
-                
-                // Pop return value if not void for now
-                if (callMethod.ReturnType != module.TypeSystem.Void)
-                    code.Append(Instruction.Create(OpCodes.Pop));
+                callMethod = genericInstanceMethod;
             }
+
+            if (!methodRpc.Signature.isStatic)
+                code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+
+            for (int i = 0; i < paramCount; ++i)
+            {
+                var param = newMethod.Parameters[i];
+                code.Append(Instruction.Create(OpCodes.Ldarg, param)); // param
+            }
+
+            code.Append(Instruction.Create(OpCodes.Call, callMethod)); // Call original method
+            
+            // Pop return value if not void for now
+            if (callMethod.ReturnType != module.TypeSystem.Void)
+                code.Append(Instruction.Create(OpCodes.Pop));
+            
+            code.Append(endOfRunLocallyCheck);
 
             if (returnMode != ReturnMode.Void)
             {
@@ -1064,7 +1076,7 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
             
             code.Append(Instruction.Create(OpCodes.Ldloc, rpcDataVariable)); // rpcPacket
-            ReturnRPCSignature(module, code, methodRpc); // rpcDetails
+            code.Append(Instruction.Create(OpCodes.Ldloc, rpcSignature)); // rpcDetails
 
             if (methodRpc.Signature.isStatic)
             {
