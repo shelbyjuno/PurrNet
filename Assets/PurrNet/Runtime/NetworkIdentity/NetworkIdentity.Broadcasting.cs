@@ -90,8 +90,12 @@ namespace PurrNet
             return gmethod.Invoke(this, rpcHeader.values);
         }
 
+        /// <summary>
+        /// Used internally to get next RPC id.
+        /// Do not use this method directly.
+        /// </summary>
         [UsedByIL]
-        protected Task<T> GetNextId<T>(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
+        public Task<T> GetNextId<T>(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
         {
             request = default;
 
@@ -124,8 +128,12 @@ namespace PurrNet
             return module.GetNextId<T>(target.Value, timeout, out request);
         }
         
+        /// <summary>
+        /// Used internally to get next RPC id.
+        /// Do not use this method directly.
+        /// </summary>
         [UsedByIL]
-        protected Task GetNextId(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
+        public Task GetNextId(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
         {
             request = default;
 

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Examples;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
@@ -26,6 +27,8 @@ public class NetworkBehaviourExample : NetworkBehaviour
     private SyncVar<int> _testChild2 = new (70);
 
     [SerializeField] private bool _keepChanging;
+
+    private ReturnableRpcsInModules _returnableRpcsInModules = new();
     
     private static void HandleRPCGenerated_39(NetworkStream stream, StaticRPCPacket packet, RPCInfo info, bool asServer)
     {

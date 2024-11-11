@@ -826,6 +826,7 @@ namespace PurrNet.Codegen
             var streamType = module.GetTypeDefinition<NetworkStream>();
             var rpcType = module.GetTypeDefinition<RPCModule>();
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
+            var moduleType = module.GetTypeDefinition<NetworkModule>();
             var hahserType = module.GetTypeDefinition<Hasher>();
             var rpcRequestType = module.GetTypeDefinition<RpcRequest>();
             var rpcSignatureType = module.GetTypeDefinition<RPCSignature>();
@@ -839,6 +840,9 @@ namespace PurrNet.Codegen
             var getSceneId = identityType.GetProperty("sceneId");
             var getStableHashU32 = hahserType.GetMethod("GetStableHashU32", true).Import(module);
             var getNetworkManager = identityType.GetProperty("networkManager").GetMethod.Import(module);
+            var getNetworkManagerModule = moduleType.GetProperty("networkManager").GetMethod.Import(module);
+            var getParent = moduleType.GetProperty("parent").GetMethod.Import(module);
+            
             var getLocalClientConnectionFromNetworkManager = module.GetTypeDefinition<NetworkManager>().GetProperty("localClientConnection").GetMethod.Import(module);
             var getNextId = identityType.GetMethod("GetNextId", true).Import(module);
             var getNextIdNonGeneric = identityType.GetMethod("GetNextId").Import(module);
@@ -942,11 +946,22 @@ namespace PurrNet.Codegen
                 }
                 else
                 {
-                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    var getNM = getNetworkManager;
+                    
+                    if (isNetworkClass)
+                        getNM = getNetworkManagerModule;
+
+                    if (isNetworkClass)
+                    {
+                        code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                        code.Append(Instruction.Create(OpCodes.Call, getParent)); // parent
+                    }
+                    else code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.Signature.type));
 
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                    code.Append(Instruction.Create(OpCodes.Call, getNetworkManager)); // networkManager
+                    code.Append(Instruction.Create(OpCodes.Call, getNM)); // networkManager
                     code.Append(Instruction.Create(OpCodes.Call,
                         getLocalClientConnectionFromNetworkManager)); // localClientConnection
                     code.Append(Instruction.Create(OpCodes.Ldc_R4, methodRpc.Signature.asyncTimeoutInSec)); // timeout
