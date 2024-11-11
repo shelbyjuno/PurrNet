@@ -7,6 +7,7 @@ using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packets;
 using PurrNet.Transports;
+using PurrNet.Utils;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -26,34 +27,42 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     [SerializeField] private bool _keepChanging;
     
+    private static void HandleRPCGenerated_39(NetworkStream stream, StaticRPCPacket packet, RPCInfo info, bool asServer)
+    {
+        info.compileTimeSignature = RPCSignature.Make(RPCType.ServerRPC, Channel.ReliableOrdered, runLocally: false,
+            requireOwnership: false, bufferLast: false, requireServer: false, excludeOwner: false, "SomeDelay",
+            isStatic: true, 5f);
+        if (RPCModule.ValidateReceivingStaticRPC(info, RPCSignature.Make(RPCType.ServerRPC, Channel.ReliableOrdered, runLocally: false, requireOwnership: false, bufferLast: false, requireServer: false, excludeOwner: false, "SomeDelay", isStatic: true, 5f), packet, asServer))
+        {
+            uint data = default(uint);
+            stream.Serialize<uint>(ref data);
+            float data2 = default(float);
+            stream.Serialize(ref data2);
+        }
+    }
+
+    
     protected override async void OnSpawned(bool asServer)
     {
+        Hasher.PrepareType<string>();
         if (!asServer)
         {
             //StartCoroutine(CoolRPC_Coroutines());
-            await CoolRPCTest("fefes");
+            var res = await CoolRPCTest("fefes");
+            Debug.Log("CoolRPCTest result: " + res);
+
+            var pong = PingPongTest("Pong");
+            Debug.Log("PingPongTest result: " + await pong);
+            
+            await SomeDelay(1);
+            Debug.Log("SomeDelay Done");
+            
             // _ = CoolRPCTest2();
 
             // this will be sent to the server as per usual
             // Test("Test 3");
         }
     }
-    
-    public Task<bool> CoolRPCTestNoReturnValue3()
-    {
-        var task = GetNextId<bool>(networkManager.localClientConnection, 5, out var request);
-        
-        NetworkStream networkStream = RPCModule.AllocStream(reading: false);
-
-        networkStream.Serialize<uint>(ref request.id);
-        
-        RPCPacket packet = RPCModule.BuildRawRPC(base.id, base.sceneId, 0, networkStream);
-        SendRPC(packet, RPCSignature.Make(RPCType.ServerRPC, Channel.ReliableOrdered, runLocally: false, requireOwnership: false, bufferLast: false, requireServer: false, excludeOwner: false, "CoolRPCTestNoReturnValue", isStatic: false, 5f));
-        RPCModule.FreeStream(networkStream);
-
-        return task;
-    }
-
     
     private void Update()
     {
@@ -90,13 +99,15 @@ public class NetworkBehaviourExample : NetworkBehaviour
     }
     
     [ServerRpc(requireOwnership: false)]
-    async Task<bool> CoolRPCTest2()
+    static Task<T> PingPongTest<T>(T ping)
     {
-        Debug.Log("Waiting for 1 second");
-        await Task.Delay(1000);
-        Debug.Log("Done waiting");
-
-        return Random.Range(0, 2) == 0;
+        return Task.FromResult(ping);
+    }
+    
+    [ServerRpc(requireOwnership: false)]
+    static Task SomeDelay(float secToWait)
+    {
+        return Task.Delay(Mathf.RoundToInt(secToWait * 1000));
     }
     
     [ObserversRpc(bufferLast: true), UsedImplicitly]

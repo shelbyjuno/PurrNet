@@ -136,7 +136,7 @@ namespace PurrNet.Modules
         {
             if (!nm) return default;
 
-            if (nm.TryGetModule<PlayersManager>(false, out var players))
+            if (!nm.TryGetModule<PlayersManager>(false, out var players))
                 return default;
 
             return players.localPlayerId ?? default;
@@ -296,7 +296,7 @@ namespace PurrNet.Modules
         static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new();
         
         [UsedByIL]
-        public static void CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
+        public static object CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
         {
             var targetType = Type.GetTypeFromHandle(type);
             var key = new StaticGenericKey(type.Value, methodName, rpcHeader.types);
@@ -312,10 +312,10 @@ namespace PurrNet.Modules
             if (gmethod == null)
             {
                 PurrLogger.LogError($"Calling generic static RPC failed. Method '{methodName}' not found.");
-                return;
+                return null;
             }
 
-            gmethod.Invoke(null, rpcHeader.values);
+            return gmethod.Invoke(null, rpcHeader.values);
         }
 
         private void SendAnyChildRPCs(PlayerID player, NetworkIdentity identity)
@@ -636,6 +636,18 @@ namespace PurrNet.Modules
 
         static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
         {
+            if (!NetworkManager.main.TryGetModule<PlayersManager>(asServer, out var playersManager))
+            {
+                PurrLogger.LogError("Failed to get players manager while receiving static RPC.");
+                return;
+            }
+            
+            if (!playersManager.TryGetConnection(player, out var conn))
+            {
+                PurrLogger.LogError($"Failed to get connection for player {player}.");
+                return;
+            }
+            
             if (!Hasher.TryGetType(data.typeHash, out var type))
             {
                 PurrLogger.LogError($"Failed to resolve type with hash {data.typeHash}.");
@@ -647,7 +659,12 @@ namespace PurrNet.Modules
             stream.ResetPointer();
             
             var rpcHandlerPtr = GetRPCHandler(type, data.rpcId);
-            var info = new RPCInfo { sender = player };
+            var info = new RPCInfo
+            {
+                sender = player,
+                asServer = asServer,
+                senderConn = conn
+            };
 
             if (rpcHandlerPtr != IntPtr.Zero)
             {
@@ -669,12 +686,23 @@ namespace PurrNet.Modules
         
         unsafe void ReceiveChildRPC(PlayerID player, ChildRPCPacket packet, bool asServer)
         {
+            if (!_playersManager.TryGetConnection(player, out var conn))
+            {
+                PurrLogger.LogError($"Failed to get connection for player {player}.");
+                return;
+            }
+            
             var stream = AllocStream(true);
             stream.Write(packet.data);
             stream.ResetPointer();
             
-            var info = new RPCInfo { sender = player };
-            
+            var info = new RPCInfo
+            {
+                sender = player,
+                asServer = asServer,
+                senderConn = conn
+            };
+
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
             {
                 if (!identity.enabled && !identity.ShouldPlayRPCsWhenDisabled())
@@ -718,11 +746,22 @@ namespace PurrNet.Modules
         
         unsafe void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
+            if (!_playersManager.TryGetConnection(player, out var conn))
+            {
+                PurrLogger.LogError($"Failed to get connection for player {player}.");
+                return;
+            }
+            
             var stream = AllocStream(true);
             stream.Write(packet.data);
             stream.ResetPointer();
             
-            var info = new RPCInfo { sender = player };
+            var info = new RPCInfo
+            {
+                sender = player,
+                asServer = asServer,
+                senderConn = conn
+            };
 
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
             {

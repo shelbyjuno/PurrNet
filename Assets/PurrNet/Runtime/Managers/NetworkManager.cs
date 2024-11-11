@@ -301,7 +301,7 @@ namespace PurrNet
             var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayersModule);
             var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
-            var rpcRequestResponseModule = new RpcRequestResponseModule();
+            var rpcRequestResponseModule = new RpcRequestResponseModule(broadcastModule);
             
             hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayersModule);

@@ -144,7 +144,7 @@ namespace PurrNet
         }
         
         [UsedByIL]
-        protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
+        protected object CallGeneric(string methodName, GenericRPCHeader rpcHeader)
         {
             var key = new NetworkIdentity.InstanceGenericKey(methodName, GetType(), rpcHeader.types);
             
@@ -159,10 +159,10 @@ namespace PurrNet
             if (gmethod == null)
             {
                 PurrLogger.LogError($"Calling generic RPC failed. Method '{methodName}' not found.");
-                return;
+                return null;
             }
 
-            gmethod.Invoke(this, rpcHeader.values);
+            return gmethod.Invoke(this, rpcHeader.values);
         }
         
         [UsedByIL]

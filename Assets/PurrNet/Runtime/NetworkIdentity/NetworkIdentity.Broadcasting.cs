@@ -69,7 +69,7 @@ namespace PurrNet
         }
     
         [UsedByIL]
-        protected void CallGeneric(string methodName, GenericRPCHeader rpcHeader)
+        protected object CallGeneric(string methodName, GenericRPCHeader rpcHeader)
         { 
             var key = new InstanceGenericKey(methodName, GetType(), rpcHeader.types);
             
@@ -84,14 +84,14 @@ namespace PurrNet
             if (gmethod == null)
             {
                 PurrLogger.LogError($"Calling generic RPC failed. Method '{methodName}' not found.");
-                return;
+                return null;
             }
 
-            gmethod.Invoke(this, rpcHeader.values);
+            return gmethod.Invoke(this, rpcHeader.values);
         }
 
         [UsedByIL]
-        protected Task<T> GetNextId<T>(Connection? target, float timeout, out RpcRequest request)
+        protected Task<T> GetNextId<T>(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
         {
             request = default;
 
@@ -106,14 +106,56 @@ namespace PurrNet
                 return Task.FromException<T>(new InvalidOperationException(
                     "NetworkIdentity is not spawned."));
             }
+            
+            bool asServer = rpcType switch
+            {
+                RPCType.ServerRPC => !networkManager.isClient,
+                RPCType.TargetRPC => networkManager.isServer,
+                RPCType.ObserversRPC => networkManager.isServer,
+                _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
+            };
 
-            if (!networkManager.TryGetModule<RpcRequestResponseModule>(networkManager.isServer, out var module))
+            if (!networkManager.TryGetModule<RpcRequestResponseModule>(asServer, out var module))
             {
                 return Task.FromException<T>(new InvalidOperationException(
                     "RpcRequestResponseModule module is missing."));
             }
 
             return module.GetNextId<T>(target.Value, timeout, out request);
+        }
+        
+        [UsedByIL]
+        protected Task GetNextId(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
+        {
+            request = default;
+
+            if (!target.HasValue)
+            {
+                return Task.FromException(new InvalidOperationException(
+                    "LocalPlayer value isn't ready."));
+            }
+
+            if (!networkManager)
+            {
+                return Task.FromException(new InvalidOperationException(
+                    "NetworkIdentity is not spawned."));
+            }
+            
+            bool asServer = rpcType switch
+            {
+                RPCType.ServerRPC => !networkManager.isClient,
+                RPCType.TargetRPC => networkManager.isServer,
+                RPCType.ObserversRPC => networkManager.isServer,
+                _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
+            };
+
+            if (!networkManager.TryGetModule<RpcRequestResponseModule>(asServer, out var module))
+            {
+                return Task.FromException(new InvalidOperationException(
+                    "RpcRequestResponseModule module is missing."));
+            }
+
+            return module.GetNextId(target.Value, timeout, out request);
         }
 
         [UsedByIL]

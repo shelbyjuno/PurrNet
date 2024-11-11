@@ -18,7 +18,7 @@ namespace PurrNet.Packets
         void Serialize(NetworkStream packer);
     }
     
-    public readonly struct NetworkStream
+    public readonly struct NetworkStream : IDisposable
     {
         readonly ByteBuffer _stream;
         
@@ -27,6 +27,11 @@ namespace PurrNet.Packets
         public ByteBuffer buffer => _stream;
         
         public int pointer => _stream.pointer;
+        
+        public ByteData ToByteData()
+        {
+            return buffer.ToByteData();
+        }
         
         public NetworkStream(ByteBuffer stream, bool isReading)
         {
@@ -297,6 +302,11 @@ namespace PurrNet.Packets
         public void ResetPointer()
         {
             _stream.ResetPointer();
+        }
+
+        public void Dispose()
+        {
+            RPCModule.FreeStream(this);
         }
     }
 

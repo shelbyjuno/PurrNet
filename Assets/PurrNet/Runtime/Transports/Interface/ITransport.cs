@@ -34,6 +34,8 @@ namespace PurrNet.Transports
         public readonly int offset;
         
         public ReadOnlySpan<byte> span => new (data, offset, length);
+        
+        public static readonly ByteData empty = new (Array.Empty<byte>(), 0, 0);
 
         public ByteData(byte[] data, int offset, int length)
         {

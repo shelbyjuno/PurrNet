@@ -1,4 +1,5 @@
 ﻿using JetBrains.Annotations;
+using PurrNet.Modules;
 using PurrNet.Transports;
 using UnityEngine.PlayerLoop;
 
@@ -7,6 +8,11 @@ namespace PurrNet
     public struct RPCInfo
     {
         public PlayerID sender;
+        public Connection senderConn;
+        public bool asServer;
+        
+        [UsedByIL]
+        public RPCSignature compileTimeSignature;
     }
     
     public enum RPCType
