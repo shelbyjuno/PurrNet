@@ -382,7 +382,6 @@ namespace PurrNet.Codegen
             var getNetworkManager = networkManagerProp.GetMethod.Import(module);
             var mainManagerProp = managerType.GetProperty("main");
             var mainManagerGetter = mainManagerProp.GetMethod.Import(module);
-            // var reqId = new VariableDefinition(param.ParameterType);
 
             VariableDefinition reqId = null;
 
@@ -402,7 +401,6 @@ namespace PurrNet.Codegen
             for (var p = 0; p < originalMethod.Parameters.Count; p++)
             {
                 var param = originalMethod.Parameters[p];
-
                 var variable = new VariableDefinition(param.ParameterType);
                 newMethod.Body.Variables.Add(variable);
 
@@ -446,7 +444,9 @@ namespace PurrNet.Codegen
             var vars = newMethod.Body.Variables;
 
             for (var j = reqId == null ? 0 : 1; j < vars.Count; j++)
+            {
                 code.Append(Instruction.Create(OpCodes.Ldloc, vars[j]));
+            }
 
             code.Append(Instruction.Create(OpCodes.Call, GetOriginalMethod(originalMethod)));
 
