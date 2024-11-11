@@ -417,13 +417,13 @@ namespace PurrNet.Codegen
                             {
                                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                                 code.Append(Instruction.Create(OpCodes.Call, localPlayerGetter));
-                                code.Append(Instruction.Create(OpCodes.Stloc, variable));
                             }
                             else
                             {
                                 code.Append(Instruction.Create(OpCodes.Call, getLocalPlayer));
-                                code.Append(Instruction.Create(OpCodes.Stloc, variable));
                             }
+
+                            code.Append(Instruction.Create(OpCodes.Stloc, variable));
                             break;
                     }
 
