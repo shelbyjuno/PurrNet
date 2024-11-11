@@ -275,7 +275,7 @@ namespace PurrNet.Modules
                         data = ByteData.empty
                     };
                     
-                    const Channel channel = Channel.ReliableOrdered;
+                    var channel = info.compileTimeSignature.channel;
                     
                     if (info.asServer)
                         rpcModule._broadcastModule.Send(info.senderConn, responsePacket, channel);
@@ -312,8 +312,8 @@ namespace PurrNet.Modules
                         data = tmpStream.ToByteData()
                     };
                     
-                    const Channel channel = Channel.ReliableOrdered;
-                    
+                    var channel = info.compileTimeSignature.channel;
+
                     if (info.asServer)
                          rpcModule._broadcastModule.Send(info.senderConn, responsePacket, channel);
                     else rpcModule._broadcastModule.SendToServer(responsePacket, channel);
