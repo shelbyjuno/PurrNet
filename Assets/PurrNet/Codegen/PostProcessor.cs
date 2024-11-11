@@ -129,9 +129,9 @@ namespace PurrNet.Codegen
                 }
                 else if (attribute.AttributeType.FullName == typeof(ObserversRpcAttribute).FullName)
                 {
-                    if (attribute.ConstructorArguments.Count != 6)
+                    if (attribute.ConstructorArguments.Count != 7)
                     {
-                        Error(messages, "ObserversRPC attribute must have 6 arguments", method);
+                        Error(messages, "ObserversRPC attribute must have 7 arguments", method);
                         return null;
                     }
                     
@@ -140,7 +140,8 @@ namespace PurrNet.Codegen
                     var bufferLast = (bool)attribute.ConstructorArguments[2].Value;
                     var requireServer = (bool)attribute.ConstructorArguments[3].Value;
                     var excludeOwner = (bool)attribute.ConstructorArguments[4].Value;
-                    var asyncTimeoutInSec = (float)attribute.ConstructorArguments[5].Value;
+                    var excludeSender = (bool)attribute.ConstructorArguments[5].Value;
+                    var asyncTimeoutInSec = (float)attribute.ConstructorArguments[6].Value;
 
                     data = new RPCSignature
                     {
@@ -151,6 +152,7 @@ namespace PurrNet.Codegen
                         requireServer = requireServer,
                         requireOwnership = false,
                         excludeOwner = excludeOwner,
+                        excludeSender = excludeSender,
                         isStatic = method.IsStatic,
                         asyncTimeoutInSec = asyncTimeoutInSec
                     };
@@ -179,6 +181,7 @@ namespace PurrNet.Codegen
                         requireServer = requireServer,
                         requireOwnership = false,
                         excludeOwner = false,
+                        excludeSender = false,
                         isStatic = method.IsStatic,
                         asyncTimeoutInSec = asyncTimeoutInSec
                     };
@@ -951,13 +954,12 @@ namespace PurrNet.Codegen
                     if (isNetworkClass)
                         getNM = getNetworkManagerModule;
 
-                    if (isNetworkClass)
-                    {
-                        code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                        code.Append(Instruction.Create(OpCodes.Call, getParent)); // parent
-                    }
-                    else code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
                     
+                    if (isNetworkClass)
+                        code.Append(Instruction.Create(OpCodes.Call, getParent)); // parent
+
+                    // this
                     code.Append(Instruction.Create(OpCodes.Ldc_I4, (int)methodRpc.Signature.type));
 
                     code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this

@@ -32,6 +32,7 @@ namespace PurrNet
         public bool bufferLast;
         public bool requireServer;
         public bool excludeOwner;
+        public bool excludeSender;
         public string rpcName;
         public float asyncTimeoutInSec;
         public PlayerID? targetPlayer;

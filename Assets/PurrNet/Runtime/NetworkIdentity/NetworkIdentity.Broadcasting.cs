@@ -272,7 +272,6 @@ namespace PurrNet
 
             Func<PlayerID, bool> predicate = ShouldSend;
 
-
             switch (signature.type)
             {
                 case RPCType.ServerRPC: throw new InvalidOperationException("ServerRPC should be handled by server.");
@@ -294,7 +293,7 @@ namespace PurrNet
 
             bool ShouldSend(PlayerID player)
             {
-                if (player == info.sender)
+                if (player == info.sender && signature.excludeSender)
                     return false;
 
                 return !signature.excludeOwner || IsNotOwnerPredicate(player);
