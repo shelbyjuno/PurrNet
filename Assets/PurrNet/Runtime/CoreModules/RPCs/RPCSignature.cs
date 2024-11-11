@@ -1,14 +1,12 @@
 ﻿using JetBrains.Annotations;
 using PurrNet.Modules;
 using PurrNet.Transports;
-using UnityEngine.PlayerLoop;
 
 namespace PurrNet
 {
     public struct RPCInfo
     {
         public PlayerID sender;
-        public Connection senderConn;
         public bool asServer;
         
         [UsedByIL]
@@ -38,7 +36,7 @@ namespace PurrNet
         public PlayerID? targetPlayer;
 
         [UsedImplicitly]
-        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, float asyncTimoutInSec)
+        public static RPCSignature Make(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, float asyncTimoutInSec, bool excludeSender)
         {
             return new RPCSignature
             {
@@ -49,6 +47,7 @@ namespace PurrNet
                 bufferLast = bufferLast,
                 requireServer = requireServer,
                 excludeOwner = excludeOwner,
+                excludeSender = excludeSender,
                 targetPlayer = null,
                 isStatic = isStatic,
                 rpcName = name,
@@ -57,9 +56,9 @@ namespace PurrNet
         }
         
         [UsedImplicitly]
-        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, float asyncTimoutInSec, PlayerID playerID)
+        public static RPCSignature MakeWithTarget(RPCType type, Channel channel, bool runLocally, bool requireOwnership, bool bufferLast, bool requireServer, bool excludeOwner, string name, bool isStatic, float asyncTimoutInSec, bool excludeSender, PlayerID playerID)
         {
-            var rpc = Make(type, channel, runLocally, requireOwnership, bufferLast, requireServer, excludeOwner, name, isStatic, asyncTimoutInSec);
+            var rpc = Make(type, channel, runLocally, requireOwnership, bufferLast, requireServer, excludeOwner, name, isStatic, asyncTimoutInSec, excludeSender);
             rpc.targetPlayer = playerID;
             return rpc;
         }

@@ -53,27 +53,27 @@ namespace PurrNet.Modules
     
     public class RpcRequestResponseModule : INetworkModule, IFixedUpdate
     {
-        private readonly BroadcastModule _broadcastModule;
+        private readonly PlayersManager _playersManager;
         private readonly List<RpcRequest> _requests = new();
         
         private uint _nextId;
         
-        public RpcRequestResponseModule(BroadcastModule broadcastModule)
+        public RpcRequestResponseModule(PlayersManager playersManager)
         {
-            _broadcastModule = broadcastModule;
+            _playersManager = playersManager;
         }
         
         public void Enable(bool asServer)
         {
-            _broadcastModule.Subscribe<RpcResponse>(OnRpcResponse);
+            _playersManager.Subscribe<RpcResponse>(OnRpcResponse);
         }
 
         public void Disable(bool asServer)
         {
-            _broadcastModule.Unsubscribe<RpcResponse>(OnRpcResponse);
+            _playersManager.Unsubscribe<RpcResponse>(OnRpcResponse);
         }
         
-        private void OnRpcResponse(Connection conn, RpcResponse data, bool asserver)
+        private void OnRpcResponse(PlayerID conn, RpcResponse data, bool asserver)
         {
             for (int i = 0; i < _requests.Count; i++)
             {
@@ -274,8 +274,8 @@ namespace PurrNet.Modules
                     var channel = info.compileTimeSignature.channel;
                     
                     if (info.asServer)
-                        rpcModule._broadcastModule.Send(info.senderConn, responsePacket, channel);
-                    else rpcModule._broadcastModule.SendToServer(responsePacket, channel);
+                        rpcModule._playersManager.Send(info.sender, responsePacket, channel);
+                    else rpcModule._playersManager.SendToServer(responsePacket, channel);
                 }
                 else
                 {
@@ -311,8 +311,8 @@ namespace PurrNet.Modules
                     var channel = info.compileTimeSignature.channel;
 
                     if (info.asServer)
-                         rpcModule._broadcastModule.Send(info.senderConn, responsePacket, channel);
-                    else rpcModule._broadcastModule.SendToServer(responsePacket, channel);
+                         rpcModule._playersManager.Send(info.sender, responsePacket, channel);
+                    else rpcModule._playersManager.SendToServer(responsePacket, channel);
                 }
                 else
                 {

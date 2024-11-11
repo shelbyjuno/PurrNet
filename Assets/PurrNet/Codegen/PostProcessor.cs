@@ -312,7 +312,7 @@ namespace PurrNet.Codegen
             var compileTimeSignatureField = info.ParameterType.GetField("compileTimeSignature").Import(module);
             
             code.Append(Instruction.Create(OpCodes.Ldarga, info));
-            ReturnRPCSignature(module, code, originalRpc);
+            ReturnRPCSignature(module, code, originalRpc, true);
             code.Append(Instruction.Create(OpCodes.Stfld, compileTimeSignatureField));
             
             MethodReference validateReceivingRPC;
@@ -376,7 +376,7 @@ namespace PurrNet.Codegen
             var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
             var responder = rpcReqRespType.GetMethod("CompleteRequestWithResponse", true).Import(module);
             var responderWithoutResponse = rpcReqRespType.GetMethod("CompleteRequestWithEmptyResponse").Import(module);
-            var localPlayerProp = identityType.GetProperty("localPlayer");
+            var localPlayerProp = identityType.GetProperty("localPlayerForced");
             var networkManagerProp = identityType.GetProperty("networkManager");
             var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
             var getNetworkManager = networkManagerProp.GetMethod.Import(module);
@@ -547,7 +547,7 @@ namespace PurrNet.Codegen
             var managerType = module.GetTypeDefinition<NetworkManager>();
             var responderWithObject = rpcReqRespType.GetMethod("CompleteRequestWithObject").Import(module);
 
-            var localPlayerProp = identityType.GetProperty("localPlayer");
+            var localPlayerProp = identityType.GetProperty("localPlayerForced");
             var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
             
             var genericRpcHeaderType = module.GetTypeDefinition<GenericRPCHeader>();
@@ -878,7 +878,7 @@ namespace PurrNet.Codegen
 
             var paramCount = newMethod.Parameters.Count;
             
-            ReturnRPCSignature(module, code, methodRpc); // rpcDetails
+            ReturnRPCSignature(module, code, methodRpc, false);
             code.Append(Instruction.Create(OpCodes.Stloc, rpcSignature));
             
             var endOfRunLocallyCheck = Instruction.Create(OpCodes.Nop);
@@ -1125,7 +1125,7 @@ namespace PurrNet.Codegen
             return newMethod;
         }
 
-        private static void ReturnRPCSignature(ModuleDefinition module, ILProcessor code, RPCMethod rpc)
+        private static void ReturnRPCSignature(ModuleDefinition module, ILProcessor code, RPCMethod rpc, bool isReceiving)
         {
             var rpcDetails = module.GetTypeDefinition<RPCSignature>();
             var makeRpcDetails = rpcDetails.GetMethod("Make").Import(module);
@@ -1142,12 +1142,32 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ldstr, rpc.ogName));
             code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.isStatic ? 1 : 0));
             code.Append(Instruction.Create(OpCodes.Ldc_R4, rpc.Signature.asyncTimeoutInSec));
+            code.Append(Instruction.Create(OpCodes.Ldc_I4, rpc.Signature.excludeSender ? 1 : 0));
 
             if (rpc.Signature.type == RPCType.TargetRPC)
             {
-                code.Append(rpc.Signature.isStatic
-                    ? Instruction.Create(OpCodes.Ldarg_0)
-                    : Instruction.Create(OpCodes.Ldarg_1));
+                if (!isReceiving)
+                {
+                    code.Append(rpc.Signature.isStatic
+                        ? Instruction.Create(OpCodes.Ldarg_0)
+                        : Instruction.Create(OpCodes.Ldarg_1));
+                }
+                else
+                {
+                    if (!rpc.Signature.isStatic)
+                    {
+                        var localPlayerProp = module.GetTypeDefinition<NetworkIdentity>().GetProperty("localPlayerForced").GetMethod.Import(module);
+
+                        code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                        code.Append(Instruction.Create(OpCodes.Call, localPlayerProp));
+                    }
+                    else
+                    {
+                        var rpcModule = module.GetTypeDefinition<RPCModule>();
+                        var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
+                        code.Append(Instruction.Create(OpCodes.Call, getLocalPlayer));
+                    }
+                }
                 
                 code.Append(Instruction.Create(OpCodes.Call, makeRpcDetailsTarget));
             }

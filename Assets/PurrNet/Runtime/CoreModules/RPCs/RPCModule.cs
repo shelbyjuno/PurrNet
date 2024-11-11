@@ -636,18 +636,6 @@ namespace PurrNet.Modules
 
         static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
         {
-            if (!NetworkManager.main.TryGetModule<PlayersManager>(asServer, out var playersManager))
-            {
-                PurrLogger.LogError("Failed to get players manager while receiving static RPC.");
-                return;
-            }
-            
-            if (!playersManager.TryGetConnection(player, out var conn))
-            {
-                PurrLogger.LogError($"Failed to get connection for player {player}.");
-                return;
-            }
-            
             if (!Hasher.TryGetType(data.typeHash, out var type))
             {
                 PurrLogger.LogError($"Failed to resolve type with hash {data.typeHash}.");
@@ -662,8 +650,7 @@ namespace PurrNet.Modules
             var info = new RPCInfo
             {
                 sender = player,
-                asServer = asServer,
-                senderConn = conn
+                asServer = asServer
             };
 
             if (rpcHandlerPtr != IntPtr.Zero)
@@ -686,12 +673,6 @@ namespace PurrNet.Modules
         
         unsafe void ReceiveChildRPC(PlayerID player, ChildRPCPacket packet, bool asServer)
         {
-            if (!_playersManager.TryGetConnection(player, out var conn))
-            {
-                PurrLogger.LogError($"Failed to get connection for player {player}.");
-                return;
-            }
-            
             var stream = AllocStream(true);
             stream.Write(packet.data);
             stream.ResetPointer();
@@ -699,8 +680,7 @@ namespace PurrNet.Modules
             var info = new RPCInfo
             {
                 sender = player,
-                asServer = asServer,
-                senderConn = conn
+                asServer = asServer
             };
 
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
@@ -746,12 +726,6 @@ namespace PurrNet.Modules
         
         unsafe void ReceiveRPC(PlayerID player, RPCPacket packet, bool asServer)
         {
-            if (!_playersManager.TryGetConnection(player, out var conn))
-            {
-                PurrLogger.LogError($"Failed to get connection for player {player}.");
-                return;
-            }
-            
             var stream = AllocStream(true);
             stream.Write(packet.data);
             stream.ResetPointer();
@@ -759,8 +733,7 @@ namespace PurrNet.Modules
             var info = new RPCInfo
             {
                 sender = player,
-                asServer = asServer,
-                senderConn = conn
+                asServer = asServer
             };
 
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)

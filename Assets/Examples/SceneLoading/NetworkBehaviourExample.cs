@@ -28,43 +28,40 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     [SerializeField] private bool _keepChanging;
 
-    private ReturnableRpcsInModules _returnableRpcsInModules = new();
+    // private ReturnableRpcsInModules _returnableRpcsInModules = new();
     
-    private static void HandleRPCGenerated_39(NetworkStream stream, StaticRPCPacket packet, RPCInfo info, bool asServer)
-    {
-        info.compileTimeSignature = RPCSignature.Make(RPCType.ServerRPC, Channel.ReliableOrdered, runLocally: false,
-            requireOwnership: false, bufferLast: false, requireServer: false, excludeOwner: false, "SomeDelay",
-            isStatic: true, 5f);
-        if (RPCModule.ValidateReceivingStaticRPC(info, RPCSignature.Make(RPCType.ServerRPC, Channel.ReliableOrdered, runLocally: false, requireOwnership: false, bufferLast: false, requireServer: false, excludeOwner: false, "SomeDelay", isStatic: true, 5f), packet, asServer))
-        {
-            uint data = default(uint);
-            stream.Serialize<uint>(ref data);
-            float data2 = default(float);
-            stream.Serialize(ref data2);
-        }
-    }
-
-    
-    protected override async void OnSpawned(bool asServer)
+    protected override void OnSpawned(bool asServer)
     {
         Hasher.PrepareType<string>();
         if (!asServer)
         {
             //StartCoroutine(CoolRPC_Coroutines());
-            var res = await CoolRPCTest("fefes");
+            /*var res = await CoolRPCTest("fefes");
             Debug.Log("CoolRPCTest result: " + res);
 
             var pong = PingPongTest("Pong");
             Debug.Log("PingPongTest result: " + await pong);
             
             await SomeDelay(1);
-            Debug.Log("SomeDelay Done");
+            Debug.Log("SomeDelay Done");*/
+            if (localPlayer.HasValue)
+            {
+                Debug.Log("Sending Targeted RPC to " + localPlayer.Value);
+                SetColor_Target(localPlayer.Value, Color.red);
+            }
+            else Debug.Log("No local player");
             
             // _ = CoolRPCTest2();
 
             // this will be sent to the server as per usual
             // Test("Test 3");
         }
+    }
+    
+    [TargetRpc]
+    private void SetColor_Target([UsedImplicitly] PlayerID player, Color color)
+    {
+        Debug.Log("SetColor_Target: " + color);
     }
     
     private void Update()

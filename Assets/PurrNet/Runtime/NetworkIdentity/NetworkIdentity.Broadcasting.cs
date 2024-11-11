@@ -227,7 +227,7 @@ namespace PurrNet
         {
             if (signature.requireOwnership && info.sender != owner)
                 return false;
-            
+
             if (signature.excludeOwner && isOwner)
                 return false;
 
@@ -285,6 +285,7 @@ namespace PurrNet
                 case RPCType.TargetRPC:
                 {
                     var rawData = BroadcastModule.GetImmediateData(data);
+                    SendToObservers(rawData, predicate, signature.channel);
                     SendToTarget(data.senderPlayerId, rawData, signature.channel);
                     return false;
                 }
@@ -341,6 +342,18 @@ namespace PurrNet
         {
             if (networkManager.isServer)
                 networkManager.GetModule<PlayersManager>(true).Send(player, packet, method);
+        }
+        
+        [Preserve]
+        public void SendToTarget(PlayerID player, ByteData data, Channel method = Channel.ReliableOrdered)
+        {
+            if (!observers.Contains(player))
+            {
+                PurrLogger.LogError($"Trying to send TargetRPC to player '{player}' which is not observing '{name}'.", this);
+                return;
+            }
+            
+            Send(player, data, method);
         }
         
         [Preserve]

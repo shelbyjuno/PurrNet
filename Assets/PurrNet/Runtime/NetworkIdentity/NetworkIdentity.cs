@@ -97,6 +97,13 @@ namespace PurrNet
         
         public PlayerID? localPlayer { get; private set; }
         
+        /// <summary>
+        /// Returns the local player if it exists.
+        /// Defaults to default(PlayerID) if it doesn't exist.
+        /// </summary>
+        [UsedByIL]
+        public PlayerID localPlayerForced => localPlayer ?? default;
+        
         public event OnRootChanged onRootChanged;
         public event Action<NetworkIdentity> onRemoved;
         public event Action<NetworkIdentity, bool> onEnabledChanged;
@@ -110,8 +117,6 @@ namespace PurrNet
         {
             get
             {
-                root = GetRootIdentity();
-                
                 if (!root || !root.isSpawned || !root.id.HasValue)
                     return VisibilityFactory.EMPTY_OBSERVERS;
                 
