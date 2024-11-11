@@ -18,6 +18,8 @@ MonoBehaviour:
     defaultOwner: 1
     propagateOwnershipByDefault: 1
     despawnIfOwnerDisconnects: 1
+  _defaultRpcRules:
+    ignoreRequireServerAttribute: 1
   _defaultVisibilityRules:
     visibilityMode: 0
   _defaultOwnershipRules:
@@ -32,6 +34,7 @@ MonoBehaviour:
     syncComponentAuth: -1
     syncGameObjectActive: 0
     syncGameObjectActiveAuth: -1
+    receiveRpcsWhenDisabled: 1
   _defaultTransformRules:
     syncParent: 1
     changeParentAuth: -1
