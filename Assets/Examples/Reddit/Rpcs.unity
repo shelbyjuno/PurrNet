@@ -234,12 +234,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _moduleA:
-    _toAddGeneric: 9601
-    _toAdd: From Module A
-  _moduleB:
-    _toAddGeneric: 69.42
-    _toAdd: From Module B
 --- !u!1 &1797481523
 GameObject:
   m_ObjectHideFlags: 0

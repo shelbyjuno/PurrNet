@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -95,7 +96,7 @@ namespace PurrNet
         /// Do not use this method directly.
         /// </summary>
         [UsedByIL]
-        public Task<T> GetNextId<T>(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
+        public Task<T> GetNextId<T>(RPCType rpcType, PlayerID? target, float timeout, out RpcRequest request)
         {
             request = default;
 
@@ -133,16 +134,10 @@ namespace PurrNet
         /// Do not use this method directly.
         /// </summary>
         [UsedByIL]
-        public Task GetNextId(RPCType rpcType, Connection? target, float timeout, out RpcRequest request)
+        public Task GetNextId(RPCType rpcType, PlayerID? target, float timeout, out RpcRequest request)
         {
             request = default;
-
-            if (!target.HasValue)
-            {
-                return Task.FromException(new InvalidOperationException(
-                    "LocalPlayer value isn't ready."));
-            }
-
+            
             if (!networkManager)
             {
                 return Task.FromException(new InvalidOperationException(
@@ -163,7 +158,7 @@ namespace PurrNet
                     "RpcRequestResponseModule module is missing."));
             }
 
-            return module.GetNextId(target.Value, timeout, out request);
+            return module.GetNextId(target, timeout, out request);
         }
 
         [UsedByIL]

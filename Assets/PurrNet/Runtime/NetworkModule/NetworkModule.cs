@@ -35,6 +35,8 @@ namespace PurrNet
         
         protected PlayerID? localPlayer => parent ? parent.localPlayer : null;
         
+        protected PlayerID localPlayerForced => parent ? parent.localPlayerForced : default;
+        
         protected PlayerID? owner => parent ? parent.owner : null;
 
         public virtual void OnSpawn() { }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -13,12 +14,7 @@ namespace PurrNet.Modules
     {
         [UsedByIL]
         public uint id;
-        
-        [UsedByIL]
-        public object tcs;
-
-        public Type responseType;
-        public Connection target;
+        public PlayerID? target;
         
         public float timeSent;
         public float timeout;
@@ -78,7 +74,7 @@ namespace PurrNet.Modules
             for (int i = 0; i < _requests.Count; i++)
             {
                 var request = _requests[i];
-                if (request.id == data.id)
+                if (request.id == data.id && (!request.target.HasValue || request.target == conn))
                 {
                     _requests.RemoveAt(i);
 
@@ -93,7 +89,7 @@ namespace PurrNet.Modules
         }
         
         [UsedByIL]
-        public static Task GetNextIdStatic(RPCType rpcType, float timeout, out RpcRequest request)
+        public static Task GetNextIdStatic(PlayerID? target, RPCType rpcType, float timeout, out RpcRequest request)
         {
             var networkManager = NetworkManager.main;
             request = default;
@@ -104,14 +100,6 @@ namespace PurrNet.Modules
                     "NetworkManager is not initialized. Make sure you have a NetworkManager active."));
             }
 
-            var localClient = networkManager.localClientConnection;
-            
-            if (!localClient.HasValue)
-            {
-                return Task.FromException(new InvalidOperationException(
-                    "Local client connection is not initialized.."));
-            }
-            
             bool asServer = rpcType switch
             {
                 RPCType.ServerRPC => !networkManager.isClient,
@@ -119,18 +107,18 @@ namespace PurrNet.Modules
                 RPCType.ObserversRPC => networkManager.isServer,
                 _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
             };
-            
+
             if (!networkManager.TryGetModule(out RpcRequestResponseModule rpcModule, asServer))
             {
                 return Task.FromException(new InvalidOperationException(
                     "RpcRequestResponseModule is not initialized.."));
             }
             
-            return rpcModule.GetNextId(localClient.Value, timeout, out request);
+            return rpcModule.GetNextId(target, timeout, out request);
         }
 
         [UsedByIL]
-        public static Task<T> GetNextIdStatic<T>(RPCType rpcType, float timeout, out RpcRequest request)
+        public static Task<T> GetNextIdStatic<T>(PlayerID? target, RPCType rpcType, float timeout, out RpcRequest request)
         {
             var networkManager = NetworkManager.main;
             request = default;
@@ -139,14 +127,6 @@ namespace PurrNet.Modules
             {
                 return Task.FromException<T>(new InvalidOperationException(
                     "NetworkManager is not initialized. Make sure you have a NetworkManager active."));
-            }
-
-            var localClient = networkManager.localClientConnection;
-            
-            if (!localClient.HasValue)
-            {
-                return Task.FromException<T>(new InvalidOperationException(
-                    "Local client connection is not initialized.."));
             }
             
             bool asServer = rpcType switch
@@ -163,10 +143,10 @@ namespace PurrNet.Modules
                     "RpcRequestResponseModule is not initialized.."));
             }
             
-            return rpcModule.GetNextId<T>(localClient.Value, timeout, out request);
+            return rpcModule.GetNextId<T>(target, timeout, out request);
         }
         
-        public Task GetNextId(Connection target, float timeout, out RpcRequest request)
+        public Task GetNextId(PlayerID? target, float timeout, out RpcRequest request)
         {
             var tcs = new TaskCompletionSource<bool>();
             var id = _nextId++;
@@ -177,8 +157,6 @@ namespace PurrNet.Modules
                 target = target,
                 timeSent = Time.unscaledTime,
                 timeout = timeout,
-                tcs = tcs,
-                responseType = typeof(void),
                 respond = _ =>
                 {
                     tcs.SetResult(true);
@@ -193,7 +171,7 @@ namespace PurrNet.Modules
             return tcs.Task;
         }
 
-        public Task<T> GetNextId<T>(Connection target, float timeout, out RpcRequest request)
+        public Task<T> GetNextId<T>(PlayerID? target, float timeout, out RpcRequest request)
         {
             var tcs = new TaskCompletionSource<T>();
             var id = _nextId++;
@@ -204,8 +182,6 @@ namespace PurrNet.Modules
                 target = target,
                 timeSent = Time.unscaledTime,
                 timeout = timeout,
-                tcs = tcs,
-                responseType = typeof(T),
                 respond = stream =>
                 {
                     T response = default;
@@ -252,6 +228,54 @@ namespace PurrNet.Modules
                 {
                     CompleteRequestWithEmptyResponse(respTask, info, reqId, manager);
                 }
+            }
+        }
+
+        static IEnumerator WaitThen(IEnumerator coroutine, Action action)
+        {
+            yield return coroutine;
+
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                PurrLogger.LogError($"Error while processing RPC response: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+        
+        [UsedByIL]
+        public static void CompleteRequestWithCoroutine(IEnumerator response, RPCInfo info, uint reqId, NetworkManager manager)
+        {
+            try
+            {
+                manager.StartCoroutine(WaitThen(response, () =>
+                {
+                    if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                    {
+                        // rpcModule
+                        var responsePacket = new RpcResponse
+                        {
+                            id = reqId,
+                            data = ByteData.empty
+                        };
+                    
+                        var channel = info.compileTimeSignature.channel;
+                    
+                        if (info.asServer)
+                            rpcModule._playersManager.Send(info.sender, responsePacket, channel);
+                        else rpcModule._playersManager.SendToServer(responsePacket, channel);
+                    }
+                    else
+                    {
+                        PurrLogger.LogError("Failed to get module, response won't be sent and receiver will timeout.");
+                    }
+                }));
+            }
+            catch (Exception ex)
+            {
+                PurrLogger.LogError($"Error while processing RPC response: {ex.Message}\n{ex.StackTrace}");
             }
         }
         
@@ -323,6 +347,16 @@ namespace PurrNet.Modules
             {
                 PurrLogger.LogError($"Error while processing RPC response: {ex.Message}\n{ex.StackTrace}");
             }
+        }
+        
+        [UsedByIL]
+        public static IEnumerator WaitForTask(Task task)
+        {
+            while (task is { IsCompleted: false })
+                yield return null;
+
+            if (task is { IsFaulted: true, Exception: not null })
+                throw task.Exception;
         }
     }
 }
