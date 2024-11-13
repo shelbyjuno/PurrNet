@@ -1356,20 +1356,7 @@ namespace PurrNet.Codegen
 
                 // Match each generic argument exactly
                 foreach (var argument in ogGenericMethodRef.GenericArguments)
-                {
-                    var newArgument = argument;
-
-                    // Match argument with the corresponding parameter if it's a GenericParameter
-                    if (argument is GenericParameter genericParam)
-                    {
-                        var matchingParam = newRef.GenericParameters.FirstOrDefault(p => p.Name == genericParam.Name);
-                        if (matchingParam != null)
-                        {
-                            newArgument = genericParam;
-                        }
-                    }
-                    newGenericInstanceMethod.GenericArguments.Add(newArgument);
-                }
+                    newGenericInstanceMethod.GenericArguments.Add(argument);
 
                 // Assign the generic instance method back to newRef
                 newRef = newGenericInstanceMethod;
