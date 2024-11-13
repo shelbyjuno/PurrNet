@@ -58,7 +58,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         }
     }
     
-    [TargetRpc]
+    [TargetRpc(requireServer: false)]
     private void SetColor_Target([UsedImplicitly] PlayerID player, Color color)
     {
         Debug.Log("SetColor_Target: " + color);

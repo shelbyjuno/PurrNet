@@ -15,7 +15,6 @@ public class SomeBehaviour : NetworkIdentity
         {
             var assetPath = new DirectoryInfo(".").Name;
             StartCoroutine(SendAndWaitConfirmation<string>(assetPath));
-            
             StartCoroutine(CoroutineTest(1));
         }
     }

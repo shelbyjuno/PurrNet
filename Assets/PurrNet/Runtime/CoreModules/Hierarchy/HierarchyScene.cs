@@ -96,23 +96,33 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone += PostObserverEvents;
             
+            if (!_asServer)
+                _playersManager.onLocalPlayerReceivedID += OnLocalClientReady;
+            
             _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Subscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
 
             if (_scenes.TryGetSceneState(_sceneID, out var state))
                 _sceneObjects = SceneObjectsModule.GetSceneIdentities(state.scene);
 
-            SpawnSceneObjects(_sceneObjects);
+            if (_asServer)
+                SpawnSceneObjects(_sceneObjects);
 
             if (asServer)
                 identities.SkipIds((ushort)_sceneObjects.Count);
         }
-        
+
+        private void OnLocalClientReady(PlayerID player)
+        {
+            SpawnSceneObjects(_sceneObjects);
+        }
+
         public void Disable(bool asServer)
         {
             _visibilityManager.onObserverAdded -= AddedObserverToIdentity;
             _visibilityManager.onObserverRemoved -= RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone -= PostObserverEvents;
+            _playersManager.onLocalPlayerReceivedID -= OnLocalClientReady;
 
             _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Unsubscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
@@ -154,15 +164,9 @@ namespace PurrNet.Modules
 
                 for (int j = 0; j < CACHE.Count; ++j)
                 {
-                    if (_asServer || !isHost)
-                    {
-                        SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
-                    }
-                    else
-                    {
-                        _spawnedThisFrame.Add(CACHE[j]);
-                        // CACHE[j].TriggerSpawnEvent(_asServer);
-                    }
+                    //if (_asServer || !isHost)
+                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer); //, !_asServer);
+                    //else _spawnedThisFrame.Add(CACHE[j]);
                 }
 
                 if (_asServer)
@@ -1122,7 +1126,7 @@ namespace PurrNet.Modules
 
                         if (!identity)
                             continue;
-                        
+
                         identity.TriggerSpawnEvent(_asServer);
                         
                         if (identity.id.HasValue && !identity.isSceneObject && _asServer && _manager.isHost)
