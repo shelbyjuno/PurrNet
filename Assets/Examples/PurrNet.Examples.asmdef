@@ -2,14 +2,15 @@
     "name": "PurrNet.Examples",
     "rootNamespace": "",
     "references": [
-        "GUID:6e20f757a1bae164fa42750dd2b27dcb"
+        "GUID:6e20f757a1bae164fa42750dd2b27dcb",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -10,6 +11,7 @@ using PurrNet.Packets;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine.Scripting;
+using Channel = PurrNet.Transports.Channel;
 
 namespace PurrNet
 {
@@ -127,6 +129,62 @@ namespace PurrNet
             }
 
             return module.GetNextId<T>(target.Value, timeout, out request);
+        }
+        
+        [UsedByIL]
+        public UniTask GetNextIdUniTask(RPCType rpcType, PlayerID? target, float timeout, out RpcRequest request)
+        {
+            request = default;
+            
+            if (!networkManager)
+            {
+                return UniTask.FromException(new InvalidOperationException(
+                    "NetworkIdentity is not spawned."));
+            }
+            
+            bool asServer = rpcType switch
+            {
+                RPCType.ServerRPC => !networkManager.isClient,
+                RPCType.TargetRPC => networkManager.isServer,
+                RPCType.ObserversRPC => networkManager.isServer,
+                _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
+            };
+
+            if (!networkManager.TryGetModule<RpcRequestResponseModule>(asServer, out var module))
+            {
+                return UniTask.FromException(new InvalidOperationException(
+                    "RpcRequestResponseModule module is missing."));
+            }
+
+            return module.GetNextIdUniTask(target, timeout, out request);
+        }
+        
+        [UsedByIL]
+        public UniTask<T> GetNextIdUniTask<T>(RPCType rpcType, PlayerID? target, float timeout, out RpcRequest request)
+        {
+            request = default;
+            
+            if (!networkManager)
+            {
+                return UniTask.FromException<T>(new InvalidOperationException(
+                    "NetworkIdentity is not spawned."));
+            }
+            
+            bool asServer = rpcType switch
+            {
+                RPCType.ServerRPC => !networkManager.isClient,
+                RPCType.TargetRPC => networkManager.isServer,
+                RPCType.ObserversRPC => networkManager.isServer,
+                _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
+            };
+
+            if (!networkManager.TryGetModule<RpcRequestResponseModule>(asServer, out var module))
+            {
+                return UniTask.FromException<T>(new InvalidOperationException(
+                    "RpcRequestResponseModule module is missing."));
+            }
+
+            return module.GetNextIdUniTask<T>(target, timeout, out request);
         }
         
         /// <summary>

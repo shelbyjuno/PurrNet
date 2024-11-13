@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packets;
@@ -146,6 +147,64 @@ namespace PurrNet.Modules
             return rpcModule.GetNextId<T>(target, timeout, out request);
         }
         
+        [UsedByIL]
+        public static UniTask GetNextIdUniTaskStatic(PlayerID? target, RPCType rpcType, float timeout, out RpcRequest request)
+        {
+            var networkManager = NetworkManager.main;
+            request = default;
+            
+            if (!networkManager)
+            {
+                return UniTask.FromException(new InvalidOperationException(
+                    "NetworkManager is not initialized. Make sure you have a NetworkManager active."));
+            }
+
+            bool asServer = rpcType switch
+            {
+                RPCType.ServerRPC => !networkManager.isClient,
+                RPCType.TargetRPC => networkManager.isServer,
+                RPCType.ObserversRPC => networkManager.isServer,
+                _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
+            };
+
+            if (!networkManager.TryGetModule(out RpcRequestResponseModule rpcModule, asServer))
+            {
+                return UniTask.FromException(new InvalidOperationException(
+                    "RpcRequestResponseModule is not initialized.."));
+            }
+            
+            return rpcModule.GetNextIdUniTask(target, timeout, out request);
+        }
+
+        [UsedByIL]
+        public static UniTask<T> GetNextIdUniTaskStatic<T>(PlayerID? target, RPCType rpcType, float timeout, out RpcRequest request)
+        {
+            var networkManager = NetworkManager.main;
+            request = default;
+            
+            if (!networkManager)
+            {
+                return UniTask.FromException<T>(new InvalidOperationException(
+                    "NetworkManager is not initialized. Make sure you have a NetworkManager active."));
+            }
+            
+            bool asServer = rpcType switch
+            {
+                RPCType.ServerRPC => !networkManager.isClient,
+                RPCType.TargetRPC => networkManager.isServer,
+                RPCType.ObserversRPC => networkManager.isServer,
+                _ => throw new ArgumentOutOfRangeException(nameof(rpcType), rpcType, null)
+            };
+            
+            if (!networkManager.TryGetModule(out RpcRequestResponseModule rpcModule, asServer))
+            {
+                return UniTask.FromException<T>(new InvalidOperationException(
+                    "RpcRequestResponseModule is not initialized.."));
+            }
+            
+            return rpcModule.GetNextIdUniTask<T>(target, timeout, out request);
+        }
+        
         public Task GetNextId(PlayerID? target, float timeout, out RpcRequest request)
         {
             var tcs = new TaskCompletionSource<bool>();
@@ -170,7 +229,59 @@ namespace PurrNet.Modules
             _requests.Add(request);
             return tcs.Task;
         }
+        
+        public UniTask GetNextIdUniTask(PlayerID? target, float timeout, out RpcRequest request)
+        {
+            var tcs = new UniTaskCompletionSource();
+            var id = _nextId++;
+            
+            request = new RpcRequest
+            {
+                id = id,
+                target = target,
+                timeSent = Time.unscaledTime,
+                timeout = timeout,
+                respond = _ =>
+                {
+                    tcs.TrySetResult();
+                },
+                timeoutRequest = () =>
+                {
+                    tcs.TrySetException(new TimeoutException($"Async RPC with request id of '{id}' timed out after {timeout} seconds."));
+                }
+            };
+            
+            _requests.Add(request);
+            return tcs.Task;
+        }
 
+        public UniTask<T> GetNextIdUniTask<T>(PlayerID? target, float timeout, out RpcRequest request)
+        {
+            var tcs = new UniTaskCompletionSource<T>();
+            var id = _nextId++;
+            
+            request = new RpcRequest
+            {
+                id = id,
+                target = target,
+                timeSent = Time.unscaledTime,
+                timeout = timeout,
+                respond = stream =>
+                {
+                    T response = default;
+                    stream.Serialize(ref response);
+                    tcs.TrySetResult(response);
+                },
+                timeoutRequest = () =>
+                {
+                    tcs.TrySetException(new TimeoutException($"Async RPC with request id of '{id}' timed out after {timeout} seconds."));
+                }
+            };
+            
+            _requests.Add(request);
+            return tcs.Task;
+        }
+        
         public Task<T> GetNextId<T>(PlayerID? target, float timeout, out RpcRequest request)
         {
             var tcs = new TaskCompletionSource<T>();
@@ -208,25 +319,6 @@ namespace PurrNet.Modules
                     _requests.RemoveAt(i);
                     i--;
                     request.timeoutRequest();
-                }
-            }
-        }
-
-        [UsedByIL]
-        public static void CompleteRequestWithObject([CanBeNull] object response, RPCInfo info, uint reqId, NetworkManager manager)
-        {
-            if (response is Task respTask)
-            {
-                var type = respTask.GetType();
-                if (type.IsGenericType)
-                {
-                    var responseType = type.GetGenericArguments()[0];
-                    var method = typeof(RpcRequestResponseModule).GetMethod(nameof(CompleteRequestWithResponse))?.MakeGenericMethod(responseType);
-                    method?.Invoke(null, new object[] {respTask, info, reqId, manager});
-                }
-                else
-                {
-                    CompleteRequestWithEmptyResponse(respTask, info, reqId, manager);
                 }
             }
         }
@@ -313,7 +405,101 @@ namespace PurrNet.Modules
         }
 
         [UsedByIL]
+        public static void CompleteRequestWithResponseObject<T>(object task, RPCInfo info, uint reqId, NetworkManager manager)
+        {
+            if (task is not Task<T> response)
+            {
+                PurrLogger.LogError("Task is not UniTask<T>, response won't be sent and receiver will timeout.");
+                return;
+            }
+            
+            CompleteRequestWithResponse(response, info, reqId, manager);
+        }
+        
+        [UsedByIL]
         public static async void CompleteRequestWithResponse<T>(Task<T> response, RPCInfo info, uint reqId, NetworkManager manager)
+        {
+            try
+            {
+                var result = await response;
+                
+                if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                {
+                    using var tmpStream = RPCModule.AllocStream(false);
+                    
+                    tmpStream.Serialize(ref result);
+                    
+                    // rpcModule
+                    var responsePacket = new RpcResponse
+                    {
+                        id = reqId,
+                        data = tmpStream.ToByteData()
+                    };
+                    
+                    var channel = info.compileTimeSignature.channel;
+
+                    if (info.asServer)
+                         rpcModule._playersManager.Send(info.sender, responsePacket, channel);
+                    else rpcModule._playersManager.SendToServer(responsePacket, channel);
+                }
+                else
+                {
+                    PurrLogger.LogError("Failed to get module, response won't be sent and receiver will timeout.");
+                }
+            }
+            catch (Exception ex)
+            {
+                PurrLogger.LogError($"Error while processing RPC response: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+        
+        [UsedByIL]
+        public static async void CompleteRequestWithUniTaskEmptyResponse(UniTask response, RPCInfo info, uint reqId, NetworkManager manager)
+        {
+            try
+            {
+                await response;
+                
+                if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                {
+                    // rpcModule
+                    var responsePacket = new RpcResponse
+                    {
+                        id = reqId,
+                        data = ByteData.empty
+                    };
+                    
+                    var channel = info.compileTimeSignature.channel;
+                    
+                    if (info.asServer)
+                        rpcModule._playersManager.Send(info.sender, responsePacket, channel);
+                    else rpcModule._playersManager.SendToServer(responsePacket, channel);
+                }
+                else
+                {
+                    PurrLogger.LogError("Failed to get module, response won't be sent and receiver will timeout.");
+                }
+            }
+            catch (Exception ex)
+            {
+                PurrLogger.LogError($"Error while processing RPC response: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        [UsedByIL]
+        public static void CompleteRequestWithUniTaskObject<T>(object task, RPCInfo info, uint reqId, NetworkManager manager)
+        {
+            if (task is not UniTask<T> response)
+            {
+                PurrLogger.LogError("Task is not UniTask<T>, response won't be sent and receiver will timeout.");
+                return;
+            }
+            
+            CompleteRequestWithUniTask(response, info, reqId, manager);
+        }
+        
+        [UsedByIL]
+        public static async void CompleteRequestWithUniTask<T>(UniTask<T> response, RPCInfo info, uint reqId, NetworkManager manager)
         {
             try
             {

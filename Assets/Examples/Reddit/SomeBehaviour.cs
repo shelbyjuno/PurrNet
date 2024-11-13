@@ -1,66 +1,42 @@
-using System.Collections;
 using System.IO;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using PurrNet;
-using PurrNet.Modules;
-using PurrNet.Packets;
-using PurrNet.Transports;
-using PurrNet.Utils;
 using UnityEngine;
 
 public class SomeBehaviour : NetworkIdentity
 {
-    protected override void OnSpawned(bool asServer)
+    protected override async void OnSpawned(bool asServer)
     {
         if (!asServer)
         {
             var assetPath = new DirectoryInfo(".").Name;
-            StartCoroutine(SendAndWaitConfirmation<string>(assetPath));
-            StartCoroutine(CoroutineTest(1));
+            Debug.Log("Sending: " + assetPath);
+            var res = await CalculateSomething(assetPath);
+            Debug.Log("Result: " + res);
+            
+            Debug.Log("Sending: " + 123);
+            res = await CalculateSomething(123);
+            
+            Debug.Log("Result: " + res);
         }
     }
     
-    /*private void SendAndWaitConfirmationTest<T>(T value)
+    [ServerRpc(requireOwnership: false)]
+    UniTask<string> CalculateSomething(string data)
     {
-        CoroutineTestReall(value);
-        CoroutineTestReall(value);
-    }*/
-    
-    private IEnumerator SendAndWaitConfirmation<T>(T value)
-    {
-        yield return CoroutineTestReal(value);
-        yield return CoroutineTest(value);
-        Debug.Log("Server received the message!");
-    }
-    
-    private IEnumerator SendAndWaitConfirmation(string value)
-    {
-        yield return CoroutineTest(value);
-        Debug.Log("Server received the message!");
+        return UniTask.FromResult($"From server: {data}");
     }
     
     [ServerRpc(requireOwnership: false)]
-    private IEnumerator CoroutineTest<T>(T value)
+    UniTask<string> CalculateSomething<T>(T data)
     {
-        Debug.Log("CoroutineTest");
-        yield return new WaitForSeconds(1);
-        Debug.Log(value);
+        return UniTask.FromResult($"From server: {data}");
     }
-    
-    private static IEnumerator CoroutineTestReal<T>(T value)
-    {
-        Debug.Log("CoroutineTest");
-        yield return new WaitForSeconds(1);
-        Debug.Log(value);
-    }
-    
+        
     [ServerRpc(requireOwnership: false)]
-    private void CoroutineTestReall(string value)
+    Task<string> CalculateSomething2<T>(T data)
     {
-        Debug.Log(value);
-    }
-    
-    private void CoroutineTestReall<T>(T value)
-    {
-        Debug.Log(value);
+        return Task.FromResult($"From server: {data}");
     }
 }

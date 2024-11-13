@@ -5,17 +5,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using PurrNet.Modules;
 using PurrNet.Packets;
-using PurrNet.Transports;
 using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 using UnityEngine.Scripting;
+using Channel = PurrNet.Transports.Channel;
 
 namespace PurrNet.Codegen
 {
@@ -377,8 +378,10 @@ namespace PurrNet.Codegen
             var rpcModule = originalMethod.DeclaringType.Module.GetTypeDefinition<RPCModule>();
             var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
             var responder = rpcReqRespType.GetMethod("CompleteRequestWithResponse", true).Import(module);
+            var responderUniTask = rpcReqRespType.GetMethod("CompleteRequestWithUniTask", true).Import(module);
             var responderWithoutResponse = rpcReqRespType.GetMethod("CompleteRequestWithEmptyResponse").Import(module);
             var responderCoroutine = rpcReqRespType.GetMethod("CompleteRequestWithCoroutine").Import(module);
+            var responderUniTaskWithoutResponse = rpcReqRespType.GetMethod("CompleteRequestWithUniTaskEmptyResponse").Import(module);
             
             var localPlayerProp = identityType.GetProperty("localPlayerForced");
             var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
@@ -466,63 +469,59 @@ namespace PurrNet.Codegen
 
             if (reqId != null)
             {
-                if (returnMode is ReturnMode.Task or ReturnMode.IEnumerator)
+                if (returnMode is ReturnMode.Task or ReturnMode.UniTask && originalMethod.ReturnType is GenericInstanceType genericInstance)
                 {
-                    if (returnMode == ReturnMode.Task && originalMethod.ReturnType is GenericInstanceType genericInstance)
+                    if (genericInstance.GenericArguments.Count != 1)
                     {
-                        if (genericInstance.GenericArguments.Count != 1)
-                        {
-                            code.Append(Instruction.Create(OpCodes.Pop));
-                            return;
-                        }
+                        code.Append(Instruction.Create(OpCodes.Pop));
+                        return;
+                    }
 
-                        code.Append(Instruction.Create(OpCodes.Ldarg, info));
-                        code.Append(Instruction.Create(OpCodes.Ldloc, reqId));
-                        // load networkManager
-                        if (newMethod.IsStatic)
-                        {
-                            code.Append(Instruction.Create(OpCodes.Call, mainManagerGetter));
-                        }
-                        else
-                        {
-                            code.Append(Instruction.Create(OpCodes.Ldarg_0));
-
-                            if (isNetworkClass)
-                                 code.Append(Instruction.Create(OpCodes.Call, getNetworkManagerModule));
-                            else code.Append(Instruction.Create(OpCodes.Call, getNetworkManager));
-                        }
-
-                        var genericResponse = new GenericInstanceMethod(responder);
-                        genericResponse.GenericArguments.Add(genericInstance.GenericArguments[0]);
-                        code.Append(Instruction.Create(OpCodes.Call, genericResponse));
+                    code.Append(Instruction.Create(OpCodes.Ldarg, info));
+                    code.Append(Instruction.Create(OpCodes.Ldloc, reqId));
+                    // load networkManager
+                    if (newMethod.IsStatic)
+                    {
+                        code.Append(Instruction.Create(OpCodes.Call, mainManagerGetter));
                     }
                     else
                     {
-                        code.Append(Instruction.Create(OpCodes.Ldarg, info));
-                        code.Append(Instruction.Create(OpCodes.Ldloc, reqId));
-                        
-                        // load networkManager
-                        if (newMethod.IsStatic)
-                        {
-                            code.Append(Instruction.Create(OpCodes.Call, mainManagerGetter));
-                        }
-                        else
-                        {
-                            code.Append(Instruction.Create(OpCodes.Ldarg_0));
-                            
-                            if (isNetworkClass)
-                                 code.Append(Instruction.Create(OpCodes.Call, getNetworkManagerModule));
-                            else code.Append(Instruction.Create(OpCodes.Call, getNetworkManager));
-                        }
+                        code.Append(Instruction.Create(OpCodes.Ldarg_0));
 
-                        code.Append(returnMode == ReturnMode.IEnumerator
-                            ? Instruction.Create(OpCodes.Call, responderCoroutine)
-                            : Instruction.Create(OpCodes.Call, responderWithoutResponse));
+                        if (isNetworkClass)
+                             code.Append(Instruction.Create(OpCodes.Call, getNetworkManagerModule));
+                        else code.Append(Instruction.Create(OpCodes.Call, getNetworkManager));
                     }
+
+                    var genericResponse = new GenericInstanceMethod(returnMode is ReturnMode.Task ? responder : responderUniTask);
+                    genericResponse.GenericArguments.Add(genericInstance.GenericArguments[0]);
+                    code.Append(Instruction.Create(OpCodes.Call, genericResponse));
                 }
-                else if (originalMethod.ReturnType != module.TypeSystem.Void)
+                else
                 {
-                    code.Append(Instruction.Create(OpCodes.Pop));
+                    code.Append(Instruction.Create(OpCodes.Ldarg, info));
+                    code.Append(Instruction.Create(OpCodes.Ldloc, reqId));
+                    
+                    // load networkManager
+                    if (newMethod.IsStatic)
+                    {
+                        code.Append(Instruction.Create(OpCodes.Call, mainManagerGetter));
+                    }
+                    else
+                    {
+                        code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                        code.Append(isNetworkClass
+                            ? Instruction.Create(OpCodes.Call, getNetworkManagerModule)
+                            : Instruction.Create(OpCodes.Call, getNetworkManager));
+                    }
+                    
+                    code.Append(returnMode switch
+                    {
+                        ReturnMode.IEnumerator => Instruction.Create(OpCodes.Call, responderCoroutine),
+                        ReturnMode.UniTask => Instruction.Create(OpCodes.Call, responderUniTaskWithoutResponse),
+                        ReturnMode.Task => Instruction.Create(OpCodes.Call, responderWithoutResponse),
+                        _ => throw new ArgumentOutOfRangeException()
+                    });
                 }
             }
         }
@@ -570,10 +569,13 @@ namespace PurrNet.Codegen
             var managerType = module.GetTypeDefinition<NetworkManager>();
             var networkModule = module.GetTypeDefinition<NetworkModule>();
             
-            var responderWithObject = rpcReqRespType.GetMethod("CompleteRequestWithObject").Import(module);
             var responderWithoutResponse = rpcReqRespType.GetMethod("CompleteRequestWithEmptyResponse").Import(module);
             var responderCoroutine = rpcReqRespType.GetMethod("CompleteRequestWithCoroutine").Import(module);
-
+            var responderUniTaskWithoutResponse = rpcReqRespType.GetMethod("CompleteRequestWithUniTaskEmptyResponse").Import(module);
+            
+            var responderTask = rpcReqRespType.GetMethod("CompleteRequestWithResponseObject", true).Import(module);
+            var responderUniTask = rpcReqRespType.GetMethod("CompleteRequestWithUniTaskObject", true).Import(module);
+            
             var localPlayerProp = identityType.GetProperty("localPlayerForced");
             var localPlayerGetter = localPlayerProp.GetMethod.Import(module);
             
@@ -695,24 +697,17 @@ namespace PurrNet.Codegen
             }
 
             // call 'CallGeneric'
-            if (!rpcMethod.Signature.isStatic)
-            {
-                code.Append(Instruction.Create(OpCodes.Ldarg_0)); // this
-                code.Append(Instruction.Create(OpCodes.Ldstr, originalMethod.Name)); // methodName
-                code.Append(Instruction.Create(OpCodes.Ldloc, headerValue)); // rpcHeader
-                code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
-            }
-            else
-            {
-                code.Append(Instruction.Create(OpCodes.Ldtoken, originalMethod.DeclaringType)); // methodName
-                code.Append(Instruction.Create(OpCodes.Ldstr, originalMethod.Name)); // methodName
-                code.Append(Instruction.Create(OpCodes.Ldloc, headerValue)); // rpcHeader
-                code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
-            }
+            code.Append(!rpcMethod.Signature.isStatic
+                ? Instruction.Create(OpCodes.Ldarg_0)
+                : Instruction.Create(OpCodes.Ldtoken, originalMethod.DeclaringType));
             
+            code.Append(Instruction.Create(OpCodes.Ldstr, originalMethod.Name)); // methodName
+            code.Append(Instruction.Create(OpCodes.Ldloc, headerValue)); // rpcHeader
+            code.Append(Instruction.Create(OpCodes.Call, callGenericMethod)); // CallGeneric
+
             if (requestId != null)
             {
-                if (returnMode == ReturnMode.Task && originalMethod.ReturnType is GenericInstanceType genericInstance)
+                if (returnMode is ReturnMode.Task or ReturnMode.UniTask && originalMethod.ReturnType is GenericInstanceType genericInstance)
                 {
                     if (genericInstance.GenericArguments.Count != 1)
                     {
@@ -734,7 +729,19 @@ namespace PurrNet.Codegen
                             ? Instruction.Create(OpCodes.Call, getNetworkManagerModule)
                             : Instruction.Create(OpCodes.Call, getNetworkManager));
                     }
-                    code.Append(Instruction.Create(OpCodes.Call, responderWithObject));
+
+                    if (returnMode == ReturnMode.Task)
+                    {
+                        var genericResponse = new GenericInstanceMethod(responderTask);
+                        genericResponse.GenericArguments.Add(genericInstance.GenericArguments[0]);
+                        code.Append(Instruction.Create(OpCodes.Call, genericResponse));
+                    }
+                    else
+                    {
+                        var genericResponse = new GenericInstanceMethod(responderUniTask);
+                        genericResponse.GenericArguments.Add(genericInstance.GenericArguments[0]);
+                        code.Append(Instruction.Create(OpCodes.Call, genericResponse));
+                    }
                 }
                 else if (originalMethod.ReturnType != module.TypeSystem.Void)
                 {
@@ -753,10 +760,14 @@ namespace PurrNet.Codegen
                             ? Instruction.Create(OpCodes.Call, getNetworkManagerModule)
                             : Instruction.Create(OpCodes.Call, getNetworkManager));
                     }
-
-                    code.Append(returnMode == ReturnMode.IEnumerator
-                        ? Instruction.Create(OpCodes.Call, responderCoroutine)
-                        : Instruction.Create(OpCodes.Call, responderWithoutResponse));
+                    
+                    code.Append(returnMode switch
+                    {
+                        ReturnMode.IEnumerator => Instruction.Create(OpCodes.Call, responderCoroutine),
+                        ReturnMode.UniTask => Instruction.Create(OpCodes.Call, responderUniTaskWithoutResponse),
+                        ReturnMode.Task => Instruction.Create(OpCodes.Call, responderWithoutResponse),
+                        _ => throw new ArgumentOutOfRangeException()
+                    });
                 }
             }
             else
@@ -769,7 +780,23 @@ namespace PurrNet.Codegen
         {
             Void,
             Task,
+            UniTask,
             IEnumerator
+        }
+        
+        private static bool IsGeneric(MethodReference method, Type type)
+        {
+            // Ensure method has a generic return type
+            if (method.ReturnType is GenericInstanceType genericReturnType)
+            {
+                // Resolve the element type to compare against Task<>
+                var resolvedType = genericReturnType.ElementType.Resolve();
+
+                // Check if the resolved type matches Task<>
+                return resolvedType != null && resolvedType.FullName == type.FullName;
+            }
+
+            return false;
         }
         
         static bool ValidateReturnType(MethodDefinition method, out ReturnMode mode)
@@ -795,11 +822,23 @@ namespace PurrNet.Codegen
                 return true;
             }
             
-            bool inheritsFromTask = method.ReturnType.Resolve().BaseType?.FullName == typeof(Task).FullName;
-
-            if (inheritsFromTask)
+            if (IsGeneric(method, typeof(Task<>)))
             {
                 mode = ReturnMode.Task;
+                return true;
+            }
+            
+            bool isUniTask = method.ReturnType.FullName == typeof(UniTask).FullName;
+            
+            if (isUniTask)
+            {
+                mode = ReturnMode.UniTask;
+                return true;
+            }
+            
+            if (IsGeneric(method, typeof(UniTask<>)))
+            {
+                mode = ReturnMode.UniTask;
                 return true;
             }
             
@@ -837,7 +876,7 @@ namespace PurrNet.Codegen
             
             if (!isValidReturn)
             {
-                Error(messages, $"RPC '{method.Name}' method must return void or Task", method);
+                Error(messages, $"RPC '{method.Name}' RPC must return <b>void</b>, <b>Task</b> or <b>UniTask</b>", method);
                 return null;
             }
 
@@ -908,7 +947,14 @@ namespace PurrNet.Codegen
             var getNextIdNonGeneric = identityType.GetMethod("GetNextId").Import(module);
             var getNextIdStatic = reqRespModule.GetMethod("GetNextIdStatic", true).Import(module);
             var getNextIdStaticNonGeneric = reqRespModule.GetMethod("GetNextIdStatic").Import(module);
+            var getNextIdUniTaskNonGeneric = identityType.GetMethod("GetNextIdUniTask").Import(module);
+            var getNextIdUniTask = identityType.GetMethod("GetNextIdUniTask", true).Import(module);
+
+            var getNextIdUniTaskStatic = reqRespModule.GetMethod("GetNextIdUniTaskStatic", true).Import(module);
+            var getNextIdUniTaskStaticNonGeneric = reqRespModule.GetMethod("GetNextIdUniTaskStatic").Import(module);
+            
             var waitForTask = reqRespModule.GetMethod("WaitForTask").Import(module);
+            
             var reqIdField = rpcRequestType.GetField("id").Import(module);
             
             // Declare local variables
@@ -946,9 +992,11 @@ namespace PurrNet.Codegen
 
                 if (methodRpc.Signature.isStatic)
                 {
-                    var getNextIdRef = getNextIdStaticNonGeneric;
+                    var getNextIdRef = returnMode == ReturnMode.UniTask ?
+                        getNextIdUniTaskStaticNonGeneric : 
+                        getNextIdStaticNonGeneric;
                     
-                    if (newMethod.ReturnType is GenericInstanceType genericInstance)
+                    if (returnMode is ReturnMode.Task or ReturnMode.UniTask && newMethod.ReturnType is GenericInstanceType genericInstance)
                     {
                         if (genericInstance.GenericArguments.Count != 1)
                         {
@@ -958,9 +1006,18 @@ namespace PurrNet.Codegen
 
                         var param = genericInstance.GenericArguments[0];
 
-                        var newGetNextId = new GenericInstanceMethod(getNextIdStatic);
-                        newGetNextId.GenericArguments.Add(param);
-                        getNextIdRef = newGetNextId;
+                        if (returnMode == ReturnMode.Task)
+                        {
+                            var newGetNextId = new GenericInstanceMethod(getNextIdStatic);
+                            newGetNextId.GenericArguments.Add(param);
+                            getNextIdRef = newGetNextId;
+                        }
+                        else
+                        {
+                            var newGetNextId = new GenericInstanceMethod(getNextIdUniTaskStatic);
+                            newGetNextId.GenericArguments.Add(param);
+                            getNextIdRef = newGetNextId;
+                        }
                     }
 
                     // get targetPlayerField
@@ -990,9 +1047,9 @@ namespace PurrNet.Codegen
                     code.Append(Instruction.Create(OpCodes.Ldc_R4, methodRpc.Signature.asyncTimeoutInSec)); // timeout
                     code.Append(Instruction.Create(OpCodes.Ldloca, rpcRequest)); // out request
 
-                    var getNextIdRef = getNextIdNonGeneric;
+                    var getNextIdRef = returnMode == ReturnMode.UniTask ? getNextIdUniTaskNonGeneric : getNextIdNonGeneric;
 
-                    if (returnMode == ReturnMode.Task && newMethod.ReturnType is GenericInstanceType genericInstance)
+                    if (returnMode is ReturnMode.Task or ReturnMode.UniTask && newMethod.ReturnType is GenericInstanceType genericInstance)
                     {
                         if (genericInstance.GenericArguments.Count != 1)
                         {
@@ -1002,9 +1059,18 @@ namespace PurrNet.Codegen
 
                         var param = genericInstance.GenericArguments[0];
 
-                        var newGetNextId = new GenericInstanceMethod(getNextId);
-                        newGetNextId.GenericArguments.Add(param);
-                        getNextIdRef = newGetNextId;
+                        if (returnMode == ReturnMode.Task)
+                        {
+                            var newGetNextId = new GenericInstanceMethod(getNextId);
+                            newGetNextId.GenericArguments.Add(param);
+                            getNextIdRef = newGetNextId;
+                        }
+                        else
+                        {
+                            var newGetNextId = new GenericInstanceMethod(getNextIdUniTask);
+                            newGetNextId.GenericArguments.Add(param);
+                            getNextIdRef = newGetNextId;
+                        }
                     }
 
                     code.Append(Instruction.Create(OpCodes.Call, getNextIdRef)); // GetNextId
