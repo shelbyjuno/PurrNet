@@ -14,29 +14,12 @@ public class SomeBehaviour : NetworkIdentity
             Debug.Log("Sending: " + assetPath);
             var res = await CalculateSomething(assetPath);
             Debug.Log("Result: " + res);
-            
-            Debug.Log("Sending: " + 123);
-            res = await CalculateSomething(123);
-            
-            Debug.Log("Result: " + res);
         }
     }
     
     [ServerRpc(requireOwnership: false)]
-    UniTask<string> CalculateSomething(string data)
+    Task<bool> CalculateSomething(string data)
     {
-        return UniTask.FromResult($"From server: {data}");
-    }
-    
-    [ServerRpc(requireOwnership: false)]
-    UniTask<string> CalculateSomething<T>(T data)
-    {
-        return UniTask.FromResult($"From server: {data}");
-    }
-        
-    [ServerRpc(requireOwnership: false)]
-    Task<string> CalculateSomething2<T>(T data)
-    {
-        return Task.FromResult($"From server: {data}");
+        return Task.FromResult(data.Contains("password"));
     }
 }

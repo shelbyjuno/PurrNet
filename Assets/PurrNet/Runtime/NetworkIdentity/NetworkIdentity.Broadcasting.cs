@@ -102,12 +102,6 @@ namespace PurrNet
         {
             request = default;
 
-            if (!target.HasValue)
-            {
-                return Task.FromException<T>(new InvalidOperationException(
-                    "LocalPlayer value isn't ready."));
-            }
-
             if (!networkManager)
             {
                 return Task.FromException<T>(new InvalidOperationException(
@@ -128,7 +122,7 @@ namespace PurrNet
                     "RpcRequestResponseModule module is missing."));
             }
 
-            return module.GetNextId<T>(target.Value, timeout, out request);
+            return module.GetNextId<T>(target, timeout, out request);
         }
         
         [UsedByIL]
