@@ -4,6 +4,7 @@ using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Packets;
 using PurrNet.Utils;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -663,7 +664,7 @@ namespace PurrNet.Modules
                 }
                 catch (Exception e)
                 {
-                    PurrLogger.LogError($"{e.Message}\nWhile calling RPC handler for id {data.rpcId} on '{type.Name}'.\n{e.StackTrace}");
+                    Debug.LogException(e);
                 }
             }
             else PurrLogger.LogError($"Can't find RPC handler for id {data.rpcId} on '{type.Name}'.");
@@ -711,8 +712,7 @@ namespace PurrNet.Modules
                         }
                         catch (Exception e)
                         {
-                            PurrLogger.LogError(
-                                $"{e.Message}\nWhile calling RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.\n{e.StackTrace}");
+                            Debug.LogException(e);
                         }
                     }
                     else
@@ -756,7 +756,7 @@ namespace PurrNet.Modules
                     }
                     catch (Exception e)
                     {
-                        PurrLogger.LogError($"{e.Message}\nWhile calling RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.\n{e.StackTrace}");
+                        Debug.LogException(e);
                     }
                 }
                 else PurrLogger.LogError($"Can't find RPC handler for id {packet.rpcId} in identity {identity.GetType().Name}.");
