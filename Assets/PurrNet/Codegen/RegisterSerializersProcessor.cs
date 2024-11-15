@@ -23,7 +23,7 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count != 2)
                 return false;
 
-            if (method.Parameters[0].ParameterType.FullName != typeof(PackStrings).FullName)
+            if (method.Parameters[0].ParameterType.FullName != typeof(BitStream).FullName)
                 return false;
             
             if (method.Parameters[1].ParameterType.IsByReference)
@@ -43,7 +43,7 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count != 2)
                 return false;
 
-            if (method.Parameters[0].ParameterType.FullName != typeof(PackStrings).FullName)
+            if (method.Parameters[0].ParameterType.FullName != typeof(BitStream).FullName)
                 return false;
             
             if (!method.Parameters[1].ParameterType.IsByReference)
@@ -138,6 +138,8 @@ namespace PurrNet.Codegen
                 var writeType = writeTypes[i];
                 var writeMethod = writeType.method.Import(module);
                 
+                writeMethod.Resolve().AggressiveInlining = true;
+                
                 var genericWrite = new GenericInstanceMethod(registerWriter);
                 genericWrite.GenericArguments.Add(writeType.type.Import(module));
                 
@@ -168,6 +170,8 @@ namespace PurrNet.Codegen
                 var readType = readTypes[i];
                 var readMethod = readType.method.Import(module);
                 
+                readMethod.Resolve().AggressiveInlining = true;
+
                 // Create a GenericInstanceMethod for Packer.RegisterReader<T>
                 var genericRead = new GenericInstanceMethod(registerReader);
                 TypeReference typeArgument = readType.type.Import(module);
