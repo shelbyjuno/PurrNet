@@ -23,7 +23,7 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count != 2)
                 return false;
 
-            if (method.Parameters[0].ParameterType.FullName != typeof(BitStream).FullName)
+            if (method.Parameters[0].ParameterType.FullName != typeof(PackStrings).FullName)
                 return false;
             
             if (method.Parameters[1].ParameterType.IsByReference)
@@ -43,7 +43,7 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count != 2)
                 return false;
 
-            if (method.Parameters[0].ParameterType.FullName != typeof(BitStream).FullName)
+            if (method.Parameters[0].ParameterType.FullName != typeof(PackStrings).FullName)
                 return false;
             
             if (!method.Parameters[1].ParameterType.IsByReference)
@@ -81,6 +81,9 @@ namespace PurrNet.Codegen
                 // Skip non-static classes
                 if (!method.IsStatic)
                     break;
+                
+                if (method.HasGenericParameters)
+                    continue;
                 
                 if (IsWriteMethod(method, out var writeType))
                 {
