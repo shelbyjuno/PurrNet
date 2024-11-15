@@ -29,20 +29,20 @@ namespace PurrNet
         }
 
         [UsedImplicitly]
-        public void Send<T>(IEnumerable<PlayerID> players, T data, Channel method = Channel.ReliableOrdered)
+        public void Send<T>(IEnumerable<PlayerID> playersCollection, T data, Channel method = Channel.ReliableOrdered)
         {
             var broadcaster = GetModule<PlayersBroadcaster>(true);
-            broadcaster.Send(players, data, method);
+            broadcaster.Send(playersCollection, data, method);
         }
         
         [UsedImplicitly]
         public void SendToScene<T>(SceneID sceneId, T data, Channel method = Channel.ReliableOrdered)
         {
             var broadcaster = GetModule<PlayersBroadcaster>(true);
-            var players = GetModule<ScenePlayersModule>(true);
+            var scenePlayers = GetModule<ScenePlayersModule>(true);
             
-            if (players.TryGetPlayersInScene(sceneId, out var scenePlayers))
-                broadcaster.Send(scenePlayers, data, method);
+            if (scenePlayers.TryGetPlayersInScene(sceneId, out var playersInScene))
+                broadcaster.Send(playersInScene, data, method);
         }
 
         [UsedImplicitly]
