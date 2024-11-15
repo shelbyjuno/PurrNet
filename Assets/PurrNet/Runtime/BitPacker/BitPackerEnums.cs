@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PurrNet.Packing
 {
-    public partial class BitPacker
+    public partial class BitStream
     {
         internal struct EnumCachedData
         {

@@ -6,9 +6,9 @@ using UnityEngine;
 
 namespace PurrNet.Packing
 {
-    public delegate void WriteFunc<T>(BitPacker packer, T value);
+    public delegate void WriteFunc<T>(BitStream stream, T value);
         
-    public delegate void ReadFunc<T>(BitPacker packer, ref T value);
+    public delegate void ReadFunc<T>(BitStream stream, ref T value);
     
     public static class Packer<T>
     {
@@ -17,97 +17,123 @@ namespace PurrNet.Packing
 
         static Packer()
         {
-            if (Packer.TryGetPacker<T>(out var helper))
+            if (Packer.TryGetReader<T>(out var reader))
             {
-                _write = helper.WriteData;
-                _read = helper.ReadData;
+                _read = reader.ReadData;
             }
-            else throw new Exception($"No packer found for type '{typeof(T)}'.");
+            else throw new Exception($"No reader found for type '{typeof(T)}'.");
+
+            
+            if (Packer.TryGetWriter<T>(out var writer))
+            {
+                _write = writer.WriteData;
+            }
+            else throw new Exception($"No writer found for type '{typeof(T)}'.");
         }
         
-        public static void Write(BitPacker packer, T value)
+        public static void Write(BitStream stream, T value)
         {
-            _write.Invoke(packer, value);
+            _write.Invoke(stream, value);
         }
         
-        public static void Read(BitPacker packer, ref T value)
+        public static void Read(BitStream stream, ref T value)
         {
-            _read.Invoke(packer, ref value);
+            _read.Invoke(stream, ref value);
         }
     }
     
     public static class Packer
     {
-        internal readonly struct PackerHelper
+        internal readonly unsafe struct PackerHelper
         {
-            readonly IntPtr readerFuncPtr;
-            readonly IntPtr writerFuncPtr;
+            readonly void* funcPtr;
             
-            public PackerHelper(MethodInfo writerFuncPtr, MethodInfo readerFuncPtr)
+            public PackerHelper(MethodInfo funcPtr)
             {
-                this.readerFuncPtr = readerFuncPtr.MethodHandle.GetFunctionPointer();
-                this.writerFuncPtr = writerFuncPtr.MethodHandle.GetFunctionPointer();
+                this.funcPtr = funcPtr.MethodHandle.GetFunctionPointer().ToPointer();
             }
             
-            public void WriteData<T>(BitPacker packer, T value)
+            public void WriteData<T>(BitStream stream, T value)
             {
-                unsafe
+                try
                 {
-                    try
-                    {
-                        ((delegate* managed<BitPacker, T, void>)writerFuncPtr.ToPointer())(packer, value);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    ((delegate* managed<BitStream, T, void>)funcPtr)(stream, value);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
             
-            public void ReadData<T>(BitPacker packer, ref T value)
+            public void ReadData<T>(BitStream stream, ref T value)
             {
-                unsafe
+                try
                 {
-                    try
-                    {
-                        ((delegate* managed<BitPacker, ref T, void>)readerFuncPtr.ToPointer())(packer, ref value);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    ((delegate* managed<BitStream, ref T, void>)funcPtr)(stream, ref value);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
         }
         
-        static readonly Dictionary<Type, PackerHelper> _packers = new ();
+        static readonly Dictionary<Type, PackerHelper> _writers = new ();
+        static readonly Dictionary<Type, PackerHelper> _readers = new ();
         
-        public static void Register<T>(WriteFunc<T> a, ReadFunc<T> b)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void Init()
         {
-            if (_packers.TryAdd(typeof(T), new PackerHelper(a.Method, b.Method)))
+            Clear();
+        }
+        
+        internal static void Clear()
+        {
+            _writers.Clear();
+            _readers.Clear();
+        }
+        
+        public static void RegisterWriter<T>(WriteFunc<T> a)
+        {
+            if (_writers.TryAdd(typeof(T), new PackerHelper(a.Method)))
                 return;
             
-            PurrLogger.LogError($"Packer for type '{typeof(T)}' already exists and cannot be overwritten.");
+            PurrLogger.LogError($"Writer for type '{typeof(T)}' already exists and cannot be overwritten.");
         }
         
-        internal static bool TryGetPacker<T>(out PackerHelper helper)
+        public static void RegisterReader<T>(ReadFunc<T> b)
         {
-            if (_packers.TryGetValue(typeof(T), out helper))
+            if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
+                return;
+            
+            PurrLogger.LogError($"Reader for type '{typeof(T)}' already exists and cannot be overwritten.");
+        }
+        
+        internal static bool TryGetReader<T>(out PackerHelper helper)
+        {
+            if (_readers.TryGetValue(typeof(T), out helper))
                 return true;
             return false;
         }
         
-        public static void Write<T>(BitPacker packer, T value)
+        internal static bool TryGetWriter<T>(out PackerHelper helper)
         {
-            if (_packers.TryGetValue(typeof(T), out var helper))
-                helper.WriteData(packer, value);
+            if (_writers.TryGetValue(typeof(T), out helper))
+                return true;
+            return false;
+        }
+        
+        public static void Write<T>(BitStream stream, T value)
+        {
+            if (_writers.TryGetValue(typeof(T), out var helper))
+                helper.WriteData(stream, value);
             else PurrLogger.LogError($"No packer found for type '{typeof(T)}'.");
         }
         
-        public static void Read<T>(BitPacker packer, ref T value)
+        public static void Read<T>(BitStream stream, ref T value)
         {
-            if (_packers.TryGetValue(typeof(T), out var helper))
-                helper.ReadData(packer, ref value);
+            if (_readers.TryGetValue(typeof(T), out var helper))
+                helper.ReadData(stream, ref value);
             else PurrLogger.LogError($"No packer found for type '{typeof(T)}'.");
         }
     }

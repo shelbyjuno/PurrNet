@@ -1,6 +1,6 @@
 namespace PurrNet.Packing
 {
-    public partial class BitPacker
+    public partial class BitStream
     {
         public void Write(string value)
         {

@@ -201,7 +201,7 @@ namespace PurrNet.Codegen
             }
         }
         
-        private static void Error(ICollection<DiagnosticMessage> messages, string message, MethodDefinition method)
+        public static void Error(ICollection<DiagnosticMessage> messages, string message, MethodDefinition method)
         {
             if (method.DebugInformation.HasSequencePoints)
             {
@@ -1460,6 +1460,8 @@ namespace PurrNet.Codegen
 
                     for (var t = 0; t < module.Types.Count; t++)
                     {
+                        RegisterSerializersProcessor.HandleType(module, module.Types[t], messages);
+                        
                         var type = module.Types[t];
 
                         if (!type.IsClass)

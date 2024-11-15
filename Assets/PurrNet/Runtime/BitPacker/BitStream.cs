@@ -6,7 +6,7 @@ using PurrNet.Transports;
 namespace PurrNet.Packing
 {
     [UsedImplicitly]
-    public partial class BitPacker : IDisposable
+    public partial class BitStream : IDisposable
     {
         private byte[] _buffer;
         private int _positionInBits;
@@ -16,7 +16,7 @@ namespace PurrNet.Packing
         
         public bool isWriting => !_isReading;
         
-        public BitPacker(int initialSize = 1024)
+        public BitStream(int initialSize = 1024)
         {
             _buffer = new byte[initialSize];
         }

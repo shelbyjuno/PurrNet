@@ -2,13 +2,13 @@ namespace PurrNet.Packing
 {
     public interface IData
     {
-        void Write(BitPacker packer);
+        void Write(BitStream stream);
 
-        void Read(BitPacker packer);
+        void Read(BitStream stream);
     }
     
     public interface ISimpleData : IData
     {
-        void Pack(BitPacker packer);
+        void Pack(BitStream stream);
     }
 }
