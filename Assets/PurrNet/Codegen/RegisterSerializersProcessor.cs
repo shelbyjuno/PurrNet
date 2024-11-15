@@ -5,7 +5,6 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using PurrNet.Packets;
 using PurrNet.Packing;
-using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
 

@@ -1438,6 +1438,8 @@ namespace PurrNet.Codegen
                 if (!WillProcess(compiledAssembly))
                     return default!;
                 
+                HashSet<TypeReference> typesToGenerateSerializer = new();
+                
                 var messages = new List<DiagnosticMessage>();
 
                 using var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData);
@@ -1584,7 +1586,7 @@ namespace PurrNet.Codegen
                         try
                         {
                             FindUsedTypes(module, _rpcMethods, usedTypes);
-                            GenerateExecuteFunction(module, type, usedTypes, inheritsFromNetworkIdentity);
+                            GenerateExecuteFunction(module, type, usedTypes, inheritsFromNetworkIdentity, typesToGenerateSerializer);
                         }
                         catch (Exception e)
                         {
@@ -1596,6 +1598,9 @@ namespace PurrNet.Codegen
                         }
                     }
                 }
+
+                foreach (var typeRef in typesToGenerateSerializer)
+                    GenerateSerializersProcessor.HandleType(assemblyDefinition, typeRef, messages);
 
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();
@@ -1735,8 +1740,25 @@ namespace PurrNet.Codegen
                 }
             }
         }
+        
+        public static bool IsTypeInOwnModule(TypeReference typeReference, ModuleDefinition ownModule)
+        {
+            // Check if the type's module matches our own module
+            if (typeReference.Module != ownModule)
+                return false;
 
-        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, bool inheritsFromIdentity)
+            // Check if the type is primitive or belongs to the core library (e.g., System, mscorlib)
+            if (typeReference.IsPrimitive || typeReference.Scope.Name == "mscorlib" || typeReference.Scope.Name == "System.Private.CoreLib")
+                return false;
+
+            // Check if the type is an external reference by comparing the assembly name
+            if (typeReference.Scope is AssemblyNameReference assemblyRef && assemblyRef.Name != ownModule.Assembly.Name.Name)
+                return false;
+
+            return true;
+        }
+
+        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, bool inheritsFromIdentity, HashSet<TypeReference> typesToGenSerializer)
         {
             var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 
                 MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static, module.TypeSystem.Void);
@@ -1763,11 +1785,14 @@ namespace PurrNet.Codegen
                 genericRegister.GenericArguments.Add(type);
                 code.Append(Instruction.Create(OpCodes.Call, genericRegister));
             }
-
+            
             foreach (var usedType in usedTypes)
             {
                 code.Append(Instruction.Create(OpCodes.Ldtoken, usedType));
                 code.Append(Instruction.Create(OpCodes.Call, hashMethod));
+                
+                if (IsTypeInOwnModule(usedType, module))
+                    typesToGenSerializer.Add(usedType);
             }
             
             code.Append(Instruction.Create(OpCodes.Ldtoken, type));
