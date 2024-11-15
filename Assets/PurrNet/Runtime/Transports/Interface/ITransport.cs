@@ -61,6 +61,12 @@ namespace PurrNet.Transports
         ReliableUnordered,
         
         /// <summary>
+        /// It ensures that the data is received but the order is not guaranteed.
+        /// They are batched together at the end of the tick.
+        /// </summary>
+        ReliableBatched,
+        
+        /// <summary>
         /// Packets are guaranteed to be in order but not guaranteed to be received.
         /// </summary>
         UnreliableSequenced,
@@ -71,14 +77,15 @@ namespace PurrNet.Transports
         ReliableOrdered,
         
         /// <summary>
-        /// Only the last sent packet is guaranteed to be received.
+        /// Packets are not guaranteed to be received nor in order.
         /// </summary>
-        ReliableSequenced,
+        Unreliable,
         
         /// <summary>
         /// Packets are not guaranteed to be received nor in order.
+        /// They are batched together at the end of the tick.
         /// </summary>
-        Unreliable
+        UnreliableBatched,
     }
     
     public interface IConnectable

@@ -79,14 +79,14 @@ namespace PurrNet
         {
             if (!parent)
             {
-                if (signature.channel is Channel.ReliableOrdered or Channel.ReliableSequenced)
+                if (signature.channel is Channel.ReliableOrdered)
                     PurrLogger.LogError($"Trying to send RPC from '{GetType().Name}' which is not initialized.");
                 return;
             }
 
             if (!parent.isSpawned)
             {
-                if (signature.channel is Channel.ReliableOrdered or Channel.ReliableSequenced)
+                if (signature.channel is Channel.ReliableOrdered)
                     PurrLogger.LogError($"Trying to send RPC from '{parent.name}' which is not spawned.", parent);
                 return;
             }

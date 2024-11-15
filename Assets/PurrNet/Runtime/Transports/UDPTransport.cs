@@ -242,6 +242,20 @@ namespace PurrNet.Transports
             }
         }
 
+        DeliveryMethod ToDeliveryMethod(Channel channel)
+        {
+            return channel switch
+            {
+                Channel.ReliableUnordered => DeliveryMethod.ReliableUnordered,
+                Channel.ReliableBatched => DeliveryMethod.ReliableUnordered,
+                Channel.UnreliableSequenced => DeliveryMethod.Sequenced,
+                Channel.ReliableOrdered => DeliveryMethod.ReliableOrdered,
+                Channel.Unreliable => DeliveryMethod.Unreliable,
+                Channel.UnreliableBatched => DeliveryMethod.Unreliable,
+                _ => DeliveryMethod.Unreliable
+            };
+        }
+
         public void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable)
         {
             if (listenerState is not ConnectionState.Connected)
@@ -250,7 +264,7 @@ namespace PurrNet.Transports
             if (!target.isValid)
                 return;
             
-            var deliveryMethod = (DeliveryMethod)(byte)method;
+            var deliveryMethod = ToDeliveryMethod(method);
             var peer = _server.GetPeerById(target.connectionId);
             peer?.Send(data.data, data.offset, data.length, deliveryMethod);
             RaiseDataSent(target, data, true);
@@ -261,7 +275,7 @@ namespace PurrNet.Transports
             if (clientState != ConnectionState.Connected)
                 return;
             
-            var deliveryMethod = (DeliveryMethod)(byte)method;
+            var deliveryMethod = ToDeliveryMethod(method);
             _client.SendToAll(data.data, data.offset, data.length, deliveryMethod);
             RaiseDataSent(default, data, false);
         }
