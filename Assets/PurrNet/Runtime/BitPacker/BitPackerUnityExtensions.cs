@@ -3,75 +3,6 @@ using UnityEngine;
 
 namespace PurrNet.Packing
 {
-    public struct HalfVector2
-    {
-        public Half x;
-        public Half y;
-        
-        public static implicit operator Vector2(HalfVector2 value)
-        {
-            return new Vector2(value.x, value.y);
-        }
-        
-        public static implicit operator HalfVector2(Vector2 value)
-        {
-            return new HalfVector2
-            {
-                x = new Half(value.x),
-                y = new Half(value.y)
-            };
-        }
-    }
-    
-    public struct HalfVector3
-    {
-        public Half x;
-        public Half y;
-        public Half z;
-        
-        public static implicit operator Vector3(HalfVector3 value)
-        {
-            return new Vector3(value.x, value.y, value.z);
-        }
-        
-        public static implicit operator HalfVector3(Vector3 value)
-        {
-            return new HalfVector3
-            {
-                x = new Half(value.x),
-                y = new Half(value.y),
-                z = new Half(value.z)
-            };
-        }
-    }
-    
-    public struct HalfVector4
-    {
-        public Half x;
-        public Half y;
-        public Half z;
-        public Half w;
-        
-        public static implicit operator Vector4(HalfVector4 value)
-        {
-            return new Vector4(value.x, value.y, value.z, value.w);
-        }
-        
-        public static implicit operator HalfVector4(Vector4 value)
-        {
-            return new HalfVector4
-            {
-                x = new Half(value.x),
-                y = new Half(value.y),
-                z = new Half(value.z),
-                w = new Half(value.w)
-            };
-        }
-    }
-}
-
-namespace PurrNet.Packing
-{
     [UsedImplicitly]
     public static class BitPackerUnityExtensions
     {
@@ -92,38 +23,6 @@ namespace PurrNet.Packing
         static float UnpackHalf(ushort value)
         {
             return value / 65535f * 2f - 1f;
-        }
-        
-        public static void Write(this BitPacker packer, object value)
-        {
-            throw new System.NotImplementedException();
-        }
-        
-        public static void Read(this BitPacker packer, ref object value)
-        {
-            throw new System.NotImplementedException();
-        }
-        
-        public static void Pack(this BitPacker packer, ref object value)
-        {
-            throw new System.NotImplementedException();
-        }
-        
-        public static void Pack<P, T>(this P packer, ref T value) where P : IPack<T>
-        {
-            if (packer.packer.isReading)
-                 packer.Read(ref value);
-            else packer.Write(value);
-        }
-        
-        public static void Write<P, T>(this P packer, T value) where P : IPack<T>
-        {
-            packer.Write(value);
-        }
-        
-        public static void Read<P, T>(this P packer, ref T value) where P : IPack<T>
-        {
-            packer.Read(ref value);
         }
         
         public static void Write(this BitPacker packer, Vector2 value)

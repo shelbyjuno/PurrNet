@@ -2,7 +2,7 @@ using System;
 
 namespace PurrNet.Packing
 {
-    public partial class BitPacker : IPack<Half>, IPack<float>, IPack<double>
+    public partial class BitPacker
     {
         public void Write(Half half)
         {

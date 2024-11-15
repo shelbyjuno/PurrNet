@@ -5,20 +5,9 @@ using PurrNet.Transports;
 
 namespace PurrNet.Packing
 {
-    public interface IPack<T>
-    {
-        public BitPacker packer { get; }
-
-        public void Write(T value);
-        
-        public void Read(ref T value);
-    }
-
     [UsedImplicitly]
-    public partial class BitPacker : IPack<IData>, IPack<ISimpleData>, IDisposable
+    public partial class BitPacker : IDisposable
     {
-        public BitPacker packer => this;
-        
         private byte[] _buffer;
         private int _positionInBits;
         private bool _isReading;
