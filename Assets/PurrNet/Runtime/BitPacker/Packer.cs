@@ -6,13 +6,39 @@ using UnityEngine;
 
 namespace PurrNet.Packing
 {
+    public delegate void WriteFunc<T>(BitPacker packer, T value);
+        
+    public delegate void ReadFunc<T>(BitPacker packer, ref T value);
+    
+    public static class Packer<T>
+    {
+        static readonly WriteFunc<T> _write;
+        static readonly ReadFunc<T> _read;
+
+        static Packer()
+        {
+            if (Packer.TryGetPacker<T>(out var helper))
+            {
+                _write = helper.WriteData;
+                _read = helper.ReadData;
+            }
+            else throw new Exception($"No packer found for type '{typeof(T)}'.");
+        }
+        
+        public static void Write(BitPacker packer, T value)
+        {
+            _write.Invoke(packer, value);
+        }
+        
+        public static void Read(BitPacker packer, ref T value)
+        {
+            _read.Invoke(packer, ref value);
+        }
+    }
+    
     public static class Packer
     {
-        public delegate void WriteFunc<T>(BitPacker packer, T value);
-        
-        public delegate void ReadFunc<T>(BitPacker packer, ref T value);
-        
-        readonly struct PackerHelper
+        internal readonly struct PackerHelper
         {
             readonly IntPtr readerFuncPtr;
             readonly IntPtr writerFuncPtr;
@@ -62,6 +88,13 @@ namespace PurrNet.Packing
                 return;
             
             PurrLogger.LogError($"Packer for type '{typeof(T)}' already exists and cannot be overwritten.");
+        }
+        
+        internal static bool TryGetPacker<T>(out PackerHelper helper)
+        {
+            if (_packers.TryGetValue(typeof(T), out helper))
+                return true;
+            return false;
         }
         
         public static void Write<T>(BitPacker packer, T value)

@@ -61,7 +61,7 @@ namespace PurrNet.Packing
             }
         }
         
-        private void WriteBits(ulong data, byte bits)
+        public void WriteBits(ulong data, byte bits)
         {
             EnsureBitsExist(bits);
             
@@ -87,7 +87,7 @@ namespace PurrNet.Packing
             }
         }
 
-        private ulong ReadBits(byte bits)
+        public ulong ReadBits(byte bits)
         {
             if (bits > 64)
                 throw new ArgumentOutOfRangeException(nameof(bits), "Cannot read more than 64 bits at a time.");
