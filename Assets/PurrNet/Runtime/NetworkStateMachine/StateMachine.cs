@@ -18,9 +18,10 @@ namespace PurrNet.StateMachine
         public event Action onReceivedNewData;
         
         StateMachineState _currentState;
-        NetworkedStateMachineData _networkedData;
+        private int _previousStateId = -1;
         
         public StateMachineState currentState => _currentState;
+        public int previousStateId => _previousStateId;
 
         private void Awake()
         {
@@ -75,55 +76,45 @@ namespace PurrNet.StateMachine
         }
 
         [ObserversRpc(bufferLast:true)]
-        private void RpcStateChange(StateMachineState state)
+        private void RpcStateChange<T>(StateMachineState state, bool hasData, T data)
         {
             if (isServer) return;
-            
-            Debug.Log($"Hello :-)");
+    
             var activeState = _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
                 null : _states[_currentState.stateId];
-            
+    
             bool isResume = state.resuming && _currentState.stateId == state.stateId;
 
             if (activeState != null && !isResume)
             {
                 activeState.Exit(false);
             }
-            
+    
             state.resuming = false;
             _currentState = state;
-            
+            _currentState.data = data;
+    
             if (_currentState.stateId < 0 || _currentState.stateId >= _states.Count)
                 return;
-            
+    
             var newState = _states[_currentState.stateId];
-
-            if (_currentState.data is INetworkedData networkedData)
+    
+            if (hasData && newState is StateNode<T> node)
             {
-                var dataType = networkedData.GetType();
-                var method = newState.GetType().GetMethod(isResume ? "Resume" : "Enter", 
-                    new[] { dataType, typeof(bool) });
-
-                if (method == null)
-                {
-                    PurrLogger.LogException($"StateNode at index {_currentState.stateId} does not have a method with signature 'void Enter({networkedData.GetType().Name})'");
-                }
-                
-                method.Invoke(newState, new [] {_currentState.data, false});
+                if (isResume)
+                    node.Resume(data, false);
+                else 
+                    node.Enter(data, false);
             }
-            
-            if (isResume)
-                 newState.Resume(false);
-            else newState.Enter(false);
-            
+            else
+            {
+                if (isResume)
+                    newState.Resume(false);
+                else 
+                    newState.Enter(false);
+            }
+    
             onReceivedNewData?.Invoke();
-        }
-
-        [ObserversRpc(bufferLast:true)]
-        private void RpcNetworkedNodeData(NetworkedStateMachineData data)
-        {
-            if (!isServer)
-                onReceivedNewData?.Invoke();
         }
 
         private void UpdateStateId(StateNode node)
@@ -146,11 +137,12 @@ namespace PurrNet.StateMachine
                         oldState.Exit(false);
                 }
                 
+                _previousStateId = _currentState.stateId;
                 _currentState.stateId = newStateId;
             }
         }
 
-        public void SetState<T>(StateNode<T> state, T data) where T : INetworkedData
+        public void SetState<T>(StateNode<T> state, T data)
         {
             if (!isServer)
             {
@@ -159,11 +151,9 @@ namespace PurrNet.StateMachine
                 );
                 return;
             }
-    
+
             UpdateStateId(state);
             _currentState.data = data;
-    
-            BroadcastState();
 
             if (state)
             {
@@ -176,8 +166,9 @@ namespace PurrNet.StateMachine
                     state.Enter(false);
                 }
             }
-
-            BroadcastNodeData();
+    
+            _currentState.resuming = false;
+            RpcStateChange(_currentState, true, data);
         }
 
         public void SetState(StateNode state)
@@ -189,11 +180,9 @@ namespace PurrNet.StateMachine
                 );
                 return;
             }
-    
+
             UpdateStateId(state);
             _currentState.data = null;
-    
-            BroadcastState();
 
             if (state)
             {
@@ -202,35 +191,17 @@ namespace PurrNet.StateMachine
                 if (!isServer)
                     state.Enter(false);
             }
-
-            BroadcastNodeData();
-        }
-
-        private void BroadcastState()
-        {
-            _currentState.resuming = false;
-            RpcStateChange(_currentState);
-        }
-        
-        private void BroadcastNodeData()
-        {
-            var currentNode = _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
-                null : _states[_currentState.stateId];
     
-            if (currentNode && currentNode is INetworkedData)
-                RpcNetworkedNodeData(new NetworkedStateMachineData(_currentState.stateId));
+            _currentState.resuming = false;
+            RpcStateChange<ushort>(_currentState, false, 0);
         }
 
-        public void Next<T>(T data) where T : INetworkedData
+        public void Next<T>(T data)
         {
             var nextNodeId = _currentState.stateId + 1;
-
             if (nextNodeId >= _states.Count)
-            {
-                SetState(null);
-                return;
-            }
-    
+                nextNodeId = 0;
+        
             var nextNode = _states[nextNodeId];
 
             if (nextNode is StateNode<T> stateNode)
@@ -246,12 +217,8 @@ namespace PurrNet.StateMachine
         public void Next()
         {
             var nextNodeId = _currentState.stateId + 1;
-    
             if (nextNodeId >= _states.Count)
-            {
-                SetState(null);
-                return;
-            }
+                nextNodeId = 0;
     
             SetState(_states[nextNodeId]);
         }
@@ -259,19 +226,17 @@ namespace PurrNet.StateMachine
         public void Previous()
         {
             var prevNodeId = _currentState.stateId - 1;
-    
             if (prevNodeId < 0)
-                return;
+                prevNodeId = _states.Count - 1;
     
             SetState(_states[prevNodeId]);
         }
 
-        public void Previous<T>(T data) where T : INetworkedData
+        public void Previous<T>(T data)
         {
             var prevNodeId = _currentState.stateId - 1;
-    
             if (prevNodeId < 0)
-                return;
+                prevNodeId = _states.Count - 1;
     
             var prevNode = _states[prevNodeId];
 
@@ -325,30 +290,6 @@ namespace PurrNet.StateMachine
 
             if (data is INetworkedData networkedData)
                 networkedData.Serialize(stream);
-            else PurrLogger.LogException($"Data of type '{data!.GetType().Name}' does not implement INetworkedData");
-        }
-    }
-
-    internal partial struct NetworkedStateMachineData : INetworkedData
-    {
-        private int stateId;
-        
-        public NetworkedStateMachineData(int stateId)
-        {
-            this.stateId = stateId;
-        }
-
-        static StateMachine machine => StateMachine.instance;
-
-        public void Serialize(NetworkStream stream)
-        {
-            stream.Serialize(ref stateId);
-            
-            var node = stateId < 0 || stateId >= machine.states.Count ? 
-                null : machine.states[stateId];
-
-            if (node && node is INetworkedData networkedNode)
-                networkedNode.Serialize(stream);
         }
     }
 }

@@ -4,23 +4,25 @@ using UnityEngine;
 
 public class StateOne : StateNode
 {
+    [SerializeField] private int forTwo;
+    
     public override void Enter(bool asServer)
     {
         base.Enter(asServer);
         
-        Debug.Log($"Entering state one");
     }
 
-    private void Update()
+    public override void StateUpdate(bool asServer)
     {
+        base.StateUpdate(asServer);
+        
         if(Input.GetKeyDown(KeyCode.X))
-            machine.Next();
+            machine.Next(forTwo);
     }
 
     public override void Exit(bool asServer)
     {
         base.Exit(asServer);
         
-        Debug.Log($"Exiting state one");
     }
 }

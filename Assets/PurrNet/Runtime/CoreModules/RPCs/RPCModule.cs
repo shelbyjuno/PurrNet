@@ -525,7 +525,6 @@ namespace PurrNet.Modules
 
             if (_bufferedRpcsKeys.TryGetValue(rpcid, out var data))
             {
-                PurrLogger.Log($"Updated buffered RPC {signature.rpcName} with hash {hash}.");
                 data.stream.ResetPointer();
                 data.stream.Write(packet.data);
             }

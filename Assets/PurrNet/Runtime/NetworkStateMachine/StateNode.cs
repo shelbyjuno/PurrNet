@@ -20,7 +20,7 @@ namespace PurrNet.StateMachine
         public virtual void Exit(bool asServer) {}
     }
     
-    public abstract class StateNode<T> : StateNode where T : INetworkedData
+    public abstract class StateNode<T> : StateNode
     {
         public virtual void Enter(T data, bool asServer) {}
         
