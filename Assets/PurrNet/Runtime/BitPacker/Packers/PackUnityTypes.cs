@@ -162,9 +162,13 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void Write(this BitStream stream, Quaternion value)
         {
+            value.Normalize();
+            
             stream.Write(PackHalf(value.x));
             stream.Write(PackHalf(value.y));
             stream.Write(PackHalf(value.z));
+            
+            stream.Write(value.w < 0);
         }
         
         [UsedByIL]
@@ -181,7 +185,14 @@ namespace PurrNet.Packing
             float x = UnpackHalf(xs);
             float y = UnpackHalf(ys);
             float z = UnpackHalf(zs);
+            
+            bool wSign = false;
+            stream.Read(ref wSign);
+            
             float w = Mathf.Sqrt(Mathf.Max(0, 1 - x * x - y * y - z * z));
+            
+            if (wSign)
+                w = -w;
             
             value = new Quaternion(x, y, z, w);
         }

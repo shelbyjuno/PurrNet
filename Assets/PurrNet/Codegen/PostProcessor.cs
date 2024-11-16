@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -17,6 +18,8 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
+using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
 namespace PurrNet.Codegen
 {
@@ -1599,6 +1602,8 @@ namespace PurrNet.Codegen
                     }
                 }
 
+                ExpandNested(assemblyDefinition, typesToGenerateSerializer, messages);
+                
                 foreach (var typeRef in typesToGenerateSerializer)
                     GenerateSerializersProcessor.HandleType(assemblyDefinition, typeRef, messages);
 
@@ -1639,6 +1644,63 @@ namespace PurrNet.Codegen
                 };
                 
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, messages);
+            }
+        }
+
+        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle, List<DiagnosticMessage> messages)
+        {
+            HashSet<TypeReference> visited = new();
+            var copy = typesToHandle.ToArray();
+
+            for (var i = 0; i < copy.Length; i++)
+            {
+                var type = copy[i];
+                var resolved = type.Resolve();
+                AddNestedTypes(assembly, resolved, typesToHandle, visited);
+            }
+        }
+
+        private static void AddNestedTypes(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
+        {
+            if (resolved == null)
+                return;
+            
+            foreach (var field in resolved.Fields)
+            {
+                if (!visited.Add(field.FieldType))
+                    continue;
+
+                if (field.FieldType.IsGenericInstance)
+                {
+                    var genericInstance = (GenericInstanceType) field.FieldType;
+                    bool containsMyStuff = false;
+                    
+                    for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
+                    {
+                        var argument = genericInstance.GenericArguments[i];
+                        
+                        if (!visited.Add(argument))
+                            continue;
+
+                        if (IsTypeInOwnModule(argument, assembly.MainModule))
+                        {
+                            typesToHandle.Add(argument);
+                            containsMyStuff = true;
+                        }
+                        
+                        AddNestedTypes(assembly, argument.Resolve(), typesToHandle, visited);
+                    }
+                    
+                    if (containsMyStuff)
+                    {
+                        typesToHandle.Add(field.FieldType);
+                    }
+                }
+                else if (IsTypeInOwnModule(field.FieldType, assembly.MainModule))
+                {
+                    typesToHandle.Add(field.FieldType);
+                    AddNestedTypes(assembly, field.FieldType.Resolve(), typesToHandle, visited);
+                }
             }
         }
 

@@ -86,13 +86,13 @@ namespace PurrNet.Packing
         {
             Clear();
         }
-        
-        internal static void Clear()
+
+        private static void Clear()
         {
             _writers.Clear();
             _readers.Clear();
         }
-        
+
         public static void RegisterWriter<T>(WriteFunc<T> a)
         {
             if (_writers.TryAdd(typeof(T), new PackerHelper(a.Method)))

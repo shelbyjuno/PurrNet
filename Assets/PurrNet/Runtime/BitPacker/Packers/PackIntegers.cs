@@ -39,5 +39,17 @@ namespace PurrNet.Packing
         {
             value = (sbyte)stream.ReadBits(16);
         }
+        
+        [UsedByIL]
+        public static void Write(this BitStream stream, bool value)
+        {
+            stream.WriteBits(value ? (ulong)1 : 0, 1);
+        }
+
+        [UsedByIL]
+        public static void Read(this BitStream stream, ref bool value)
+        {
+            value = stream.ReadBits(1) == 1;
+        }
     }
 }
