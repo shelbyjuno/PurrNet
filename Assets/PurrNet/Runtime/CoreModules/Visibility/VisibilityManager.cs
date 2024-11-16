@@ -101,7 +101,7 @@ namespace PurrNet
 
             foreach (var identity in allIdentities)
             {
-                var root = identity.root;
+                var root = identity.GetRootIdentity();
                 if (!roots.Add(root)) continue;
                 
                 EvaluateVisibilityForNewPlayer(root, player);
@@ -282,7 +282,7 @@ namespace PurrNet
         private void AddPlayerAsObserver(NetworkCluster cluster, PlayerID player)
         {
             var children = cluster.children;
-            var count = children.Count;
+            // var count = children.Count;
             
             if (!_observers.TryGetValue(cluster.firstId, out var observers))
             {
@@ -290,13 +290,16 @@ namespace PurrNet
                 _observers.Add(cluster.firstId, observers);
             }
             
-            if (!observers.Add(player)) return;
-
-            for (var childIdx = 0; childIdx < count; childIdx++)
+            if (!observers.Add(player))
+                return;
+            
+            onObserverAdded?.Invoke(player, children[0]);
+            
+            /*for (var childIdx = 0; childIdx < count; childIdx++)
             {
                 var identity = children[childIdx];
                 onObserverAdded?.Invoke(player, identity);
-            }
+            }*/
         }
 
         private void OnIdentityRemoved(NetworkIdentity identity)

@@ -378,7 +378,7 @@ namespace PurrNet.Modules
 
                 if (data.sig.excludeOwner && _ownership.TryGetOwner(identity, out var owner) && owner == player)
                     continue;
-
+                
                 switch (data.sig.type)
                 {
                     case RPCType.ObserversRPC:
@@ -520,9 +520,12 @@ namespace PurrNet.Modules
             if (!signature.bufferLast) return;
             
             var rpcid = new RPC_ID(packet);
+            
+            var hash = rpcid.GetHashCode();
 
             if (_bufferedRpcsKeys.TryGetValue(rpcid, out var data))
             {
+                PurrLogger.Log($"Updated buffered RPC {signature.rpcName} with hash {hash}.");
                 data.stream.ResetPointer();
                 data.stream.Write(packet.data);
             }

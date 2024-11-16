@@ -1238,7 +1238,6 @@ namespace PurrNet.Modules
         {
             var roots = HashSetPool<NetworkIdentity>.Instantiate();
             var rootsList = ListPool<NetworkIdentity>.Instantiate();
-
             foreach (var (player, all) in identitiesToSpawn)
             {
                 roots.Clear();
