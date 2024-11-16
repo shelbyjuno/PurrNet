@@ -27,9 +27,14 @@ namespace PurrNet
         public int siblingIndex { get; private set; } = -1;
 
         /// <summary>
-        /// Network id of this object.
+        /// Network id of this object. Holds more information than the ObjectId
         /// </summary>
         public NetworkID? id => idServer ?? idClient;
+        
+        /// <summary>
+        /// Unique ObjectId of this object
+        /// </summary>
+        public int ObjectId => id?.id ?? -1;
         
         /// <summary>
         /// Scene id of this object.
