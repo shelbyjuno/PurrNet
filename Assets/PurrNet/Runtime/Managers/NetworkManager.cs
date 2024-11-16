@@ -302,7 +302,7 @@ namespace PurrNet
             var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
             var rpcRequestResponseModule = new RpcRequestResponseModule(playersManager);
-            var lagCompensationModule = new LagCompensationModule(this, 60); // 60 ticks history
+            // var lagCompensationModule = new LagCompensationModule(this, 60); // 60 ticks history
             
             hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayersModule);
@@ -315,7 +315,7 @@ namespace PurrNet
             modules.AddModule(networkCookies);
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
-            modules.AddModule(lagCompensationModule);
+            // modules.AddModule(lagCompensationModule);
             
             modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
