@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -1499,11 +1498,6 @@ namespace PurrNet.Codegen
                                 
                                 _networkFields.Add(field);
                             }
-                            
-                            for (int i = 0; i < _networkFields.Count; i++)
-                            {
-                                HandleNetworkField(module, i, type, _networkFields[i]);
-                            }
 
                             if (_networkFields.Count > 0)
                             {
@@ -1602,7 +1596,7 @@ namespace PurrNet.Codegen
                     }
                 }
 
-                ExpandNested(assemblyDefinition, typesToGenerateSerializer, messages);
+                ExpandNested(assemblyDefinition, typesToGenerateSerializer);
                 
                 foreach (var typeRef in typesToGenerateSerializer)
                     GenerateSerializersProcessor.HandleType(assemblyDefinition, typeRef, messages);
@@ -1647,7 +1641,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle, List<DiagnosticMessage> messages)
+        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle)
         {
             HashSet<TypeReference> visited = new();
             var copy = typesToHandle.ToArray();
@@ -1736,26 +1730,6 @@ namespace PurrNet.Codegen
             }
 
             code.Append(Instruction.Create(OpCodes.Ret));
-        }
-
-        private static void HandleNetworkField(ModuleDefinition module, int offset, TypeDefinition type, FieldDefinition networkField)
-        {
-            var newMethod = new MethodDefinition($"HandleRPCGenerated_GetNetworkClass_{offset}", 
-                MethodAttributes.Private | MethodAttributes.HideBySig, networkField.FieldType);
-                
-            var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
-            var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
-            newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
-            
-            newMethod.Body.InitLocals = true;
-            
-            var code = newMethod.Body.GetILProcessor();
-            
-            code.Append(Instruction.Create(OpCodes.Ldarg_0));
-            code.Append(Instruction.Create(OpCodes.Ldfld, networkField));
-            code.Append(Instruction.Create(OpCodes.Ret));
-            
-            type.Methods.Add(newMethod);
         }
 
         private static void FindUsedTypes(ModuleDefinition module, List<RPCMethod> methods, HashSet<TypeReference> types)
