@@ -13,31 +13,31 @@ namespace PurrNet
         
         public string name { get; private set; }
 
-        private byte index { get; set; } = 255;
+        public byte index { get; private set; } = 255;
 
-        protected NetworkManager networkManager => parent ? parent.networkManager : null;
+        public NetworkManager networkManager => parent ? parent.networkManager : null;
         
-        protected bool isSceneObject => parent && parent.isSceneObject;
+        public bool isSceneObject => parent && parent.isSceneObject;
         
-        protected bool isOwner => parent && parent.isOwner;
+        public bool isOwner => parent && parent.isOwner;
         
-        protected bool isClient => parent && parent.isClient;
+        public bool isClient => parent && parent.isClient;
 
-        protected bool isServer => parent && parent.isServer;
+        public bool isServer => parent && parent.isServer;
         
-        protected bool isHost => parent && parent.isHost;
+        public bool isHost => parent && parent.isHost;
         
-        protected bool isSpawned => parent && parent.isSpawned;
+        public bool isSpawned => parent && parent.isSpawned;
         
-        protected bool hasOwner => parent.hasOwner;
+        public bool hasOwner => parent.hasOwner;
         
-        protected bool hasConnectedOwner => parent && parent.hasConnectedOwner;
+        public bool hasConnectedOwner => parent && parent.hasConnectedOwner;
         
-        protected PlayerID? localPlayer => parent ? parent.localPlayer : null;
+        public PlayerID? localPlayer => parent ? parent.localPlayer : null;
         
         protected PlayerID localPlayerForced => parent ? parent.localPlayerForced : default;
         
-        protected PlayerID? owner => parent ? parent.owner : null;
+        public PlayerID? owner => parent ? parent.owner : null;
 
         public virtual void OnSpawn() { }
 
@@ -170,6 +170,9 @@ namespace PurrNet
         [UsedByIL]
         protected ChildRPCPacket BuildRPC(byte rpcId, NetworkStream data)
         {
+            if (!parent)
+                throw new InvalidOperationException($"Trying to send RPC from '{GetType().Name}' which is not spawned.");
+            
             var rpc = new ChildRPCPacket
             {
                 networkId = parent.id!.Value,

@@ -620,20 +620,6 @@ namespace PurrNet.Modules
             
             return ptr;
         }
-        
-        static IntPtr ChildIndexGetter(IReflect type, byte childId)
-        {
-            string methodName = $"HandleRPCGenerated_GetNetworkClass_{childId}";
-            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
-            var ptr = method != null ? method.MethodHandle.GetFunctionPointer() : IntPtr.Zero;
-            return ptr;
-        }
-        
-        static unsafe NetworkModule GetNetworkClass(NetworkIdentity identity, byte childId)
-        {
-            var ptr = ChildIndexGetter(identity.GetType(), childId);
-            return ptr == IntPtr.Zero ? null : ((delegate* managed<NetworkIdentity, NetworkModule>)ptr)(identity);
-        }
 
         static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
         {
@@ -692,9 +678,7 @@ namespace PurrNet.Modules
                     return;
                 }
                 
-                var networkClass = GetNetworkClass(identity, packet.childId);
-                
-                if (networkClass == null)
+                if (!identity.TryGetModule(packet.childId, out var networkClass))
                 {
                     PurrLogger.LogError($"Can't find child with id {packet.childId} in identity {identity.GetType().Name}.");
                 }

@@ -20,5 +20,17 @@ namespace PurrNet
             module.SetComponentParent(this, (byte)_modules.Count, moduleName);
             _modules.Add(module);
         }
+        
+        public bool TryGetModule(byte moduleId, out NetworkModule module)
+        {
+            if (moduleId >= _modules.Count)
+            {
+                module = null;
+                return false;
+            }
+            
+            module = _modules[moduleId];
+            return true;
+        }
     }
 }
