@@ -342,7 +342,7 @@ namespace PurrNet
         private void CallInitMethods()
         {
             var type = GetType();
-            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic);
+            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
             for (int i = 0; i < methods.Length; i++)
             {

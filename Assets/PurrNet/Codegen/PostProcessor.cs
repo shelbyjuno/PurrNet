@@ -1707,7 +1707,7 @@ namespace PurrNet.Codegen
         private void CreateSyncVarInitMethod(ModuleDefinition module, TypeDefinition type, List<FieldDefinition> networkFields)
         {
             var newMethod = new MethodDefinition($"__{type.Name}_CodeGen_Initialize", 
-                MethodAttributes.Private | MethodAttributes.HideBySig, module.TypeSystem.Void);
+                MethodAttributes.Public | MethodAttributes.HideBySig, module.TypeSystem.Void);
 
             var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
             var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
