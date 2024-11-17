@@ -648,7 +648,8 @@ namespace PurrNet.Modules
                 }
 
                 if (!sceneObject)
-                    Object.Destroy(identity.gameObject);
+                     Object.Destroy(identity.gameObject);
+                else identity.gameObject.SetActive(false);
             }
             else
             {
