@@ -12,18 +12,20 @@ namespace PurrNet
         
         public string prefabGuid => _guid;
 
-        internal static void IgnoreNextAutoSpawnAttempt()
+        internal static void StartIgnoreAutoSpawn()
         {
             _muteAutoSpawn = true;
+        }
+        
+        internal static void StopIgnoreAutoSpawn()
+        {
+            _muteAutoSpawn = false;
         }
 
         void Start()
         {
             if (_muteAutoSpawn)
-            {
-                _muteAutoSpawn = false;
                 return;
-            }
 
             if (isSpawned)
                 return;

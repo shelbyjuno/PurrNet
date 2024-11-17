@@ -477,7 +477,7 @@ namespace PurrNet.Modules
                 parent = parentIdentity.transform;
             
             if (!isScenePrefab)
-                PrefabLink.IgnoreNextAutoSpawnAttempt();
+                PrefabLink.StartIgnoreAutoSpawn();
 
             var oldActive = prefab.gameObject.activeInHierarchy;
 
@@ -545,6 +545,8 @@ namespace PurrNet.Modules
             }
 
             if (_asServer) _history.AddSpawnAction(action, player);
+            
+            PrefabLink.StopIgnoreAutoSpawn();
         }
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer, bool isInitialSceneObject = false)
