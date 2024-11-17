@@ -22,6 +22,8 @@ namespace PurrNet.StateMachine
         
         public StateMachineState currentState => _currentState;
         public int previousStateId => _previousStateId;
+        public StateNode currentStateNode => _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
+                    null : _states[_currentState.stateId];
 
         private void Awake()
         {
