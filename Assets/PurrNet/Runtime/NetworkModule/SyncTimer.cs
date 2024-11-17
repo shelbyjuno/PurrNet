@@ -47,6 +47,9 @@ namespace PurrNet
             
             if (_ownerAuth && isOwner || !_ownerAuth && isServer)
             {
+                if(_remaining <= 0)
+                    StopTimer();
+                
                 if (_lastReconcile + _reconcileInterval < Time.unscaledTime)
                 {
                     if (isServer)
