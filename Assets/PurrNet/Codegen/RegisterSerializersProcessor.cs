@@ -111,9 +111,9 @@ namespace PurrNet.Codegen
             if (writeTypes.Count == 0 && readTypes.Count == 0)
                 return;
             
-            var packerType = module.GetTypeDefinition(typeof(Packer));
-            var writeFuncDelegate = module.GetTypeDefinition(typeof(WriteFunc<>));
-            var readFuncDelegate = module.GetTypeDefinition(typeof(ReadFunc<>));
+            var packerType = module.GetTypeDefinition(typeof(Packer)).Import(module);
+            var writeFuncDelegate = module.GetTypeDefinition(typeof(WriteFunc<>)).Import(module);
+            var readFuncDelegate = module.GetTypeDefinition(typeof(ReadFunc<>)).Import(module);
             
             var registerMethod = new MethodDefinition("Register_Type_Generated_PurrNet", MethodAttributes.Static, module.TypeSystem.Void);
             var attributeType = module.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 

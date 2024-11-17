@@ -25,8 +25,9 @@ namespace PurrNet.Codegen
             if (resolvedType == null)
                 return;
             
-            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream));
-
+            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
+            var mainmodule = assembly.MainModule;
+            
             // create static class
             var serializerClass = new TypeDefinition($"{assembly.MainModule.Name}.CodeGen.Serializers", 
                 $"{type.Name}_Serializer",
@@ -65,12 +66,12 @@ namespace PurrNet.Codegen
                 InitLocals = true
             };
             
-            var packerType = type.Module.GetTypeDefinition(typeof(Packer<>));
-            var readMethodP = packerType.GetMethod("Read");
-            var writeMethodP = packerType.GetMethod("Write");
+            var packerType = mainmodule.GetTypeDefinition(typeof(Packer<>)).Import(mainmodule);
+            var readMethodP = packerType.GetMethod("Read").Import(mainmodule);
+            var writeMethodP = packerType.GetMethod("Write").Import(mainmodule);
             
             var write = writeMethod.Body.GetILProcessor();
-            GenerateMethod(true, writeMethod, writeMethodP, resolvedType, write);
+            GenerateMethod(true, writeMethod, writeMethodP, resolvedType, write, mainmodule);
             serializerClass.Methods.Add(writeMethod);
             
             // create static read method
@@ -84,7 +85,7 @@ namespace PurrNet.Codegen
             };
             
             var read = readMethod.Body.GetILProcessor();
-            GenerateMethod(false, readMethod, readMethodP, resolvedType, read);
+            GenerateMethod(false, readMethod, readMethodP, resolvedType, read, mainmodule);
             serializerClass.Methods.Add(readMethod);
             
             RegisterSerializersProcessor.HandleType(type.Module, serializerClass, messages);
@@ -121,20 +122,20 @@ namespace PurrNet.Codegen
         }
 
         private static void GenerateMethod(
-            bool isWriting, MethodDefinition method, MethodDefinition serialize, TypeDefinition type, ILProcessor il)
+            bool isWriting, MethodDefinition method, MethodReference serialize, TypeDefinition type, ILProcessor il, ModuleDefinition mainmodule)
         {
-            var packerType = type.Module.GetTypeDefinition(typeof(Packer<>));
+            var packerType = mainmodule.GetTypeDefinition(typeof(Packer<>)).Import(mainmodule);
 
             if (type.IsEnum)
             {
-                HandleEnums(isWriting, method, serialize, type, il, packerType);
+                HandleEnums(isWriting, method, serialize, type, il, packerType, mainmodule);
                 return;
             }
 
             foreach (var field in type.Fields)
             {
-                var genericM = CreateGenericMethod(packerType, field.FieldType, serialize);
-
+                var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
+                
                 // Pack<T>.Write(stream, value.field);
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldarg_1);
@@ -145,11 +146,11 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ret);
         }
 
-        private static void HandleEnums(bool isWriting, MethodDefinition method, MethodDefinition serialize,
-            TypeDefinition type, ILProcessor il, TypeDefinition packerType)
+        private static void HandleEnums(bool isWriting, MethodDefinition method, MethodReference serialize,
+            TypeDefinition type, ILProcessor il, TypeReference packerType, ModuleDefinition mainmodule)
         {
             var underlyingType = type.GetField("value__").FieldType;
-            var enumWriteMethod = CreateGenericMethod(packerType, underlyingType, serialize);
+            var enumWriteMethod = CreateGenericMethod(packerType, underlyingType, serialize, mainmodule);
                 
             var tmpVar = new VariableDefinition(underlyingType);
                 
@@ -181,20 +182,20 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ret);
         }
 
-        private static MethodReference CreateGenericMethod(TypeDefinition packerType, TypeReference type,
-            MethodDefinition writeMethod)
+        private static MethodReference CreateGenericMethod(TypeReference packerType, TypeReference type,
+            MethodReference writeMethod, ModuleDefinition mainmodule)
         {
             var genericPackerType = new GenericInstanceType(packerType);
             genericPackerType.GenericArguments.Add(type);
                 
-            var genericWriteMethod = new MethodReference(writeMethod.Name, writeMethod.ReturnType, genericPackerType)
+            var genericWriteMethod = new MethodReference(writeMethod.Name, writeMethod.ReturnType, genericPackerType.Import(mainmodule))
             {
                 HasThis = writeMethod.HasThis
-            };
+            }; 
                 
             foreach (var param in writeMethod.Parameters)
                 genericWriteMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
-            return genericWriteMethod;
+            return genericWriteMethod.Import(mainmodule);
         }
 
         private static bool IsGeneric(TypeReference typeDef, out HandledGenericTypes type)
