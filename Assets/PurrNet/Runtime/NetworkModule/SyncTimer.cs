@@ -1,49 +1,41 @@
 using System;
+using JetBrains.Annotations;
 using PurrNet.Logging;
-using PurrNet.Modules;
 using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet
 {
-    public class SyncTimer : NetworkModule
+    public class SyncTimer : NetworkModule, ITick
     {
-        private bool _ownerAuth;
-        private float _reconcileInterval;
+        private readonly bool _ownerAuth;
+        private readonly float _reconcileInterval;
 
         private bool _isRunning;
         private float _remaining;
-        private TickManager _tickManager;
         private float _lastReconcile;
         
-        public float Remaining => _remaining;
-        public bool IsRunning => _isRunning;
-        public int RemainingInt => Mathf.CeilToInt(_remaining);
-        public Action OnTimerEnd, OnTimerStart, OnTimerSecondTick;
+        public float remaining => _remaining;
+        public bool isRunning => _isRunning;
         
-        public SyncTimer(bool ownerAuth = false, float reconcileInterval = 3) : base()
+        public int remainingInt => Mathf.CeilToInt(_remaining);
+        
+        public Action onTimerEnd, onTimerStart, onTimerSecondTick;
+        
+        public SyncTimer(bool ownerAuth = false, float reconcileInterval = 3)
         {
             _ownerAuth = ownerAuth;
             _reconcileInterval = reconcileInterval;
         }
 
-        public override void OnSpawn()
-        {
-            base.OnSpawn();
-            
-            networkManager.GetModule<ScenePlayersModule>(isServer).onPlayerJoinedScene += OnPlayerJoinedScene;
-            _tickManager = networkManager.GetModule<TickManager>(isServer);
-            networkManager.GetModule<TickManager>(isServer).onTick += OnTick;
-        }
-
-        private void OnTick()
+        public void OnTick(float delta)
         {
             if (!_isRunning) return;
 
-            int lastSecond = RemainingInt;
-            _remaining -= _tickManager.tickDelta;
-            if(lastSecond != RemainingInt)
-                OnTimerSecondTick?.Invoke();
+            int lastSecond = remainingInt;
+            _remaining -= delta;
+            if(lastSecond != remainingInt)
+                onTimerSecondTick?.Invoke();
             
             if (_ownerAuth && isOwner || !_ownerAuth && isServer)
             {
@@ -63,27 +55,16 @@ namespace PurrNet
 
         #region Buffering
 
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asServer)
+        public override void OnObserverAdded(PlayerID player)
         {
-            if(_ownerAuth && !isOwner || !_ownerAuth && !isServer) return;
-            
-            if(isServer)
-                BufferPlayer(player, _remaining, _isRunning);
-            else
-                BufferPlayerServer(player, _remaining, _isRunning);
-        }
-        
-        [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
-        private void BufferPlayerServer(PlayerID player, float timeRemaining, bool isRunning)
-        {
-            BufferPlayer(player, timeRemaining, isRunning);
+            BufferPlayer(player, _remaining, _isRunning);
         }
 
         [TargetRpc]
-        private void BufferPlayer(PlayerID player, float timeRemaining, bool isRunning)
+        private void BufferPlayer([UsedImplicitly] PlayerID player, float timeRemaining, bool running)
         {
             _remaining = timeRemaining;
-            _isRunning = isRunning;
+            _isRunning = running;
         }
 
         #endregion
@@ -97,7 +78,7 @@ namespace PurrNet
             _remaining = duration;
             _isRunning = true;
             _lastReconcile = Time.unscaledTime;
-            OnTimerStart?.Invoke();
+            onTimerStart?.Invoke();
 
             if (isServer)
             {
@@ -120,7 +101,7 @@ namespace PurrNet
             if(toIgnore.HasValue && localPlayer.HasValue && toIgnore.Value.id == localPlayer.Value.id)
                 return;
             
-            OnTimerStart?.Invoke();
+            onTimerStart?.Invoke();
             _remaining = duration;
             _isRunning = true;
         }
@@ -134,38 +115,38 @@ namespace PurrNet
             if (!isOwner && _ownerAuth || !_ownerAuth && !isServer) return;
             
             _isRunning = false;
-            OnTimerEnd?.Invoke();
+            onTimerEnd?.Invoke();
             
-            var remaining = syncRemaining ? _remaining : -1;
+            var remainingTime = syncRemaining ? _remaining : -1;
             _remaining = 0;
             
             if (isServer)
-                SendStopTimerToAll(remaining);
+                SendStopTimerToAll(remainingTime);
             else
-                SendStopTimerToServer(remaining);
+                SendStopTimerToServer(remainingTime);
         }
 
         [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
-        private void SendStopTimerToServer(float remaining, RPCInfo info = default)
+        private void SendStopTimerToServer(float remainingTime, RPCInfo info = default)
         {
-            if (remaining > -1)
-                _remaining = remaining;
+            if (remainingTime > -1)
+                _remaining = remainingTime;
             _isRunning = false;
             
-            SendStopTimerToAll(remaining, info.sender);
+            SendStopTimerToAll(remainingTime, info.sender);
         }
 
         [ObserversRpc(Channel.ReliableOrdered)]
-        private void SendStopTimerToAll(float remaining, PlayerID? toIgnore = null)
+        private void SendStopTimerToAll(float remainingTime, PlayerID? toIgnore = null)
         {
             if(toIgnore.HasValue && localPlayer.HasValue && toIgnore.Value.id == localPlayer.Value.id)
                 return;
             
-            if (remaining > -1)
-                _remaining = remaining;
+            if (remainingTime > -1)
+                _remaining = remainingTime;
             
             _isRunning = false;
-            OnTimerEnd?.Invoke();
+            onTimerEnd?.Invoke();
         }
 
         #endregion

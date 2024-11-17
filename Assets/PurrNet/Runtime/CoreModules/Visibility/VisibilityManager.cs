@@ -101,7 +101,7 @@ namespace PurrNet
 
             foreach (var identity in allIdentities)
             {
-                var root = identity.GetRootIdentity();
+                var root = identity.root;
                 if (!roots.Add(root)) continue;
                 
                 EvaluateVisibilityForNewPlayer(root, player);

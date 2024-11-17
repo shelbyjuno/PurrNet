@@ -38,6 +38,10 @@ namespace PurrNet
         protected PlayerID localPlayerForced => parent ? parent.localPlayerForced : default;
         
         public PlayerID? owner => parent ? parent.owner : null;
+        
+        public bool isController => isSpawned && (hasConnectedOwner ? isOwner : isServer);
+
+        public bool IsController(bool ownerHasAuthority) => ownerHasAuthority ? isController : isServer;
 
         public virtual void OnSpawn() { }
 

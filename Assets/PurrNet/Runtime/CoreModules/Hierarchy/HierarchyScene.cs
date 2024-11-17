@@ -140,7 +140,6 @@ namespace PurrNet.Modules
 
         private void SpawnSceneObjects(IReadOnlyList<NetworkIdentity> sceneObjects)
         {
-            bool isHost = !_asServer && _manager.isServer;
             var roots = HashSetPool<NetworkIdentity>.Instantiate();
 
             for (int i = 0; i < sceneObjects.Count; i++)

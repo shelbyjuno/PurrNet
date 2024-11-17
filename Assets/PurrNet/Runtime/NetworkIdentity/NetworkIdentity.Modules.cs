@@ -32,5 +32,17 @@ namespace PurrNet
             module = _modules[moduleId];
             return true;
         }
+
+        private void RegisterEvents()
+        {
+            for (var i = 0; i < _modules.Count; i++)
+            {
+                var module = _modules[i];
+                if (module is ITick tickableModule)
+                {
+                    _tickables.Add(tickableModule);
+                }
+            }
+        }
     }
 }

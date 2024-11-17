@@ -160,6 +160,8 @@ namespace PurrNet
         private int onTickCount;
         private ITick _ticker;
         
+        private readonly List<ITick> _tickables = new ();
+        
         private void InternalOnSpawn(bool asServer)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
@@ -256,6 +258,12 @@ namespace PurrNet
         private void ClientTick()
         {
             _ticker.OnTick(_clientTickManager.tickDelta);
+
+            for (var i = 0; i < _tickables.Count; i++)
+            {
+                var ticker = _tickables[i];
+                ticker.OnTick(_clientTickManager.tickDelta);
+            }
         }
 
         private void ServerTick()
@@ -264,6 +272,12 @@ namespace PurrNet
 
             if (!isClient && _ticker != null)
                 _ticker.OnTick(_serverTickManager.tickDelta);
+            
+            for (var i = 0; i < _tickables.Count; i++)
+            {
+                var ticker = _tickables[i];
+                ticker.OnTick(_serverTickManager.tickDelta);
+            }
         }
 
         internal PlayerID? GetOwner(bool asServer) => asServer ? internalOwnerServer : internalOwnerClient;
@@ -419,6 +433,9 @@ namespace PurrNet
             {
                 OnInitializeModules();
                 CallInitMethods();
+                
+                _tickables.Clear();
+                RegisterEvents();
             }
             
             if (_visitiblityRules && !_visitiblityRules.isInitialized)
