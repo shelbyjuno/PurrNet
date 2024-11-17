@@ -10,17 +10,11 @@ public class StateTwo : StateNode<int>
         Debug.Log($"Entering state two | Data: {data}");
     }
 
-   
     public override void StateUpdate(bool asServer)
     {
         base.StateUpdate(asServer);
         
         if(Input.GetKeyDown(KeyCode.X))
             machine.Next();
-    }
-
-    public override void Exit(bool asServer)
-    {
-        base.Exit(asServer);
     }
 }

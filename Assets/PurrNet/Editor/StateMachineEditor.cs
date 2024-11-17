@@ -18,10 +18,21 @@ public class StateMachineEditor : Editor
     {
         serializedObject.Update();
 
-        // Show default inspector for states list
-        EditorGUI.BeginDisabledGroup(true);
-        EditorGUILayout.PropertyField(_statesProperty);
-        EditorGUI.EndDisabledGroup();
+        EditorGUI.BeginChangeCheck();
+        if(Application.isPlaying)
+            EditorGUI.BeginDisabledGroup(true);
+        
+        EditorGUILayout.PropertyField(_statesProperty, new GUIContent("States"), true);
+    
+        if(Application.isPlaying)
+            EditorGUI.EndDisabledGroup();
+        
+        if(EditorGUI.EndChangeCheck())
+        {
+            EditorUtility.SetDirty(target);
+            serializedObject.ApplyModifiedProperties();
+            serializedObject.Update();
+        }
 
         if (!Application.isPlaying)
         {
@@ -32,7 +43,7 @@ public class StateMachineEditor : Editor
         DrawStateMachineInfo();
         DrawStateControls();
         DrawNetworkStatus();
-        
+    
         serializedObject.ApplyModifiedProperties();
     }
 
