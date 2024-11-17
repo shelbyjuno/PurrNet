@@ -341,12 +341,20 @@ namespace PurrNet.Modules
             }
             
             bool hadOwnerPreviously = nid.hasOwner;
-
-            if (hadOwnerPreviously && !nid.HasTransferOwnershipAuthority(_asServer) || !hadOwnerPreviously && !nid.HasGiveOwnershipAuthority(_asServer))
+            
+            switch (hadOwnerPreviously)
             {
-                if (!silent)
-                    PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because of missing authority.");
-                return;
+                case true when nid.owner == player:
+                {
+                    return;
+                }
+                case true when !nid.HasTransferOwnershipAuthority(_asServer):
+                case false when !nid.HasGiveOwnershipAuthority(_asServer):
+                {
+                    if (!silent)
+                        PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because of missing authority.");
+                    return;
+                }
             }
 
             if (!_sceneOwnerships.TryGetValue(nid.sceneId, out var module))
@@ -409,7 +417,10 @@ namespace PurrNet.Modules
                 if (_scenePlayers.TryGetPlayersInScene(nid.sceneId, out var players))
                     _playersManager.Send(players, data);
             }
-            else _playersManager.SendToServer(data);
+            else
+            {
+                _playersManager.SendToServer(data);
+            }
         }
 
         /// <summary>
@@ -603,11 +614,7 @@ namespace PurrNet.Modules
                 return;
 
             if (!identity.id.HasValue)
-            {
-                PurrLogger.LogError(
-                    $"Can't apply ownership change for identity {change.identity} because it isn't spawned.");
                 return;
-            }
 
             if (!identity.HasGiveOwnershipAuthority(!_asServer))
             {
@@ -635,7 +642,7 @@ namespace PurrNet.Modules
         private void HandleOwnershipChange(PlayerID actor, OwnershipChange change, NetworkID id)
         {
             string verb = change.isAdding ? "give" : "remove";
-
+            
             if (!_hierarchy.TryGetIdentity(change.sceneId, id, out var identity))
                 return;
 

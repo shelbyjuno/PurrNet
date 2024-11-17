@@ -115,8 +115,6 @@ GameObject:
   - component: {fileID: 4393774338475174367}
   - component: {fileID: 9029450125345654683}
   - component: {fileID: 5061607183926739309}
-  - component: {fileID: -3333321085058504007}
-  - component: {fileID: -7705550441448609449}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -255,37 +253,6 @@ MonoBehaviour:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
     scaleTolerance: 0.05
---- !u!114 &-3333321085058504007
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2021845121686469242}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e1196db864742dd429b93cd09862b1ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 0}
---- !u!114 &-7705550441448609449
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2021845121686469242}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 97907a62eb2af3b4ca3a9713f66951f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 0}
-  _fireKey: 101
-  _rayLength: 20
-  _debugDrawDuration: 2
 --- !u!1 &4524263293768573260
 GameObject:
   m_ObjectHideFlags: 0

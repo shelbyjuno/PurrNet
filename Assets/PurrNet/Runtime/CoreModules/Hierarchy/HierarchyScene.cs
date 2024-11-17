@@ -671,6 +671,7 @@ namespace PurrNet.Modules
         }
 
         readonly List<NetworkIdentity> _spawnedThisFrame = new ();
+        readonly List<NetworkIdentity> _triggerPostIdentityFunc = new ();
         
         public void Spawn(ref GameObject instance)
         {
@@ -743,8 +744,9 @@ namespace PurrNet.Modules
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
-                child.PostSetIdentity();
                 roots.Add(child.root);
+                
+                _triggerPostIdentityFunc.Add(child);
             }
             
             foreach (var root in roots)
@@ -1089,9 +1091,12 @@ namespace PurrNet.Modules
                 _removedLastFrame.Clear();
                 PostObserverEvents();
             }
-            
+
             if (_history.hasUnflushedActions)
+            {
                 SendDeltaToPlayers(_history.GetDelta());
+                SendOwnershipChanges();
+            }
 
             if (_identitiesToSpawn.Count > 0)
             {
@@ -1104,7 +1109,21 @@ namespace PurrNet.Modules
                 _identitiesToSpawn.Clear();
             }
         }
-        
+
+        private void SendOwnershipChanges()
+        {
+            if (_triggerPostIdentityFunc.Count > 0)
+            {
+                for (var i = 0; i < _triggerPostIdentityFunc.Count; i++)
+                {
+                    var child = _triggerPostIdentityFunc[i];
+                    child.PostSetIdentity();
+                }
+
+                _triggerPostIdentityFunc.Clear();
+            }
+        }
+
         private void PostObserverEvents()
         {
             if (_identitiesToDespawn.Count > 0)

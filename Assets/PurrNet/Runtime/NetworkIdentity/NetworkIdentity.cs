@@ -470,6 +470,23 @@ namespace PurrNet
             GiveOwnershipInternal(player, silent);
         }
         
+        public void GiveOwnership(PlayerID? player, bool silent = false)
+        {
+            if (!player.HasValue)
+            {
+                RemoveOwnership();
+                return;
+            }
+            
+            if (!networkManager)
+            {
+                _pendingOwnershipRequest = player;
+                return;
+            }
+            
+            GiveOwnershipInternal(player.Value, silent);
+        }
+        
         private void GiveOwnershipInternal(PlayerID player, bool silent = false)
         {
             if (!networkManager)
@@ -633,6 +650,11 @@ namespace PurrNet
             
             for (int i = 0; i < _modules.Count; i++)
                 _modules[i].OnObserverRemoved(target);
+        }
+
+        internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)
+        {
+            _pendingOwnershipRequest = playersLocalPlayerId;
         }
     }
 }

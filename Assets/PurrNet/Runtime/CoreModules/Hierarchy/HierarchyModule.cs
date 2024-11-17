@@ -167,7 +167,7 @@ namespace PurrNet
             var identity = gameObject.GetComponent<NetworkIdentity>();
             
             if (identity && identity.isSpawned && identity.ShouldClientGiveOwnershipOnSpawn())
-                identity.GiveOwnership(_players.localPlayerId.Value, true);
+                identity.SetPendingOwnershipRequest(_players.localPlayerId.Value);
         }
 
         public void Spawn(GameObject gameObject)
