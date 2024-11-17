@@ -99,7 +99,7 @@ namespace PurrNet.Codegen
             {
                 case HandledGenericTypes.List when type is GenericInstanceType listType:
                     
-                    var registerListMethod = packCollectionsType.GetMethod("RegisterList", true);
+                    var registerListMethod = packCollectionsType.GetMethod("RegisterList", true).Import(type.Module);
                     var genericRegisterListMethod = new GenericInstanceMethod(registerListMethod);
                     genericRegisterListMethod.GenericArguments.Add(listType.GenericArguments[0]);
                     
@@ -108,7 +108,7 @@ namespace PurrNet.Codegen
                     break;
                 case HandledGenericTypes.Array when type is ArrayType arrayType:
                     
-                    var registerArrayMethod = packCollectionsType.GetMethod("RegisterArray", true);
+                    var registerArrayMethod = packCollectionsType.GetMethod("RegisterArray", true).Import(type.Module);
                     var genericRegisterArrayMethod = new GenericInstanceMethod(registerArrayMethod);
                     genericRegisterArrayMethod.GenericArguments.Add(arrayType.ElementType);
                     
