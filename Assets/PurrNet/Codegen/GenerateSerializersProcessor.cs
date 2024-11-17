@@ -137,8 +137,8 @@ namespace PurrNet.Codegen
                 // make field public
                 if (!field.IsPublic)
                 {
-                    field.IsNotSerialized = true;
-                    field.IsPublic = true;
+                    field.Attributes &= ~FieldAttributes.FieldAccessMask;
+                    field.Attributes |= FieldAttributes.Assembly;
                 }
                 
                 var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
