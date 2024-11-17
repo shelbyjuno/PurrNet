@@ -134,6 +134,13 @@ namespace PurrNet.Codegen
 
             foreach (var field in type.Fields)
             {
+                // make field public
+                if (!field.IsPublic)
+                {
+                    field.IsNotSerialized = true;
+                    field.IsPublic = true;
+                }
+                
                 var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
                 
                 // Pack<T>.Write(stream, value.field);
