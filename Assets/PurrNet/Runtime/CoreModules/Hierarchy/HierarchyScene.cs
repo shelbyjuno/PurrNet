@@ -149,7 +149,7 @@ namespace PurrNet.Modules
 
                 if (!roots.Add(root)) continue;
                 
-                if (!_asServer)
+                if (!_asServer && !_manager.isServer)
                     root.gameObject.SetActive(false);
                 
                 CACHE.Clear();
