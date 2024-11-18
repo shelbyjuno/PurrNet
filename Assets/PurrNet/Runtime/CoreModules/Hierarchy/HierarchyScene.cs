@@ -545,20 +545,20 @@ namespace PurrNet.Modules
             PrefabLink.StopIgnoreAutoSpawn();
         }
         
-        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer, bool addToSpawnedThisFrame = false)
+        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
         {
             var siblingIdx = component.transform.parent ? component.transform.GetSiblingIndex() : 0;
-            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer, addToSpawnedThisFrame);
+            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer);
         }
         
-        void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer, bool addToSpawnedThisFrame = false)
+        void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer)
         {
             var identityId = new NetworkID(nid, offset);
             
             if (component.IsSpawned(asServer) && (asServer ? component.idServer == identityId : component.idClient == identityId))
                 return;
             
-            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, identityId, offset, asServer, addToSpawnedThisFrame);
+            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, identityId, offset, asServer);
 
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
@@ -570,8 +570,7 @@ namespace PurrNet.Modules
             if (component is NetworkTransform { syncParent: true } transform)
                 transform.onParentChanged += OnIdentityParentChanged;
 
-            if (!addToSpawnedThisFrame)
-                _spawnedThisFrame.Add(component);
+            _spawnedThisFrame.Add(component);
         }
 
         internal static readonly List<NetworkIdentity> CACHE = new ();

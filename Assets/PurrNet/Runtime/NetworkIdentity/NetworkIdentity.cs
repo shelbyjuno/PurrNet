@@ -380,7 +380,7 @@ namespace PurrNet
         /// </summary>
         public int layer { get; private set; }
         
-        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer, bool isInitialSceneObject = false)
+        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
             Hasher.PrepareType(GetType());
             
@@ -394,16 +394,16 @@ namespace PurrNet
             if (!localPlayer.HasValue && networkManager.TryGetModule<PlayersManager>(false, out var playersManager))
                 localPlayer = playersManager.localPlayerId;
 
-            bool wasAlreadySpawned = isSpawned || isInitialSceneObject;
+            bool wasAlreadySpawned = isSpawned;
 
             if (asServer)
             {
-                _isSpawnedServer = !isInitialSceneObject;
+                _isSpawnedServer = true;
                 idServer = identityId;
             }
             else
             {
-                _isSpawnedClient = !isInitialSceneObject;
+                _isSpawnedClient = true;
                 idClient = identityId;
             }
 
