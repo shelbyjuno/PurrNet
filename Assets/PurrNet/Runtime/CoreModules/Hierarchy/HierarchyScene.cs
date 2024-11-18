@@ -555,8 +555,7 @@ namespace PurrNet.Modules
         {
             var identityId = new NetworkID(nid, offset);
             
-            if ((asServer && component.idServer == identityId) ||
-                (!asServer && component.idClient == identityId))
+            if (component.IsSpawned(asServer) && (asServer ? component.idServer == identityId : component.idClient == identityId))
                 return;
             
             component.SetIdentity(_manager, _sceneID, prefabId, siblingId, identityId, offset, asServer, addToSpawnedThisFrame);
