@@ -163,11 +163,12 @@ namespace PurrNet.Codegen
 
         private static void GenerateRegisterMethod(ModuleDefinition module, TypeReference type, ILProcessor il, HandledGenericTypes handledType)
         {
+            var importedType = type.Import(module);
             var packCollectionsType = module.GetTypeDefinition(typeof(PackCollections)).Import(module);
             
             switch (handledType)
             {
-                case HandledGenericTypes.List when type is GenericInstanceType listType:
+                case HandledGenericTypes.List when importedType is GenericInstanceType listType:
                     
                     var registerListMethod = packCollectionsType.GetMethod("RegisterList", true).Import(module);
                     var genericRegisterListMethod = new GenericInstanceMethod(registerListMethod);
@@ -176,7 +177,7 @@ namespace PurrNet.Codegen
                     il.Emit(OpCodes.Call, genericRegisterListMethod);
                     
                     break;
-                case HandledGenericTypes.Array when type is ArrayType arrayType:
+                case HandledGenericTypes.Array when importedType is ArrayType arrayType:
                     
                     var registerArrayMethod = packCollectionsType.GetMethod("RegisterArray", true).Import(module);
                     var genericRegisterArrayMethod = new GenericInstanceMethod(registerArrayMethod);
