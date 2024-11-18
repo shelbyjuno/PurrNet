@@ -162,11 +162,7 @@ namespace PurrNet.Modules
                 };
 
                 for (int j = 0; j < CACHE.Count; ++j)
-                {
-                    //if (_asServer || !isHost)
-                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer); //, !_asServer);
-                    //else _spawnedThisFrame.Add(CACHE[j]);
-                }
+                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
 
                 if (_asServer)
                     _history.AddSpawnAction(action, default);
@@ -549,15 +545,15 @@ namespace PurrNet.Modules
             PrefabLink.StopIgnoreAutoSpawn();
         }
         
-        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer, bool isInitialSceneObject = false)
+        private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer, bool addToSpawnedThisFrame = false)
         {
             var siblingIdx = component.transform.parent ? component.transform.GetSiblingIndex() : 0;
-            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer, isInitialSceneObject);
+            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer, addToSpawnedThisFrame);
         }
         
-        void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer, bool isInitialSceneObject = false)
+        void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer, bool addToSpawnedThisFrame = false)
         {
-            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, new NetworkID(nid, offset), offset, asServer, isInitialSceneObject);
+            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, new NetworkID(nid, offset), offset, asServer, addToSpawnedThisFrame);
 
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
@@ -569,11 +565,8 @@ namespace PurrNet.Modules
             if (component is NetworkTransform { syncParent: true } transform)
                 transform.onParentChanged += OnIdentityParentChanged;
 
-            if (!isInitialSceneObject)
-            {
+            if (!addToSpawnedThisFrame)
                 _spawnedThisFrame.Add(component);
-                //component.TriggerSpawnEvent(asServer);
-            }
         }
 
         internal static readonly List<NetworkIdentity> CACHE = new ();
@@ -728,6 +721,7 @@ namespace PurrNet.Modules
                 
                 child.SetIdentity(_manager, _sceneID, prefabId, siblingIdx, nid, (ushort)i, _asServer);
                 
+                PurrLogger.Log($"Spawned '{child.name}' with id {child.id} and prefab id {prefabId}");
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
                 
@@ -1167,8 +1161,9 @@ namespace PurrNet.Modules
                         Debug.LogException(e);
                     }
                 }
-                _spawnedThisFrame.Clear();
             }
+            
+            _spawnedThisFrame.Clear();
         }
 
         private void SendDeltaToPlayers(HierarchyActionBatch delta)

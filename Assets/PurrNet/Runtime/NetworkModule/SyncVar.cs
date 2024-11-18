@@ -33,6 +33,8 @@ namespace PurrNet
         }
 
         public event Action<T> onChanged;
+        
+        public bool isControllingSyncVar => parent.IsController(_ownerAuth);
 
         public T value
         {
@@ -41,8 +43,8 @@ namespace PurrNet
             {
                 if (isSpawned)
                 {
-                    bool isController = parent.IsController(_ownerAuth);
-                    if (!isController)
+                    bool isControlling = parent.IsController(_ownerAuth);
+                    if (!isControlling)
                     {
                         PurrLogger.LogError(
                             $"Invalid permissions when setting '<b>SyncVar<{typeof(T).Name}> {name}</b>' on '{parent.name}'." +
@@ -99,9 +101,9 @@ namespace PurrNet
 
         private void OnTick()
         {
-            bool isController = parent.IsController(_ownerAuth);
+            bool isControlling = parent.IsController(_ownerAuth);
 
-            if (!isController) 
+            if (!isControlling) 
                 return;
             
             float timeSinceLastSend = Time.time - _lastSendTime;
@@ -141,9 +143,9 @@ namespace PurrNet
         private void SendLatestState(PlayerID player, ushort packetId, T newValue)
         {
             if (isServer) return;
-            
+
             _id = packetId;
-            
+
             if (_value.Equals(newValue))
                 return;
             
@@ -195,9 +197,9 @@ namespace PurrNet
         
         private void OnReceivedValue(ushort packetId, T newValue)
         {
-            bool isController = parent.IsController(_ownerAuth);
+            bool isControlling = parent.IsController(_ownerAuth);
 
-            if (isController)
+            if (isControlling)
             {
                 return;
             }
@@ -214,6 +216,7 @@ namespace PurrNet
                 return;
             }
             
+            PurrLogger.Log($"OnReceivedValue new value: {newValue}.");
             _value = newValue;
             onChanged?.Invoke(value);
         }

@@ -566,15 +566,15 @@ namespace PurrNet
             InternalOnSpawn(asServer);
             OnSpawned(asServer);
 
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnSpawn(asServer);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnSpawn(asServer);
 
             if (_spawnedCount == 0)
             {
                 OnSpawned();
 
-                for (int i = 0; i < _modules.Count; i++)
-                    _modules[i].OnSpawn();
+                for (int i = 0; i < _externalModulesView.Count; i++)
+                    _externalModulesView[i].OnSpawn();
             }
             
             _spawnedCount++;
@@ -587,8 +587,8 @@ namespace PurrNet
             InternalOnDespawn(asServer);
             OnDespawned(asServer);
 
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnDespawned(asServer);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnDespawned(asServer);
 
             if (asServer)
             {
@@ -605,9 +605,10 @@ namespace PurrNet
             {
                 OnDespawned();
                 
-                for (int i = 0; i < _modules.Count; i++)
-                    _modules[i].OnDespawned();
+                for (int i = 0; i < _externalModulesView.Count; i++)
+                    _externalModulesView[i].OnDespawned();
 
+                _externalModulesView.Clear();
                 _modules.Clear();
             }
         }
@@ -616,40 +617,40 @@ namespace PurrNet
         {
             OnOwnerChanged(oldOwner, newOwner, asServer);
             
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnOwnerChanged(oldOwner, newOwner, asServer);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnOwnerChanged(oldOwner, newOwner, asServer);
         }
 
         internal void TriggerOnOwnerDisconnected(PlayerID ownerId, bool asServer)
         {
             OnOwnerDisconnected(ownerId, asServer);
             
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnOwnerDisconnected(ownerId, asServer);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnOwnerDisconnected(ownerId, asServer);
         }
 
         internal void TriggerOnOwnerReconnected(PlayerID ownerId, bool asServer)
         {
             OnOwnerConnected(ownerId, asServer);
             
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnOwnerConnected(ownerId, asServer);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnOwnerConnected(ownerId, asServer);
         }
 
         public void TriggerOnObserverAdded(PlayerID target)
         {
             OnObserverAdded(target);
             
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnObserverAdded(target);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnObserverAdded(target);
         }
 
         public void TriggerOnObserverRemoved(PlayerID target)
         {
             OnObserverRemoved(target);
             
-            for (int i = 0; i < _modules.Count; i++)
-                _modules[i].OnObserverRemoved(target);
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnObserverRemoved(target);
         }
 
         internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)

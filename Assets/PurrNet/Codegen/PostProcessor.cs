@@ -1481,28 +1481,12 @@ namespace PurrNet.Codegen
 
                         int idOffset = GetIDOffset(type, messages);
 
-                        if (inheritsFromNetworkIdentity)
+                        if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                         {
                             List<FieldDefinition> _networkFields = new();
 
-                            for (var i = 0; i < type.Fields.Count; i++)
-                            {
-                                var field = type.Fields[i];
-
-                                if (field.IsStatic) continue;
-
-                                var fieldType = field.FieldType.Resolve();
-                                var isNetworkClass = fieldType.FullName == classFullName || InheritsFrom(fieldType, classFullName);
-
-                                if (!isNetworkClass) continue;
-                                
-                                _networkFields.Add(field);
-                            }
-
-                            if (_networkFields.Count > 0)
-                            {
-                                CreateSyncVarInitMethod(module, type, _networkFields);
-                            }
+                            FindNetworkModules(type, classFullName, _networkFields);
+                            CreateSyncVarInitMethod(inheritsFromNetworkIdentity, module, type, _networkFields);
                         }
 
                         for (var i = 0; i < type.Methods.Count; i++)
@@ -1641,6 +1625,26 @@ namespace PurrNet.Codegen
             }
         }
 
+        private static void FindNetworkModules(TypeDefinition type, string classFullName, List<FieldDefinition> _networkFields)
+        {
+            for (var i = 0; i < type.Fields.Count; i++)
+            {
+                var field = type.Fields[i];
+
+                if (field.IsStatic) continue;
+
+                var fieldType = field.FieldType.Resolve();
+                
+                if (fieldType == null) continue;
+                
+                var isNetworkClass = fieldType.FullName == classFullName || InheritsFrom(fieldType, classFullName);
+
+                if (!isNetworkClass) continue;
+                                
+                _networkFields.Add(field);
+            }
+        }
+
         private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle)
         {
             HashSet<TypeReference> visited = new();
@@ -1698,7 +1702,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private void CreateSyncVarInitMethod(ModuleDefinition module, TypeDefinition type, List<FieldDefinition> networkFields)
+        private static void CreateSyncVarInitMethod(bool isNetworkIdentity, ModuleDefinition module, TypeDefinition type, List<FieldDefinition> networkFields)
         {
             var newMethod = new MethodDefinition($"__{type.Name}_CodeGen_Initialize", 
                 MethodAttributes.Public | MethodAttributes.HideBySig, module.TypeSystem.Void);
@@ -1707,19 +1711,29 @@ namespace PurrNet.Codegen
             var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
             newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
 
+            var parentStr = new ParameterDefinition("parent", ParameterAttributes.None, module.TypeSystem.String);
+            
+            if (!isNetworkIdentity)
+                newMethod.Parameters.Add(parentStr);
+
             type.Methods.Add(newMethod);
             
             newMethod.Body.InitLocals = true;
             
             var code = newMethod.Body.GetILProcessor();
+
+            var parentType =
+                (isNetworkIdentity
+                    ? module.GetTypeDefinition<NetworkIdentity>()
+                    : module.GetTypeDefinition<NetworkModule>()).Import(module);
             
-            var registerModule = module
-                .GetTypeDefinition<NetworkIdentity>().Import(module)
-                .GetMethod("RegisterModuleInternal").Import(module);
+            var registerModule = parentType.GetMethod("RegisterModuleInternal").Import(module);
+            var concatMethod = module.TypeSystem.String.Resolve()
+                .GetMethod("Concat", module.TypeSystem.String, module.TypeSystem.String).Import(module);
 
             for (int i = 0; i < networkFields.Count; i++)
             {
-                FieldDefinition field = networkFields[i];
+                var field = networkFields[i];
 
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldstr, field.Name));
@@ -1727,6 +1741,39 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldfld, field));
                 code.Append(Instruction.Create(OpCodes.Call, registerModule));
+
+                var endInstruction = Instruction.Create(OpCodes.Nop);
+                
+                // if not null
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Ldfld, field));
+                code.Append(Instruction.Create(OpCodes.Brfalse, endInstruction));
+
+                // call init method
+                var initMethodName = $"__{field.FieldType.Name}_CodeGen_Initialize";
+                var codeGenInitRef = new MethodReference(initMethodName, module.TypeSystem.Void, field.FieldType)
+                {
+                    HasThis = true
+                };
+                
+                codeGenInitRef.Parameters.Add(parentStr);
+                
+                code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                code.Append(Instruction.Create(OpCodes.Ldfld, field));
+                if (isNetworkIdentity)
+                {
+                    code.Append(Instruction.Create(OpCodes.Ldstr, field.Name));
+                }
+                else
+                {
+                    code.Append(Instruction.Create(OpCodes.Ldarg_1));
+                    code.Append(Instruction.Create(OpCodes.Ldstr, '.' + field.Name));
+                    code.Append(Instruction.Create(OpCodes.Call, concatMethod));
+                }
+
+                code.Append(Instruction.Create(OpCodes.Call, codeGenInitRef));
+                
+                code.Append(endInstruction);
             }
 
             code.Append(Instruction.Create(OpCodes.Ret));

@@ -79,6 +79,16 @@ namespace PurrNet
         }
 
         [UsedByIL]
+        public void RegisterModuleInternal(string moduleName, string type, NetworkModule module)
+        {
+            var parentRef = this.parent;
+            
+            if (parentRef)
+                parentRef.RegisterModuleInternal(moduleName, type, module);
+            else PurrLogger.LogError($"Registering module '{moduleName}' failed since it is not spawned.");
+        }
+
+        [UsedByIL]
         protected void SendRPC(ChildRPCPacket packet, RPCSignature signature)
         {
             if (!parent)
