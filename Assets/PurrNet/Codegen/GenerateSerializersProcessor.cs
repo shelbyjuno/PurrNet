@@ -163,7 +163,7 @@ namespace PurrNet.Codegen
 
         private static void GenerateRegisterMethod(ModuleDefinition module, TypeReference type, ILProcessor il, HandledGenericTypes handledType)
         {
-            var packCollectionsType = type.Module.GetTypeDefinition(typeof(PackCollections)).Import(module);
+            var packCollectionsType = module.GetTypeDefinition(typeof(PackCollections)).Import(module);
             
             switch (handledType)
             {
