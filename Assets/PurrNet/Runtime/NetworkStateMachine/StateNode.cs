@@ -14,8 +14,6 @@ namespace PurrNet.StateMachine
         public virtual void Enter(bool asServer) {}
         
         public virtual void StateUpdate(bool asServer) {}
-
-        public virtual void Resume(bool asServer) {}
         
         public virtual void Exit(bool asServer) {}
     }

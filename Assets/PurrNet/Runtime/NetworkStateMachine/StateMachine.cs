@@ -85,15 +85,12 @@ namespace PurrNet.StateMachine
     
             var activeState = _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
                 null : _states[_currentState.stateId];
-    
-            bool isResume = state.resuming && _currentState.stateId == state.stateId;
-
-            if (activeState != null && !isResume)
+            
+            if (activeState != null)
             {
                 activeState.Exit(false);
             }
     
-            state.resuming = false;
             _currentState = state;
             _currentState.data = data;
     
@@ -104,17 +101,11 @@ namespace PurrNet.StateMachine
     
             if (hasData && newState is StateNode<T> node)
             {
-                if (isResume)
-                    node.Resume(data, false);
-                else 
-                    node.Enter(data, false);
+                node.Enter(data, false);
             }
             else
             {
-                if (isResume)
-                    newState.Resume(false);
-                else 
-                    newState.Enter(false);
+                newState.Enter(false);
             }
     
             onReceivedNewData?.Invoke();
@@ -170,7 +161,6 @@ namespace PurrNet.StateMachine
                 }
             }
     
-            _currentState.resuming = false;
             RpcStateChange(_currentState, true, data);
         }
 
@@ -195,7 +185,6 @@ namespace PurrNet.StateMachine
                     state.Enter(false);
             }
     
-            _currentState.resuming = false;
             RpcStateChange<ushort>(_currentState, false, 0);
         }
 
@@ -258,7 +247,6 @@ namespace PurrNet.StateMachine
     {
         public int stateId;
         public object data;
-        public bool resuming;
         
         static StateMachine machine => StateMachine.instance;
         
@@ -274,7 +262,6 @@ namespace PurrNet.StateMachine
         
         public void Serialize(NetworkStream stream)
         {
-            stream.Serialize(ref resuming);
             stream.Serialize(ref stateId);
             
             bool isNull = data == null || stateId < 0 || stateId >= machine.states.Count;
