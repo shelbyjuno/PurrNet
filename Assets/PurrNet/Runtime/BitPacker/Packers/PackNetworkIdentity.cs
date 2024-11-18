@@ -13,6 +13,28 @@ namespace PurrNet
         }
 
         [UsedByIL]
+        public static void WriteIdentity<T>(this BitStream stream, T value) where T : NetworkIdentity
+        {
+            WriteIdentity(stream, (NetworkIdentity)value);
+        }
+
+        [UsedByIL]
+        public static void ReadIdentity<T>(this BitStream stream, ref T value) where T : NetworkIdentity
+        {
+            NetworkIdentity identity = null;
+            
+            ReadIdentity(stream, ref identity);
+            
+            if (identity == null || identity is not T result)
+            {
+                value = null;
+                return;
+            }
+            
+            value = result;
+        }
+        
+        [UsedByIL]
         public static void WriteIdentity(this BitStream stream, NetworkIdentity value)
         {
             if (value == null || !value.id.HasValue)
@@ -27,10 +49,11 @@ namespace PurrNet
         }
 
         [UsedByIL]
-        public static void ReadIdentity<T>(this BitStream stream, ref T value) where T : NetworkIdentity
+        public static void ReadIdentity(this BitStream stream, ref NetworkIdentity value)
         {
             bool hasValue = false;
-            stream.Read(ref hasValue);
+            
+            Packer<bool>.Read(stream, ref hasValue);
 
             if (!hasValue)
             {
@@ -43,6 +66,23 @@ namespace PurrNet
             
             Packer<NetworkID>.Read(stream, ref id);
             Packer<SceneID>.Read(stream, ref sceneId);
+            
+            var networkManager = NetworkManager.main;
+            
+            if (!networkManager)
+            {
+                value = null;
+                return;
+            }
+
+            if (!networkManager.TryGetModule<HierarchyModule>(networkManager.isServer, out var module) ||
+                !module.TryGetIdentity(sceneId, id, out var result))
+            {
+                value = null;
+                return;
+            }
+            
+            value = result;
         }
     }
 }

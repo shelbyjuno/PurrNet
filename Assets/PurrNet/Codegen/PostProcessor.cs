@@ -16,6 +16,7 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
+using IAutoNetworkedData = PurrNet.Packing.IAutoNetworkedData;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
@@ -1480,6 +1481,11 @@ namespace PurrNet.Codegen
                         RegisterSerializersProcessor.HandleType(module, module.Types[t], messages);
                         
                         var type = module.Types[t];
+                        
+                        if (GenerateSerializersProcessor.HasInterface(type, typeof(IAutoNetworkedData)))
+                        {
+                            typesToGenerateSerializer.Add(type);
+                        }
 
                         if (!type.IsClass)
                             continue;

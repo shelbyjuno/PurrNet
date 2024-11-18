@@ -163,7 +163,7 @@ namespace PurrNet.Codegen
 
         private static void GenerateRegisterMethod(TypeReference type, ILProcessor il, HandledGenericTypes handledType)
         {
-            var packCollectionsType = type.Module.GetTypeDefinition(typeof(PackCollections));
+            var packCollectionsType = type.Module.GetTypeDefinition(typeof(PackCollections)).Import(type.Module);
             
             switch (handledType)
             {
@@ -191,7 +191,7 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ret);
         }
         
-        static bool HasInterface(TypeDefinition def, Type interfaceType)
+        public static bool HasInterface(TypeDefinition def, Type interfaceType)
         {
             return def.Interfaces.Any(i => i.InterfaceType.FullName == interfaceType.FullName);
         }

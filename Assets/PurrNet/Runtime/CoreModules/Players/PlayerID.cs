@@ -1,9 +1,9 @@
 using System;
-using PurrNet.Packets;
+using IAutoNetworkedData = PurrNet.Packets.IAutoNetworkedData;
 
 namespace PurrNet
 {
-    public readonly partial struct PlayerID : IAutoNetworkedData, IEquatable<PlayerID>
+    public readonly partial struct PlayerID : IAutoNetworkedData, PurrNet.Packing.IAutoNetworkedData, IEquatable<PlayerID>
     {
         private ushort _id { get; }
 

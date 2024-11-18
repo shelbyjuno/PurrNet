@@ -3,7 +3,7 @@ using PurrNet.Packets;
 
 namespace PurrNet
 {
-    public readonly partial struct SceneID : IAutoNetworkedData, IEquatable<SceneID>
+    public readonly partial struct SceneID : IAutoNetworkedData, PurrNet.Packing.IAutoNetworkedData, IEquatable<SceneID>
     {
         private ushort _id { get; }
 
