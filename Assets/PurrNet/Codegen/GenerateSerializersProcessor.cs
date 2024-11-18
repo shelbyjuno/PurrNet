@@ -50,8 +50,8 @@ namespace PurrNet.Codegen
                 });
                 return;
             }
-
-            if (PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName))
+            if (PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) && 
+                !HasInterface(resolvedType, typeof(INetworkedData)))
                 return;
 
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using JetBrains.Annotations;
 using PurrNet.Logging;
+using PurrNet.Modules;
 using UnityEngine;
 
 namespace PurrNet.Packing
@@ -31,14 +33,34 @@ namespace PurrNet.Packing
             else throw new Exception($"No writer found for type '{typeof(T)}'.");
         }
         
-        public static void Write(BitStream stream, T value)
+        /// <summary>
+        /// This method is used to write the value to the stream.
+        /// The value can be null.
+        /// </summary>
+        public static void Write(BitStream stream, [CanBeNull] T value)
         {
             _write.Invoke(stream, value);
         }
         
-        public static void Read(BitStream stream, ref T value)
+        /// <summary>
+        /// This method is used to read the value from the stream.
+        /// The value can be null.
+        /// </summary>
+        public static void Read(BitStream stream, [CanBeNull] ref T value)
         {
             _read.Invoke(stream, ref value);
+        }
+        
+        /// <summary>
+        /// Packs the value into the stream.
+        /// If the stream is writing, it will write the value and won't change the value.
+        /// If the stream is reading, it will read the value and change the value.
+        /// </summary>
+        public static void Pack(BitStream stream, [CanBeNull] ref T value)
+        {
+            if (stream.isWriting)
+                 Write(stream, value);
+            else Read(stream, ref value);
         }
     }
     
@@ -93,6 +115,7 @@ namespace PurrNet.Packing
             _readers.Clear();
         }
 
+        [UsedByIL]
         public static void RegisterWriter<T>(WriteFunc<T> a)
         {
             if (_writers.TryAdd(typeof(T), new PackerHelper(a.Method)))
@@ -106,6 +129,7 @@ namespace PurrNet.Packing
             _writers.TryAdd(typeof(T), new PackerHelper(a.Method));
         }
         
+        [UsedByIL]
         public static void RegisterReader<T>(ReadFunc<T> b)
         {
             if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
@@ -140,11 +164,25 @@ namespace PurrNet.Packing
             else PurrLogger.LogError($"No packer found for type '{typeof(T)}'.");
         }
         
-        public static void Read<T>(BitStream stream, ref T value)
+        public static void Write(BitStream stream, object value)
         {
-            if (_readers.TryGetValue(typeof(T), out var helper))
+            if (_writers.TryGetValue(value.GetType(), out var helper))
+                helper.WriteData(stream, value);
+            else PurrLogger.LogError($"No packer found for type '{value.GetType()}'.");
+        }
+        
+        public static void Read(BitStream stream, Type type, ref object value)
+        {
+            if (_readers.TryGetValue(type, out var helper))
+            {
+                bool isReferenceType = type.IsClass;
+
+                if (!isReferenceType)
+                    value = Activator.CreateInstance(type);
+                
                 helper.ReadData(stream, ref value);
-            else PurrLogger.LogError($"No packer found for type '{typeof(T)}'.");
+            }
+            else PurrLogger.LogError($"No packer found for type '{type}'.");
         }
     }
 }
