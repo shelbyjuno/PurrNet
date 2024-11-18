@@ -14,7 +14,6 @@ using PurrNet.Packets;
 using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
-using UnityEngine;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
@@ -1581,7 +1580,12 @@ namespace PurrNet.Codegen
                         try
                         {
                             FindUsedTypes(module, _rpcMethods, usedTypes);
-                            GenerateExecuteFunction(module, type, usedTypes, inheritsFromNetworkIdentity, typesToGenerateSerializer);
+                            
+                            foreach (var usedType in usedTypes)
+                            {
+                                if (IsTypeInOwnModule(usedType, module))
+                                    typesToGenerateSerializer.Add(usedType);
+                            }
                         }
                         catch (Exception e)
                         {
@@ -1882,15 +1886,6 @@ namespace PurrNet.Codegen
                 return false;
 
             return true;
-        }
-        
-        private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, bool inheritsFromIdentity, HashSet<TypeReference> typesToGenSerializer)
-        {
-            foreach (var usedType in usedTypes)
-            {
-                if (IsTypeInOwnModule(usedType, module))
-                    typesToGenSerializer.Add(usedType);
-            }
         }
     }
 }
