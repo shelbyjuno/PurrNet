@@ -140,6 +140,7 @@ namespace PurrNet.Modules
 
         private void SpawnSceneObjects(IReadOnlyList<NetworkIdentity> sceneObjects)
         {
+            PurrLogger.Log($"Spawning scene objects for scene {_sceneID}");
             var roots = HashSetPool<NetworkIdentity>.Instantiate();
 
             for (int i = 0; i < sceneObjects.Count; i++)
@@ -162,7 +163,7 @@ namespace PurrNet.Modules
                 };
 
                 for (int j = 0; j < CACHE.Count; ++j)
-                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer, !_asServer);
+                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer);
 
                 if (_asServer)
                     _history.AddSpawnAction(action, default);
@@ -553,7 +554,13 @@ namespace PurrNet.Modules
         
         void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer, bool addToSpawnedThisFrame = false)
         {
-            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, new NetworkID(nid, offset), offset, asServer, addToSpawnedThisFrame);
+            var identityId = new NetworkID(nid, offset);
+            
+            if ((asServer && component.idServer == identityId) ||
+                (!asServer && component.idClient == identityId))
+                return;
+            
+            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, identityId, offset, asServer, addToSpawnedThisFrame);
 
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
@@ -721,7 +728,6 @@ namespace PurrNet.Modules
                 
                 child.SetIdentity(_manager, _sceneID, prefabId, siblingIdx, nid, (ushort)i, _asServer);
                 
-                PurrLogger.Log($"Spawned '{child.name}' with id {child.id} and prefab id {prefabId}");
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
                 

@@ -6,6 +6,7 @@ using Mono.Cecil.Cil;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
 {
@@ -21,10 +22,13 @@ namespace PurrNet.Codegen
         public static void HandleType(AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
         {
             var resolvedType = type.Resolve();
-            
+
             if (resolvedType == null)
                 return;
-            
+
+            if (PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName))
+                return;
+
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
             var mainmodule = assembly.MainModule;
             

@@ -11,6 +11,16 @@ namespace PurrNet.Packing
         private byte[] _buffer;
         private int _positionInBits;
         private bool _isReading;
+
+        public int length
+        {
+            get
+            {
+                int pos = _positionInBits / 8;
+                int len = pos + (_positionInBits % 8 == 0 ? 0 : 1);
+                return len;
+            }
+        }
         
         public bool isReading => _isReading;
         
@@ -28,9 +38,7 @@ namespace PurrNet.Packing
         
         public ByteData ToByteData()
         {
-            int pos = _positionInBits / 8;
-            int len = pos + (_positionInBits % 8 == 0 ? 0 : 1);
-            return new ByteData(_buffer, 0, len);
+            return new ByteData(_buffer, 0, length);
         }
         
         public void ResetPosition()

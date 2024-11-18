@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace PurrNet.Packing
 {
-    public delegate void WriteFunc<T>(BitStream stream, T value);
+    public delegate void WriteFunc<in T>(BitStream stream, T value);
         
     public delegate void ReadFunc<T>(BitStream stream, ref T value);
     

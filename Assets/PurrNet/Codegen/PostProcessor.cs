@@ -77,7 +77,7 @@ namespace PurrNet.Codegen
             }
         }
         
-        private static bool InheritsFrom(TypeDefinition type, string baseTypeName)
+        public static bool InheritsFrom(TypeDefinition type, string baseTypeName)
         {
             try
             {
