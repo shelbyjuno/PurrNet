@@ -40,7 +40,7 @@ namespace PurrNet.Codegen
         public static void HandleType(AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
         {
             var resolvedType = type.Resolve();
-
+            
             if (resolvedType == null)
             {
                 messages.Add(new DiagnosticMessage
@@ -51,11 +51,19 @@ namespace PurrNet.Codegen
                 return;
             }
             
+            if (resolvedType.IsInterface)
+                return;
+            
             bool isNetworkIdentity = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkIdentity).FullName);
             bool isNetworkModule = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkModule).FullName);
             
             if (!isNetworkIdentity && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) &&
                 !HasInterface(resolvedType, typeof(INetworkedData)))
+            {
+                return;
+            }
+            
+            if (isNetworkModule)
             {
                 return;
             }
@@ -112,11 +120,6 @@ namespace PurrNet.Codegen
                 var register = registerMethod.Body.GetILProcessor();
                 GenerateRegisterMethodForIdentity(type, register);
                 serializerClass.Methods.Add(registerMethod);
-                return;
-            }
-
-            if (isNetworkModule)
-            {
                 return;
             }
             
