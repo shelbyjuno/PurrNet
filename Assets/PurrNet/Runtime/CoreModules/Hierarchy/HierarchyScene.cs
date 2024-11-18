@@ -554,9 +554,12 @@ namespace PurrNet.Modules
         void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer)
         {
             var identityId = new NetworkID(nid, offset);
-            
-            if (component.IsSpawned(asServer) && (asServer ? component.idServer == identityId : component.idClient == identityId))
+
+            if (component.IsSpawned(asServer) &&
+                (asServer ? component.idServer == identityId : component.idClient == identityId))
+            {
                 return;
+            }
             
             component.SetIdentity(_manager, _sceneID, prefabId, siblingId, identityId, offset, asServer);
 
@@ -642,13 +645,23 @@ namespace PurrNet.Modules
                     }
                     else
                     {
+                        child.SetIsSpawned(false, _asServer);
                         child.TriggerDespawnEvent(_asServer);
                     }
                 }
 
                 if (!sceneObject)
                      Object.Destroy(identity.gameObject);
-                else identity.gameObject.SetActive(false);
+                else
+                {
+                    var go = identity.gameObject;
+
+                    if (go.activeInHierarchy)
+                    {
+                        identity.IgnoreNextActivationCallback();
+                        go.SetActive(false);
+                    }
+                }
             }
             else
             {

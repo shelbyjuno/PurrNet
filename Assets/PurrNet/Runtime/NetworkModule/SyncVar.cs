@@ -216,7 +216,6 @@ namespace PurrNet
                 return;
             }
             
-            PurrLogger.Log($"OnReceivedValue new value: {newValue}.");
             _value = newValue;
             onChanged?.Invoke(value);
         }

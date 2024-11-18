@@ -283,7 +283,7 @@ namespace PurrNet
         internal PlayerID? GetOwner(bool asServer) => asServer ? internalOwnerServer : internalOwnerClient;
 
         [UsedImplicitly]
-        public bool IsSpawned(bool asServer) => asServer ? idServer.HasValue : idClient.HasValue;
+        public bool IsSpawned(bool asServer) => asServer ? _isSpawnedServer : _isSpawnedClient;
 
         protected virtual void OnSpawned() { }
         
@@ -509,6 +509,9 @@ namespace PurrNet
         
         public void RemoveOwnership()
         {
+            if (!networkManager)
+                return;
+            
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
             {
                 module.RemoveOwnership(this);
@@ -661,6 +664,13 @@ namespace PurrNet
         internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)
         {
             _pendingOwnershipRequest = playersLocalPlayerId;
+        }
+
+        internal void SetIsSpawned(bool value, bool asServer)
+        {
+            if (asServer)
+                 _isSpawnedServer = value;
+            else _isSpawnedClient = value;
         }
     }
 }
