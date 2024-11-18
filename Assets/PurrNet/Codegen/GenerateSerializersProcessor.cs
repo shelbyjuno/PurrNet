@@ -90,7 +90,7 @@ namespace PurrNet.Codegen
                 };
             
                 var register = registerMethod.Body.GetILProcessor();
-                GenerateRegisterMethod(type, register, genericT);
+                GenerateRegisterMethod(assembly.MainModule, type, register, genericT);
                 serializerClass.Methods.Add(registerMethod);
                 return;
             }
@@ -161,15 +161,15 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ret);
         }
 
-        private static void GenerateRegisterMethod(TypeReference type, ILProcessor il, HandledGenericTypes handledType)
+        private static void GenerateRegisterMethod(ModuleDefinition module, TypeReference type, ILProcessor il, HandledGenericTypes handledType)
         {
-            var packCollectionsType = type.Module.GetTypeDefinition(typeof(PackCollections)).Import(type.Module);
+            var packCollectionsType = type.Module.GetTypeDefinition(typeof(PackCollections)).Import(module);
             
             switch (handledType)
             {
                 case HandledGenericTypes.List when type is GenericInstanceType listType:
                     
-                    var registerListMethod = packCollectionsType.GetMethod("RegisterList", true).Import(type.Module);
+                    var registerListMethod = packCollectionsType.GetMethod("RegisterList", true).Import(module);
                     var genericRegisterListMethod = new GenericInstanceMethod(registerListMethod);
                     genericRegisterListMethod.GenericArguments.Add(listType.GenericArguments[0]);
                     
@@ -178,7 +178,7 @@ namespace PurrNet.Codegen
                     break;
                 case HandledGenericTypes.Array when type is ArrayType arrayType:
                     
-                    var registerArrayMethod = packCollectionsType.GetMethod("RegisterArray", true).Import(type.Module);
+                    var registerArrayMethod = packCollectionsType.GetMethod("RegisterArray", true).Import(module);
                     var genericRegisterArrayMethod = new GenericInstanceMethod(registerArrayMethod);
                     genericRegisterArrayMethod.GenericArguments.Add(arrayType.ElementType);
                     
