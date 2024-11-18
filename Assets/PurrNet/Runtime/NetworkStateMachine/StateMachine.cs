@@ -43,8 +43,9 @@ namespace PurrNet.StateMachine
             }
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             instance = null;
         }
 
