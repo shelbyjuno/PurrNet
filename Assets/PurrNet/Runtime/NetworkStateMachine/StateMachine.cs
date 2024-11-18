@@ -148,6 +148,8 @@ namespace PurrNet.StateMachine
 
             UpdateStateId(state);
             _currentState.data = data;
+    
+            RpcStateChange(_currentState, true, data);
 
             if (state)
             {
@@ -160,8 +162,6 @@ namespace PurrNet.StateMachine
                     state.Enter(false);
                 }
             }
-    
-            RpcStateChange(_currentState, true, data);
         }
 
         public void SetState(StateNode state)
@@ -176,6 +176,8 @@ namespace PurrNet.StateMachine
 
             UpdateStateId(state);
             _currentState.data = null;
+    
+            RpcStateChange<ushort>(_currentState, false, 0);
 
             if (state)
             {
@@ -184,8 +186,6 @@ namespace PurrNet.StateMachine
                 if (!isServer)
                     state.Enter(false);
             }
-    
-            RpcStateChange<ushort>(_currentState, false, 0);
         }
 
         public void Next<T>(T data)
