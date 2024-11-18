@@ -285,9 +285,26 @@ namespace PurrNet
             _visibilityRules.RemoveRule(rule);
         }
         
+        public TickManager clientTickManager { get; private set; }
+        
+        public TickManager serverTickManager { get; private set; }
+        
+        public TickManager GetTickManager(bool asServer) => asServer ? serverTickManager : clientTickManager;
+        
+        public ScenesModule clientScenesModule { get; private set; }
+        
+        public ScenesModule serverScenesModule { get; private set; }
+        
+        public ScenesModule GetScenesModule(bool asServer) => asServer ? serverScenesModule : clientScenesModule;
+        
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
             var tickManager = new TickManager(_tickRate);
+            
+            if (asServer)
+                serverTickManager = tickManager;
+            else clientTickManager = tickManager;
+
             var broadcastModule = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
             
@@ -295,6 +312,12 @@ namespace PurrNet
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
 
             var scenesModule = new ScenesModule(this, playersManager);
+            
+            if (asServer)
+                serverScenesModule = scenesModule;
+            else clientScenesModule = scenesModule;
+
+            
             var scenePlayersModule = new ScenePlayersModule(this, scenesModule, playersManager);
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
@@ -302,7 +325,6 @@ namespace PurrNet
             var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
             var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
             var rpcRequestResponseModule = new RpcRequestResponseModule(playersManager);
-            // var lagCompensationModule = new LagCompensationModule(this, 60); // 60 ticks history
             
             hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayersModule);
@@ -315,7 +337,6 @@ namespace PurrNet
             modules.AddModule(networkCookies);
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
-            // modules.AddModule(lagCompensationModule);
             
             modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
