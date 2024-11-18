@@ -46,8 +46,8 @@ namespace PurrNet
         [UsedByIL]
         public void Error(string message)
         {
-            PurrLogger.LogError($"Module in {parent.GetType().Name} is null: <i>{message}</i>\n" +
-                                $"You can initialize it on Awake or override OnInitializeModules.", parent);
+            PurrLogger.LogWarning($"Module in {parent.GetType().Name} is null: <i>{message}</i>\n" +
+                                  $"You can initialize it on Awake or override OnInitializeModules.", parent);
         }
         
         public virtual void OnSpawn() { }

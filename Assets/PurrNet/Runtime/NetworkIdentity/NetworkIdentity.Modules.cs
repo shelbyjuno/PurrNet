@@ -16,22 +16,20 @@ namespace PurrNet
         [UsedByIL]
         public void RegisterModuleInternal(string moduleName, string type, NetworkModule module, bool isNetworkIdentity)
         {
+            if (_moduleId >= byte.MaxValue)
+            {
+                throw new System.Exception($"Too many modules in {GetType().Name}! Max is {byte.MaxValue}.\n" +
+                                           $"This could also happen with circular dependencies.");
+            }
+            
             if (module == null)
             {
                 ++_moduleId;
-                
-                if (_moduleId >= byte.MaxValue)
-                {
-                    PurrLogger.LogError($"Too many modules in {GetType().Name}! Max is {byte.MaxValue}.\n" +
-                                        $"This could also happen with circular dependencies.", this);
-                    return;
-                }
-                
                 _modules.Add(null);
 
                 if (isNetworkIdentity)
                 {
-                    PurrLogger.LogError($"Module in {GetType().Name} is null: <i>{type}</i> {moduleName};\n" +
+                    PurrLogger.LogWarning($"Module in {GetType().Name} is null: <i>{type}</i> {moduleName};\n" +
                                         $"You can initialize it on Awake or override OnInitializeModules.",
                         this);
                 }
@@ -40,13 +38,6 @@ namespace PurrNet
             }
 
             module.SetComponentParent(this, _moduleId++, moduleName);
-            
-            if (_moduleId >= byte.MaxValue)
-            {
-                PurrLogger.LogError($"Too many modules in {GetType().Name}! Max is {byte.MaxValue}.\n" +
-                                    $"This could also happen with circular dependencies.", this);
-                return;
-            }
             
             _modules.Add(module);
             _externalModulesView.Add(module);
