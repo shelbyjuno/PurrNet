@@ -149,6 +149,9 @@ namespace PurrNet.Modules
 
                 if (!roots.Add(root)) continue;
                 
+                if (!_asServer)
+                    root.gameObject.SetActive(false);
+                
                 CACHE.Clear();
                 obj.GetComponentsInChildren(true, CACHE);
 
