@@ -1,7 +1,6 @@
 using System;
 using JetBrains.Annotations;
 using PurrNet.Logging;
-using PurrNet.Packing;
 using PurrNet.Transports;
 using UnityEngine;
 
