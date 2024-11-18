@@ -1901,28 +1901,19 @@ namespace PurrNet.Codegen
 
             var code = initMethod.Body.GetILProcessor();
             
-            var networkRegister = type.Module.GetTypeDefinition<NetworkRegister>();
-            var registerMethod = networkRegister.GetMethod("Register", true).Import(type.Module);
-            var hashMethod = networkRegister.GetMethod("Hash").Import(type.Module);
-
             if (inheritsFromIdentity)
             {
-                var genericRegister = new GenericInstanceMethod(registerMethod);
+                // typesToGenSerializer.Add(type);
+                /*var genericRegister = new GenericInstanceMethod(registerMethod);
                 genericRegister.GenericArguments.Add(type);
-                code.Append(Instruction.Create(OpCodes.Call, genericRegister));
+                code.Append(Instruction.Create(OpCodes.Call, genericRegister));*/
             }
             
             foreach (var usedType in usedTypes)
             {
-                code.Append(Instruction.Create(OpCodes.Ldtoken, usedType));
-                code.Append(Instruction.Create(OpCodes.Call, hashMethod));
-                
                 if (IsTypeInOwnModule(usedType, module))
                     typesToGenSerializer.Add(usedType);
             }
-            
-            code.Append(Instruction.Create(OpCodes.Ldtoken, type));
-            code.Append(Instruction.Create(OpCodes.Call, hashMethod));
             
             code.Append(Instruction.Create(OpCodes.Ret));
         }

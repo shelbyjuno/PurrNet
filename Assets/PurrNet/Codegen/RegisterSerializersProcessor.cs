@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using PurrNet.Packets;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
@@ -210,15 +209,6 @@ namespace PurrNet.Codegen
                 il.Emit(OpCodes.Ldftn, readMethod);          // Load the method pointer
                 il.Emit(OpCodes.Newobj, delegateConstructorRef); // Create the delegate instance
                 il.Emit(OpCodes.Call, genericRead);          // Call RegisterReader<T> with the delegate
-
-                var resolved = typeArgument.Resolve();
-                if (resolved is { IsInterface: true })
-                    continue;
-                
-                var networkRegister = type.Module.GetTypeDefinition<NetworkRegister>();
-                var hashMethod = networkRegister.GetMethod("Hash").Import(type.Module);
-                il.Emit(OpCodes.Ldtoken, typeArgument);
-                il.Emit(OpCodes.Call, hashMethod);
             }
             
             il.Emit(OpCodes.Ret);

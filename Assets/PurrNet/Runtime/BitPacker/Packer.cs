@@ -4,6 +4,7 @@ using System.Reflection;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Utils;
 using UnityEngine;
 
 namespace PurrNet.Packing
@@ -133,14 +134,18 @@ namespace PurrNet.Packing
         public static void RegisterReader<T>(ReadFunc<T> b)
         {
             if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
+            {
+                Hasher.PrepareType<T>();
                 return;
+            }
             
             PurrLogger.LogError($"Reader for type '{typeof(T)}' already exists and cannot be overwritten.");
         }
         
         public static void RegisterReaderSilent<T>(ReadFunc<T> b)
         {
-            _readers.TryAdd(typeof(T), new PackerHelper(b.Method));
+            if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
+                Hasher.PrepareType<T>();
         }
         
         internal static bool TryGetReader<T>(out PackerHelper helper)
@@ -166,9 +171,10 @@ namespace PurrNet.Packing
         
         public static void Write(BitStream stream, object value)
         {
-            if (_writers.TryGetValue(value.GetType(), out var helper))
+            var type = value.GetType();
+            if (_writers.TryGetValue(type, out var helper))
                 helper.WriteData(stream, value);
-            else PurrLogger.LogError($"No packer found for type '{value.GetType()}'.");
+            else PurrLogger.LogError($"No packer found for type '{type}'.");
         }
         
         public static void Read(BitStream stream, Type type, ref object value)
