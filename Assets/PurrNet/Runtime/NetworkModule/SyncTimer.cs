@@ -1,5 +1,7 @@
 using System;
 using JetBrains.Annotations;
+using PurrNet.Logging;
+using PurrNet.Packing;
 using PurrNet.Transports;
 using UnityEngine;
 
@@ -16,7 +18,7 @@ namespace PurrNet
         
         public float remaining => _remaining;
         public bool isRunning => _isRunning;
-        
+
         public int remainingInt => Mathf.CeilToInt(_remaining);
         
         public Action onTimerEnd, onTimerStart, onTimerSecondTick;
@@ -25,6 +27,11 @@ namespace PurrNet
         {
             _ownerAuth = ownerAuth;
             _reconcileInterval = reconcileInterval;
+        }
+
+        private void LogValue(int obj)
+        {
+            PurrLogger.Log($"Remaining: {obj}");
         }
 
         public void OnTick(float delta)

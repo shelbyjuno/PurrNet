@@ -39,10 +39,17 @@ namespace PurrNet
         
         public PlayerID? owner => parent ? parent.owner : null;
         
-        public bool isController => isSpawned && (hasConnectedOwner ? isOwner : isServer);
+        public bool isController => parent && parent.isController;
 
-        public bool IsController(bool ownerHasAuthority) => ownerHasAuthority ? isController : isServer;
-
+        public bool IsController(bool ownerHasAuthority) => parent && parent.IsController(ownerHasAuthority);
+        
+        [UsedByIL]
+        public void Error(string message)
+        {
+            PurrLogger.LogError($"Module in {parent.GetType().Name} is null: <i>{message}</i>\n" +
+                                $"You can initialize it on Awake or override OnInitializeModules.", parent);
+        }
+        
         public virtual void OnSpawn() { }
 
         public virtual void OnSpawn(bool asServer) { }
@@ -79,12 +86,12 @@ namespace PurrNet
         }
 
         [UsedByIL]
-        public void RegisterModuleInternal(string moduleName, string type, NetworkModule module)
+        public void RegisterModuleInternal(string moduleName, string type, NetworkModule module, bool isNetworkIdentity)
         {
             var parentRef = this.parent;
             
             if (parentRef)
-                parentRef.RegisterModuleInternal(moduleName, type, module);
+                parentRef.RegisterModuleInternal(moduleName, type, module, isNetworkIdentity);
             else PurrLogger.LogError($"Registering module '{moduleName}' failed since it is not spawned.");
         }
 
@@ -199,5 +206,7 @@ namespace PurrNet
 
             return rpc;
         }
+
+        public virtual void OnInitializeModules() { }
     }
 }

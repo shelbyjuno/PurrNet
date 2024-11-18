@@ -489,10 +489,9 @@ namespace PurrNet.Codegen
                     else
                     {
                         code.Append(Instruction.Create(OpCodes.Ldarg_0));
-
-                        if (isNetworkClass)
-                             code.Append(Instruction.Create(OpCodes.Call, getNetworkManagerModule));
-                        else code.Append(Instruction.Create(OpCodes.Call, getNetworkManager));
+                        code.Append(isNetworkClass
+                            ? Instruction.Create(OpCodes.Call, getNetworkManagerModule)
+                            : Instruction.Create(OpCodes.Call, getNetworkManager));
                     }
 
                     var genericResponse = new GenericInstanceMethod(returnMode is ReturnMode.Task ? responder : responderUniTask);
@@ -1740,6 +1739,7 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Ldstr, field.FieldType.Name));
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldfld, field));
+                code.Append(Instruction.Create(OpCodes.Ldc_I4, isNetworkIdentity ? 1 : 0));
                 code.Append(Instruction.Create(OpCodes.Call, registerModule));
 
                 var endInstruction = Instruction.Create(OpCodes.Nop);
@@ -1770,10 +1770,29 @@ namespace PurrNet.Codegen
                     code.Append(Instruction.Create(OpCodes.Ldstr, '.' + field.Name));
                     code.Append(Instruction.Create(OpCodes.Call, concatMethod));
                 }
-
-                code.Append(Instruction.Create(OpCodes.Call, codeGenInitRef));
                 
+                code.Append(Instruction.Create(OpCodes.Call, codeGenInitRef));
                 code.Append(endInstruction);
+
+                if (!isNetworkIdentity)
+                {
+                    // if null
+                    var endInstruction2 = Instruction.Create(OpCodes.Nop);
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                    code.Append(Instruction.Create(OpCodes.Ldfld, field));
+                    code.Append(Instruction.Create(OpCodes.Brtrue, endInstruction2));
+
+                    // call error
+                    var errorMethod = module.GetTypeDefinition<NetworkModule>().GetMethod("Error").Import(module);
+
+                    code.Append(Instruction.Create(OpCodes.Ldarg_0));
+                    code.Append(Instruction.Create(OpCodes.Ldarg_1));
+                    code.Append(Instruction.Create(OpCodes.Ldstr, '.' + field.Name));
+                    code.Append(Instruction.Create(OpCodes.Call, concatMethod));
+                    code.Append(Instruction.Create(OpCodes.Call, errorMethod));
+
+                    code.Append(endInstruction2);
+                }
             }
 
             code.Append(Instruction.Create(OpCodes.Ret));

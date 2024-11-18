@@ -14,7 +14,7 @@ namespace PurrNet
         private byte _moduleId;
 
         [UsedByIL]
-        public void RegisterModuleInternal(string moduleName, string type, NetworkModule module)
+        public void RegisterModuleInternal(string moduleName, string type, NetworkModule module, bool isNetworkIdentity)
         {
             if (module == null)
             {
@@ -28,8 +28,14 @@ namespace PurrNet
                 }
                 
                 _modules.Add(null);
-                PurrLogger.LogError($"Module in {GetType().Name} is null: <i>{type}</i> {moduleName};\n" +
-                                    $"Ensure it isn't null once identity is spawned. A good place to initialize it could be in Awake().", this);
+
+                if (isNetworkIdentity)
+                {
+                    PurrLogger.LogError($"Module in {GetType().Name} is null: <i>{type}</i> {moduleName};\n" +
+                                        $"You can initialize it on Awake or override OnInitializeModules.",
+                        this);
+                }
+
                 return;
             }
 

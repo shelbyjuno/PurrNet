@@ -433,6 +433,11 @@ namespace PurrNet
             {
                 OnInitializeModules();
                 CallInitMethods();
+
+                foreach (var module in _externalModulesView)
+                {
+                    module.OnInitializeModules();
+                }
                 
                 _tickables.Clear();
                 RegisterEvents();
