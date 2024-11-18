@@ -218,11 +218,11 @@ namespace PurrNet.Codegen
             foreach (var field in type.Fields)
             {
                 // make field public
-                if (!field.IsPublic)
+                /*if (!field.IsPublic)
                 {
                     field.Attributes &= ~FieldAttributes.FieldAccessMask;
                     field.Attributes |= FieldAttributes.Assembly;
-                }
+                }*/
                 
                 var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
                 
