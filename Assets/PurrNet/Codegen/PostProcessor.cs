@@ -1886,36 +1886,11 @@ namespace PurrNet.Codegen
         
         private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, bool inheritsFromIdentity, HashSet<TypeReference> typesToGenSerializer)
         {
-            var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 
-                MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static, module.TypeSystem.Void);
-            type.Methods.Add(initMethod);
-            
-            var attributeType = module.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
-            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(module);
-            var attribute = new CustomAttribute(constructor);
-            
-            initMethod.CustomAttributes.Add(attribute);
-            attribute.ConstructorArguments.Add(new CustomAttributeArgument(module.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
-            
-            initMethod.Body.InitLocals = true;
-
-            var code = initMethod.Body.GetILProcessor();
-            
-            if (inheritsFromIdentity)
-            {
-                // typesToGenSerializer.Add(type);
-                /*var genericRegister = new GenericInstanceMethod(registerMethod);
-                genericRegister.GenericArguments.Add(type);
-                code.Append(Instruction.Create(OpCodes.Call, genericRegister));*/
-            }
-            
             foreach (var usedType in usedTypes)
             {
                 if (IsTypeInOwnModule(usedType, module))
                     typesToGenSerializer.Add(usedType);
             }
-            
-            code.Append(Instruction.Create(OpCodes.Ret));
         }
     }
 }
