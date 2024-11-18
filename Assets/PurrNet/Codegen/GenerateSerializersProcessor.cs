@@ -52,6 +52,7 @@ namespace PurrNet.Codegen
             }
             
             bool isNetworkIdentity = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkIdentity).FullName);
+            bool isNetworkModule = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkModule).FullName);
             
             if (!isNetworkIdentity && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) &&
                 !HasInterface(resolvedType, typeof(INetworkedData)))
@@ -111,6 +112,11 @@ namespace PurrNet.Codegen
                 var register = registerMethod.Body.GetILProcessor();
                 GenerateRegisterMethodForIdentity(type, register);
                 serializerClass.Methods.Add(registerMethod);
+                return;
+            }
+
+            if (isNetworkModule)
+            {
                 return;
             }
             
@@ -218,11 +224,11 @@ namespace PurrNet.Codegen
             foreach (var field in type.Fields)
             {
                 // make field public
-                /*if (!field.IsPublic)
+                if (!field.IsPublic)
                 {
                     field.Attributes &= ~FieldAttributes.FieldAccessMask;
                     field.Attributes |= FieldAttributes.Assembly;
-                }*/
+                }
                 
                 var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
                 
