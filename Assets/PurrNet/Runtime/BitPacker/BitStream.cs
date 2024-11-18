@@ -33,7 +33,7 @@ namespace PurrNet.Packing
 
         public void Dispose()
         {
-            BitPackerPool.Destroy(this);
+            BitStreamPool.Free(this);
         }
         
         public ByteData ToByteData()
@@ -120,41 +120,67 @@ namespace PurrNet.Packing
 
             return result;
         }
-        
-        public void Write(IData data)
-        {
-            data.Write(this);
-        }
-        
-        public void Read(ref IData data)
-        {
-            data.Read(this);
-        }
-        
-        public void Write(ISimpleData data)
-        {
-            data.Pack(this);
-        }
-        
-        public void Read(ref ISimpleData data)
-        {
-            data.Pack(this);
-        }
 
         public void ReadBytes(IList<byte> bytes)
         {
-            EnsureBitsExist(bytes.Count * 8);
-            
-            for (int i = 0; i < bytes.Count; i++)
-                bytes[i] = (byte)ReadBits(8);
+            int count = bytes.Count;
+
+            EnsureBitsExist(count * 8);
+
+            int excess = count % 8;
+            int fullChunks = count / 8;
+
+            int index = 0;
+
+            // Process excess bytes (remaining bytes before full 64-bit chunks)
+            for (int i = 0; i < excess; i++)
+            {
+                bytes[index++] = (byte)ReadBits(8);
+            }
+
+            // Process full 64-bit chunks
+            for (int i = 0; i < fullChunks; i++)
+            {
+                var longValue = ReadBits(64);
+
+                for (int j = 0; j < 8; j++)
+                {
+                    if (index < count)
+                    {
+                        bytes[index++] = (byte)(longValue >> (j * 8));
+                    }
+                }
+            }
         }
         
         public void WriteBytes(IReadOnlyList<byte> bytes)
         {
             EnsureBitsExist(bytes.Count * 8);
-            
-            for (int i = 0; i < bytes.Count; i++)
-                WriteBits(bytes[i], 8);
+
+            int count = bytes.Count;
+            int fullChunks = count / 8; // Number of full 64-bit chunks
+            int excess = count % 8;     // Remaining bytes after full chunks
+
+            int index = 0;
+
+            // Process full 64-bit chunks
+            for (int i = 0; i < fullChunks; i++)
+            {
+                ulong longValue = 0;
+
+                // Combine 8 bytes into a single 64-bit value
+                for (int j = 0; j < 8; j++)
+                    longValue |= (ulong)bytes[index++] << (j * 8);
+
+                // Write the 64-bit chunk
+                WriteBits(longValue, 64);
+            }
+
+            // Process remaining excess bytes
+            for (int i = 0; i < excess; i++)
+            {
+                WriteBits(bytes[index++], 8);
+            }
         }
     }
 }

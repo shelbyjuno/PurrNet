@@ -6,25 +6,18 @@ namespace PurrNet.Packing
 {
     public static class PackCollections
     {
-        static void Read(BitStream stream, ref NetAnimatorAction value, int t)
-        {
-            byte value2 = default(byte);
-            Packer<byte>.Read(stream, ref value2);
-            value = (NetAnimatorAction)value2;
-        }
-        
         [UsedByIL]
         public static void RegisterList<T>()
         {
-            Packer.RegisterWriter<List<T>>(WriteList);
-            Packer.RegisterReader<List<T>>(ReadList);
+            Packer.RegisterWriterSilent<List<T>>(WriteList);
+            Packer.RegisterReaderSilent<List<T>>(ReadList);
         }
         
         [UsedByIL]
         public static void RegisterArray<T>()
         {
-            Packer.RegisterWriter<T[]>(WriteList);
-            Packer.RegisterReader<T[]>(ReadArray);
+            Packer.RegisterWriterSilent<T[]>(WriteList);
+            Packer.RegisterReaderSilent<T[]>(ReadArray);
         }
         
         [UsedByIL]
@@ -32,12 +25,14 @@ namespace PurrNet.Packing
         {
             if (value == null)
             {
-                Packer<int>.Write(stream, -1);
+                Packer<bool>.Write(stream, false);
                 return;
             }
             
+            Packer<bool>.Write(stream, true);
+
             int length = value.Count;
-            Packer<int>.Write(stream, length);
+            stream.WriteInteger(length, 31);
             
             for (int i = 0; i < length; i++)
                 Packer<T>.Write(stream, value[i]);
@@ -46,18 +41,21 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void ReadList<T>(this BitStream stream, ref List<T> value)
         {
-            int length = default;
+            bool hasValue = default;
+            stream.Read(ref hasValue);
             
-            Packer<int>.Read(stream, ref length);
-            
-            if (length == -1)
+            if (!hasValue)
             {
                 value = null;
                 return;
             }
             
+            long length = default;
+            
+            stream.ReadInteger(ref length, 31);
+            
             if (value == null)
-                 value = new List<T>(length);
+                 value = new List<T>((int)length);
             else value.Clear();
             
             for (int i = 0; i < length; i++)
@@ -71,9 +69,18 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void ReadArray<T>(this BitStream stream, ref T[] value)
         {
-            int length = default;
+            bool hasValue = default;
+            stream.Read(ref hasValue);
             
-            Packer<int>.Read(stream, ref length);
+            if (!hasValue)
+            {
+                value = null;
+                return;
+            }
+            
+            long length = default;
+            
+            stream.ReadInteger(ref length, 31);
             
             if (length == -1)
             {
@@ -84,7 +91,7 @@ namespace PurrNet.Packing
             if (value == null)
                 value = new T[length];
             else if (value.Length != length)
-                Array.Resize(ref value, length);
+                Array.Resize(ref value, (int)length);
             
             for (int i = 0; i < length; i++)
                 Packer<T>.Read(stream, ref value[i]);

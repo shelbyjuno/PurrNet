@@ -2,26 +2,26 @@
 
 namespace PurrNet.Packing
 {
-    public class BitPackerPool : GenericPool<BitStream>
+    public class BitStreamPool : GenericPool<BitStream>
     {
-        private static readonly BitPackerPool _instance;
+        private static readonly BitStreamPool _instance;
         
-        static BitPackerPool() => _instance = new BitPackerPool();
+        static BitStreamPool() => _instance = new BitStreamPool();
 
         static BitStream Factory() => new();
 
         static void Reset(BitStream list) => list.ResetPosition();
         
-        public BitPackerPool() : base(Factory, Reset) { }
+        public BitStreamPool() : base(Factory, Reset) { }
         
-        public static BitStream Instantiate(bool readMode)
+        public static BitStream Get(bool readMode = false)
         {
             var packer = _instance.Allocate();
             packer.ResetMode(readMode);
             return packer;
         }
 
-        public static void Destroy(BitStream stream)
+        public static void Free(BitStream stream)
         {
             _instance.Delete(stream);
         }

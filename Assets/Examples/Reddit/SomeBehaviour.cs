@@ -1,37 +1,40 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using PurrNet;
 using PurrNet.Logging;
 using PurrNet.Packing;
 
-public struct SomeData
+public struct SomeNetworkedData
+{
+    public int data;
+    public int[] test;
+    public List<SomeDataB> testf;
+}
+
+public struct SomeDataB
 {
     public int data;
 }
 
 public class SomeBehaviour : NetworkIdentity
 {
-    SyncTimer _timer = new ();
-    
-    protected override async void OnSpawned(bool asServer)
+    protected override void OnSpawned(bool asServer)
     {
-        PurrLogger.Log($"OnSpawned ({asServer})", this);
-
         if (!asServer)
         {
-            var stream = new BitStream();
-            Packer<SomeData>.Write(stream, new SomeData { data = 69 });
+            using var stream = BitStreamPool.Get();
+            var data = new SomeNetworkedData { data = 69 };
+            
+            Packer<SomeNetworkedData>.Write(stream, data);
+            
             PurrLogger.Log($"Stream size: {stream.length}", this);
-            /*var assetPath = new DirectoryInfo(".").Name;
-            Debug.Log("Sending: " + assetPath);
-            var res = await CalculateSomething(this, new SomeData { data = 59 });
-            Debug.Log("Result: " + res);*/
         }
     }
     
     [ServerRpc(requireOwnership: false)]
-    Task<bool> CalculateSomething(SomeBehaviour reference, SomeData data)
+    Task<bool> CalculateSomething(SomeBehaviour reference, SomeNetworkedData networkedData, List<int> test, List<float> rt, SomeDataB rf)
     {
-        PurrLogger.Log($"CalculateSomething: {data.data}", this);
-        return Task.FromResult(data.data == 69);
+        PurrLogger.Log($"CalculateSomething: {networkedData.data}", this);
+        return Task.FromResult(networkedData.data == 69);
     }
 }

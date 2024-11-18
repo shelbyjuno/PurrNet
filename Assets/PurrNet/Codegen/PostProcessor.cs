@@ -785,6 +785,21 @@ namespace PurrNet.Codegen
             IEnumerator
         }
         
+        private static bool IsGeneric(TypeReference typeRef, Type type)
+        {
+            // Ensure method has a generic return type
+            if (typeRef is GenericInstanceType genericReturnType)
+            {
+                // Resolve the element type to compare against Task<>
+                var resolvedType = genericReturnType.ElementType.Resolve();
+
+                // Check if the resolved type matches Task<>
+                return resolvedType != null && resolvedType.FullName == type.FullName;
+            }
+
+            return false;
+        }
+        
         private static bool IsGeneric(MethodReference method, Type type)
         {
             // Ensure method has a generic return type
@@ -1659,9 +1674,6 @@ namespace PurrNet.Codegen
 
         private static void AddNestedTypes(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
         {
-            if (resolved == null)
-                return;
-            
             foreach (var field in resolved.Fields)
             {
                 if (!visited.Add(field.FieldType))
@@ -1845,6 +1857,18 @@ namespace PurrNet.Codegen
         
         public static bool IsTypeInOwnModule(TypeReference typeReference, ModuleDefinition ownModule)
         {
+            if (IsGeneric(typeReference, typeof(Dictionary<,>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(HashSet<>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(List<>)))
+                return true;
+
+            if (typeReference is ArrayType)
+                return true;
+            
             // Check if the type's module matches our own module
             if (typeReference.Module != ownModule)
                 return false;
@@ -1859,7 +1883,7 @@ namespace PurrNet.Codegen
 
             return true;
         }
-
+        
         private static void GenerateExecuteFunction(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> usedTypes, bool inheritsFromIdentity, HashSet<TypeReference> typesToGenSerializer)
         {
             var initMethod = new MethodDefinition($"PurrInitMethod_{type.Name}_{type.Namespace}_Generated", 

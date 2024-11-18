@@ -101,12 +101,22 @@ namespace PurrNet.Packing
             PurrLogger.LogError($"Writer for type '{typeof(T)}' already exists and cannot be overwritten.");
         }
         
+        public static void RegisterWriterSilent<T>(WriteFunc<T> a)
+        {
+            _writers.TryAdd(typeof(T), new PackerHelper(a.Method));
+        }
+        
         public static void RegisterReader<T>(ReadFunc<T> b)
         {
             if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
                 return;
             
             PurrLogger.LogError($"Reader for type '{typeof(T)}' already exists and cannot be overwritten.");
+        }
+        
+        public static void RegisterReaderSilent<T>(ReadFunc<T> b)
+        {
+            _readers.TryAdd(typeof(T), new PackerHelper(b.Method));
         }
         
         internal static bool TryGetReader<T>(out PackerHelper helper)

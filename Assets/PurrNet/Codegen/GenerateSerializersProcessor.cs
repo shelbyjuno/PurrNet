@@ -18,13 +18,38 @@ namespace PurrNet.Codegen
             List,
             Array
         }
+
+        static string PrettyTypeName(TypeDefinition typeDef, TypeReference typeRef)
+        {
+            // print full name with generic arguments
+            switch (typeRef)
+            {
+                case GenericInstanceType genericInstance:
+                {
+                    var genericArgs = string.Join(", ", genericInstance.GenericArguments.Select(a => a.Name));
+                    var name = $"{typeDef.Name[..^2]}_{genericArgs}";
+                    return name;
+                }
+                case ArrayType arrayType:
+                    return $"Array_{PrettyTypeName(typeDef, arrayType.ElementType)}";
+                default:
+                    return typeDef.Name;
+            }
+        }
         
         public static void HandleType(AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
         {
             var resolvedType = type.Resolve();
 
             if (resolvedType == null)
+            {
+                messages.Add(new DiagnosticMessage
+                {
+                    MessageData = $"Could not resolve type {type.FullName}",
+                    DiagnosticType = DiagnosticType.Error
+                });
                 return;
+            }
 
             if (PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName))
                 return;
@@ -32,9 +57,14 @@ namespace PurrNet.Codegen
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
             var mainmodule = assembly.MainModule;
             
+            string namespaceName = type.Namespace;
+            if (string.IsNullOrWhiteSpace(namespaceName))
+                 namespaceName = "PurrNet.CodeGen.Serializers";
+            else namespaceName += ".PurrNet.CodeGen.Serializers";
+            
             // create static class
-            var serializerClass = new TypeDefinition($"{assembly.MainModule.Name}.CodeGen.Serializers", 
-                $"{type.Name}_Serializer",
+            var serializerClass = new TypeDefinition(namespaceName, 
+                $"{PrettyTypeName(resolvedType, type)}_Serializer",
                 TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Public,
                 assembly.MainModule.TypeSystem.Object
             );
@@ -75,7 +105,7 @@ namespace PurrNet.Codegen
             var writeMethodP = packerType.GetMethod("Write").Import(mainmodule);
             
             var write = writeMethod.Body.GetILProcessor();
-            GenerateMethod(true, writeMethod, writeMethodP, resolvedType, write, mainmodule);
+            GenerateMethod(true, writeMethod, writeMethodP, resolvedType, write, mainmodule, valueArg);
             serializerClass.Methods.Add(writeMethod);
             
             // create static read method
@@ -89,7 +119,7 @@ namespace PurrNet.Codegen
             };
             
             var read = readMethod.Body.GetILProcessor();
-            GenerateMethod(false, readMethod, readMethodP, resolvedType, read, mainmodule);
+            GenerateMethod(false, readMethod, readMethodP, resolvedType, read, mainmodule, valueArg);
             serializerClass.Methods.Add(readMethod);
             
             RegisterSerializersProcessor.HandleType(type.Module, serializerClass, messages);
@@ -124,9 +154,15 @@ namespace PurrNet.Codegen
             
             il.Emit(OpCodes.Ret);
         }
+        
+        static bool HasInterface(TypeDefinition def, Type interfaceType)
+        {
+            return def.Interfaces.Any(i => i.InterfaceType.FullName == interfaceType.FullName);
+        }
 
         private static void GenerateMethod(
-            bool isWriting, MethodDefinition method, MethodReference serialize, TypeDefinition type, ILProcessor il, ModuleDefinition mainmodule)
+            bool isWriting, MethodDefinition method, MethodReference serialize, TypeDefinition type, ILProcessor il,
+            ModuleDefinition mainmodule, ParameterDefinition valueArg)
         {
             var packerType = mainmodule.GetTypeDefinition(typeof(Packer<>)).Import(mainmodule);
 
@@ -136,6 +172,12 @@ namespace PurrNet.Codegen
                 return;
             }
 
+            if (HasInterface(type, typeof(INetworkedData)))
+            {
+                HandleIData(isWriting, type, il, mainmodule, valueArg);
+                return;
+            }
+            
             foreach (var field in type.Fields)
             {
                 // make field public
@@ -154,6 +196,30 @@ namespace PurrNet.Codegen
                 il.Emit(OpCodes.Call, genericM);
             }
             
+            il.Emit(OpCodes.Ret);
+        }
+
+        private static void HandleIData(bool isWriting, TypeDefinition type,
+            ILProcessor il, ModuleDefinition mainmodule, ParameterDefinition valueArg)
+        {
+            if (isWriting)
+            {
+                var writeData = type.GetMethod("Write").Import(mainmodule);
+
+                il.Emit(OpCodes.Ldarga_S, valueArg);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, writeData);
+            }
+            else
+            {
+                var readData = type.GetMethod("Read").Import(mainmodule);
+
+                il.Emit(OpCodes.Ldarg_S, valueArg);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, readData);
+            }
+            
+                
             il.Emit(OpCodes.Ret);
         }
 
