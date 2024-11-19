@@ -19,7 +19,7 @@ namespace PurrNet.Editor
             if (!_foldout) return HeaderHeight;
             
             float totalHeight = HeaderHeight + ColumnHeaderHeight;
-            int count = keysProp.arraySize;
+            int count = keysProp?.arraySize ?? 0;
             totalHeight += (EditorGUIUtility.singleLineHeight + ElementPadding) * count;
             totalHeight += BottomPadding;
             
@@ -53,7 +53,8 @@ namespace PurrNet.Editor
                 
                 yOffset += ColumnHeaderHeight;
 
-                for (int i = 0; i < keysProp.arraySize; i++)
+                int count = keysProp?.arraySize ?? 0;
+                for (int i = 0; i < count; i++)
                 {
                     float elementHeight = EditorGUIUtility.singleLineHeight;
                     Rect keyRect = new Rect(position.x, position.y + yOffset, position.width * 0.45f, elementHeight);
