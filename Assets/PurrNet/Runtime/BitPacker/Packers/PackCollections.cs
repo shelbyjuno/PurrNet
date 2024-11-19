@@ -9,15 +9,15 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void RegisterList<T>()
         {
-            Packer<List<T>>.RegisterWriterSilent(WriteList);
-            Packer<List<T>>.RegisterReaderSilent(ReadList);
+            Packer<List<T>>.RegisterWriter(WriteList);
+            Packer<List<T>>.RegisterReader(ReadList);
         }
         
         [UsedByIL]
         public static void RegisterArray<T>()
         {
-            Packer<T[]>.RegisterWriterSilent(WriteList);
-            Packer<T[]>.RegisterReaderSilent(ReadArray);
+            Packer<T[]>.RegisterWriter(WriteList);
+            Packer<T[]>.RegisterReader(ReadArray);
         }
         
         [UsedByIL]

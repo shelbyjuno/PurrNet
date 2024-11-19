@@ -1,3 +1,4 @@
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packing;
 using PurrNet.Utils;
@@ -9,6 +10,7 @@ namespace PurrNet
         [UsedByIL]
         public static void WriteObject(this BitStream stream, object value)
         {
+            PurrLogger.Log("WriteObject");
             bool isNull = value == null;
             
             stream.Write(isNull);
@@ -26,6 +28,8 @@ namespace PurrNet
         [UsedByIL]
         public static void ReadObject(this BitStream stream, ref object value)
         {
+            PurrLogger.Log("ReadObject");
+
             bool isNull = false;
             
             stream.Read(ref isNull);

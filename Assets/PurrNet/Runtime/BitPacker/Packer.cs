@@ -17,10 +17,7 @@ namespace PurrNet.Packing
         public static void RegisterWriter(WriteFunc<T> a)
         {
             if (_write != null)
-            {
-                PurrLogger.LogError($"Writer for type '{typeof(T)}' is already registered.");
                 return;
-            }
             
             Packer.RegisterWriter(typeof(T), a.Method);
             _write = a;
@@ -29,24 +26,9 @@ namespace PurrNet.Packing
         public static void RegisterReader(ReadFunc<T> b)
         {
             if (_read != null)
-            {
-                PurrLogger.LogError($"Reader for type '{typeof(T)}' is already registered.");
                 return;
-            }
             
             Packer.RegisterReader(typeof(T), b.Method);
-            _read = b;
-        }
-        
-        public static void RegisterWriterSilent(WriteFunc<T> a)
-        {
-            Packer.RegisterWriterSilent(typeof(T), a.Method);
-            _write = a;
-        }
-        
-        public static void RegisterReaderSilent(ReadFunc<T> b)
-        {
-            Packer.RegisterReaderSilent(typeof(T), b.Method);
             _read = b;
         }
         
@@ -136,9 +118,15 @@ namespace PurrNet.Packing
             
             try
             {
+                if (!type.IsClass)
+                    value = Activator.CreateInstance(type);
+                
                 _args[0] = stream;
                 _args[1] = value;
                 method.Invoke(null, _args);
+                
+                if (!type.IsClass)
+                    value = _args[1];
             }
             catch (Exception e)
             {
