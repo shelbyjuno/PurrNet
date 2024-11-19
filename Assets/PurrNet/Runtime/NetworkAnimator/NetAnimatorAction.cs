@@ -203,7 +203,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetTrigger : IAutoNetworkedData, IApplyOnAnimator
+    public partial struct SetTrigger : IAutoNetworkedData, IApplyOnAnimator
     {
         public int nameHash;
         

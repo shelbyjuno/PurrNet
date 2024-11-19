@@ -14,7 +14,6 @@ public struct SomeDataB
 {
     public int data;
 }
-
 public class SomeBehaviour : NetworkIdentity
 {
     protected override void OnSpawned(bool asServer)
@@ -22,12 +21,21 @@ public class SomeBehaviour : NetworkIdentity
         if (!asServer)
         {
             using var stream = BitStreamPool.Get();
+            /*List<int> test = new List<int> { 1, 2, 3, 4, 5 };
             
+            Packer<List<int>>.Write(stream, test);
+            
+            stream.ResetPositionAndMode(true);
+            test.Clear();
+            test.Add(6);
+            Packer<List<int>>.Read(stream, ref test);
+            
+            PurrLogger.Log($"Test: {test.Count}", this);*/
             Packer<SomeBehaviour>.Write(stream, this);
             PurrLogger.Log($"Stream size: {stream.length}", this);
 
+            SomeBehaviour data = null;
             stream.ResetPositionAndMode(true);
-            SomeBehaviour data = this;
             
             Packer<SomeBehaviour>.Read(stream, ref data);
             PurrLogger.Log($"Data: {data == null}", data);

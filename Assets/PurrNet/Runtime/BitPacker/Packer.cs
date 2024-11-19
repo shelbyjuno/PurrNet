@@ -1,11 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using JetBrains.Annotations;
 using PurrNet.Logging;
-using PurrNet.Modules;
-using PurrNet.Utils;
-using UnityEngine;
 
 namespace PurrNet.Packing
 {
@@ -15,180 +11,139 @@ namespace PurrNet.Packing
     
     public static class Packer<T>
     {
-        static readonly WriteFunc<T> _write;
-        static readonly ReadFunc<T> _read;
+        static WriteFunc<T> _write;
+        static ReadFunc<T> _read;
 
-        static Packer()
+        public static void RegisterWriter(WriteFunc<T> a)
         {
-            if (Packer.TryGetReader<T>(out var reader))
+            if (_write != null)
             {
-                _read = reader.ReadData;
+                PurrLogger.LogError($"Writer for type '{typeof(T)}' is already registered.");
+                return;
             }
-            else throw new Exception($"No reader found for type '{typeof(T)}'.");
-
             
-            if (Packer.TryGetWriter<T>(out var writer))
+            Packer.RegisterWriter(typeof(T), a.Method);
+            _write = a;
+        }
+        
+        public static void RegisterReader(ReadFunc<T> b)
+        {
+            if (_read != null)
             {
-                _write = writer.WriteData;
+                PurrLogger.LogError($"Reader for type '{typeof(T)}' is already registered.");
+                return;
             }
-            else throw new Exception($"No writer found for type '{typeof(T)}'.");
+            
+            Packer.RegisterReader(typeof(T), b.Method);
+            _read = b;
         }
         
-        /// <summary>
-        /// This method is used to write the value to the stream.
-        /// The value can be null.
-        /// </summary>
-        public static void Write(BitStream stream, [CanBeNull] T value)
+        public static void RegisterWriterSilent(WriteFunc<T> a)
         {
-            _write.Invoke(stream, value);
+            Packer.RegisterWriterSilent(typeof(T), a.Method);
+            _write = a;
         }
         
-        /// <summary>
-        /// This method is used to read the value from the stream.
-        /// The value can be null.
-        /// </summary>
-        public static void Read(BitStream stream, [CanBeNull] ref T value)
+        public static void RegisterReaderSilent(ReadFunc<T> b)
         {
-            _read.Invoke(stream, ref value);
+            Packer.RegisterReaderSilent(typeof(T), b.Method);
+            _read = b;
         }
         
-        /// <summary>
-        /// Packs the value into the stream.
-        /// If the stream is writing, it will write the value and won't change the value.
-        /// If the stream is reading, it will read the value and change the value.
-        /// </summary>
-        public static void Pack(BitStream stream, [CanBeNull] ref T value)
+        public static void Write(BitStream stream, T value)
         {
-            if (stream.isWriting)
-                 Write(stream, value);
-            else Read(stream, ref value);
+            try
+            {
+                _write(stream, value);
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to write value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
+            }
+        }
+        
+        public static void Read(BitStream stream, ref T value)
+        {
+            try
+            {
+                _read(stream, ref value);
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to read value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
+            }
         }
     }
-    
+
     public static class Packer
     {
-        internal readonly unsafe struct PackerHelper
+        static readonly Dictionary<Type, MethodInfo> _writeMethods = new ();
+        static readonly Dictionary<Type, MethodInfo> _readMethods = new ();
+        
+        public static void RegisterWriter(Type type, MethodInfo method)
         {
-            readonly void* funcPtr;
-            
-            public PackerHelper(MethodInfo funcPtr)
-            {
-                this.funcPtr = funcPtr.MethodHandle.GetFunctionPointer().ToPointer();
-            }
-            
-            public void WriteData<T>(BitStream stream, T value)
-            {
-                try
-                {
-                    ((delegate* managed<BitStream, T, void>)funcPtr)(stream, value);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-            }
-            
-            public void ReadData<T>(BitStream stream, ref T value)
-            {
-                try
-                {
-                    ((delegate* managed<BitStream, ref T, void>)funcPtr)(stream, ref value);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-            }
+            if (!_writeMethods.TryAdd(type, method))
+                PurrLogger.LogError($"Writer for type '{type}' is already registered.");
         }
         
-        static readonly Dictionary<Type, PackerHelper> _writers = new ();
-        static readonly Dictionary<Type, PackerHelper> _readers = new ();
-        
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Init()
+        public static void RegisterReader(Type type, MethodInfo method)
         {
-            Clear();
-        }
-
-        private static void Clear()
-        {
-            _writers.Clear();
-            _readers.Clear();
-        }
-
-        [UsedByIL]
-        public static void RegisterWriter<T>(WriteFunc<T> a)
-        {
-            if (_writers.TryAdd(typeof(T), new PackerHelper(a.Method)))
-                return;
-            
-            PurrLogger.LogError($"Writer for type '{typeof(T)}' already exists and cannot be overwritten.");
+            if (!_readMethods.TryAdd(type, method))
+                PurrLogger.LogError($"Reader for type '{type}' is already registered.");
         }
         
-        public static void RegisterWriterSilent<T>(WriteFunc<T> a)
+        public static void RegisterWriterSilent(Type type, MethodInfo method)
         {
-            _writers.TryAdd(typeof(T), new PackerHelper(a.Method));
+            _writeMethods[type] = method;
         }
         
-        [UsedByIL]
-        public static void RegisterReader<T>(ReadFunc<T> b)
+        public static void RegisterReaderSilent(Type type, MethodInfo method)
         {
-            if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
-            {
-                Hasher.PrepareType<T>();
-                return;
-            }
-            
-            PurrLogger.LogError($"Reader for type '{typeof(T)}' already exists and cannot be overwritten.");
+            _readMethods[type] = method;
         }
         
-        public static void RegisterReaderSilent<T>(ReadFunc<T> b)
-        {
-            if (_readers.TryAdd(typeof(T), new PackerHelper(b.Method)))
-                Hasher.PrepareType<T>();
-        }
-        
-        internal static bool TryGetReader<T>(out PackerHelper helper)
-        {
-            if (_readers.TryGetValue(typeof(T), out helper))
-                return true;
-            return false;
-        }
-        
-        internal static bool TryGetWriter<T>(out PackerHelper helper)
-        {
-            if (_writers.TryGetValue(typeof(T), out helper))
-                return true;
-            return false;
-        }
-        
-        public static void Write<T>(BitStream stream, T value)
-        {
-            if (_writers.TryGetValue(typeof(T), out var helper))
-                helper.WriteData(stream, value);
-            else PurrLogger.LogError($"No packer found for type '{typeof(T)}'.");
-        }
+        static readonly object[] _args = new object[2];
         
         public static void Write(BitStream stream, object value)
         {
             var type = value.GetType();
-            if (_writers.TryGetValue(type, out var helper))
-                helper.WriteData(stream, value);
-            else PurrLogger.LogError($"No packer found for type '{type}'.");
+            
+            if (!_writeMethods.TryGetValue(type, out var method))
+            {
+                PurrLogger.LogError($"No writer for type '{type}' is registered.");
+                return;
+            }
+            
+            try
+            {
+                _args[0] = stream;
+                _args[1] = value;
+                method.Invoke(null, _args);
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to write value of type '{type}'.\n{e.Message}\n{e.StackTrace}");
+            }
         }
         
         public static void Read(BitStream stream, Type type, ref object value)
         {
-            if (_readers.TryGetValue(type, out var helper))
+            if (!_readMethods.TryGetValue(type, out var method))
             {
-                bool isReferenceType = type.IsClass;
-
-                if (!isReferenceType)
-                    value = Activator.CreateInstance(type);
-                
-                helper.ReadData(stream, ref value);
+                PurrLogger.LogError($"No reader for type '{type}' is registered.");
+                return;
             }
-            else PurrLogger.LogError($"No packer found for type '{type}'.");
+            
+            try
+            {
+                _args[0] = stream;
+                _args[1] = value;
+                method.Invoke(null, _args);
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to read value of type '{type}'.\n{e.Message}\n{e.StackTrace}");
+            }
         }
     }
 }

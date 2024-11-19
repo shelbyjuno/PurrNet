@@ -110,7 +110,6 @@ namespace PurrNet.Codegen
             if (writeTypes.Count == 0 && readTypes.Count == 0)
                 return;
             
-            var packerType = module.GetTypeDefinition(typeof(Packer)).Import(module);
             var writeFuncDelegate = module.GetTypeDefinition(typeof(WriteFunc<>)).Import(module);
             var readFuncDelegate = module.GetTypeDefinition(typeof(ReadFunc<>)).Import(module);
             
@@ -118,9 +117,6 @@ namespace PurrNet.Codegen
             var attributeType = module.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
             var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(module);
             var attribute = new CustomAttribute(constructor);
-
-            var registerWriter = packerType.GetMethod("RegisterWriter", true).Import(module);
-            var registerReader = packerType.GetMethod("RegisterReader", true).Import(module);
             
             registerMethod.CustomAttributes.Add(attribute);
             attribute.ConstructorArguments.Add(new CustomAttributeArgument(module.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
@@ -138,9 +134,10 @@ namespace PurrNet.Codegen
                 
                 writeMethod.Resolve().AggressiveInlining = true;
                 
-                var genericWrite = new GenericInstanceMethod(registerWriter);
-                genericWrite.GenericArguments.Add(writeType.type.Import(module));
-                
+                var packerType = module.GetTypeDefinition(typeof(Packer<>)).Import(module);
+                var genPackerType = new GenericInstanceType(packerType);
+                genPackerType.GenericArguments.Add(writeType.type.Import(module));
+
                 var writeFuncGeneric = new GenericInstanceType(writeFuncDelegate);
                 writeFuncGeneric.GenericArguments.Add(writeType.type.Import(module));
                 
@@ -160,6 +157,18 @@ namespace PurrNet.Codegen
                 il.Emit(OpCodes.Ldnull);
                 il.Emit(OpCodes.Ldftn, writeMethod);
                 il.Emit(OpCodes.Newobj, delegateConstructorRef);
+                
+                var write = genPackerType.GetMethod("RegisterWriter", false).Import(module);
+                var genericWrite = new MethodReference("RegisterWriter", module.TypeSystem.Void, genPackerType)
+                {
+                    HasThis = write.HasThis,
+                    ExplicitThis = write.ExplicitThis,
+                    CallingConvention = write.CallingConvention
+                };
+
+                foreach (var param in write.Parameters)
+                    genericWrite.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
+                
                 il.Emit(OpCodes.Call, genericWrite);
             }
             
@@ -171,7 +180,7 @@ namespace PurrNet.Codegen
                 readMethod.Resolve().AggressiveInlining = true;
 
                 // Create a GenericInstanceMethod for Packer.RegisterReader<T>
-                var genericRead = new GenericInstanceMethod(registerReader);
+                
                 TypeReference typeArgument = readType.type.Import(module);
                 
                 // If the type is a ByReferenceType (e.g., ref int), get the base type
@@ -180,7 +189,9 @@ namespace PurrNet.Codegen
                     typeArgument = byRefType.ElementType; // Use the base type (e.g., int from ref int)
                 }
                 
-                genericRead.GenericArguments.Add(typeArgument);
+                var packerType = module.GetTypeDefinition(typeof(Packer<>)).Import(module);
+                var genPackerType = new GenericInstanceType(packerType);
+                genPackerType.GenericArguments.Add(typeArgument);
 
                 // Create the generic delegate type (ReadFunc<T>)
                 var readFuncGeneric = new GenericInstanceType(readFuncDelegate);
@@ -208,7 +219,19 @@ namespace PurrNet.Codegen
                 il.Emit(OpCodes.Ldnull);                     // Load 'null' for the target instance (static method)
                 il.Emit(OpCodes.Ldftn, readMethod);          // Load the method pointer
                 il.Emit(OpCodes.Newobj, delegateConstructorRef); // Create the delegate instance
-                il.Emit(OpCodes.Call, genericRead);          // Call RegisterReader<T> with the delegate
+                
+                var read = genPackerType.GetMethod("RegisterReader", false).Import(module);
+                var genericread = new MethodReference("RegisterReader", module.TypeSystem.Void, genPackerType)
+                {
+                    HasThis = read.HasThis,
+                    ExplicitThis = read.ExplicitThis,
+                    CallingConvention = read.CallingConvention
+                };
+
+                foreach (var param in read.Parameters)
+                    genericread.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
+                
+                il.Emit(OpCodes.Call, genericread);
             }
             
             il.Emit(OpCodes.Ret);
