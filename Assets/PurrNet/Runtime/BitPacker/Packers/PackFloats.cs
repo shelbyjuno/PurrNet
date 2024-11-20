@@ -6,41 +6,41 @@ namespace PurrNet.Packing
     public static class PackFloats
     {
         [UsedByIL]
-        public static void Write(this BitStream stream, Half half)
+        public static void Write(this BitPacker packer, Half half)
         {
-            stream.Write(half.Value);
+            packer.Write(half.Value);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Half half)
+        public static void Read(this BitPacker packer, ref Half half)
         {
             ushort data = default;
-            stream.Read(ref data);
+            packer.Read(ref data);
             half = new Half(data);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, float data)
+        public static void Write(this BitPacker packer, float data)
         {
-            stream.WriteBits((ulong)BitConverter.SingleToInt32Bits(data), 32);
+            packer.WriteBits((ulong)BitConverter.SingleToInt32Bits(data), 32);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref float data)
+        public static void Read(this BitPacker packer, ref float data)
         {
-            data = BitConverter.Int32BitsToSingle((int)stream.ReadBits(32));
+            data = BitConverter.Int32BitsToSingle((int)packer.ReadBits(32));
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, double data)
+        public static void Write(this BitPacker packer, double data)
         {
-            stream.WriteBits((ulong)BitConverter.DoubleToInt64Bits(data), 64);
+            packer.WriteBits((ulong)BitConverter.DoubleToInt64Bits(data), 64);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref double data)
+        public static void Read(this BitPacker packer, ref double data)
         {
-            data = BitConverter.Int64BitsToDouble((long)stream.ReadBits(64));
+            data = BitConverter.Int64BitsToDouble((long)packer.ReadBits(64));
         }
     }
 }

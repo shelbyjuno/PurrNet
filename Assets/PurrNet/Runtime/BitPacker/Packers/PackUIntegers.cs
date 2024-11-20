@@ -5,39 +5,39 @@ namespace PurrNet.Packing
     public static class PackUIntegers
     {
         [UsedByIL]
-        public static void Write(this BitStream stream, uint value)
+        public static void Write(this BitPacker packer, uint value)
         {
-            stream.WriteBits(value, 32);
+            packer.WriteBits(value, 32);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref uint value)
+        public static void Read(this BitPacker packer, ref uint value)
         {
-            value = (uint)stream.ReadBits(32);
+            value = (uint)packer.ReadBits(32);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, ushort value)
+        public static void Write(this BitPacker packer, ushort value)
         {
-            stream.WriteBits(value, 16);
+            packer.WriteBits(value, 16);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref ushort value)
+        public static void Read(this BitPacker packer, ref ushort value)
         {
-            value = (ushort)stream.ReadBits(16);
+            value = (ushort)packer.ReadBits(16);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, byte value)
+        public static void Write(this BitPacker packer, byte value)
         {
-            stream.WriteBits(value, 16);
+            packer.WriteBits(value, 16);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref byte value)
+        public static void Read(this BitPacker packer, ref byte value)
         {
-            value = (byte)stream.ReadBits(16);
+            value = (byte)packer.ReadBits(16);
         }
     }
 }

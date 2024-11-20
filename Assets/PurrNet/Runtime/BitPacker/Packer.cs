@@ -6,9 +6,9 @@ using PurrNet.Utils;
 
 namespace PurrNet.Packing
 {
-    public delegate void WriteFunc<in T>(BitStream stream, T value);
+    public delegate void WriteFunc<in T>(BitPacker packer, T value);
         
-    public delegate void ReadFunc<T>(BitStream stream, ref T value);
+    public delegate void ReadFunc<T>(BitPacker packer, ref T value);
     
     public static class Packer<T>
     {
@@ -33,11 +33,11 @@ namespace PurrNet.Packing
             _read = b;
         }
         
-        public static void Write(BitStream stream, T value)
+        public static void Write(BitPacker packer, T value)
         {
             try
             {
-                _write(stream, value);
+                _write(packer, value);
             }
             catch (Exception e)
             {
@@ -45,11 +45,11 @@ namespace PurrNet.Packing
             }
         }
         
-        public static void Read(BitStream stream, ref T value)
+        public static void Read(BitPacker packer, ref T value)
         {
             try
             {
-                _read(stream, ref value);
+                _read(packer, ref value);
             }
             catch (Exception e)
             {
@@ -93,7 +93,7 @@ namespace PurrNet.Packing
         
         static readonly object[] _args = new object[2];
         
-        public static void Write(BitStream stream, object value)
+        public static void Write(BitPacker packer, object value)
         {
             var type = value.GetType();
             
@@ -105,7 +105,7 @@ namespace PurrNet.Packing
             
             try
             {
-                _args[0] = stream;
+                _args[0] = packer;
                 _args[1] = value;
                 method.Invoke(null, _args);
             }
@@ -115,7 +115,7 @@ namespace PurrNet.Packing
             }
         }
         
-        public static void Read(BitStream stream, Type type, ref object value)
+        public static void Read(BitPacker packer, Type type, ref object value)
         {
             if (!_readMethods.TryGetValue(type, out var method))
             {
@@ -128,7 +128,7 @@ namespace PurrNet.Packing
                 if (!type.IsClass)
                     value = Activator.CreateInstance(type);
                 
-                _args[0] = stream;
+                _args[0] = packer;
                 _args[1] = value;
                 method.Invoke(null, _args);
                 

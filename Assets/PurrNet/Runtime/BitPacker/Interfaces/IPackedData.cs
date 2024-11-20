@@ -4,8 +4,8 @@ namespace PurrNet.Packing
     
     public interface INetworkedData
     {
-        void Write(BitStream stream);
+        void Write(BitPacker packer);
 
-        void Read(BitStream stream);
+        void Read(BitPacker packer);
     }
 }

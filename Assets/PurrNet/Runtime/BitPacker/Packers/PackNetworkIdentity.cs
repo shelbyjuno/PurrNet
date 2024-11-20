@@ -13,25 +13,25 @@ namespace PurrNet
         }
         
         [UsedByIL]
-        public static void WriteIdentity<T>(this BitStream stream, T value) where T : NetworkIdentity
+        public static void WriteIdentity<T>(this BitPacker packer, T value) where T : NetworkIdentity
         {
             if (value == null || !value.id.HasValue)
             {
-                Packer<bool>.Write(stream, false);
+                Packer<bool>.Write(packer, false);
                 return;
             }
 
-            Packer<bool>.Write(stream, true);
-            Packer<NetworkID>.Write(stream, value.id.Value);
-            Packer<SceneID>.Write(stream, value.sceneId);
+            Packer<bool>.Write(packer, true);
+            Packer<NetworkID>.Write(packer, value.id.Value);
+            Packer<SceneID>.Write(packer, value.sceneId);
         }
 
         [UsedByIL]
-        public static void ReadIdentity<T>(this BitStream stream, ref T value) where T : NetworkIdentity
+        public static void ReadIdentity<T>(this BitPacker packer, ref T value) where T : NetworkIdentity
         {
             bool hasValue = false;
             
-            Packer<bool>.Read(stream, ref hasValue);
+            Packer<bool>.Read(packer, ref hasValue);
 
             if (!hasValue)
             {
@@ -42,8 +42,8 @@ namespace PurrNet
             NetworkID id = default;
             SceneID sceneId = default;
             
-            Packer<NetworkID>.Read(stream, ref id);
-            Packer<SceneID>.Read(stream, ref sceneId);
+            Packer<NetworkID>.Read(packer, ref id);
+            Packer<SceneID>.Read(packer, ref sceneId);
             
             var networkManager = NetworkManager.main;
             

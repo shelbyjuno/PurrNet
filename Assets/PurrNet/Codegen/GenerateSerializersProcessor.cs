@@ -99,7 +99,7 @@ namespace PurrNet.Codegen
             if (isNetworkModule)
                 return;
             
-            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
+            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitPacker)).Import(assembly.MainModule);
             var mainmodule = assembly.MainModule;
             
             assembly.MainModule.Types.Add(serializerClass);

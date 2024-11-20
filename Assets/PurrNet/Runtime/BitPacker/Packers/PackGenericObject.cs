@@ -8,28 +8,28 @@ namespace PurrNet
     public static class PackGenericObject
     {
         [UsedByIL]
-        public static void WriteObject(this BitStream stream, object value)
+        public static void WriteObject(this BitPacker packer, object value)
         {
             bool isNull = value == null;
             
-            stream.Write(isNull);
+            packer.Write(isNull);
             
             if (isNull)
                 return;
 
             var hash = Hasher.GetStableHashU32(value.GetType());
             
-            stream.Write(hash);
+            packer.Write(hash);
             
-            Packer.Write(stream, value);
+            Packer.Write(packer, value);
         }
 
         [UsedByIL]
-        public static void ReadObject(this BitStream stream, ref object value)
+        public static void ReadObject(this BitPacker packer, ref object value)
         {
             bool isNull = false;
             
-            stream.Read(ref isNull);
+            packer.Read(ref isNull);
             
             if (isNull)
             {
@@ -39,12 +39,12 @@ namespace PurrNet
             
             uint hash = 0;
             
-            stream.Read(ref hash);
+            packer.Read(ref hash);
             
             if (!Hasher.TryGetType(hash, out var type))
                 return;
             
-            Packer.Read(stream, type, ref value);
+            Packer.Read(packer, type, ref value);
         }
     }
 }

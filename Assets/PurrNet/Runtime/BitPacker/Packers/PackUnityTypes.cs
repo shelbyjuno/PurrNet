@@ -27,167 +27,167 @@ namespace PurrNet.Packing
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Vector2 value)
+        public static void Write(this BitPacker packer, Vector2 value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
+            packer.Write(value.x);
+            packer.Write(value.y);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Vector2 value)
+        public static void Read(this BitPacker packer, ref Vector2 value)
         {
-            stream.Read(ref value.x);
-            stream.Read(ref value.y);
+            packer.Read(ref value.x);
+            packer.Read(ref value.y);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Vector3 value)
+        public static void Write(this BitPacker packer, Vector3 value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
-            stream.Write(value.z);
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.z);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Vector3 value)
+        public static void Read(this BitPacker packer, ref Vector3 value)
         {
-            stream.Read(ref value.x);
-            stream.Read(ref value.y);
-            stream.Read(ref value.z);
+            packer.Read(ref value.x);
+            packer.Read(ref value.y);
+            packer.Read(ref value.z);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Vector4 value)
+        public static void Write(this BitPacker packer, Vector4 value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
-            stream.Write(value.z);
-            stream.Write(value.w);
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.z);
+            packer.Write(value.w);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Vector4 value)
+        public static void Read(this BitPacker packer, ref Vector4 value)
         {
-            stream.Read(ref value.x);
-            stream.Read(ref value.y);
-            stream.Read(ref value.z);
-            stream.Read(ref value.w);
+            packer.Read(ref value.x);
+            packer.Read(ref value.y);
+            packer.Read(ref value.z);
+            packer.Read(ref value.w);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Vector2Int value)
+        public static void Write(this BitPacker packer, Vector2Int value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
+            packer.Write(value.x);
+            packer.Write(value.y);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Vector2Int value)
+        public static void Read(this BitPacker packer, ref Vector2Int value)
         {
             float x = default;
             float y = default;
-            stream.Read(ref x);
-            stream.Read(ref y);
+            packer.Read(ref x);
+            packer.Read(ref y);
             value = new Vector2Int((int)x, (int)y);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Vector3Int value)
+        public static void Write(this BitPacker packer, Vector3Int value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
-            stream.Write(value.z);
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.z);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Vector3Int value)
+        public static void Read(this BitPacker packer, ref Vector3Int value)
         {
             float x = default;
             float y = default;
             float z = default;
-            stream.Read(ref x);
-            stream.Read(ref y);
-            stream.Read(ref z);
+            packer.Read(ref x);
+            packer.Read(ref y);
+            packer.Read(ref z);
             value = new Vector3Int((int)x, (int)y, (int)z);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, HalfVector2 value)
+        public static void Write(this BitPacker packer, HalfVector2 value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
+            packer.Write(value.x);
+            packer.Write(value.y);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref HalfVector2 value)
+        public static void Read(this BitPacker packer, ref HalfVector2 value)
         {
-            stream.Read(ref value.x);
-            stream.Read(ref value.y);
+            packer.Read(ref value.x);
+            packer.Read(ref value.y);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, HalfVector3 value)
+        public static void Write(this BitPacker packer, HalfVector3 value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
-            stream.Write(value.z);
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.z);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref HalfVector3 value)
+        public static void Read(this BitPacker packer, ref HalfVector3 value)
         {
-            stream.Read(ref value.x);
-            stream.Read(ref value.y);
-            stream.Read(ref value.z);
+            packer.Read(ref value.x);
+            packer.Read(ref value.y);
+            packer.Read(ref value.z);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, HalfVector4 value)
+        public static void Write(this BitPacker packer, HalfVector4 value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
-            stream.Write(value.z);
-            stream.Write(value.w);
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.z);
+            packer.Write(value.w);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref HalfVector4 value)
+        public static void Read(this BitPacker packer, ref HalfVector4 value)
         {
-            stream.Read(ref value.x);
-            stream.Read(ref value.y);
-            stream.Read(ref value.z);
-            stream.Read(ref value.w);
+            packer.Read(ref value.x);
+            packer.Read(ref value.y);
+            packer.Read(ref value.z);
+            packer.Read(ref value.w);
         }
    
         [UsedByIL]
-        public static void Write(this BitStream stream, Quaternion value)
+        public static void Write(this BitPacker packer, Quaternion value)
         {
             value.Normalize();
             
-            stream.Write(PackHalf(value.x));
-            stream.Write(PackHalf(value.y));
-            stream.Write(PackHalf(value.z));
+            packer.Write(PackHalf(value.x));
+            packer.Write(PackHalf(value.y));
+            packer.Write(PackHalf(value.z));
             
-            stream.Write(value.w < 0);
+            packer.Write(value.w < 0);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Quaternion value)
+        public static void Read(this BitPacker packer, ref Quaternion value)
         {
             ushort xs = default;
             ushort ys = default;
             ushort zs = default;
             
-            stream.Read(ref xs);
-            stream.Read(ref ys);
-            stream.Read(ref zs);
+            packer.Read(ref xs);
+            packer.Read(ref ys);
+            packer.Read(ref zs);
             
             float x = UnpackHalf(xs);
             float y = UnpackHalf(ys);
             float z = UnpackHalf(zs);
             
             bool wSign = false;
-            stream.Read(ref wSign);
+            packer.Read(ref wSign);
             
             float w = Mathf.Sqrt(Mathf.Max(0, 1 - x * x - y * y - z * z));
             
@@ -198,104 +198,104 @@ namespace PurrNet.Packing
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Color32 value)
+        public static void Write(this BitPacker packer, Color32 value)
         {
-            stream.Write(value.r);
-            stream.Write(value.g);
-            stream.Write(value.b);
-            stream.Write(value.a);
+            packer.Write(value.r);
+            packer.Write(value.g);
+            packer.Write(value.b);
+            packer.Write(value.a);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Color32 value)
+        public static void Read(this BitPacker packer, ref Color32 value)
         {
             byte r = default;
             byte g = default;
             byte b = default;
             byte a = default;
             
-            stream.Read(ref r);
-            stream.Read(ref g);
-            stream.Read(ref b);
-            stream.Read(ref a);
+            packer.Read(ref r);
+            packer.Read(ref g);
+            packer.Read(ref b);
+            packer.Read(ref a);
             
             value = new Color32(r, g, b, a);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Color value)
+        public static void Write(this BitPacker packer, Color value)
         {
             Color32 color32 = value;
-            stream.Write(color32);
+            packer.Write(color32);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Color value)
+        public static void Read(this BitPacker packer, ref Color value)
         {
             Color32 color32 = default;
-            stream.Read(ref color32);
+            packer.Read(ref color32);
             value = color32;
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Rect value)
+        public static void Write(this BitPacker packer, Rect value)
         {
-            stream.Write(value.x);
-            stream.Write(value.y);
-            stream.Write(value.width);
-            stream.Write(value.height);
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.width);
+            packer.Write(value.height);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Rect value)
+        public static void Read(this BitPacker packer, ref Rect value)
         {
             float x = default;
             float y = default;
             float width = default;
             float height = default;
             
-            stream.Read(ref x);
-            stream.Read(ref y);
-            stream.Read(ref width);
-            stream.Read(ref height);
+            packer.Read(ref x);
+            packer.Read(ref y);
+            packer.Read(ref width);
+            packer.Read(ref height);
             
             value = new Rect(x, y, width, height);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, Bounds value)
+        public static void Write(this BitPacker packer, Bounds value)
         {
-            stream.Write(value.center);
-            stream.Write(value.size);
+            packer.Write(value.center);
+            packer.Write(value.size);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref Bounds value)
+        public static void Read(this BitPacker packer, ref Bounds value)
         {
             Vector3 center = default;
             Vector3 size = default;
             
-            stream.Read(ref center);
-            stream.Read(ref size);
+            packer.Read(ref center);
+            packer.Read(ref size);
             
             value = new Bounds(center, size);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, BoundsInt value)
+        public static void Write(this BitPacker packer, BoundsInt value)
         {
-            stream.Write(value.center);
-            stream.Write(value.size);
+            packer.Write(value.center);
+            packer.Write(value.size);
         }
         
         [UsedByIL]
-        public static void Read(this BitStream stream, ref BoundsInt value)
+        public static void Read(this BitPacker packer, ref BoundsInt value)
         {
             Vector3Int center = default;
             Vector3Int size = default;
             
-            stream.Read(ref center);
-            stream.Read(ref size);
+            packer.Read(ref center);
+            packer.Read(ref size);
             
             value = new BoundsInt(center, size);
         }

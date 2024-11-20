@@ -5,51 +5,51 @@ namespace PurrNet.Packing
     public static class PackIntegers
     {
         [UsedByIL]
-        public static void Write(this BitStream stream, int value)
+        public static void Write(this BitPacker packer, int value)
         {
-            stream.WriteBits((ulong)value, 32);
+            packer.WriteBits((ulong)value, 32);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref int value)
+        public static void Read(this BitPacker packer, ref int value)
         {
-            value = (int)stream.ReadBits(32);
+            value = (int)packer.ReadBits(32);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, short value)
+        public static void Write(this BitPacker packer, short value)
         {
-            stream.WriteBits((ulong)value, 16);
+            packer.WriteBits((ulong)value, 16);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref short value)
+        public static void Read(this BitPacker packer, ref short value)
         {
-            value = (short)stream.ReadBits(16);
+            value = (short)packer.ReadBits(16);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, sbyte value)
+        public static void Write(this BitPacker packer, sbyte value)
         {
-            stream.WriteBits((ulong)value, 16);
+            packer.WriteBits((ulong)value, 16);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref sbyte value)
+        public static void Read(this BitPacker packer, ref sbyte value)
         {
-            value = (sbyte)stream.ReadBits(16);
+            value = (sbyte)packer.ReadBits(16);
         }
         
         [UsedByIL]
-        public static void Write(this BitStream stream, bool value)
+        public static void Write(this BitPacker packer, bool value)
         {
-            stream.WriteBits(value ? (ulong)1 : 0, 1);
+            packer.WriteBits(value ? (ulong)1 : 0, 1);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref bool value)
+        public static void Read(this BitPacker packer, ref bool value)
         {
-            value = stream.ReadBits(1) == 1;
+            value = packer.ReadBits(1) == 1;
         }
     }
 }

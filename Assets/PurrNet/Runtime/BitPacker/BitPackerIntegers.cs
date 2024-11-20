@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PurrNet.Packing
 {
-    public partial class BitStream
+    public partial class BitPacker
     {
         public static byte GetBitCount(long minValue, long maxValue)
         {

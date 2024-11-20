@@ -5,15 +5,15 @@ namespace PurrNet.Packing
     public static class PackIData
     {
         [UsedByIL]
-        public static void Write(this BitStream stream, INetworkedData value)
+        public static void Write(this BitPacker packer, INetworkedData value)
         {
-            value.Write(stream);
+            value.Write(packer);
         }
 
         [UsedByIL]
-        public static void Read(this BitStream stream, ref INetworkedData value)
+        public static void Read(this BitPacker packer, ref INetworkedData value)
         {
-            value.Read(stream);
+            value.Read(packer);
         }
     }
 }
