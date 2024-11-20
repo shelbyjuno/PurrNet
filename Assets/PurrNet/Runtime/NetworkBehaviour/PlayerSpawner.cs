@@ -49,11 +49,20 @@ namespace PurrNet
         private void OnDestroy()
         {
             if(NetworkManager.main && NetworkManager.main.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
-                scenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+                scenePlayersModule.onPlayerLoadedScene -= OnPlayerLoadedScene;
         }
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer)
         {
+            if (!NetworkManager.main.TryGetModule(out ScenesModule scenes, true))
+                return;
+            
+            if (!scenes.TryGetSceneID(gameObject.scene, out var sceneID))
+                return;
+            
+            if (sceneID != scene)
+                return;
+
             if (!asServer)
                 return;
 
