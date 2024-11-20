@@ -54,6 +54,7 @@ namespace PurrNet.Modules
         
         internal event OnSceneActionEvent onPreSceneLoaded;
         public event OnSceneActionEvent onSceneLoaded;
+        public event OnSceneActionEvent onPostSceneLoaded;
         
         public event OnSceneActionEvent onSceneUnloaded;
         public event OnSceneVisibilityEvent onSceneVisibilityChanged;
@@ -90,6 +91,7 @@ namespace PurrNet.Modules
             
             onPreSceneLoaded?.Invoke(id, _asServer);
             onSceneLoaded?.Invoke(id, _asServer);
+            onPostSceneLoaded?.Invoke(id, _asServer);
         }
         
         public void UpdateSceneVisibility(SceneID scene, bool isPublic)
@@ -284,8 +286,6 @@ namespace PurrNet.Modules
                 {
                     if (_networkManager.isHost && !_asServer)
                     {
-                        /*onPreSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);
-                        onSceneLoaded?.Invoke(action.loadSceneAction.sceneID, false);*/
                         _actionsQueue.Dequeue();
                         break;
                     }
