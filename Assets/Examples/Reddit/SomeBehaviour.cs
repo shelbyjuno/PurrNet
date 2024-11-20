@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using PurrNet;
 using PurrNet.Logging;
 using PurrNet.Packing;
+using PurrNet.Utils;
+using UnityEngine;
 
 public struct SomeNetworkedData
 {
@@ -38,6 +40,16 @@ public class SomeBehaviour : NetworkIdentity
             PurrLogger.Log($"Read: {result.data}", this);
             PurrLogger.Log($"Read: {(float)result.random}", this);
         }
+        else
+        {
+            RPC_SyncShuffleToClients(new int[] { 1, 2, 3, 4, 5 });
+        }
+    }
+    
+    [ObserversRpc(bufferLast:true)]
+    private void RPC_SyncShuffleToClients(int[] shuffledIndices)
+    {
+        Debug.Log(Hasher.GetStableHashU32<int[]>());
     }
     
     [ServerRpc(requireOwnership: false)]

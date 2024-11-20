@@ -70,7 +70,7 @@ namespace PurrNet.Codegen
                 messages.Add(new DiagnosticMessage
                 {
                     DiagnosticType = DiagnosticType.Error,
-                    MessageData = "Failed to get ID offset: " + e.Message
+                    MessageData = "Failed to get ID offset: " + e.Message + "\n" + e.StackTrace
                 });
                 
                 return 0;
@@ -92,7 +92,7 @@ namespace PurrNet.Codegen
             }
             catch (Exception e)
             {
-                throw new Exception($"InheritsFrom : Failed to resolve base type of {type.FullName}, {e.Message}");
+                throw new Exception($"InheritsFrom : Failed to resolve base type of {type.FullName}, {e.Message} \n {e.StackTrace}");
             }
         }
         
@@ -1503,7 +1503,8 @@ namespace PurrNet.Codegen
                         if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                         {
                             List<FieldDefinition> _networkFields = new();
-
+                            
+                            IncludeAnyConcreteGenericParameters(module, type, typesToGenerateSerializer);
                             FindNetworkModules(type, classFullName, _networkFields);
                             CreateSyncVarInitMethod(inheritsFromNetworkIdentity, module, type, _networkFields);
                         }
@@ -1628,7 +1629,7 @@ namespace PurrNet.Codegen
                     messages.Add(new DiagnosticMessage
                     {
                         DiagnosticType = DiagnosticType.Error,
-                        MessageData = $"Failed to write assembly ({compiledAssembly.Name}): {e.Message}",
+                        MessageData = $"Failed to write assembly ({compiledAssembly.Name}): {e.Message}\n{e.StackTrace}",
                     });
                 }
 
@@ -1646,6 +1647,21 @@ namespace PurrNet.Codegen
                 };
                 
                 return new ILPostProcessResult(compiledAssembly.InMemoryAssembly, messages);
+            }
+        }
+
+        private static void IncludeAnyConcreteGenericParameters(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> typesToGenerateSerializer)
+        {
+            if (type.BaseType is GenericInstanceType genericType)
+            {
+                foreach (var genericParameter in genericType.GenericArguments)
+                {
+                    if (IsTypeInOwnModule(genericParameter, module) && IsConcreteType(genericParameter, out var concreteType))
+                    {
+                        if (concreteType != null)
+                            typesToGenerateSerializer.Add(concreteType);
+                    }
+                }
             }
         }
 
