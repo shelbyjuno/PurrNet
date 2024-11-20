@@ -21,7 +21,7 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count != 2)
                 return false;
 
-            if (method.Parameters[0].ParameterType.FullName != typeof(BitStream).FullName)
+            if (method.Parameters[0].ParameterType.FullName != typeof(PurrNet.Packing.BitStream).FullName)
                 return false;
             
             if (method.Parameters[1].ParameterType.IsByReference)
@@ -41,7 +41,7 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count != 2)
                 return false;
 
-            if (method.Parameters[0].ParameterType.FullName != typeof(BitStream).FullName)
+            if (method.Parameters[0].ParameterType.FullName != typeof(PurrNet.Packing.BitStream).FullName)
                 return false;
             
             if (!method.Parameters[1].ParameterType.IsByReference)
@@ -60,10 +60,10 @@ namespace PurrNet.Codegen
         
         public static void HandleType(ModuleDefinition module, TypeDefinition type, List<DiagnosticMessage> messages)
         {
-            if (type.FullName == typeof(Packer).FullName) 
+            if (type.FullName == typeof(PurrNet.Packing.Packer).FullName) 
                 return;
             
-            if (type.FullName == typeof(Packer<>).FullName) 
+            if (type.FullName == typeof(PurrNet.Packing.Packer<>).FullName) 
                 return;
             
             bool isStatic = type.IsAbstract && type.IsSealed;

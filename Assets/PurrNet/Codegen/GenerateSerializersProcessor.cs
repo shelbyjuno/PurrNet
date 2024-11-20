@@ -68,7 +68,7 @@ namespace PurrNet.Codegen
                 return;
             }
             
-            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
+            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(PurrNet.Packing.BitStream)).Import(assembly.MainModule);
             var mainmodule = assembly.MainModule;
             
             string namespaceName = type.Namespace;
