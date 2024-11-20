@@ -18,22 +18,40 @@ namespace PurrNet.Codegen
             List,
             Array
         }
+        
+        static string GetTypeWithAllParentTypes(TypeReference type)
+        {
+            var parentTypes = new List<string>();
+            var currentType = type;
+            while (currentType != null)
+            {
+                parentTypes.Add(currentType.Name);
+
+                var resolved = currentType.Resolve();
+                if (resolved == null) break;
+                currentType = resolved.BaseType;
+            }
+
+            return string.Join("_", parentTypes);
+        }
 
         static string PrettyTypeName(TypeReference typeRef)
         {
             // print full name with generic arguments
+            var typeName = GetTypeWithAllParentTypes(typeRef);
+            
             switch (typeRef)
             {
                 case GenericInstanceType genericInstance:
                 {
                     var genericArgs = string.Join(", ", genericInstance.GenericArguments.Select(a => a.Name));
-                    var name = $"{typeRef.Name[..^2]}_{genericArgs}";
+                    var name = $"{typeName[..^2]}_{genericArgs}";
                     return name;
                 }
                 case ArrayType arrayType:
                     return $"Array_{PrettyTypeName(arrayType.ElementType)}";
                 default:
-                    return typeRef.Name;
+                    return typeName;
             }
         }
         

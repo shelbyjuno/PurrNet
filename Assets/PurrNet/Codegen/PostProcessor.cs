@@ -1447,6 +1447,17 @@ namespace PurrNet.Codegen
             return newRef;
         }
 
+        public static List<TypeDefinition> GetAllTypes(ModuleDefinition module)
+        {
+            List<TypeDefinition> types = new();
+            
+            types.AddRange(module.Types);
+            foreach (var type in module.Types)
+                types.AddRange(type.NestedTypes);
+
+            return types;
+        }
+
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             try
@@ -1475,12 +1486,13 @@ namespace PurrNet.Codegen
                 for (var m = 0; m < assemblyDefinition.Modules.Count; m++)
                 {
                     var module = assemblyDefinition.Modules[m];
+                    var types = GetAllTypes(module);
 
-                    for (var t = 0; t < module.Types.Count; t++)
+                    for (var t = 0; t < types.Count; t++)
                     {
-                        RegisterSerializersProcessor.HandleType(module, module.Types[t], messages);
+                        RegisterSerializersProcessor.HandleType(module, types[t], messages);
                         
-                        var type = module.Types[t];
+                        var type = types[t];
                         
                         if (GenerateSerializersProcessor.HasInterface(type, typeof(IAutoNetworkedData)))
                         {
@@ -1586,7 +1598,7 @@ namespace PurrNet.Codegen
                         
                         try
                         {
-                            FindUsedTypes(module, _rpcMethods, usedTypes);
+                            FindUsedTypes(types, _rpcMethods, usedTypes);
                             
                             foreach (var usedType in usedTypes)
                             {
@@ -1836,11 +1848,11 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ret));
         }
 
-        private static void FindUsedTypes(ModuleDefinition module, List<RPCMethod> methods, HashSet<TypeReference> types)
+        private static void FindUsedTypes(List<TypeDefinition> allTypes, List<RPCMethod> methods, HashSet<TypeReference> types)
         {
-            for (int i = 0; i < module.Types.Count; i++)
+            for (int i = 0; i < allTypes.Count; i++)
             {
-                var type = module.Types[i];
+                var type = allTypes[i];
 
                 for (int j = 0; j < type.Methods.Count; j++)
                 {
