@@ -150,10 +150,7 @@ namespace PurrNet
             }
 
             if (!_players.TryGetPlayersInScene(_sceneId, out var players))
-            {
-                PurrLogger.LogError("No players in scene, can't evaluate visibility.");
                 return;
-            }
             
             var copy = HashSetPool<PlayerID>.Instantiate();
             copy.UnionWith(players);
