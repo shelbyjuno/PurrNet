@@ -521,8 +521,6 @@ namespace PurrNet.Modules
             
             var rpcid = new RPC_ID(packet);
             
-            var hash = rpcid.GetHashCode();
-
             if (_bufferedRpcsKeys.TryGetValue(rpcid, out var data))
             {
                 data.stream.ResetPointer();
