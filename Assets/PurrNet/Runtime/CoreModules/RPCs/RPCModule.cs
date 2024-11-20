@@ -245,7 +245,7 @@ namespace PurrNet.Modules
                 {
                     var players = nm.GetModule<PlayersManager>(true);
                     var rawData = BroadcastModule.GetImmediateData(data);
-                    var collection = GetImmediateExcept(players, info.sender);
+                    var collection = signature.excludeSender ? GetImmediateExcept(players, info.sender) : players.players;
                     players.SendRaw(collection, rawData, signature.channel);
                     return !nm.isClient;
                 }
