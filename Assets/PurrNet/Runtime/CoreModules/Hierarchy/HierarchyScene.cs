@@ -109,7 +109,9 @@ namespace PurrNet.Modules
 
             if (_asServer)
                 SpawnSceneObjects(_sceneObjects);
-
+            else if (_playersManager.localPlayerId.HasValue)
+                SpawnSceneObjects(_sceneObjects);
+            
             if (asServer)
                 identities.SkipIds((ushort)_sceneObjects.Count);
         }
