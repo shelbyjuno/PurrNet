@@ -303,7 +303,9 @@ namespace PurrNet
             }
 
             if (!asServer)
+            {
                 return true;
+            }
             
             var rules = networkManager.networkRules;
             bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
@@ -331,7 +333,6 @@ namespace PurrNet
                 case RPCType.TargetRPC:
                 {
                     var rawData = BroadcastModule.GetImmediateData(data);
-                    SendToObservers(rawData, predicate, signature.channel);
                     SendToTarget(data.senderPlayerId, rawData, signature.channel);
                     return false;
                 }
@@ -388,6 +389,12 @@ namespace PurrNet
         {
             if (networkManager.isServer)
                 networkManager.GetModule<PlayersManager>(true).Send(player, packet, method);
+        }
+        
+        public void Send(PlayerID player, ByteData data, Channel method = Channel.ReliableOrdered)
+        {
+            if (networkManager.isServer)
+                networkManager.GetModule<PlayersManager>(true).SendRaw(player, data, method);
         }
         
         [Preserve]
