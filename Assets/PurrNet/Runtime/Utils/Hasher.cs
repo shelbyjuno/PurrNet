@@ -82,13 +82,17 @@ namespace PurrNet.Utils
 
         public static uint GetStableHashU32(Type type)
         {
-            return _hashes.TryGetValue(type, out var hash) ? hash : PrepareType(type);
+            return _hashes.TryGetValue(type, out var hash) ? hash : throw new InvalidOperationException(
+                PurrLogger.FormatMessage($"Type '{type.FullName}' is not registered.")
+            );
         }
         
         public static uint GetStableHashU32<T>()
         {
             var type = typeof(T);
-            return _hashes.TryGetValue(type, out var hash) ? hash : PrepareType(type);
+            return _hashes.TryGetValue(type, out var hash) ? hash : throw new InvalidOperationException(
+                PurrLogger.FormatMessage($"Type '{type.FullName}' is not registered.")
+            );
         }
         
         static uint GetStableHashU32(string txt)

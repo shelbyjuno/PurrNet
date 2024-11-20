@@ -19,7 +19,7 @@ namespace PurrNet.Codegen
             Array
         }
 
-        static string PrettyTypeName(TypeDefinition typeDef, TypeReference typeRef)
+        static string PrettyTypeName(TypeReference typeRef)
         {
             // print full name with generic arguments
             switch (typeRef)
@@ -27,18 +27,33 @@ namespace PurrNet.Codegen
                 case GenericInstanceType genericInstance:
                 {
                     var genericArgs = string.Join(", ", genericInstance.GenericArguments.Select(a => a.Name));
-                    var name = $"{typeDef.Name[..^2]}_{genericArgs}";
+                    var name = $"{typeRef.Name[..^2]}_{genericArgs}";
                     return name;
                 }
                 case ArrayType arrayType:
-                    return $"Array_{PrettyTypeName(typeDef, arrayType.ElementType)}";
+                    return $"Array_{PrettyTypeName(arrayType.ElementType)}";
                 default:
-                    return typeDef.Name;
+                    return typeRef.Name;
             }
         }
         
         public static void HandleType(AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
         {
+            if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
+                return;
+            
+            string namespaceName = type.Namespace;
+            if (string.IsNullOrWhiteSpace(namespaceName))
+                namespaceName = "PurrNet.CodeGen.Serializers";
+            else namespaceName += ".PurrNet.CodeGen.Serializers";
+            
+            // create static class
+            var serializerClass = new TypeDefinition(namespaceName, 
+                $"{PrettyTypeName(type)}_Serializer",
+                TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Public,
+                assembly.MainModule.TypeSystem.Object
+            );
+            
             var resolvedType = type.Resolve();
             
             if (resolvedType == null)
@@ -64,24 +79,10 @@ namespace PurrNet.Codegen
             }
             
             if (isNetworkModule)
-            {
                 return;
-            }
             
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
             var mainmodule = assembly.MainModule;
-            
-            string namespaceName = type.Namespace;
-            if (string.IsNullOrWhiteSpace(namespaceName))
-                 namespaceName = "PurrNet.CodeGen.Serializers";
-            else namespaceName += ".PurrNet.CodeGen.Serializers";
-            
-            // create static class
-            var serializerClass = new TypeDefinition(namespaceName, 
-                $"{PrettyTypeName(resolvedType, type)}_Serializer",
-                TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Public,
-                assembly.MainModule.TypeSystem.Object
-            );
             
             assembly.MainModule.Types.Add(serializerClass);
 

@@ -98,13 +98,13 @@ namespace PurrNet.Modules
         }
     }
     
-    internal partial struct HierarchyActionBatch : IAutoNetworkedData
+    internal partial struct HierarchyActionBatch : IAutoNetworkedData, PurrNet.Packing.IAutoNetworkedData
     {
         public SceneID sceneId;
         public List<HierarchyAction> actions;
     }
 
-    internal partial struct DespawnAction : IAutoNetworkedData
+    internal partial struct DespawnAction : IAutoNetworkedData, PurrNet.Packing.IAutoNetworkedData
     {
         public NetworkID identityId { get; set; }
         public DespawnType despawnType { get; set; }

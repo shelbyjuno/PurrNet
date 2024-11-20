@@ -382,8 +382,6 @@ namespace PurrNet
         
         internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
         {
-            Hasher.PrepareType(GetType());
-            
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;

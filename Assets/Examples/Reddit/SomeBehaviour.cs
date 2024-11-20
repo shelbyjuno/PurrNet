@@ -42,14 +42,14 @@ public class SomeBehaviour : NetworkIdentity
         }
         else
         {
-            RPC_SyncShuffleToClients(new int[] { 1, 2, 3, 4, 5 });
+            RPC_SyncShuffleToClients((sbyte)69, new int[] { 1, 2, 3, 4, 5 });
         }
     }
     
     [ObserversRpc(bufferLast:true)]
-    private void RPC_SyncShuffleToClients(int[] shuffledIndices)
+    private void RPC_SyncShuffleToClients<T>(T test, int[] shuffledIndices)
     {
-        Debug.Log(Hasher.GetStableHashU32<int[]>());
+        Debug.Log(test + " "  + Hasher.GetStableHashU32<int[]>());
     }
     
     [ServerRpc(requireOwnership: false)]

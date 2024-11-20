@@ -32,7 +32,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
     
     protected override void OnSpawned(bool asServer)
     {
-        Hasher.PrepareType<string>();
         if (!asServer)
         {
             //StartCoroutine(CoolRPC_Coroutines());

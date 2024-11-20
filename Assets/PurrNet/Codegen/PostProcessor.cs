@@ -1656,7 +1656,7 @@ namespace PurrNet.Codegen
             {
                 foreach (var genericParameter in genericType.GenericArguments)
                 {
-                    if (IsTypeInOwnModule(genericParameter, module) && IsConcreteType(genericParameter, out var concreteType))
+                    if (IsConcreteType(genericParameter, out var concreteType))
                     {
                         if (concreteType != null)
                             typesToGenerateSerializer.Add(concreteType);

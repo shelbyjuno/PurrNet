@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
+using PurrNet.Utils;
 
 namespace PurrNet.Packing
 {
@@ -27,7 +28,7 @@ namespace PurrNet.Packing
         {
             if (_read != null)
                 return;
-            
+
             Packer.RegisterReader(typeof(T), b.Method);
             _read = b;
         }
@@ -71,7 +72,13 @@ namespace PurrNet.Packing
         public static void RegisterReader(Type type, MethodInfo method)
         {
             if (!_readMethods.TryAdd(type, method))
+            {
                 PurrLogger.LogError($"Reader for type '{type}' is already registered.");
+            }
+            else
+            {
+                Hasher.PrepareType(type);
+            }
         }
         
         public static void RegisterWriterSilent(Type type, MethodInfo method)

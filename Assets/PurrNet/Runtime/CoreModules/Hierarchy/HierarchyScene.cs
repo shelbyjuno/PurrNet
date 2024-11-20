@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
+using PurrNet.Packing;
 using PurrNet.Pooling;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,7 +9,8 @@ using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
-    internal struct TriggerQueuedSpawnEvents { }
+    internal struct TriggerQueuedSpawnEvents : IAutoNetworkedData
+    { }
     
     internal struct ComponentGameObjectPair
     {
