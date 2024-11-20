@@ -291,8 +291,10 @@ namespace PurrNet.Codegen
                 }
                 else
                 {
+                    il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldarg_1);
                     il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, field);
+                    il.Emit(OpCodes.Call, genericM);
                 }
 
             }
