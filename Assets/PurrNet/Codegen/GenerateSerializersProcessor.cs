@@ -68,7 +68,7 @@ namespace PurrNet.Codegen
                 return;
             }
             
-            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(PurrNet.Packing.BitStream)).Import(assembly.MainModule);
+            var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitStream)).Import(assembly.MainModule);
             var mainmodule = assembly.MainModule;
             
             string namespaceName = type.Namespace;
@@ -126,7 +126,8 @@ namespace PurrNet.Codegen
             // create static write method
             var writeMethod = new MethodDefinition("Write", MethodAttributes.Public | MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
             var valueArg = new ParameterDefinition("value", ParameterAttributes.None, type);
-            writeMethod.Parameters.Add(new ParameterDefinition("stream", ParameterAttributes.None, bitStreamType));
+            var streamArg = new ParameterDefinition("stream", ParameterAttributes.None, bitStreamType);
+            writeMethod.Parameters.Add(streamArg);
             writeMethod.Parameters.Add(valueArg);
             writeMethod.Body = new MethodBody(writeMethod)
             {
@@ -206,6 +207,37 @@ namespace PurrNet.Codegen
             return def.Interfaces.Any(i => i.InterfaceType.FullName == interfaceType.FullName);
         }
 
+        private static MethodReference CreateSetterMethod(TypeDefinition parent, FieldDefinition field)
+        {
+            var method = new MethodDefinition($"Purrnet_Set_{field.Name}", MethodAttributes.Public, parent.Module.TypeSystem.Void);
+            var valueArg = new ParameterDefinition("value", ParameterAttributes.None, field.FieldType);
+            method.Parameters.Add(valueArg);
+            
+            var setter = method.Body.GetILProcessor();
+            
+            setter.Emit(OpCodes.Ldarg_0);
+            setter.Emit(OpCodes.Ldarg_1);
+            setter.Emit(OpCodes.Stfld, field);
+            
+            setter.Emit(OpCodes.Ret);
+            
+            parent.Methods.Add(method);
+            return method;
+        }
+        
+        private static MethodReference CreateGetterMethod(TypeDefinition parent, FieldDefinition field)
+        {
+            var method = new MethodDefinition($"Purrnet_Get_{field.Name}", MethodAttributes.Public, field.FieldType);
+            var getter = method.Body.GetILProcessor();
+            
+            getter.Emit(OpCodes.Ldarg_0);
+            getter.Emit(OpCodes.Ldfld, field);
+            getter.Emit(OpCodes.Ret);
+            
+            parent.Methods.Add(method);
+            return method;
+        }
+
         private static void GenerateMethod(
             bool isWriting, MethodDefinition method, MethodReference serialize, TypeDefinition type, ILProcessor il,
             ModuleDefinition mainmodule, ParameterDefinition valueArg)
@@ -226,20 +258,43 @@ namespace PurrNet.Codegen
             
             foreach (var field in type.Fields)
             {
+                var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
+
+
                 // make field public
                 if (!field.IsPublic)
                 {
-                    field.Attributes &= ~FieldAttributes.FieldAccessMask;
-                    field.Attributes |= FieldAttributes.Assembly;
+                    if (isWriting)
+                    {
+                        var getter = CreateGetterMethod(type, field);
+                        
+                        il.Emit(OpCodes.Ldarg_0);
+                        il.Emit(OpCodes.Ldarga_S, valueArg);
+                        il.Emit(OpCodes.Call, getter);
+                        il.Emit(OpCodes.Call, genericM);
+                    }
+                    else
+                    {
+                        var variable = new VariableDefinition(field.FieldType);
+                        method.Body.Variables.Add(variable);
+                        
+                        var setter = CreateSetterMethod(type, field);
+                         
+                        il.Emit(OpCodes.Ldarg_0);
+                        il.Emit(OpCodes.Ldloca, variable);
+                        il.Emit(OpCodes.Call, genericM);
+                        
+                        il.Emit(OpCodes.Ldarg_1);
+                        il.Emit(OpCodes.Ldloc, variable);
+                        il.Emit(OpCodes.Call, setter);
+                    }
                 }
-                
-                var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
-                
-                // Pack<T>.Write(stream, value.field);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, field);
-                il.Emit(OpCodes.Call, genericM);
+                else
+                {
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, field);
+                }
+
             }
             
             il.Emit(OpCodes.Ret);
