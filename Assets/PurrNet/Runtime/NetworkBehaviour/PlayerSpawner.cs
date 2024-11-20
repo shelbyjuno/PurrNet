@@ -16,6 +16,8 @@ namespace PurrNet
         
         private void Awake()
         {
+            if (NetworkManager.main.isServer)
+                OnServerConnectionState(ConnectionState.Connected);
             NetworkManager.main.onServerConnectionState += OnServerConnectionState;
             
             for (int i = 0; i < spawnPoints.Count; i++)
