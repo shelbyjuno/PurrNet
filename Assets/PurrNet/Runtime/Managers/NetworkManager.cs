@@ -309,6 +309,8 @@ namespace PurrNet
         
         public TickManager tickModule => serverTickManager ?? clientTickManager;
         
+        public PlayersBroadcaster broadcastModule => _serverPlayersBroadcast ?? _clientPlayersBroadcast;
+        
         public PlayerID localPlayer => playerModule.localPlayerId ?? default;
         
         private ScenesModule _clientSceneModule;
@@ -319,6 +321,9 @@ namespace PurrNet
         
         private TickManager _clientTickManager;
         private TickManager _serverTickManager;
+        
+        private PlayersBroadcaster _clientPlayersBroadcast;
+        private PlayersBroadcaster _serverPlayersBroadcast;
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
@@ -332,16 +337,19 @@ namespace PurrNet
                 serverTickManager = tickManager;
             else clientTickManager = tickManager;
 
-            var broadcastModule = new BroadcastModule(this, asServer);
+            var connBroadcaster = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
-            
-            var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
+            var playersManager = new PlayersManager(this, networkCookies, connBroadcaster);
             
             if (asServer)
                  _serverPlayersManager = playersManager;
             else _clientPlayersManager = playersManager;
             
-            var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
+            var playersBroadcast = new PlayersBroadcaster(connBroadcaster, playersManager);
+            
+            if (asServer)
+                _serverPlayersBroadcast = playersBroadcast;
+            else _clientPlayersBroadcast = playersBroadcast;
 
             var scenesModule = new ScenesModule(this, playersManager);
             
@@ -364,7 +372,7 @@ namespace PurrNet
             modules.AddModule(playersManager);
             modules.AddModule(playersBroadcast);
             modules.AddModule(tickManager);
-            modules.AddModule(broadcastModule);
+            modules.AddModule(connBroadcaster);
             modules.AddModule(networkCookies);
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayersModule);
