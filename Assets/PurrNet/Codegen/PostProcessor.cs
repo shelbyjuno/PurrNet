@@ -1466,6 +1466,7 @@ namespace PurrNet.Codegen
                     return default!;
                 
                 HashSet<TypeReference> typesToGenerateSerializer = new();
+                HashSet<TypeReference> typesToPrepareHasher = new();
                 
                 var messages = new List<DiagnosticMessage>();
 
@@ -1555,6 +1556,10 @@ namespace PurrNet.Codegen
                         if (!inheritsFromNetworkIdentity && !inheritsFromNetworkClass && _rpcMethods.Count == 0)
                             continue;
                         
+                        if (!inheritsFromNetworkIdentity && !inheritsFromNetworkClass)
+                             typesToPrepareHasher.Add(type);
+                        else typesToGenerateSerializer.Add(type);
+                        
                         HashSet<TypeReference> usedTypes = new();
 
                         for (var index = 0; index < _rpcMethods.Count; index++)
@@ -1619,8 +1624,14 @@ namespace PurrNet.Codegen
 
                 ExpandNested(assemblyDefinition, typesToGenerateSerializer);
                 
+                // remove any typesToGenerateSerializer from typesToPrepareHasher
+                typesToPrepareHasher.ExceptWith(typesToGenerateSerializer);
+
                 foreach (var typeRef in typesToGenerateSerializer)
-                    GenerateSerializersProcessor.HandleType(assemblyDefinition, typeRef, messages);
+                    GenerateSerializersProcessor.HandleType(false, assemblyDefinition, typeRef, messages);
+                
+                foreach (var typeRef in typesToPrepareHasher)
+                    GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, messages);
 
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();
@@ -1712,6 +1723,9 @@ namespace PurrNet.Codegen
 
         private static void AddNestedTypes(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
         {
+            if (resolved == null)
+                return;
+            
             foreach (var field in resolved.Fields)
             {
                 if (!visited.Add(field.FieldType))

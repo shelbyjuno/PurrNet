@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using PurrNet.Packets;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
+using INetworkedData = PurrNet.Packing.INetworkedData;
 using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
@@ -55,7 +57,7 @@ namespace PurrNet.Codegen
             }
         }
         
-        public static void HandleType(AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
+        public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
         {
             if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
                 return;
@@ -75,14 +77,7 @@ namespace PurrNet.Codegen
             var resolvedType = type.Resolve();
             
             if (resolvedType == null)
-            {
-                messages.Add(new DiagnosticMessage
-                {
-                    MessageData = $"Could not resolve type {type.FullName}",
-                    DiagnosticType = DiagnosticType.Error
-                });
                 return;
-            }
             
             if (resolvedType.IsInterface)
                 return;
@@ -104,41 +99,21 @@ namespace PurrNet.Codegen
             
             assembly.MainModule.Types.Add(serializerClass);
 
+            if (hashOnly)
+            {
+                HandleHashOnly(assembly, type, serializerClass);
+                return;
+            }
+
             if (IsGeneric(type, out var genericT))
             {
-                var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
-                var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
-                var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
-                var attribute = new CustomAttribute(constructor);
-                registerMethod.CustomAttributes.Add(attribute);
-                attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
-                registerMethod.Body = new MethodBody(registerMethod)
-                {
-                    InitLocals = true
-                };
-            
-                var register = registerMethod.Body.GetILProcessor();
-                GenerateRegisterMethod(assembly.MainModule, type, register, genericT);
-                serializerClass.Methods.Add(registerMethod);
+                HandleGenerics(assembly, type, genericT, serializerClass);
                 return;
             }
             
             if (isNetworkIdentity)
             {
-                var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
-                var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
-                var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
-                var attribute = new CustomAttribute(constructor);
-                registerMethod.CustomAttributes.Add(attribute);
-                attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
-                registerMethod.Body = new MethodBody(registerMethod)
-                {
-                    InitLocals = true
-                };
-            
-                var register = registerMethod.Body.GetILProcessor();
-                GenerateRegisterMethodForIdentity(type, register);
-                serializerClass.Methods.Add(registerMethod);
+                HandleNetworkIdentity(assembly, type, serializerClass);
                 return;
             }
             
@@ -176,6 +151,70 @@ namespace PurrNet.Codegen
             serializerClass.Methods.Add(readMethod);
             
             RegisterSerializersProcessor.HandleType(type.Module, serializerClass, messages);
+        }
+
+        private static void HandleHashOnly(AssemblyDefinition assembly, TypeReference type, TypeDefinition serializerClass)
+        {
+            var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
+            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
+            var attribute = new CustomAttribute(constructor);
+            registerMethod.CustomAttributes.Add(attribute);
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            registerMethod.Body = new MethodBody(registerMethod)
+            {
+                InitLocals = true
+            };
+            
+            var il = registerMethod.Body.GetILProcessor();
+            
+            var networkRegister = assembly.MainModule.GetTypeDefinition(typeof(NetworkRegister)).Import(assembly.MainModule);
+            var hashMethod = networkRegister.GetMethod("Hash").Import(assembly.MainModule);
+            
+            // NetworkRegister.Hash(RuntimeTypeHandle handle);
+            il.Emit(OpCodes.Ldtoken, type);
+            il.Emit(OpCodes.Call, hashMethod);
+            il.Emit(OpCodes.Ret);
+            
+            serializerClass.Methods.Add(registerMethod);
+        }
+
+        private static void HandleNetworkIdentity(AssemblyDefinition assembly, TypeReference type,
+            TypeDefinition serializerClass)
+        {
+            var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
+            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
+            var attribute = new CustomAttribute(constructor);
+            registerMethod.CustomAttributes.Add(attribute);
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            registerMethod.Body = new MethodBody(registerMethod)
+            {
+                InitLocals = true
+            };
+            
+            var register = registerMethod.Body.GetILProcessor();
+            GenerateRegisterMethodForIdentity(type, register);
+            serializerClass.Methods.Add(registerMethod);
+        }
+
+        private static void HandleGenerics(AssemblyDefinition assembly, TypeReference type, HandledGenericTypes genericT,
+            TypeDefinition serializerClass)
+        {
+            var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
+            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
+            var attribute = new CustomAttribute(constructor);
+            registerMethod.CustomAttributes.Add(attribute);
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            registerMethod.Body = new MethodBody(registerMethod)
+            {
+                InitLocals = true
+            };
+            
+            var register = registerMethod.Body.GetILProcessor();
+            GenerateRegisterMethod(assembly.MainModule, type, register, genericT);
+            serializerClass.Methods.Add(registerMethod);
         }
 
         private static void GenerateRegisterMethodForIdentity(TypeReference type, ILProcessor il)
