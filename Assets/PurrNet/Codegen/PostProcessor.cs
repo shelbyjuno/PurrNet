@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -1465,6 +1466,7 @@ namespace PurrNet.Codegen
                 if (!WillProcess(compiledAssembly))
                     return default!;
                 
+                HashSet<string> visitedTypes = new();
                 HashSet<TypeReference> typesToGenerateSerializer = new();
                 HashSet<TypeReference> typesToPrepareHasher = new();
                 
@@ -1628,10 +1630,10 @@ namespace PurrNet.Codegen
                 typesToPrepareHasher.ExceptWith(typesToGenerateSerializer);
 
                 foreach (var typeRef in typesToGenerateSerializer)
-                    GenerateSerializersProcessor.HandleType(false, assemblyDefinition, typeRef, messages);
+                    GenerateSerializersProcessor.HandleType(false, assemblyDefinition, typeRef, visitedTypes, messages);
                 
                 foreach (var typeRef in typesToPrepareHasher)
-                    GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, messages);
+                    GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, visitedTypes, messages);
 
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();
