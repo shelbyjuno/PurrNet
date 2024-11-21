@@ -176,6 +176,19 @@ namespace PurrNet
 
         private void Awake()
         {
+            if (main && main != this)
+            {
+                if (main.isOffline)
+                {
+                    Destroy(gameObject);
+                }
+                else
+                {
+                    Destroy(this);
+                    return;
+                }
+            }
+            
             if (!networkRules)
                 throw new InvalidOperationException(PurrLogger.FormatMessage("NetworkRules is not set (null)."));
 
@@ -189,8 +202,7 @@ namespace PurrNet
                 _visibilityRules.Setup(this);
             }
             
-            if (!main)
-                main = this;
+            main = this;
 
             Time.fixedDeltaTime = 1f / _tickRate;
             Application.runInBackground = true;
