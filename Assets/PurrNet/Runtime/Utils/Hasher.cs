@@ -40,6 +40,8 @@ namespace PurrNet.Utils
 
         public static uint PrepareType(Type type)
         {
+            PurrLogger.Log($"Preparing type {type.FullName}");
+            
             if (_hashes.TryGetValue(type, out var hash))
                 return hash;
             

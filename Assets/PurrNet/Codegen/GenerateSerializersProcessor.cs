@@ -20,57 +20,23 @@ namespace PurrNet.Codegen
             List,
             Array
         }
-        
-        static string GetTypeWithAllParentTypes(TypeReference type)
-        {
-            var parentTypes = new List<string>();
-            var currentType = type;
-            while (currentType != null)
-            {
-                parentTypes.Add(currentType.Name);
 
-                var resolved = currentType.Resolve();
-                if (resolved == null) break;
-                currentType = resolved.BaseType;
+        static bool ValideType(TypeReference type)
+        {
+            // Check if the type itself is an interface
+            if (type.Resolve()?.IsInterface == true)
+            {
+                return false;
             }
 
-            return string.Join("_", parentTypes);
-        }
-
-        static string PrettyTypeName(TypeReference typeRef)
-        {
-            // print full name with generic arguments
-            var typeName = GetTypeWithAllParentTypes(typeRef);
-            
-            switch (typeRef)
-            {
-                case GenericInstanceType genericInstance:
-                {
-                    var genericArgs = string.Join(", ", genericInstance.GenericArguments.Select(a => a.Name));
-                    var name = $"{typeName[..^2]}_{genericArgs}";
-                    return name;
-                }
-                case ArrayType arrayType:
-                    return $"Array_{PrettyTypeName(arrayType.ElementType)}";
-                default:
-                    return typeName;
-            }
-        }
-
-        static bool ValideType(TypeReference type, List<DiagnosticMessage> messages)
-        {
             // Check if the type is a generic instance
             if (type is GenericInstanceType genericInstance)
             {
-                // Iterate through the generic arguments to check if any are open
+                // Recursively validate all generic arguments
                 foreach (var argument in genericInstance.GenericArguments)
                 {
-                    if (argument.ContainsGenericParameter)
+                    if (argument.ContainsGenericParameter || argument.Resolve()?.IsInterface == true || !ValideType(argument))
                     {
-                        messages.Add(new DiagnosticMessage
-                        {
-                            MessageData = $"Type {type.FullName} has open generic arguments."
-                        });
                         return false;
                     }
                 }
@@ -78,15 +44,16 @@ namespace PurrNet.Codegen
             else if (type.ContainsGenericParameter)
             {
                 // If the type itself contains generic parameters (e.g., T)
-                messages.Add(new DiagnosticMessage()
-                {
-                    MessageData = $"Type {type.FullName} contains open generic parameters."
-                });
                 return false;
             }
 
-            // If no open generics are found, return true
+            // If no open generics or interfaces are found, return true
             return true;
+        }
+        
+        static string MakeFullNameValidCSharp(string name)
+        {
+            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_");
         }
         
         public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, List<DiagnosticMessage> messages)
@@ -94,7 +61,7 @@ namespace PurrNet.Codegen
             if (!visited.Add(type.FullName))
                 return;
 
-            if (!ValideType(type, messages))
+            if (!ValideType(type))
                 return;
             
             if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
@@ -107,7 +74,7 @@ namespace PurrNet.Codegen
             
             // create static class
             var serializerClass = new TypeDefinition(namespaceName, 
-                $"{PrettyTypeName(type)}_Serializer",
+                $"{MakeFullNameValidCSharp(type.FullName)}_Serializer",
                 TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Public,
                 assembly.MainModule.TypeSystem.Object
             );
