@@ -56,9 +56,47 @@ namespace PurrNet.Codegen
                     return typeName;
             }
         }
-        
-        public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, List<DiagnosticMessage> messages)
+
+        static bool ValideType(TypeReference type, List<DiagnosticMessage> messages)
         {
+            // Check if the type is a generic instance
+            if (type is GenericInstanceType genericInstance)
+            {
+                // Iterate through the generic arguments to check if any are open
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    if (argument.ContainsGenericParameter)
+                    {
+                        messages.Add(new DiagnosticMessage
+                        {
+                            MessageData = $"Type {type.FullName} has open generic arguments."
+                        });
+                        return false;
+                    }
+                }
+            }
+            else if (type.ContainsGenericParameter)
+            {
+                // If the type itself contains generic parameters (e.g., T)
+                messages.Add(new DiagnosticMessage()
+                {
+                    MessageData = $"Type {type.FullName} contains open generic parameters."
+                });
+                return false;
+            }
+
+            // If no open generics are found, return true
+            return true;
+        }
+        
+        public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, List<DiagnosticMessage> messages)
+        {
+            if (!visited.Add(type.FullName))
+                return;
+
+            if (!ValideType(type, messages))
+                return;
+            
             if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
                 return;
             
