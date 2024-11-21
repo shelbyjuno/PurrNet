@@ -38,7 +38,7 @@ namespace PurrNet
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
         [Header("Network Settings")]
-        [SerializeField] private bool _dontDestroyOnLoad;
+        [SerializeField] private bool _dontDestroyOnLoad = true;
         [SerializeField] private GenericTransport _transport;
         [SerializeField] private NetworkPrefabs _networkPrefabs;
         [SerializeField] private NetworkRules _networkRules;

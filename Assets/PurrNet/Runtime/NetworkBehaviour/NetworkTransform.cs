@@ -360,6 +360,9 @@ namespace PurrNet
             if (ApplicationContext.isQuitting)
                 return;
             
+            if (!isSpawned)
+                return;
+            
             if (!_trs)
                 return;
             

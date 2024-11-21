@@ -425,7 +425,18 @@ namespace PurrNet.Modules
 
             var idToAssign = GetNextID();
             var parameters = new LoadSceneParameters(settings.mode, settings.physicsMode);
-            
+
+            if (settings.mode == LoadSceneMode.Single)
+            {
+                // add unload action for every scene that is being loaded
+                for (int i = 0; i < _rawScenes.Count; i++)
+                {
+                    bool isDontDestroyOnLoad = _scenes[_rawScenes[i]].scene.name == "DontDestroyOnLoad";
+                    if (!isDontDestroyOnLoad)
+                        _history.AddUnloadAction(new UnloadSceneAction { sceneID = _rawScenes[i], options = UnloadSceneOptions.None });
+                }
+            }
+
             _history.AddLoadAction(new LoadSceneAction
             {
                 buildIndex = sceneIndex, 
@@ -631,7 +642,7 @@ namespace PurrNet.Modules
             {
                 for (int i = 0; i < _pendingUnloads.Count; i++)
                 {
-                    if (!_pendingUnloads[i].isDone)
+                    if (_pendingUnloads[i] != null && !_pendingUnloads[i].isDone)
                         return false;
                 }
             } 

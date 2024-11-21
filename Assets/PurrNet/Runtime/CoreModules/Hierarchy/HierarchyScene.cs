@@ -10,8 +10,10 @@ using Object = UnityEngine.Object;
 namespace PurrNet.Modules
 {
     internal struct TriggerQueuedSpawnEvents : IAutoNetworkedData
-    { }
-    
+    {
+        public SceneID sceneId;
+    }
+
     internal struct ComponentGameObjectPair
     {
         public GameObject gameObject;
@@ -136,9 +138,12 @@ namespace PurrNet.Modules
 
             identities.DestroyAllNonSceneObjects();
         }
-
+        
         private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
         {
+            if (data.sceneId != _sceneID)
+                return;
+            
             TriggerSpawnEvents();
         }
 
@@ -243,8 +248,13 @@ namespace PurrNet.Modules
             for (int i = 0; i < data.actions.Count; i++)
             {
                 var action = data.actions[i];
-                if (action is { type: HierarchyActionType.Despawn, despawnAction: { despawnType: DespawnType.GameObject } })
+                if (action is
+                    {
+                        type: HierarchyActionType.Despawn, despawnAction: { despawnType: DespawnType.GameObject }
+                    })
+                {
                     _instancesAboutToBeRemoved.Add(data.actions[i].despawnAction.identityId);
+                }
             }
             
             for (int i = 0; i < data.actions.Count; i++)
@@ -253,6 +263,8 @@ namespace PurrNet.Modules
                 OnHierarchyAction(player, ref action);
                 data.actions[i] = action;
             }
+            
+            _instancesAboutToBeRemoved.Clear();
         }
 
         readonly struct ActionSignature
@@ -652,8 +664,8 @@ namespace PurrNet.Modules
                     }
                     else
                     {
-                        child.SetIsSpawned(false, _asServer);
                         child.TriggerDespawnEvent(_asServer);
+                        child.SetIsSpawned(false, _asServer);
                     }
                 }
 
@@ -940,7 +952,7 @@ namespace PurrNet.Modules
             
             onIdentityRemoved?.Invoke(identity);
             identity.TriggerDespawnEvent(_asServer);
-            
+
             if (!identity.isSceneObject && _asServer && _manager.isHost)
                 identity.TriggerDespawnEvent(false);
         }
@@ -1316,7 +1328,11 @@ namespace PurrNet.Modules
                 onBeforeSpawnTrigger?.Invoke(_sceneID);
                 
                 TriggerSpawnEvents();
-                _playersManager.Send(player, new TriggerQueuedSpawnEvents());
+                
+                _playersManager.Send(player, new TriggerQueuedSpawnEvents
+                {
+                    sceneId = _sceneID
+                });
                 
                 all.Dispose();
             }

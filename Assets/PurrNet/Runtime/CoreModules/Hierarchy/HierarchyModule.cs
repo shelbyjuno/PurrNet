@@ -71,8 +71,8 @@ namespace PurrNet
                 hierarchy.onIdentityAdded -= TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved -= TriggerOnEntityRemoved;
                 hierarchy.onBeforeSpawnTrigger -= TriggerOnBeforeSpawnTrigger;
-
                 hierarchy.Disable(asserver);
+                
                 _hierarchies.Remove(hierarchy);
                 _sceneToHierarchy.Remove(scene);
             }

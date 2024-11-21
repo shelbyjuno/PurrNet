@@ -680,7 +680,7 @@ namespace PurrNet.Modules
                 
                 if (!identity.TryGetModule(packet.childId, out var networkClass))
                 {
-                    PurrLogger.LogError($"Can't find child with id {packet.childId} in identity {identity.GetType().Name}.");
+                    PurrLogger.LogError($"Can't find child with id {packet.childId} in identity {identity.GetType().Name}.", identity);
                 }
                 else
                 {
