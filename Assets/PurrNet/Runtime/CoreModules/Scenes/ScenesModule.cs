@@ -396,6 +396,19 @@ namespace PurrNet.Modules
             
             return LoadSceneAsync(idx, parameters);
         }
+        
+        public AsyncOperation LoadSceneAsync(string sceneName, PurrSceneSettings settings)
+        {
+            var idx = SceneNameToBuildIndex(sceneName);
+            
+            if (idx == -1)
+            {
+                PurrLogger.LogError($"Scene {sceneName} not found in build settings");
+                return null;
+            }
+            
+            return LoadSceneAsync(idx, settings);
+        }
 
         public AsyncOperation LoadSceneAsync(int sceneIndex, LoadSceneParameters parameters)
         {
