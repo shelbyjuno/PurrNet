@@ -12,7 +12,7 @@ namespace PurrNet
             bool bufferLast = false,
             bool requireServer = true, 
             bool excludeOwner = false,
-            bool excludeSender = true,
+            bool excludeSender = false,
             float asyncTimeoutInSec = 5f) { }
     }
 }

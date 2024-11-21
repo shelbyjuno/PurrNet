@@ -1,14 +1,7 @@
 using System;
-using System.Collections;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
-using PurrNet.Examples;
-using PurrNet.Logging;
-using PurrNet.Modules;
-using PurrNet.Packets;
-using PurrNet.Transports;
-using PurrNet.Utils;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -34,30 +27,15 @@ public class NetworkBehaviourExample : NetworkBehaviour
     {
         if (!asServer)
         {
-            //StartCoroutine(CoolRPC_Coroutines());
-            /*var res = await CoolRPCTest("fefes");
-            Debug.Log("CoolRPCTest result: " + res);
-
-            var pong = PingPongTest("Pong");
-            Debug.Log("PingPongTest result: " + await pong);
-            
-            await SomeDelay(1);
-            Debug.Log("SomeDelay Done");*/
             if (localPlayer.HasValue)
             {
-                Debug.Log("Sending Targeted RPC to " + localPlayer.Value);
                 SetColor_Target(localPlayer.Value, Color.red);
             }
             else Debug.Log("No local player");
-            
-            // _ = CoolRPCTest2();
-
-            // this will be sent to the server as per usual
-            // Test("Test 3");
         }
     }
     
-    [TargetRpc(requireServer: false)]
+    [ObserversRpc]
     private void SetColor_Target([UsedImplicitly] PlayerID player, Color color)
     {
         Debug.Log("SetColor_Target: " + color);
