@@ -1560,7 +1560,7 @@ namespace PurrNet.Codegen
                         
                         if (!inheritsFromNetworkIdentity && !inheritsFromNetworkClass)
                              typesToPrepareHasher.Add(type);
-                        else typesToGenerateSerializer.Add(type);
+                        // else typesToGenerateSerializer.Add(type);
                         
                         HashSet<TypeReference> usedTypes = new();
 

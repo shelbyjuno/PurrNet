@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 
 namespace PurrNet.Utils
@@ -38,10 +39,9 @@ namespace PurrNet.Utils
             return _decoder_64.TryGetValue(hash, out type);
         }
 
+        [UsedImplicitly]
         public static uint PrepareType(Type type)
         {
-            PurrLogger.Log($"Preparing type {type.FullName}");
-            
             if (_hashes.TryGetValue(type, out var hash))
                 return hash;
             
