@@ -425,9 +425,19 @@ namespace PurrNet.Modules
 
             var idToAssign = GetNextID();
             var parameters = new LoadSceneParameters(settings.mode, settings.physicsMode);
-
+            
             if (settings.mode == LoadSceneMode.Single)
             {
+                if (TryGetSceneID(_networkManager.gameObject.scene, out var nmId) &&
+                    TryGetSceneState(nmId, out var nmScene))
+                {
+                    if (nmScene.scene.name != "DontDestroyOnLoad")
+                    {
+                        PurrLogger.LogError("Network manager scene is not DontDestroyOnLoad and you are trying to" +
+                                            " load a new scene with LoadSceneMode.Single");
+                    }
+                }
+                
                 // add unload action for every scene that is being loaded
                 for (int i = 0; i < _rawScenes.Count; i++)
                 {
