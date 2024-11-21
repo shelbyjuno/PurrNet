@@ -303,15 +303,30 @@ namespace PurrNet
         
         public TickManager GetTickManager(bool asServer) => asServer ? serverTickManager : clientTickManager;
         
-        public ScenesModule clientScenesModule { get; private set; }
+        public ScenesModule sceneModule => _serverSceneModule ?? _clientSceneModule;
         
-        public ScenesModule serverScenesModule { get; private set; }
+        public PlayersManager playerModule => _serverPlayersManager ?? _clientPlayersManager;
         
-        public ScenesModule GetScenesModule(bool asServer) => asServer ? serverScenesModule : clientScenesModule;
+        public TickManager tickModule => serverTickManager ?? clientTickManager;
+        
+        public PlayerID localPlayer => playerModule.localPlayerId ?? default;
+        
+        private ScenesModule _clientSceneModule;
+        private ScenesModule _serverSceneModule;
+        
+        private PlayersManager _clientPlayersManager;
+        private PlayersManager _serverPlayersManager;
+        
+        private TickManager _clientTickManager;
+        private TickManager _serverTickManager;
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
             var tickManager = new TickManager(_tickRate);
+            
+            if (asServer)
+                 serverTickManager = tickManager;
+            else clientTickManager = tickManager;
             
             if (asServer)
                 serverTickManager = tickManager;
@@ -321,15 +336,19 @@ namespace PurrNet
             var networkCookies = new CookiesModule(_cookieScope);
             
             var playersManager = new PlayersManager(this, networkCookies, broadcastModule);
+            
+            if (asServer)
+                 _serverPlayersManager = playersManager;
+            else _clientPlayersManager = playersManager;
+            
             var playersBroadcast = new PlayersBroadcaster(broadcastModule, playersManager);
 
             var scenesModule = new ScenesModule(this, playersManager);
             
             if (asServer)
-                serverScenesModule = scenesModule;
-            else clientScenesModule = scenesModule;
+                 _serverSceneModule = scenesModule;
+            else _clientSceneModule = scenesModule;
 
-            
             var scenePlayersModule = new ScenePlayersModule(this, scenesModule, playersManager);
             
             var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
