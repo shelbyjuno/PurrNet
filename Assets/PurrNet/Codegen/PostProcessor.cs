@@ -1517,7 +1517,7 @@ namespace PurrNet.Codegen
                         {
                             List<FieldDefinition> _networkFields = new();
                             
-                            IncludeAnyConcreteGenericParameters(module, type, typesToGenerateSerializer);
+                            IncludeAnyConcreteGenericParameters(type, typesToGenerateSerializer);
                             FindNetworkModules(type, classFullName, _networkFields);
                             CreateSyncVarInitMethod(inheritsFromNetworkIdentity, module, type, _networkFields);
                         }
@@ -1673,7 +1673,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void IncludeAnyConcreteGenericParameters(ModuleDefinition module, TypeDefinition type, HashSet<TypeReference> typesToGenerateSerializer)
+        private static void IncludeAnyConcreteGenericParameters(TypeDefinition type, HashSet<TypeReference> typesToGenerateSerializer)
         {
             if (type.BaseType is GenericInstanceType genericType)
             {
