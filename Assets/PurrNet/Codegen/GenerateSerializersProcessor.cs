@@ -18,7 +18,9 @@ namespace PurrNet.Codegen
         {
             None,
             List,
-            Array
+            Array,
+            HashSet,
+            Dictionary
         }
 
         static bool ValideType(TypeReference type)
@@ -258,6 +260,23 @@ namespace PurrNet.Codegen
                     
                     il.Emit(OpCodes.Call, genericRegisterArrayMethod);
                     break;
+                case HandledGenericTypes.HashSet when importedType is GenericInstanceType hashSetType:
+                    
+                    var registerHashSetMethod = packCollectionsType.GetMethod("RegisterHashSet", true).Import(module);
+                    var genericRegisterHashSetMethod = new GenericInstanceMethod(registerHashSetMethod);
+                    genericRegisterHashSetMethod.GenericArguments.Add(hashSetType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericRegisterHashSetMethod);
+                    break;
+                case HandledGenericTypes.Dictionary when importedType is GenericInstanceType dictionaryType:
+                    
+                    var registerDictionaryMethod = packCollectionsType.GetMethod("RegisterDictionary", true).Import(module);
+                    var genericRegisterDictionaryMethod = new GenericInstanceMethod(registerDictionaryMethod);
+                    genericRegisterDictionaryMethod.GenericArguments.Add(dictionaryType.GenericArguments[0]);
+                    genericRegisterDictionaryMethod.GenericArguments.Add(dictionaryType.GenericArguments[1]);
+                    
+                    il.Emit(OpCodes.Call, genericRegisterDictionaryMethod);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(handledType), handledType, null);
             }
@@ -452,6 +471,18 @@ namespace PurrNet.Codegen
             if (IsGeneric(typeDef, typeof(List<>)))
             {
                 type = HandledGenericTypes.List;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(HashSet<>)))
+            {
+                type = HandledGenericTypes.HashSet;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(Dictionary<,>)))
+            {
+                type = HandledGenericTypes.Dictionary;
                 return true;
             }
 

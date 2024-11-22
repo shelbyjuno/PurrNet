@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
@@ -36,14 +37,14 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (localPlayer.HasValue)
             {
-                SetColor_Target(localPlayer.Value, Color.red);
+                SetColor_Target(localPlayer.Value, Color.red, null);
             }
             else Debug.Log("No local player");
         }
     }
     
     [ObserversRpc]
-    private void SetColor_Target([UsedImplicitly] PlayerID player, Color color)
+    private void SetColor_Target([UsedImplicitly] PlayerID player, Color color, HashSet<int> fe)
     {
         Debug.Log("SetColor_Target: " + color);
     }
