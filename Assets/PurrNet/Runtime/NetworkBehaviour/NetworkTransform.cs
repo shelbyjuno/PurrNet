@@ -148,6 +148,12 @@ namespace PurrNet
             SendLatestTransform(player, GetCurrentTransformData());
         }
 
+        protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
+        {
+            if (asServer && newOwner.HasValue)
+                SendLatestTransform(newOwner.Value, GetCurrentTransformData());
+        }
+
         private int _ticksSinceLastSend;
         private bool _wasLastDirty;
         private NetworkTransformData _lastSentData;
