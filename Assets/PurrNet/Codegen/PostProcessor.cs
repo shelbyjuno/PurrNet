@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -1605,7 +1604,7 @@ namespace PurrNet.Codegen
                         
                         try
                         {
-                            FindUsedTypes(types, _rpcMethods, usedTypes);
+                            FindUsedTypes(module, types, _rpcMethods, usedTypes);
                             
                             foreach (var usedType in usedTypes)
                             {
@@ -1623,7 +1622,7 @@ namespace PurrNet.Codegen
                         }
                     }
                 }
-
+                
                 ExpandNested(assemblyDefinition, typesToGenerateSerializer);
                 
                 // remove any typesToGenerateSerializer from typesToPrepareHasher
@@ -1864,11 +1863,23 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ret));
         }
 
-        private static void FindUsedTypes(List<TypeDefinition> allTypes, List<RPCMethod> methods, HashSet<TypeReference> types)
+        private static void FindUsedTypes(ModuleDefinition module, List<TypeDefinition> allTypes, List<RPCMethod> methods, HashSet<TypeReference> types)
         {
+            var playersManagerSubscribe = module.GetTypeDefinition<PlayersManager>();
+            var broadcastModuleSubscribe = module.GetTypeDefinition<BroadcastModule>();
+            var networkModule = module.GetTypeDefinition<NetworkModule>();
+            
             for (int i = 0; i < allTypes.Count; i++)
             {
                 var type = allTypes[i];
+
+                foreach (var field in type.Fields)
+                {
+                    var resolved = field.FieldType.Resolve();
+                    if (resolved == null) continue;
+                    
+                    AddAnySyncVarOrGenericNetworkModulesType(types, resolved, networkModule, field);
+                }
 
                 for (int j = 0; j < type.Methods.Count; j++)
                 {
@@ -1877,38 +1888,78 @@ namespace PurrNet.Codegen
                     if (method.Body == null) continue;
 
                     var body = method.Body;
-                    
+
                     for (int k = 0; k < body.Instructions.Count; k++)
                     {
                         var instruction = body.Instructions[k];
+
+                        if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt) 
+                            continue;
                         
-                        if (instruction.OpCode == OpCodes.Call && instruction.Operand is GenericInstanceMethod currentMethod)
+                        if (instruction.Operand is GenericInstanceMethod currentMethod)
                         {
-                            bool isRpcMethod = false;
+                            var isRpcMethod = IsRpcMethod(methods, currentMethod);
                             
-                            foreach (var rpcMethod in methods)
-                            {
-                                if (rpcMethod.originalMethod.GetElementMethod() == currentMethod.GetElementMethod())
-                                {
-                                    isRpcMethod = true;
-                                    break;
-                                }
-                            }
-
-                            if (!isRpcMethod)
-                                continue;
-
-                            foreach (var argument in currentMethod.GenericArguments)
-                            {
-                                if (!argument.IsGenericParameter)
-                                    types.Add(argument);
-                            }
+                            FindUsedGenericRpcTypes(types, isRpcMethod, currentMethod);
+                            
+                            var isSubscribeMethod = currentMethod.GenericArguments.Count == 1 && currentMethod.Name.Equals("Subscribe") &&
+                                                    (currentMethod.DeclaringType.FullName ==  playersManagerSubscribe.FullName ||
+                                                     currentMethod.DeclaringType.FullName == broadcastModuleSubscribe.FullName);
+                            
+                            if (isSubscribeMethod && IsConcreteType(currentMethod.GenericArguments[0], out var concreteType))
+                                types.Add(concreteType);
                         }
                     }
                 }
             }
         }
-        
+
+        private static void AddAnySyncVarOrGenericNetworkModulesType(HashSet<TypeReference> types, TypeDefinition resolved,
+            TypeDefinition networkModule, FieldDefinition field)
+        {
+            bool inheritsNetworkModule = InheritsFrom(resolved, networkModule.FullName);
+
+            if (inheritsNetworkModule)
+            {
+                if (field.FieldType is GenericInstanceType genericInstance)
+                {
+                    foreach (var genericArg in genericInstance.GenericArguments)
+                    {
+                        if (IsConcreteType(genericArg, out var concreteType))
+                            types.Add(concreteType);
+                    }
+                }
+            }
+        }
+
+        private static void FindUsedGenericRpcTypes(HashSet<TypeReference> types, bool isRpcMethod, GenericInstanceMethod currentMethod)
+        {
+            if (isRpcMethod)
+            {
+                foreach (var argument in currentMethod.GenericArguments)
+                {
+                    if (!argument.IsGenericParameter)
+                        types.Add(argument);
+                }
+            }
+        }
+
+        private static bool IsRpcMethod(List<RPCMethod> methods, GenericInstanceMethod currentMethod)
+        {
+            bool isRpcMethod = false;
+
+            foreach (var rpcMethod in methods)
+            {
+                if (rpcMethod.originalMethod.GetElementMethod() == currentMethod.GetElementMethod())
+                {
+                    isRpcMethod = true;
+                    break;
+                }
+            }
+
+            return isRpcMethod;
+        }
+
         public static bool IsTypeInOwnModule(TypeReference typeReference, ModuleDefinition ownModule)
         {
             if (IsGeneric(typeReference, typeof(Dictionary<,>)))

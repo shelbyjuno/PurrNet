@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet;
+using PurrNet.Packing;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -12,19 +13,10 @@ struct TestStruct
     public int b;
 }
 
-public struct TestStructFWFE
+public struct TestStructFWFEIFHJEIFHJEIFHIE
 {
     public int a;
     public int b;
-}
-
-public class TestStaticClass
-{
-    [ServerRpc]
-    public static void TestStaticMethod(TestStructFWFE data)
-    {
-        Debug.Log("TestStaticMethod");
-    }
 }
 
 public class NetworkBehaviourExample : NetworkBehaviour
@@ -32,7 +24,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
     [SerializeField] private Transform someRef;
 
     [SerializeField]
-    private SyncVar<int> _testChild2 = new (70);
+    private SyncVar<TestStructFWFEIFHJEIFHJEIFHIE> _testChild2;
 
     [SerializeField] private bool _keepChanging;
 
@@ -45,7 +37,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
             if (localPlayer.HasValue)
             {
                 SetColor_Target(localPlayer.Value, Color.red);
-                TestStaticClass.TestStaticMethod(new TestStructFWFE {a = 1, b = 2});
             }
             else Debug.Log("No local player");
         }
@@ -63,7 +54,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                _testChild2.value = Random.Range(0, 100);
+                // _testChild2.value = Random.Range(0, 100);
                 ObserversRPCTest(Time.time, someRef);
             }
         }
@@ -115,8 +106,8 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (_keepChanging)
-            _testChild2.value = Random.Range(0, 100);
+        /*if (_keepChanging)
+            _testChild2.value = Random.Range(0, 100);*/
     }
 
     [ObserversRpc(requireServer: false, bufferLast: true)]
