@@ -119,21 +119,19 @@ namespace PurrNet.StateMachine
                 PurrLogger.LogException($"State '{node.name}' of type {node.GetType().Name} not in states list");
 
             var newStateId = idx < 0 ? -1 : idx;
-            if (_currentState.stateId != newStateId)
-            {
-                var oldState = _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
-                    null : _states[_currentState.stateId];
+            
+            var oldState = _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
+                null : _states[_currentState.stateId];
 
-                if (oldState)
-                {
-                    oldState.Exit(true);
-                    if (!isServer)
-                        oldState.Exit(false);
-                }
-                
-                _previousStateId = _currentState.stateId;
-                _currentState.stateId = newStateId;
+            if (oldState)
+            {
+                oldState.Exit(true);
+                if (!isServer)
+                    oldState.Exit(false);
             }
+            
+            _previousStateId = _currentState.stateId;
+            _currentState.stateId = newStateId;
         }
 
         public void SetState<T>(StateNode<T> state, T data)
@@ -154,12 +152,12 @@ namespace PurrNet.StateMachine
             if (state)
             {
                 state.Enter(data, true);
-                state.Enter(true);
+                //state.Enter(true);
 
                 if (!isServer)
                 {
                     state.Enter(data, false);
-                    state.Enter(false);
+                    //state.Enter(false);
                 }
             }
         }
