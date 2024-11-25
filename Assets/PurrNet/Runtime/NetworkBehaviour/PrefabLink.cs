@@ -23,21 +23,12 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        private void Awake()
-        {
-            SceneObjectsModule.MarkSceneIdentities(gameObject.scene);
-            
-            if (!delayedAutoSpawn)
-                DoAutoSpawn();
-        }
-
         void Start()
         {
-            if (delayedAutoSpawn)
-                DoAutoSpawn();
+            DoAutoSpawn();
         }
 
-        private void DoAutoSpawn()
+        public void DoAutoSpawn()
         {
             if (_muteAutoSpawn)
                 return;

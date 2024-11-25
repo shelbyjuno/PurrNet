@@ -57,7 +57,6 @@ namespace PurrNet.Modules
         public event Action<NetworkIdentity> onIdentityRootSpawned;
         
         private readonly SceneID _sceneID;
-        private Scene _sceneUnity;
         private readonly bool _asServer;
 
         public string GetActionsAsString()
@@ -108,10 +107,7 @@ namespace PurrNet.Modules
             _playersManager.Subscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
 
             if (_scenes.TryGetSceneState(_sceneID, out var state))
-            {
                 _sceneObjects = SceneObjectsModule.GetSceneIdentities(state.scene);
-                _sceneUnity = state.scene;
-            }
 
             if (_asServer)
                 SpawnSceneObjects(_sceneObjects);
@@ -141,8 +137,6 @@ namespace PurrNet.Modules
                 identity.TriggerDespawnEvent(false);
 
             identities.DestroyAllNonSceneObjects();
-            
-            SceneObjectsModule.ClearScene(_sceneUnity);
         }
         
         private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
