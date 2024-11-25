@@ -1730,11 +1730,34 @@ namespace PurrNet.Codegen
             {
                 var type = copy[i];
                 var resolved = type.Resolve();
-                AddNestedTypes(assembly, resolved, typesToHandle, visited);
+                
+                if (type is GenericInstanceType genericInstance)
+                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited);
+                AddNestedFields(assembly, resolved, typesToHandle, visited);
             }
         }
 
-        private static void AddNestedTypes(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
+        private static void AddNestedGenerics(AssemblyDefinition assembly, GenericInstanceType type, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
+        {
+            for (int i = 0; i < type.GenericArguments.Count; i++)
+            {
+                var argument = type.GenericArguments[i];
+                
+                if (!visited.Add(argument))
+                    continue;
+
+                if (argument is GenericInstanceType genericInstance)
+                {
+                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited);
+                }
+                else if (IsTypeInOwnModule(argument, assembly.MainModule))
+                {
+                    typesToHandle.Add(argument);
+                }
+            }
+        }
+
+        private static void AddNestedFields(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
         {
             if (resolved == null)
                 return;
@@ -1765,7 +1788,7 @@ namespace PurrNet.Codegen
                             containsMyStuff = true;
                         }
                         
-                        AddNestedTypes(assembly, resolvedArg, typesToHandle, visited);
+                        AddNestedFields(assembly, resolvedArg, typesToHandle, visited);
                     }
                     
                     if (containsMyStuff)
@@ -1776,7 +1799,7 @@ namespace PurrNet.Codegen
                 else if (IsTypeInOwnModule(field.FieldType, assembly.MainModule))
                 {
                     typesToHandle.Add(field.FieldType);
-                    AddNestedTypes(assembly, field.FieldType.Resolve(), typesToHandle, visited);
+                    AddNestedFields(assembly, field.FieldType.Resolve(), typesToHandle, visited);
                 }
             }
         }

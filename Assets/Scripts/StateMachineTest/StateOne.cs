@@ -15,9 +15,11 @@ public class StateOne : StateNode
     public override void StateUpdate(bool asServer)
     {
         base.StateUpdate(asServer);
-        
-        if(Input.GetKeyDown(KeyCode.X))
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
             machine.Next(forTwo);
+        }
     }
 
     public override void Exit(bool asServer)

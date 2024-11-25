@@ -47,6 +47,12 @@ namespace PurrNet.Packing
         {
             try
             {
+                if (_write == null)
+                {
+                    PurrLogger.LogError($"No writer for type '{typeof(T)}' is registered.");
+                    return;
+                }
+                
                 _write(packer, value);
             }
             catch (Exception e)
@@ -59,6 +65,12 @@ namespace PurrNet.Packing
         {
             try
             {
+                if (_read == null)
+                {
+                    PurrLogger.LogError($"No reader for type '{typeof(T)}' is registered.");
+                    return;
+                }
+                
                 _read(packer, ref value);
             }
             catch (Exception e)
