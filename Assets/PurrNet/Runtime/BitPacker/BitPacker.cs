@@ -10,18 +10,29 @@ namespace PurrNet.Packing
     public partial class BitPacker : IDisposable
     {
         private byte[] _buffer;
-        private int _positionInBits;
         private bool _isReading;
         
         public bool isWrapper { get; private set; }
 
+        public int positionInBits { get; private set; }
+
+        public int positionInBytes
+        {
+            get
+            {
+                int pos = positionInBits / 8;
+                int len = pos + (positionInBits % 8 == 0 ? 0 : 1);
+                return len;
+            }
+        }
+        
         public int length
         {
             get
             {
-                int pos = _positionInBits / 8;
-                int len = pos + (_positionInBits % 8 == 0 ? 0 : 1);
-                return len;
+                if (isWrapper)
+                    return _buffer.Length;
+                return positionInBytes;
             }
         }
         
@@ -37,7 +48,7 @@ namespace PurrNet.Packing
         public void MakeWrapper(ByteData data)
         {
             _buffer = data.data;
-            _positionInBits = data.offset * 8;
+            positionInBits = data.offset * 8;
             isWrapper = true;
         }
         
@@ -53,7 +64,7 @@ namespace PurrNet.Packing
         
         public void ResetPosition()
         {
-            _positionInBits = 0;
+            positionInBits = 0;
         }
         
         public void ResetMode(bool readMode)
@@ -63,15 +74,15 @@ namespace PurrNet.Packing
         
         public void ResetPositionAndMode(bool readMode)
         {
-            _positionInBits = 0;
+            positionInBits = 0;
             _isReading = readMode;
         }
         
         private void EnsureBitsExist(int bits)
         {
-            int targetPos = (_positionInBits + bits) / 8;
+            int targetPos = (positionInBits + bits) / 8;
 
-            if (targetPos >= _buffer.Length)
+            if (targetPos > _buffer.Length)
             {
                 if (_isReading)
                     throw new IndexOutOfRangeException("Not enough bits in the buffer.");
@@ -116,8 +127,8 @@ namespace PurrNet.Packing
 
             while (bitsLeft > 0)
             {
-                int bytePos = _positionInBits / 8;
-                int bitOffset = _positionInBits % 8;
+                int bytePos = positionInBits / 8;
+                int bitOffset = positionInBits % 8;
                 int bitsToWrite = Math.Min(bitsLeft, 8 - bitOffset);
 
                 byte mask = (byte)((1 << bitsToWrite) - 1);
@@ -127,7 +138,7 @@ namespace PurrNet.Packing
                 _buffer[bytePos] |= (byte)(value << bitOffset); // Set the bits
 
                 bitsLeft -= bitsToWrite;
-                _positionInBits += bitsToWrite;
+                positionInBits += bitsToWrite;
             }
         }
 
@@ -141,8 +152,8 @@ namespace PurrNet.Packing
 
             while (bitsLeft > 0)
             {
-                int bytePos = _positionInBits / 8;
-                int bitOffset = _positionInBits % 8;
+                int bytePos = positionInBits / 8;
+                int bitOffset = positionInBits % 8;
                 int bitsToRead = Math.Min(bitsLeft, 8 - bitOffset);
 
                 byte mask = (byte)((1 << bitsToRead) - 1);
@@ -151,10 +162,28 @@ namespace PurrNet.Packing
                 result |= (ulong)value << (bits - bitsLeft);
 
                 bitsLeft -= bitsToRead;
-                _positionInBits += bitsToRead;
+                positionInBits += bitsToRead;
             }
 
             return result;
+        }
+
+        public void ReadBytes(BitPacker target, int count)
+        {
+            EnsureBitsExist(count * 8);
+
+            int excess = count % 8;
+            int fullChunks = count / 8;
+
+            // Process excess bytes (remaining bytes before full 64-bit chunks)
+            for (int i = 0; i < excess; i++)
+            {
+                target.WriteBits(ReadBits(8), 8);
+            }
+
+            // Process full 64-bit chunks
+            for (int i = 0; i < fullChunks; i++)
+                target.WriteBits(ReadBits(64), 64);
         }
 
         public void ReadBytes(IList<byte> bytes)
@@ -226,7 +255,7 @@ namespace PurrNet.Packing
 
         public void SkipBits(int skip)
         {
-            _positionInBits += skip;
+            positionInBits += skip;
         }
     }
 }

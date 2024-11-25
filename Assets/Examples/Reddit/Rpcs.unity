@@ -436,7 +436,6 @@ MonoBehaviour:
   _visitiblityRules: {fileID: 0}
   _states:
   - {fileID: 1849404127}
-  - {fileID: 1688220061}
   - {fileID: 1849404123}
 --- !u!4 &1849404126
 Transform:

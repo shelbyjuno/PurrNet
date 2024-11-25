@@ -243,15 +243,21 @@ namespace PurrNet.StateMachine
         }
     }
     
-    public struct StateMachineState : IPackedSimple
+    public struct StateMachineState : IPacked
     {
         public int stateId;
         public object data;
         
-        public void Serialize(BitPacker stream)
+        public void Write(BitPacker packer)
         {
-            Packer<int>.Serialize(stream, ref stateId);
-            Packer<object>.Serialize(stream, ref data);
+            Packer<int>.Write(packer, stateId);
+            Packer<object>.Write(packer, data);
+        }
+
+        public void Read(BitPacker packer)
+        {
+            Packer<int>.Read(packer, ref stateId);
+            Packer<object>.Read(packer, ref data);
         }
     }
 }
