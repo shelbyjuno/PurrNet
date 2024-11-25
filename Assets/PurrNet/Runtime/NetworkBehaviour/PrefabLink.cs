@@ -1,3 +1,4 @@
+using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -21,13 +22,21 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        // if you change this to Awake again you will regret it
-        void Start()
+        private void Awake()
         {
-            DoAutoSpawn();
+            SceneObjectsModule.MarkSceneIdentities(gameObject.scene);
+            
+            if (!delayedAutoSpawn)
+                DoAutoSpawn();
         }
 
-        public void DoAutoSpawn()
+        void Start()
+        {
+            if (delayedAutoSpawn)
+                DoAutoSpawn();
+        }
+
+        private void DoAutoSpawn()
         {
             if (_muteAutoSpawn)
                 return;
