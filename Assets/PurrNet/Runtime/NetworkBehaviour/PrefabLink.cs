@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -23,6 +21,7 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
+        // if you change this to Awake again you will regret it
         void Start()
         {
             DoAutoSpawn();
