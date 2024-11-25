@@ -10,6 +10,8 @@ public class SomeNetworkedData
 
 public class SomeBehaviour : NetworkIdentity
 {
+    SyncVar<ulong> _test = new ();
+    
     protected override void OnSpawned(bool asServer)
     {
         if (!asServer)
@@ -19,6 +21,10 @@ public class SomeBehaviour : NetworkIdentity
                 data = 42,
                 random = "Hello, World!"
             }, "WTF");
+        }
+        else
+        {
+            _test.value = 42;
         }
     }
     
