@@ -94,6 +94,55 @@ namespace PurrNet
             }
         }
 
+        public override void OnSpawn(bool asServer)
+        {
+            base.OnSpawn(asServer);
+
+            if (!IsController(_ownerAuth))
+                return;
+        
+            if (_list.Count > 0)
+            {
+                if (isServer)
+                    SendInitialStateToAll(_list);
+                else
+                    SendInitialStateToServer(_list);
+            }
+        }
+        
+        [ObserversRpc(Channel.ReliableOrdered)]
+        private void SendInitialStateToAll(List<T> items)
+        {
+            if (!isHost)
+            {
+                for (int i = 0; i < items.Count; i++)
+                {
+                    _list.Add(items[i]);
+                    InvokeChange(new SyncListChange<T>(SyncListOperation.Added, items[i], i));
+                }
+            }
+        }
+        
+        [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
+        private void SendInitialStateToServer(List<T> items)
+        {
+            if (!_ownerAuth) return;
+            SendInitialStateToOthers(items);
+        }
+
+        [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
+        private void SendInitialStateToOthers(List<T> items)
+        {
+            if (!isServer || isHost)
+            {
+                for (int i = 0; i < items.Count; i++)
+                {
+                    _list.Add(items[i]);
+                    InvokeChange(new SyncListChange<T>(SyncListOperation.Added, items[i], i));
+                }
+            }
+        }
+
         /// <summary>
         /// adds an item to the list and syncs the change
         /// </summary>
