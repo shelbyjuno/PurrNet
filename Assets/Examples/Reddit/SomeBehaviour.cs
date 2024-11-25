@@ -1,5 +1,4 @@
 using PurrNet;
-using UnityEngine;
 
 public class SomeNetworkedData
 {
@@ -10,32 +9,18 @@ public class SomeNetworkedData
 
 public class SomeBehaviour : NetworkIdentity
 {
-    SyncVar<ulong> _test = new ();
-    
     protected override void OnSpawned(bool asServer)
     {
-        if (!asServer)
-        {
-            SimpleRPC(new SomeNetworkedData
-            {
-                data = 42,
-                random = "Hello, World!"
-            }, "WTF");
-        }
-        else
-        {
-            _test.value = 42;
-        }
     }
     
-    [ServerRpc(requireOwnership: false)]
-    private void SimpleRPC(SomeNetworkedData data, object wtf)
+    /*[ObserversRpc(requireServer: false)]
+    private void SimpleRPC<T>(SomeNetworkedData data, object wtf, T ftw)
     {
         if (data == null)
         {
             Debug.LogError("SimpleRPC: data is null!");
             return;
         }
-        Debug.Log($"SimpleRPC: {data.data}, {data.random.GetType()} {data.random}, {wtf}");
-    }
+        Debug.Log($"SimpleRPC: {data.data}, {data.random.GetType()} {data.random}, {wtf}, {ftw}");
+    }*/
 }

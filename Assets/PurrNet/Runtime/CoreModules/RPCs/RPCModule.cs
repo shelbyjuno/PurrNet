@@ -466,12 +466,12 @@ namespace PurrNet.Modules
             if (_bufferedStaticRpcsKeys.TryGetValue(rpcid, out var data))
             {
                 data.stream.ResetPosition();
-                data.stream.Write(packet.data);
+                data.stream.WriteBytes(packet.data);
             }
             else
             {
                 var newStream = AllocStream(false);
-                newStream.Write(packet.data);
+                newStream.WriteBytes(packet.data);
                     
                 var newdata = new STATIC_RPC_DATA
                 {
@@ -495,12 +495,12 @@ namespace PurrNet.Modules
             if (_bufferedChildRpcsKeys.TryGetValue(rpcid, out var data))
             {
                 data.stream.ResetPosition();
-                data.stream.Write(packet.data);
+                data.stream.WriteBytes(packet.data);
             }
             else
             {
                 var newStream = AllocStream(false);
-                newStream.Write(packet.data);
+                newStream.WriteBytes(packet.data);
 
                 var newdata = new CHILD_RPC_DATA
                 {
@@ -524,12 +524,12 @@ namespace PurrNet.Modules
             if (_bufferedRpcsKeys.TryGetValue(rpcid, out var data))
             {
                 data.stream.ResetPosition();
-                data.stream.Write(packet.data);
+                data.stream.WriteBytes(packet.data);
             }
             else
             {
                 var newStream = AllocStream(false);
-                newStream.Write(packet.data);
+                newStream.WriteBytes(packet.data);
                     
                 var newdata = new RPC_DATA
                 {
@@ -667,10 +667,7 @@ namespace PurrNet.Modules
             if (_hierarchyModule.TryGetIdentity(packet.sceneId, packet.networkId, out var identity) && identity)
             {
                 if (!identity.enabled && !identity.ShouldPlayRPCsWhenDisabled())
-                {
-                    FreeStream(stream);
                     return;
-                }
                 
                 if (!identity.TryGetModule(packet.childId, out var networkClass))
                 {
@@ -714,12 +711,10 @@ namespace PurrNet.Modules
             {
                 if (!identity.enabled && !identity.ShouldPlayRPCsWhenDisabled())
                 {
-                    FreeStream(stream);
                     return;
                 }
                 
                 var rpcHandlerPtr = GetRPCHandler(identity.GetType(), packet.rpcId);
-
                 if (rpcHandlerPtr != IntPtr.Zero)
                 {
                     try

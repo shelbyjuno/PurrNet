@@ -248,38 +248,10 @@ namespace PurrNet.StateMachine
         public int stateId;
         public object data;
         
-        static StateMachine machine => StateMachine.instance;
-        
-        private Type RequireDataType()
-        {
-            var dataType = machine.GetDataType(stateId);
-            
-            if (dataType == null)
-                PurrLogger.LogException($"StateNode at index {stateId} was expected to have a generic type argument, but did not.");
-            
-            return dataType;
-        }
-        
         public void Serialize(BitPacker stream)
         {
             Packer<int>.Serialize(stream, ref stateId);
-            
-            bool isNull = data == null || stateId < 0 || stateId >= machine.states.Count;
-            
-            Packer<bool>.Serialize(stream, ref isNull);
-
-            if (isNull)
-            {
-                data = null;
-                return;
-            }
-            
-            var dataType = RequireDataType();
-            
-            if (data == null || data.GetType() != dataType)
-                data = Activator.CreateInstance(dataType);
-
-            Packer.Serialize(stream, dataType, ref data);
+            Packer<object>.Serialize(stream, ref data);
         }
     }
 }

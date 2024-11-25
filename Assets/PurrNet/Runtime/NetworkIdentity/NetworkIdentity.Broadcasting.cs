@@ -9,6 +9,7 @@ using PurrNet.Modules;
 using PurrNet.Packing;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEngine;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
 
