@@ -91,6 +91,13 @@ namespace PurrNet
         public NetworkID? idServer;
         public NetworkID? idClient;
         
+        protected bool delayedAutoSpawn { get; private set; }
+
+        internal void MarkForDelayedAutoSpawn()
+        {
+            delayedAutoSpawn = true;
+        }
+        
         /// <summary>
         /// Returns the owner of this object.
         /// It will return the owner of the closest parent object.

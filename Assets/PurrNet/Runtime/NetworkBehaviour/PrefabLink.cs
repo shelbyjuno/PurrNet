@@ -1,4 +1,5 @@
-using PurrNet.Logging;
+using System.Collections.Generic;
+using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -22,7 +23,21 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        void Awake()
+        private void Awake()
+        {
+            SceneObjectsModule.MarkSceneIdentities(gameObject.scene);
+            
+            if (!delayedAutoSpawn)
+                DoAutoSpawn();
+        }
+
+        void Start()
+        {
+            if (delayedAutoSpawn)
+                DoAutoSpawn();
+        }
+
+        private void DoAutoSpawn()
         {
             if (_muteAutoSpawn)
                 return;
