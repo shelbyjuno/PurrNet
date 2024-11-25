@@ -1,7 +1,6 @@
 using JetBrains.Annotations;
 using PurrNet.Modules;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace PurrNet.Packing
 {
@@ -299,71 +298,6 @@ namespace PurrNet.Packing
             packer.Read(ref size);
             
             value = new BoundsInt(center, size);
-        }
-        
-        [UsedByIL]
-        public static void Write(this BitPacker packer, UnloadSceneOptions value)
-        {
-            packer.WriteInteger((int)value, 1);
-        }
-        
-        [UsedByIL]
-        public static void Read(this BitPacker packer, ref UnloadSceneOptions value)
-        {
-            long intValue = default;
-            packer.ReadInteger(ref intValue, 1);
-            value = (UnloadSceneOptions)intValue;
-        }
-        
-        [UsedByIL]
-        public static void Write(this BitPacker packer, LoadSceneMode value)
-        {
-            packer.WriteInteger((int)value, 1);
-        }
-        
-        [UsedByIL]
-        public static void Read(this BitPacker packer, ref LoadSceneMode value)
-        {
-            long intValue = default;
-            packer.ReadInteger(ref intValue, 1);
-            value = (LoadSceneMode)intValue;
-        }
-        
-        [UsedByIL]
-        public static void Write(this BitPacker packer, LocalPhysicsMode value)
-        {
-            packer.WriteInteger((int)value, 2);
-        }
-        
-        [UsedByIL]
-        public static void Read(this BitPacker packer, ref LocalPhysicsMode value)
-        {
-            long intValue = default;
-            packer.ReadInteger(ref intValue, 2);
-            value = (LocalPhysicsMode)intValue;
-        }
-        
-        [UsedByIL]
-        public static void Write(this BitPacker packer, LoadSceneParameters value)
-        {
-            Packer<LoadSceneMode>.Write(packer, value.loadSceneMode);
-            Packer<LocalPhysicsMode>.Write(packer, value.localPhysicsMode);
-        }
-        
-        [UsedByIL]
-        public static void Read(this BitPacker packer, ref LoadSceneParameters value)
-        {
-            LoadSceneMode loadSceneMode = default;
-            LocalPhysicsMode localPhysicsMode = default;
-            
-            Packer<LoadSceneMode>.Read(packer, ref loadSceneMode);
-            Packer<LocalPhysicsMode>.Read(packer, ref localPhysicsMode);
-            
-            value = new LoadSceneParameters
-            {
-                loadSceneMode = loadSceneMode,
-                localPhysicsMode = localPhysicsMode
-            };
         }
     }
 }
