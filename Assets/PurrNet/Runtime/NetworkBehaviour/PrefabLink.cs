@@ -22,7 +22,7 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        void Start()
+        void Awake()
         {
             if (_muteAutoSpawn)
                 return;
