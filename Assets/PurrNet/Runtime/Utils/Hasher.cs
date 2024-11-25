@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
+using PurrNet.Modules;
 
 namespace PurrNet.Utils
 {
@@ -80,6 +81,7 @@ namespace PurrNet.Utils
             return value;
         }
         
+        [UsedByIL]
         public static void PrepareType<T>() => PrepareType(typeof(T));
 
         public static uint GetStableHashU32(Type type)

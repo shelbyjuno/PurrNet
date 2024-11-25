@@ -1,4 +1,3 @@
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packing;
 using PurrNet.Utils;

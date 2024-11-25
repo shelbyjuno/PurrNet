@@ -6,7 +6,7 @@ namespace PurrNet.Examples
 {
     public class ReturnableRpcsInModules : NetworkModule
     {
-        public override async void OnSpawn(bool asServer)
+        /*public override async void OnSpawn(bool asServer)
         {
             if (!asServer)
             {
@@ -20,6 +20,6 @@ namespace PurrNet.Examples
         {
             DirectoryInfo thisDir = new DirectoryInfo(".");
             return Task.FromResult(ping + " " + thisDir.Name);
-        }
+        }*/
     }
 }

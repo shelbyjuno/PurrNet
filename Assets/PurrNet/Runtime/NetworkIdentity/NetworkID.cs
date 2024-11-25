@@ -1,10 +1,9 @@
 ﻿using System;
 using JetBrains.Annotations;
-using IAutoNetworkedData = PurrNet.Packets.IAutoNetworkedData;
 
 namespace PurrNet
 {
-    public partial struct NetworkID : IAutoNetworkedData, PurrNet.Packing.IAutoNetworkedData, IEquatable<NetworkID>
+    public struct NetworkID : Packing.IPackedAuto, IEquatable<NetworkID>
     {
         [UsedImplicitly] private PlayerID _scope;
         [UsedImplicitly] private ushort _id;

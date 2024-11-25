@@ -167,7 +167,6 @@ MonoBehaviour:
   _visitiblityRules: {fileID: 0}
   someRef: {fileID: 1238428650}
   _testChild2:
-    _value: -69
     _ownerAuth: 0
     _sendIntervalInSeconds: 0
   _keepChanging: 0

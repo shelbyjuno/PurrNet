@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Transports;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -48,7 +48,7 @@ namespace PurrNet
             for (var i = 0; i < _reflectedValues.Length; i++)
             {
                 var reflectedValue = _reflectedValues[i];
-                SendMemberUpdate(i, reflectedValue.valueType, reflectedValue.lastValue);
+                SendMemberUpdate(i, reflectedValue.lastValue);
             }
         }
 
@@ -63,29 +63,21 @@ namespace PurrNet
             {
                 var reflectedValue = _reflectedValues[i];
                 if (reflectedValue.Update())
-                    SendMemberUpdate(i, reflectedValue.valueType, reflectedValue.lastValue);
+                    SendMemberUpdate(i, reflectedValue.lastValue);
             }
         }
 
-        private void SendMemberUpdate(int index, Type dataType, object data)
+        private void SendMemberUpdate(int index, object data)
         {
-            var buffer = ByteBufferPool.Alloc();
-            var stream = new NetworkStream(buffer, false);
+            using var stream = BitPackerPool.Get();
 
-            stream.Serialize(dataType, ref data);
-
-            var byteData = buffer.ToByteData();
-
-            if (isServer)
-            {
-                ObserversRpc(index, byteData);
-            }
-            else
-            {
-                ForwardThroughServer(index, byteData);
-            }
+            Packer.Write(stream, data);
             
-            ByteBufferPool.Free(buffer);
+            var byteData = stream.ToByteData();
+            
+            if (isServer)
+                 ObserversRpc(index, byteData);
+            else ForwardThroughServer(index, byteData);
         }
         
         [ServerRpc]
@@ -112,17 +104,14 @@ namespace PurrNet
                 return;
             }
             
-            var buffer = ByteBufferPool.Alloc();
-            buffer.Write(data);
-            buffer.ResetPointer();
+            using var stream = BitPackerPool.Get();
+            
+            stream.Write(data);
+            stream.ResetPositionAndMode(true);
             
             object reflectedData = null;
-            
-            var stream = new NetworkStream(buffer, true);
-            stream.Serialize(reflectedValue.valueType, ref reflectedData);
+            Packer.Read(stream, reflectedValue.valueType, ref reflectedData);
             reflectedValue.SetValue(reflectedData);
-            
-            ByteBufferPool.Free(buffer);
         }
     }
 }

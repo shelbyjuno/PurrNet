@@ -1915,7 +1915,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1247646079
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2065,6 +2065,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
+  forTwo: 0
 --- !u!1001 &1312733901
 PrefabInstance:
   m_ObjectHideFlags: 0

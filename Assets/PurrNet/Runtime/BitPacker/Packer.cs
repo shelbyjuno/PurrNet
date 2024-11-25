@@ -3,9 +3,19 @@ using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Utils;
+using UnityEngine;
 
 namespace PurrNet.Packing
 {
+    public static class PackerInfo
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void PostRegistration()
+        {
+            // Debug.Log($"Registered {Packer.registeredTypes} readers.");
+        }
+    }
+    
     public delegate void WriteFunc<in T>(BitPacker packer, T value);
         
     public delegate void ReadFunc<T>(BitPacker packer, ref T value);
@@ -56,10 +66,19 @@ namespace PurrNet.Packing
                 PurrLogger.LogError($"Failed to read value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
             }
         }
+        
+        public static void Serialize(BitPacker packer, ref T value)
+        {
+            if (packer.isWriting)
+                 Write(packer, value);
+            else Read(packer, ref value);
+        }
     }
 
     public static class Packer
     {
+        public static int registeredTypes => _readMethods.Count;
+        
         static readonly Dictionary<Type, MethodInfo> _writeMethods = new ();
         static readonly Dictionary<Type, MethodInfo> _readMethods = new ();
         
@@ -79,16 +98,6 @@ namespace PurrNet.Packing
             {
                 Hasher.PrepareType(type);
             }
-        }
-        
-        public static void RegisterWriterSilent(Type type, MethodInfo method)
-        {
-            _writeMethods[type] = method;
-        }
-        
-        public static void RegisterReaderSilent(Type type, MethodInfo method)
-        {
-            _readMethods[type] = method;
         }
         
         static readonly object[] _args = new object[2];
@@ -125,20 +134,22 @@ namespace PurrNet.Packing
             
             try
             {
-                if (!type.IsClass)
-                    value = Activator.CreateInstance(type);
-                
                 _args[0] = packer;
                 _args[1] = value;
                 method.Invoke(null, _args);
-                
-                if (!type.IsClass)
-                    value = _args[1];
+                value = _args[1];
             }
             catch (Exception e)
             {
                 PurrLogger.LogError($"Failed to read value of type '{type}'.\n{e.Message}\n{e.StackTrace}");
             }
+        }
+        
+        public static void Serialize(BitPacker packer, Type type, ref object value)
+        {
+            if (packer.isWriting)
+                 Write(packer, value);
+            else Read(packer, type, ref value);
         }
     }
 }

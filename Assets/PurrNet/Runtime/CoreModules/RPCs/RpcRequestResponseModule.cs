@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using JetBrains.Annotations;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Transports;
 using UnityEngine;
 
@@ -21,31 +20,13 @@ namespace PurrNet.Modules
         public float timeout;
         
         public Action timeoutRequest;
-        public Action<NetworkStream> respond;
+        public Action<BitPacker> respond;
     }
 
-    public partial struct RpcResponse : INetworkedData
+    public struct RpcResponse
     {
         public uint id;
         public ByteData data;
-        
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize<uint>(ref id);
-            
-            if (packer.isReading)
-            {
-                int length = 0;
-                packer.Serialize(ref length, false);
-                data = packer.Read(length);
-            }
-            else
-            {
-                int length = data.length;
-                packer.Serialize(ref length, false);
-                packer.Write(data);
-            }
-        }
     }
     
     public class RpcRequestResponseModule : INetworkModule, IFixedUpdate
@@ -81,7 +62,7 @@ namespace PurrNet.Modules
 
                     using var stream = RPCModule.AllocStream(true);
                     stream.Write(data.data);
-                    stream.ResetPointer();
+                    stream.ResetPosition();
                     
                     request.respond(stream);
                     break;
@@ -269,7 +250,7 @@ namespace PurrNet.Modules
                 respond = stream =>
                 {
                     T response = default;
-                    stream.Serialize(ref response);
+                    Packer<T>.Read(stream, ref response);
                     tcs.TrySetResult(response);
                 },
                 timeoutRequest = () =>
@@ -296,7 +277,7 @@ namespace PurrNet.Modules
                 respond = stream =>
                 {
                     T response = default;
-                    stream.Serialize(ref response);
+                    Packer<T>.Read(stream, ref response);
                     tcs.SetResult(response);
                 },
                 timeoutRequest = () =>
@@ -427,7 +408,7 @@ namespace PurrNet.Modules
                 {
                     using var tmpStream = RPCModule.AllocStream(false);
                     
-                    tmpStream.Serialize(ref result);
+                    Packer<T>.Write(tmpStream, result);
                     
                     // rpcModule
                     var responsePacket = new RpcResponse
@@ -509,8 +490,8 @@ namespace PurrNet.Modules
                 {
                     using var tmpStream = RPCModule.AllocStream(false);
                     
-                    tmpStream.Serialize(ref result);
-                    
+                    Packer<T>.Write(tmpStream, result);
+
                     // rpcModule
                     var responsePacket = new RpcResponse
                     {

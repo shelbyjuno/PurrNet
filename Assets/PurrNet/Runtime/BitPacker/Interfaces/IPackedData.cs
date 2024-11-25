@@ -1,11 +1,30 @@
+using System;
+using PurrNet.Modules;
+using PurrNet.Utils;
+
 namespace PurrNet.Packing
 {
-    public interface IAutoNetworkedData { }
+    public class NetworkRegister
+    {
+        [UsedByIL]
+        public static void Hash(RuntimeTypeHandle handle)
+        {
+            var type = Type.GetTypeFromHandle(handle);
+            Hasher.PrepareType(type);
+        }
+    }
     
-    public interface INetworkedData
+    public interface IPackedAuto { }
+    
+    public interface IPacked
     {
         void Write(BitPacker packer);
 
         void Read(BitPacker packer);
+    }
+    
+    public interface IPackedSimple
+    {
+        void Serialize(BitPacker packer);
     }
 }

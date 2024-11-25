@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
 using PurrNet.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -26,7 +25,7 @@ namespace PurrNet.Modules
         }
     }
 
-    public partial struct PurrSceneSettings : IAutoNetworkedData
+    public struct PurrSceneSettings
     {
         public LoadSceneMode mode;
         public LocalPhysicsMode physicsMode;

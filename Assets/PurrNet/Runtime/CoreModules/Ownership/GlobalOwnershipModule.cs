@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Pooling;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
-    internal partial struct OwnershipInfo : IAutoNetworkedData
+    internal struct OwnershipInfo 
     {
         public NetworkID identity;
         public PlayerID player;
@@ -20,27 +20,27 @@ namespace PurrNet.Modules
         public OwnershipChange data;
     }
     
-    internal partial struct OwnershipChangeBatch : IAutoNetworkedData
+    internal struct OwnershipChangeBatch 
     {
         public SceneID scene;
         public List<OwnershipInfo> state;
     }
     
-    internal partial struct OwnershipChange : INetworkedData
+    internal struct OwnershipChange : IPackedSimple
     {
         public SceneID sceneId;
         public List<NetworkID> identities;
         public bool isAdding;
         public PlayerID player;
 
-        public void Serialize(NetworkStream packer)
+        public void Serialize(BitPacker packer)
         {
-            packer.Serialize(ref sceneId);
-            packer.Serialize(ref identities);
-            packer.Serialize(ref isAdding);
-            
+            Packer<SceneID>.Serialize(packer, ref sceneId);
+            Packer<List<NetworkID>>.Serialize(packer, ref identities);
+            Packer<bool>.Serialize(packer, ref isAdding);
+
             if (isAdding)
-                packer.Serialize(ref player);
+                Packer<PlayerID>.Serialize(packer, ref player);
         }
     }
     
@@ -767,7 +767,7 @@ namespace PurrNet.Modules
 
             if (!_playerOwnedIds.TryGetValue(player, out var ownedIds))
             {
-                ownedIds = new HashSet<NetworkID>() { identity.id.Value };
+                ownedIds = new HashSet<NetworkID> { identity.id.Value };
                 _playerOwnedIds[player] = ownedIds;
             }
             else ownedIds.Add(identity.id.Value);

@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using PurrNet.Logging;
 using PurrNet.Modules;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Transports;
 
 namespace PurrNet
@@ -189,7 +189,7 @@ namespace PurrNet
         }
         
         [UsedByIL]
-        protected ChildRPCPacket BuildRPC(byte rpcId, NetworkStream data)
+        protected ChildRPCPacket BuildRPC(byte rpcId, BitPacker data)
         {
             if (!parent)
                 throw new InvalidOperationException($"Trying to send RPC from '{GetType().Name}' which is not spawned.");
@@ -200,7 +200,7 @@ namespace PurrNet
                 sceneId = parent.sceneId,
                 childId = index,
                 rpcId = rpcId,
-                data = data.buffer.ToByteData(),
+                data = data.ToByteData(),
                 senderId = RPCModule.GetLocalPlayer(networkManager)
             };
 

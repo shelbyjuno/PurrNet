@@ -1,5 +1,6 @@
+using System;
 using System.Collections.Generic;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
@@ -11,7 +12,7 @@ namespace PurrNet.Modules
         SetActive
     }
     
-    internal partial struct SceneAction : INetworkedData
+    internal struct SceneAction : IPackedSimple
     {
         public SceneActionType type;
         
@@ -19,33 +20,33 @@ namespace PurrNet.Modules
         public UnloadSceneAction unloadSceneAction;
         public SetActiveSceneAction setActiveSceneAction;
         
-        public void Serialize(NetworkStream packer)
+        public void Serialize(BitPacker packer)
         {
-            packer.Serialize(ref type);
+            Packer<SceneActionType>.Serialize(packer, ref type);
             
             switch (type)
             {
                 case SceneActionType.Load:
-                    packer.Serialize(ref loadSceneAction);
+                    Packer<LoadSceneAction>.Serialize(packer, ref loadSceneAction);
                     break;
                 case SceneActionType.Unload:
-                    packer.Serialize(ref unloadSceneAction);
+                    Packer<UnloadSceneAction>.Serialize(packer, ref unloadSceneAction);
                     break;
+                case SceneActionType.SetActive:
+                    Packer<SetActiveSceneAction>.Serialize(packer, ref setActiveSceneAction);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }
     
-    internal partial struct SceneActionsBatch : INetworkedData
+    internal struct SceneActionsBatch
     {
         public List<SceneAction> actions;
-        
-        public void Serialize(NetworkStream packer)
-        {
-            packer.Serialize(ref actions);
-        }
     }
     
-    internal partial struct LoadSceneAction : IAutoNetworkedData
+    internal struct LoadSceneAction
     {
         public int buildIndex;
         public SceneID sceneID;
@@ -61,13 +62,13 @@ namespace PurrNet.Modules
         }
     }
     
-    internal partial struct UnloadSceneAction : IAutoNetworkedData
+    internal struct UnloadSceneAction
     {
         public SceneID sceneID;
         public UnloadSceneOptions options;
     }
     
-    internal partial struct SetActiveSceneAction : IAutoNetworkedData
+    internal struct SetActiveSceneAction
     {
         public SceneID sceneID;
     }

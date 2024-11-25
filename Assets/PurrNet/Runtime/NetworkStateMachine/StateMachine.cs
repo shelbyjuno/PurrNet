@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using UnityEngine;
 
 namespace PurrNet.StateMachine
@@ -243,7 +243,7 @@ namespace PurrNet.StateMachine
         }
     }
     
-    public partial struct StateMachineState : INetworkedData
+    public struct StateMachineState : IPackedSimple
     {
         public int stateId;
         public object data;
@@ -260,12 +260,13 @@ namespace PurrNet.StateMachine
             return dataType;
         }
         
-        public void Serialize(NetworkStream stream)
+        public void Serialize(BitPacker stream)
         {
-            stream.Serialize(ref stateId);
+            Packer<int>.Serialize(stream, ref stateId);
             
             bool isNull = data == null || stateId < 0 || stateId >= machine.states.Count;
-            stream.Serialize(ref isNull);
+            
+            Packer<bool>.Serialize(stream, ref isNull);
 
             if (isNull)
             {
@@ -278,8 +279,7 @@ namespace PurrNet.StateMachine
             if (data == null || data.GetType() != dataType)
                 data = Activator.CreateInstance(dataType);
 
-            if (data is INetworkedData networkedData)
-                networkedData.Serialize(stream);
+            Packer.Serialize(stream, dataType, ref data);
         }
     }
 }

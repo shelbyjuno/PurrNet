@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using UnityEngine;
 
 namespace PurrNet
 {
-    internal partial struct NetAnimatorActionBatch : IAutoNetworkedData
+    internal struct NetAnimatorActionBatch : IPackedAuto
     {
         public List<NetAnimatorRPC> actions;
         

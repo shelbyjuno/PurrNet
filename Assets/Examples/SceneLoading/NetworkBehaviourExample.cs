@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -61,13 +61,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
         }
     }
     
-    /*[ServerRpc(requireOwnership: false)]
-    IEnumerator CoolRPC_Coroutines()
-    {
-        Debug.Log("CoolRPC_Coroutines");
-        yield return new WaitForSeconds(1);
-        Debug.Log("CoolRPC_Coroutines Done");
-    }*/
     
     [ServerRpc(requireOwnership: false)]
     async void CoolRPCTestNoReturnValue()
@@ -105,12 +98,6 @@ public class NetworkBehaviourExample : NetworkBehaviour
             Debug.Log("No ref");
     }
 
-    private void FixedUpdate()
-    {
-        /*if (_keepChanging)
-            _testChild2.value = Random.Range(0, 100);*/
-    }
-
     [ObserversRpc(requireServer: false, bufferLast: true)]
     private void Test(string test)
     {
@@ -122,4 +109,4 @@ public class NetworkBehaviourExample : NetworkBehaviour
     {
         Debug.Log("Targeted: " + message + " " + typeof(T).Name);
     }
-}
+}*/

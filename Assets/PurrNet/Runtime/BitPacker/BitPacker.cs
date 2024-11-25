@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using JetBrains.Annotations;
+using PurrNet.Modules;
 using PurrNet.Transports;
 
 namespace PurrNet.Packing
@@ -12,6 +12,8 @@ namespace PurrNet.Packing
         private byte[] _buffer;
         private int _positionInBits;
         private bool _isReading;
+        
+        public bool isWrapper { get; private set; }
 
         public int length
         {
@@ -31,10 +33,17 @@ namespace PurrNet.Packing
         {
             _buffer = new byte[initialSize];
         }
-
+        
+        public void MakeWrapper(ByteData data)
+        {
+            _buffer = data.data;
+            _positionInBits = data.offset * 8;
+            isWrapper = true;
+        }
+        
         public void Dispose()
         {
-            BitStreamPool.Free(this);
+            BitPackerPool.Free(this);
         }
         
         public ByteData ToByteData()
@@ -68,6 +77,32 @@ namespace PurrNet.Packing
                     throw new IndexOutOfRangeException("Not enough bits in the buffer.");
                 Array.Resize(ref _buffer, _buffer.Length * 2);
             }
+        }
+
+        [UsedByIL]
+        public bool WriteIsNull<T>(T value) where T : class
+        {
+            if (value == null)
+            {
+                WriteBits(1, 1);
+                return false;
+            }
+
+            WriteBits(0, 1);
+            return true;
+        }
+        
+        [UsedByIL]
+        public bool ReadIsNull<T>(ref T value) where T : class
+        {
+            if (ReadBits(1) == 1)
+            {
+                value = default;
+                return false;
+            }
+
+            value = Activator.CreateInstance<T>();
+            return true;
         }
         
         public void WriteBits(ulong data, byte bits)
@@ -153,12 +188,17 @@ namespace PurrNet.Packing
                 }
             }
         }
-        
-        public void WriteBytes(IReadOnlyList<byte> bytes)
-        {
-            EnsureBitsExist(bytes.Count * 8);
 
-            int count = bytes.Count;
+        public void WriteBytes(ByteData byteData)
+        {
+            WriteBytes(byteData.span);
+        }
+        
+        public void WriteBytes(ReadOnlySpan<byte> bytes)
+        {
+            EnsureBitsExist(bytes.Length * 8);
+
+            int count = bytes.Length;
             int fullChunks = count / 8; // Number of full 64-bit chunks
             int excess = count % 8;     // Remaining bytes after full chunks
 
@@ -182,6 +222,11 @@ namespace PurrNet.Packing
             {
                 WriteBits(bytes[index++], 8);
             }
+        }
+
+        public void SkipBits(int skip)
+        {
+            _positionInBits += skip;
         }
     }
 }

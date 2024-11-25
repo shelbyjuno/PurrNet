@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Transports;
 
 namespace PurrNet.Modules
 {
-    public partial struct ClientLoginRequest : IAutoNetworkedData
+    public struct ClientLoginRequest : IPackedAuto
     {
         public string join { get; }
         
@@ -16,7 +16,7 @@ namespace PurrNet.Modules
         }
     }
     
-    public partial struct ServerLoginResponse : IAutoNetworkedData
+    public struct ServerLoginResponse : IPackedAuto
     {
         public PlayerID playerId { get; }
 
@@ -26,7 +26,7 @@ namespace PurrNet.Modules
         }
     }
     
-    public partial struct PlayerJoinedEvent : IAutoNetworkedData
+    public struct PlayerJoinedEvent : IPackedAuto
     {
         public PlayerID playerId { get; }
         public Connection connection { get; }
@@ -38,7 +38,7 @@ namespace PurrNet.Modules
         }
     }
     
-    public partial struct PlayerLeftEvent : IAutoNetworkedData
+    public struct PlayerLeftEvent : IPackedAuto
     {
         public PlayerID playerId { get; }
         
@@ -48,7 +48,7 @@ namespace PurrNet.Modules
         }
     }
     
-    public partial struct PlayerSnapshotEvent : IAutoNetworkedData
+    public struct PlayerSnapshotEvent : IPackedAuto
     {
         public Dictionary<Connection, PlayerID> connectionToPlayerId { get; }
         
