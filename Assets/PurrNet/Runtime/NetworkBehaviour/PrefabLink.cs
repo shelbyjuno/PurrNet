@@ -69,7 +69,9 @@ namespace PurrNet
                 return;
             }
 
-            var spawnModule = manager.GetModule<HierarchyModule>(manager.isServer);
+            if (!manager.TryGetModule<HierarchyModule>(manager.isServer, out var spawnModule))
+                return;
+                    
             spawnModule.AutoSpawn(gameObject);
             _autoSpawnCalledFrame = Time.frameCount;
             _autoSpawnCalled = true;
