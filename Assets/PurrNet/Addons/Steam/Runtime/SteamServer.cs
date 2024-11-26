@@ -182,9 +182,11 @@ namespace PurrNet.Steam
             if (buffer.Length < packetLength)
                 Array.Resize(ref buffer, packetLength);
         }
-
+#endif
         public void SendToConnection(int connId, ByteData data, Channel channel)
         {
+#if STEAMWORKS_NET
+
             if (!_connectionById.TryGetValue(connId, out var conn))
                 return;
 
@@ -207,8 +209,10 @@ namespace PurrNet.Steam
             if (_isDedicated)
                  SteamGameServerNetworkingSockets.SendMessageToConnection(conn, ptr, (uint)data.length, sendFlag, out _);
             else SteamNetworkingSockets.SendMessageToConnection(conn, ptr, (uint)data.length, sendFlag, out _);
+#endif
         }
-
+        
+#if STEAMWORKS_NET
         private void AddConnection(HSteamNetConnection connection)
         {
             int id = _connections.Count;
