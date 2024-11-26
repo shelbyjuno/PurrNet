@@ -33,6 +33,9 @@ namespace PurrNet.Codegen
             // Check if the type is a generic instance
             if (type is GenericInstanceType genericInstance)
             {
+                if (genericInstance.GenericArguments.Count == 0)
+                    return false;
+                
                 // Recursively validate all generic arguments
                 foreach (var argument in genericInstance.GenericArguments)
                 {
@@ -46,6 +49,15 @@ namespace PurrNet.Codegen
             {
                 // If the type itself contains generic parameters (e.g., T)
                 return false;
+            }
+
+            if (type.HasGenericParameters)
+            {
+                foreach (var param in type.GenericParameters)
+                {
+                    if (!PostProcessor.IsConcreteType(param, out _))
+                        return false;
+                }
             }
 
             // If no open generics or interfaces are found, return true
@@ -64,6 +76,12 @@ namespace PurrNet.Codegen
 
             if (!ValideType(type))
                 return;
+            
+            /*messages.Add(new DiagnosticMessage
+            {
+                DiagnosticType = DiagnosticType.Error,
+                MessageData = type.FullName,
+            });*/
 
             if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
                 return;
@@ -91,7 +109,7 @@ namespace PurrNet.Codegen
             bool isNetworkIdentity = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkIdentity).FullName);
             bool isNetworkModule = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkModule).FullName);
             
-            if (!isNetworkIdentity && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) && 
+            if (!isNetworkIdentity && !isNetworkModule && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) && 
                 !HasInterface(resolvedType, typeof(IPacked)) && 
                 !HasInterface(resolvedType, typeof(IPackedAuto)) && 
                 !HasInterface(resolvedType, typeof(IPackedSimple)))

@@ -859,7 +859,7 @@ namespace PurrNet.Codegen
             return type.Resolve().BaseType?.FullName == typeof(Task).FullName;
         }
         
-        static bool IsConcreteType(TypeReference type, out TypeReference concreteType)
+        public static bool IsConcreteType(TypeReference type, out TypeReference concreteType)
         {
             concreteType = type;
 
@@ -1566,12 +1566,16 @@ namespace PurrNet.Codegen
                             }
                         }
 
-                        if (!inheritsFromNetworkIdentity && !inheritsFromNetworkClass && _rpcMethods.Count == 0)
-                            continue;
-                        
-                        if (!inheritsFromNetworkIdentity && !inheritsFromNetworkClass)
-                             typesToPrepareHasher.Add(type);
-                        // else typesToGenerateSerializer.Add(type);
+                        switch (inheritsFromNetworkIdentity)
+                        {
+                            case false when !inheritsFromNetworkClass && _rpcMethods.Count == 0:
+                                continue;
+                            case false when !inheritsFromNetworkClass && !inheritsFromNetworkIdentity:
+                                typesToPrepareHasher.Add(type);
+                                break;
+                        }
+
+                        // typesToGenerateSerializer.Add(type);
                         
                         HashSet<TypeReference> usedTypes = new();
 
@@ -1616,7 +1620,7 @@ namespace PurrNet.Codegen
                         
                         try
                         {
-                            FindUsedTypes(module, types, _rpcMethods, usedTypes);
+                            FindUsedTypes(module, types, _rpcMethods, usedTypes, messages);
                             
                             foreach (var usedType in usedTypes)
                             {
@@ -1635,7 +1639,7 @@ namespace PurrNet.Codegen
                     }
                 }
                 
-                ExpandNested(assemblyDefinition, typesToGenerateSerializer);
+                ExpandNested(assemblyDefinition, typesToGenerateSerializer, messages);
                 
                 // remove any typesToGenerateSerializer from typesToPrepareHasher
                 typesToPrepareHasher.ExceptWith(typesToGenerateSerializer);
@@ -1721,9 +1725,10 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle)
+        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle, List<DiagnosticMessage> messages)
         {
             HashSet<TypeReference> visited = new();
+            HashSet<TypeReference> visited2 = new();
             var copy = typesToHandle.ToArray();
 
             for (var i = 0; i < copy.Length; i++)
@@ -1732,12 +1737,12 @@ namespace PurrNet.Codegen
                 var resolved = type.Resolve();
                 
                 if (type is GenericInstanceType genericInstance)
-                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited);
-                AddNestedFields(assembly, resolved, typesToHandle, visited);
+                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited2, messages);
+                AddNestedFields(assembly, resolved, typesToHandle, visited, messages);
             }
         }
 
-        private static void AddNestedGenerics(AssemblyDefinition assembly, GenericInstanceType type, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
+        private static void AddNestedGenerics(AssemblyDefinition assembly, GenericInstanceType type, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
         {
             for (int i = 0; i < type.GenericArguments.Count; i++)
             {
@@ -1745,10 +1750,10 @@ namespace PurrNet.Codegen
                 
                 if (!visited.Add(argument))
                     continue;
-
+                
                 if (argument is GenericInstanceType genericInstance)
                 {
-                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited);
+                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited, messages);
                 }
                 else if (IsTypeInOwnModule(argument, assembly.MainModule))
                 {
@@ -1757,51 +1762,60 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void AddNestedFields(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
+        private static void AddNestedFields(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
         {
             if (resolved == null)
                 return;
-            
+    
             foreach (var field in resolved.Fields)
             {
                 if (!visited.Add(field.FieldType))
                     continue;
-
+                
                 if (field.FieldType is GenericInstanceType genericInstance)
                 {
-                    bool containsMyStuff = false;
-
-                    var resolvedFieldType = field.FieldType.Resolve();
-                    bool isNullableType = resolvedFieldType != null && resolvedFieldType.FullName == typeof(Nullable<>).FullName;
-
-                    if (isNullableType)
-                        typesToHandle.Add(field.FieldType);
+                    bool containsRelevantTypes = false;
                     
+                    // Add the GenericInstanceType itself if fully concrete
+                    if (genericInstance.GenericArguments.All(IsResolved))
+                    {
+                        typesToHandle.Add(field.FieldType);
+                        containsRelevantTypes = true;
+                    }
+
+                    // Check the generic arguments
                     for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
                     {
                         var argument = genericInstance.GenericArguments[i];
                         var resolvedArg = argument.Resolve();
-                        
+
                         if (resolvedArg != null)
                         {
                             typesToHandle.Add(argument);
-                            containsMyStuff = true;
+                            containsRelevantTypes = true;
                         }
-                        
-                        AddNestedFields(assembly, resolvedArg, typesToHandle, visited);
+
+                        AddNestedFields(assembly, resolvedArg, typesToHandle, visited, messages);
                     }
-                    
-                    if (containsMyStuff)
+
+                    // If the GenericInstanceType contains relevant arguments, add it
+                    if (containsRelevantTypes)
                     {
                         typesToHandle.Add(field.FieldType);
                     }
                 }
                 else if (IsTypeInOwnModule(field.FieldType, assembly.MainModule))
                 {
+                    // Handle non-generic field types
                     typesToHandle.Add(field.FieldType);
-                    AddNestedFields(assembly, field.FieldType.Resolve(), typesToHandle, visited);
+                    AddNestedFields(assembly, field.FieldType.Resolve(), typesToHandle, visited, messages);
                 }
             }
+        }
+
+        private static bool IsResolved(TypeReference type)
+        {
+            return type.Resolve() != null;
         }
 
         private static void CreateSyncVarInitMethod(bool isNetworkIdentity, ModuleDefinition module, TypeDefinition type, List<FieldDefinition> networkFields)
@@ -1901,7 +1915,7 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ret));
         }
 
-        private static void FindUsedTypes(ModuleDefinition module, List<TypeDefinition> allTypes, List<RPCMethod> methods, HashSet<TypeReference> types)
+        private static void FindUsedTypes(ModuleDefinition module, List<TypeDefinition> allTypes, List<RPCMethod> methods, HashSet<TypeReference> types, List<DiagnosticMessage> messages)
         {
             var playersBroadcasterSubscribe = module.GetTypeDefinition<PlayersBroadcaster>();
             var playersManagerSubscribe = module.GetTypeDefinition<PlayersManager>();
@@ -1937,9 +1951,10 @@ namespace PurrNet.Codegen
                         
                         if (instruction.Operand is GenericInstanceMethod currentMethod)
                         {
-                            var isRpcMethod = IsRpcMethod(methods, currentMethod);
-                            
-                            FindUsedGenericRpcTypes(types, isRpcMethod, currentMethod);
+                            if (IsRpcMethod(currentMethod))
+                            {
+                                FindUsedGenericRpcTypes(types, currentMethod, messages);
+                            }
                             
                             var isSubscribeMethod = currentMethod.GenericArguments.Count == 1 && currentMethod.Name.Equals("Subscribe") &&
                                                     (currentMethod.DeclaringType.FullName ==  playersManagerSubscribe.FullName ||
@@ -1963,41 +1978,49 @@ namespace PurrNet.Codegen
             {
                 if (field.FieldType is GenericInstanceType genericInstance)
                 {
+                    bool allConcrete = true;
                     foreach (var genericArg in genericInstance.GenericArguments)
                     {
                         if (IsConcreteType(genericArg, out var concreteType))
+                        {
                             types.Add(concreteType);
+                        }
+                        else allConcrete = false;
                     }
+                    
+                    if (allConcrete)
+                        types.Add(field.FieldType);
                 }
             }
         }
 
-        private static void FindUsedGenericRpcTypes(HashSet<TypeReference> types, bool isRpcMethod, GenericInstanceMethod currentMethod)
+        private static void FindUsedGenericRpcTypes(HashSet<TypeReference> types, GenericInstanceMethod currentMethod, List<DiagnosticMessage> messages)
         {
-            if (isRpcMethod)
+            foreach (var argument in currentMethod.GenericArguments)
             {
-                foreach (var argument in currentMethod.GenericArguments)
-                {
-                    if (!argument.IsGenericParameter)
-                        types.Add(argument);
-                }
+                if (!argument.IsGenericParameter)
+                    types.Add(argument);
             }
         }
 
-        private static bool IsRpcMethod(List<RPCMethod> methods, GenericInstanceMethod currentMethod)
+        private static bool IsRpcMethod(GenericInstanceMethod currentMethod)
         {
-            bool isRpcMethod = false;
-
-            foreach (var rpcMethod in methods)
+            var resolved = currentMethod.Resolve();
+            
+            if (resolved == null)
+                return false;
+            
+            foreach (var attribute in resolved.CustomAttributes)
             {
-                if (rpcMethod.originalMethod.GetElementMethod() == currentMethod.GetElementMethod())
+                if (attribute.AttributeType.FullName == typeof(ServerRpcAttribute).FullName ||
+                    attribute.AttributeType.FullName == typeof(TargetRpcAttribute).FullName ||
+                    attribute.AttributeType.FullName == typeof(ObserversRpcAttribute).FullName)
                 {
-                    isRpcMethod = true;
-                    break;
+                    return true;
                 }
             }
 
-            return isRpcMethod;
+            return false;
         }
 
         public static bool IsTypeInOwnModule(TypeReference typeReference, ModuleDefinition ownModule)

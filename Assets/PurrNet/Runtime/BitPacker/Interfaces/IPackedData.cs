@@ -1,6 +1,7 @@
 using System;
 using PurrNet.Modules;
 using PurrNet.Utils;
+using UnityEngine.Scripting;
 
 namespace PurrNet.Packing
 {

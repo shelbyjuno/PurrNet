@@ -1,9 +1,12 @@
 using PurrNet;
 using PurrNet.Logging;
 using PurrNet.Packing;
+using PurrNet.StateMachine;
 
 public class SomeBehaviour : NetworkBehaviour
 {
+    SyncList<SomeBehaviour> _list = new ();
+    
     protected override void OnSpawned(bool asServer)
     {
         if (!asServer)
