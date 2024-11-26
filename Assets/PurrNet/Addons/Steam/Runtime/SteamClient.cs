@@ -80,8 +80,6 @@ namespace PurrNet.Steam
                 SteamGameServerNetworkingSockets.ConnectP2P(ref networkIdentity, 0, 0, null) :
                 SteamNetworkingSockets.ConnectP2P(ref networkIdentity, 0, 0, null);
             
-            _connection = SteamGameServerNetworkingSockets.ConnectP2P(ref networkIdentity, 0, 0, null);
-            
             PostConnect();
 #endif
         }
