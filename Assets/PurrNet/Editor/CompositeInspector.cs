@@ -16,6 +16,8 @@ namespace PurrNet.Editor
 
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
+            
             var composite = (CompositeTransport)target;
             if (composite.clientState != ConnectionState.Disconnected || composite.listenerState != ConnectionState.Disconnected)
                 GUI.enabled = false;
@@ -23,6 +25,7 @@ namespace PurrNet.Editor
             GUI.enabled = true;
             
             TransportInspector.DrawTransportStatus(composite);
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }
