@@ -1,4 +1,5 @@
 using System;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
@@ -72,7 +73,7 @@ namespace PurrNet
 
             var spawnModule = manager.GetModule<HierarchyModule>(manager.isServer);
             spawnModule.AutoSpawn(gameObject);
-            
+            _autoSpawnCalledFrame = Time.frameCount;
             _autoSpawnCalled = true;
         }
 

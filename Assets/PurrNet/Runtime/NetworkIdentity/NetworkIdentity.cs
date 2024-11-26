@@ -57,6 +57,8 @@ namespace PurrNet
         public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
+        
+        protected int _autoSpawnCalledFrame;
 
         /// <summary>
         /// Returns if you can control this object.
@@ -480,8 +482,10 @@ namespace PurrNet
                 RemoveOwnership();
                 return;
             }
+
+            var link = GetComponentInParent<PrefabLink>();
             
-            if (!networkManager)
+            if (!networkManager || (link && link._autoSpawnCalledFrame == Time.frameCount))
             {
                 _pendingOwnershipRequest = player;
                 return;
