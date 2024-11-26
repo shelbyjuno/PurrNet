@@ -297,7 +297,7 @@ namespace PurrNet.Transports
             _clientTransport = target;
         }
 
-        internal override void StartClient()
+        public override void StartClient()
         {
             if (!_clientTransport || !_clientTransport.isSupported)
                 throw new NotSupportedException("No supported transport found for client.");
@@ -317,7 +317,7 @@ namespace PurrNet.Transports
             TriggerConnectionStateEvent(false);
         }
 
-        internal override void StartServer()
+        public override void StartServer()
         {
             if (_internalIsListening)
                 return;

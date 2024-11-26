@@ -37,7 +37,7 @@ namespace PurrNet.Transports
             }
         }
 
-        internal override void StartServer()
+        public override void StartServer()
         {
             Listen(default);
         }
@@ -83,7 +83,7 @@ namespace PurrNet.Transports
             }
         }
 
-        internal override void StartClient()
+        public override void StartClient()
         {
             Connect(default, default);
         }
