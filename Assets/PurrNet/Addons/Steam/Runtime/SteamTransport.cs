@@ -37,8 +37,12 @@ namespace PurrNet.Steam
             get => _address;
             set => _address = value;
         }
-
+        
+#if STEAMWORKS_NET
         public override bool isSupported => Application.platform != RuntimePlatform.WebGLPlayer;
+#else
+        public override bool isSupported => false;
+#endif
 
         public override ITransport transport => this;
         
