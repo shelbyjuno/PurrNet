@@ -67,7 +67,7 @@ namespace PurrNet.Transports
         }
     }
 
-    internal readonly struct ConnectionPair
+    internal readonly struct ConnectionPair : IEquatable<ConnectionPair>
     {
         private readonly int transportIdx;
         private readonly Connection connection;
@@ -81,6 +81,16 @@ namespace PurrNet.Transports
         public override int GetHashCode()
         {
             return HashCode.Combine(transportIdx, connection);
+        }
+
+        public bool Equals(ConnectionPair other)
+        {
+            return transportIdx == other.transportIdx && connection.Equals(other.connection);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ConnectionPair other && Equals(other);
         }
     }
     
