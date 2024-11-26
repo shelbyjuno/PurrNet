@@ -9,7 +9,7 @@ using PurrNet.Utils;
 namespace PurrNet
 {
     [Serializable]
-    public class SyncVar<T> : NetworkModule where T : struct
+    public class SyncVar<T> : NetworkModule
     {
         private TickManager _tickManager;
 
