@@ -155,9 +155,9 @@ namespace PurrNet
             if (!_trs)
                 _trs = transform;
 
-            _position.Teleport(_trs.position);
-            _rotation.Teleport(_trs.rotation);
-            _scale.Teleport(_trs.localScale);
+            _position?.Teleport(_trs.position);
+            _rotation?.Teleport(_trs.rotation);
+            _scale?.Teleport(_trs.localScale);
         }
 
         private int _ticksSinceLastSend;
