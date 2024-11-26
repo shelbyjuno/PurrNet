@@ -1734,11 +1734,9 @@ namespace PurrNet.Codegen
             for (var i = 0; i < copy.Length; i++)
             {
                 var type = copy[i];
-                var resolved = type.Resolve();
-                
                 if (type is GenericInstanceType genericInstance)
                     AddNestedGenerics(assembly, genericInstance, typesToHandle, visited2, messages);
-                AddNestedFields(assembly, type, resolved, typesToHandle, visited, messages);
+                AddNestedFields(assembly, type, typesToHandle, visited, messages);
             }
         }
 
@@ -1762,24 +1760,23 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void AddNestedFields(AssemblyDefinition assembly, TypeReference reference, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
+        private static void AddNestedFields(AssemblyDefinition assembly, TypeReference reference, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
         {
-            if (resolved == null)
-                return;
-    
-            foreach (var field in resolved.Fields)
+            var fields = GetConcreteFields(reference);
+            
+            foreach (var field in fields)
             {
-                if (!visited.Add(field.FieldType))
+                if (!visited.Add(field))
                     continue;
                 
-                if (field.FieldType is GenericInstanceType genericInstance)
+                if (field is GenericInstanceType genericInstance)
                 {
                     bool containsRelevantTypes = false;
                     
                     // Add the GenericInstanceType itself if fully concrete
                     if (genericInstance.GenericArguments.All(IsResolved))
                     {
-                        typesToHandle.Add(field.FieldType);
+                        typesToHandle.Add(field);
                         containsRelevantTypes = true;
                     }
 
@@ -1795,22 +1792,95 @@ namespace PurrNet.Codegen
                             containsRelevantTypes = true;
                         }
 
-                        AddNestedFields(assembly, argument, resolvedArg, typesToHandle, visited, messages);
+                        AddNestedFields(assembly, argument, typesToHandle, visited, messages);
                     }
 
                     // If the GenericInstanceType contains relevant arguments, add it
                     if (containsRelevantTypes)
                     {
-                        typesToHandle.Add(field.FieldType);
+                        typesToHandle.Add(field);
                     }
+                    
+                    AddNestedFields(assembly, field, typesToHandle, visited, messages);
                 }
-                else if (IsTypeInOwnModule(field.FieldType, assembly.MainModule))
+                else if (IsTypeInOwnModule(field, assembly.MainModule))
                 {
                     // Handle non-generic field types
-                    typesToHandle.Add(field.FieldType);
-                    AddNestedFields(assembly, field.FieldType, field.FieldType.Resolve(), typesToHandle, visited, messages);
+                    typesToHandle.Add(field);
+                    AddNestedFields(assembly, field, typesToHandle, visited, messages);
                 }
             }
+        }
+
+        static List<TypeReference> GetConcreteFields(TypeReference typeReference)
+        {
+            List<TypeReference> concreteFields = new();
+
+            if (typeReference is GenericInstanceType genericInstance)
+            {
+                // Resolve the type definition
+                TypeDefinition typeDef = typeReference.Resolve();
+                if (typeDef == null)
+                {
+                    throw new InvalidOperationException($"Could not resolve type: {typeReference.FullName}");
+                }
+
+                // Map generic parameters to concrete arguments
+                Dictionary<string, TypeReference> genericMapping = new();
+                for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
+                {
+                    string paramName = typeDef.GenericParameters[i].Name;
+                    TypeReference concreteType = genericInstance.GenericArguments[i];
+                    genericMapping[paramName] = concreteType;
+                }
+
+                // Process each field
+                foreach (var field in typeDef.Fields)
+                {
+                    TypeReference fieldType = field.FieldType;
+
+                    // Substitute generic parameters with concrete arguments
+                    TypeReference concreteFieldType = SubstituteGenericParameters(fieldType, genericMapping);
+                    concreteFields.Add(concreteFieldType);
+                }
+            }
+            else
+            {
+                TypeDefinition typeDef = typeReference.Resolve();
+                
+                if (typeDef != null)
+                {
+                    foreach (var field in typeDef.Fields)
+                        concreteFields.Add(field.FieldType);
+                }
+            }
+
+            return concreteFields;
+        }
+
+        static TypeReference SubstituteGenericParameters(TypeReference type, Dictionary<string, TypeReference> genericMapping)
+        {
+            if (type is GenericInstanceType genericInstance)
+            {
+                // Substitute each generic argument recursively
+                GenericInstanceType concreteGenericInstance = new GenericInstanceType(genericInstance.ElementType);
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    concreteGenericInstance.GenericArguments.Add(SubstituteGenericParameters(argument, genericMapping));
+                }
+                return concreteGenericInstance;
+            }
+            else if (type is GenericParameter genericParameter)
+            {
+                // Replace the generic parameter with its mapped concrete type
+                if (genericMapping.TryGetValue(genericParameter.Name, out var concreteType))
+                {
+                    return concreteType;
+                }
+            }
+
+            // Return the type as is if no substitution is needed
+            return type;
         }
 
         private static bool IsResolved(TypeReference type)
