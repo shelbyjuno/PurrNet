@@ -146,6 +146,9 @@ namespace PurrNet.Transports
         {
             get
             {
+                if(_transports.Length == 0)
+                    return true; //Just defaulting to true to avoid calling an error
+                
                 for (int i = 0; i < _transports.Length; i++)
                 {
                     if (_transports[i] && _transports[i].isSupported)
