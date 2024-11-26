@@ -71,45 +71,38 @@ namespace PurrNet
             _ownerAuth = ownerAuth;
         }
 
-        public T this[int index]
+        public T this[int idx]
         {
-            get => _list[index];
+            get => _list[idx];
             set
             {
                 ValidateAuthority();
                 
-                var oldValue = _list[index];
-                _list[index] = value;
+                var oldValue = _list[idx];
                 
-                var change = new SyncListChange<T>(SyncListOperation.Set, value, index);
+                if (oldValue.Equals(value)) 
+                    return;
+                
+                _list[idx] = value;
+                
+                var change = new SyncListChange<T>(SyncListOperation.Set, value, idx);
                 InvokeChange(change);
                 
                 if (isSpawned)
                 {
                     if (isServer)
-                        SendSetToAll(index, value);
+                        SendSetToAll(idx, value);
                     else 
-                        SendSetToServer(index, value);
+                        SendSetToServer(idx, value);
                 }
             }
         }
 
-        public override void OnSpawn(bool asServer)
+        public override void OnObserverAdded(PlayerID player)
         {
-            base.OnSpawn(asServer);
-
-            if (!IsController(_ownerAuth))
-                return;
-        
-            if (_list.Count > 0)
-            {
-                if (isServer)
-                    SendInitialStateToAll(_list);
-                else
-                    SendInitialStateToServer(_list);
-            }
+            SendInitialStateToAll(_list);
         }
-        
+
         [ObserversRpc(Channel.ReliableOrdered)]
         private void SendInitialStateToAll(List<T> items)
         {

@@ -1575,7 +1575,8 @@ namespace PurrNet.Codegen
                                 break;
                         }
 
-                        // typesToGenerateSerializer.Add(type);
+                        if (inheritsFromNetworkIdentity)
+                            typesToGenerateSerializer.Add(type);
                         
                         HashSet<TypeReference> usedTypes = new();
 
