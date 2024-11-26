@@ -78,8 +78,6 @@ namespace PurrNet
 
         public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
         {
-            BroadcastModule.RegisterTypeForSerializer<T>();
-
             var hash = Hasher.GetStableHashU32(typeof(T));
 
             if (_actions.TryGetValue(hash, out var actions))

@@ -8,12 +8,12 @@ namespace PurrNet.Transports
         
         public abstract ITransport transport { get; }
         
-        internal abstract void StartClient();
+        public abstract void StartClient();
         
-        internal abstract void StartServer();
+        public abstract void StartServer();
         
-        internal void StopClient() => transport.Disconnect();
+        public void StopClient() => transport.Disconnect();
         
-        internal void StopServer() => transport.StopListening();
+        public void StopServer() => transport.StopListening();
     }
 }

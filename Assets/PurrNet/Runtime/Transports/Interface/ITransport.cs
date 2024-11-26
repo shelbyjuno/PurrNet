@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using MemoryPack;
-using UnityEngine;
 
 namespace PurrNet.Transports
 {
@@ -22,13 +20,6 @@ namespace PurrNet.Transports
 
     public readonly struct ByteData
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Init()
-        {
-            MemoryPackFormatterProvider.Register(new Packets.ByteDataFormatter());
-            Utils.Hasher.PrepareType<ByteData>();
-        }
-        
         public readonly byte[] data;
         public readonly int length;
         public readonly int offset;

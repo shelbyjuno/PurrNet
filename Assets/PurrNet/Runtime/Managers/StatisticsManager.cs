@@ -201,8 +201,8 @@ namespace PurrNet
             _totalDataSent += data.length;
         }
 
-        public struct PingMessage : Packing.IAutoNetworkedData { }
+        public struct PingMessage : Packing.IPackedAuto { }
  
-        public struct PacketMessage : Packing.IAutoNetworkedData { }
+        public struct PacketMessage : Packing.IPackedAuto { }
     }
 }

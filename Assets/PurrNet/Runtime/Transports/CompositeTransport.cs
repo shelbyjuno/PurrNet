@@ -67,7 +67,7 @@ namespace PurrNet.Transports
         }
     }
 
-    internal readonly struct ConnectionPair
+    internal readonly struct ConnectionPair : IEquatable<ConnectionPair>
     {
         private readonly int transportIdx;
         private readonly Connection connection;
@@ -81,6 +81,16 @@ namespace PurrNet.Transports
         public override int GetHashCode()
         {
             return HashCode.Combine(transportIdx, connection);
+        }
+
+        public bool Equals(ConnectionPair other)
+        {
+            return transportIdx == other.transportIdx && connection.Equals(other.connection);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ConnectionPair other && Equals(other);
         }
     }
     
@@ -142,10 +152,13 @@ namespace PurrNet.Transports
 
         private readonly CompositeTransportEvents _clientEvent = new();
         
-        public override bool isSupported
-        {
+        public override bool isSupported => true;
+        /*{
             get
             {
+                if(_transports.Length == 0)
+                    return true; //Just defaulting to true to avoid calling an error
+                
                 for (int i = 0; i < _transports.Length; i++)
                 {
                     if (_transports[i] && _transports[i].isSupported)
@@ -154,7 +167,7 @@ namespace PurrNet.Transports
 
                 return false;
             }
-        }
+        }*/
         
         Connection GetNextConnection(int transportIdx, Connection original)
         {
@@ -297,7 +310,7 @@ namespace PurrNet.Transports
             _clientTransport = target;
         }
 
-        internal override void StartClient()
+        public override void StartClient()
         {
             if (!_clientTransport || !_clientTransport.isSupported)
                 throw new NotSupportedException("No supported transport found for client.");
@@ -317,7 +330,7 @@ namespace PurrNet.Transports
             TriggerConnectionStateEvent(false);
         }
 
-        internal override void StartServer()
+        public override void StartServer()
         {
             if (_internalIsListening)
                 return;

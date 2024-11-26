@@ -1808,6 +1808,7 @@ GameObject:
   - component: {fileID: 1216416896}
   - component: {fileID: 1216416899}
   - component: {fileID: 1216416900}
+  - component: {fileID: 1216416901}
   m_Layer: 0
   m_Name: Network
   m_TagString: Untagged
@@ -1897,6 +1898,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   checkInterval: 0.33
+--- !u!114 &1216416901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216416895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ccc454d6a19ac140b15f8d619d0fb5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _serverPort: 5003
+  _dedicatedServer: 0
+  _peerToPeer: 0
+  _address: 127.0.0.1
 --- !u!1 &1247646078
 GameObject:
   m_ObjectHideFlags: 0
@@ -1915,7 +1932,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1247646079
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1998,6 +2015,7 @@ GameObject:
   - component: {fileID: 1273912353}
   - component: {fileID: 1273912356}
   - component: {fileID: 1273912355}
+  - component: {fileID: 1273912357}
   m_Layer: 0
   m_Name: StateMachine
   m_TagString: Untagged
@@ -2065,6 +2083,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
+  forTwo: 0
+--- !u!114 &1273912357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1273912352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef4bffeda13d7a748973ff9204401c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1312733901
 PrefabInstance:
   m_ObjectHideFlags: 0

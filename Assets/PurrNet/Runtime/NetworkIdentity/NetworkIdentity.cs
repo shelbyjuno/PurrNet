@@ -57,6 +57,8 @@ namespace PurrNet
         public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
+        
+        protected int _autoSpawnCalledFrame;
 
         /// <summary>
         /// Returns if you can control this object.
@@ -173,7 +175,7 @@ namespace PurrNet
                 _serverTickManager = networkManager.GetModule<TickManager>(true);
                 _serverTickManager.onTick += ServerTick;
             }
-            else if (_ticker != null)
+            else if (_ticker != null || _tickables.Count > 0)
             {
                 _clientTickManager = networkManager.GetModule<TickManager>(false);
                 _clientTickManager.onTick += ClientTick;
@@ -208,7 +210,7 @@ namespace PurrNet
                 if (_serverTickManager != null)
                     _serverTickManager.onTick -= ServerTick;
             }
-            else if (_ticker != null) 
+            else if (_ticker != null || _tickables.Count > 0) 
             {
                 if (_clientTickManager != null)
                     _clientTickManager.onTick -= ClientTick;
@@ -257,7 +259,7 @@ namespace PurrNet
         
         private void ClientTick()
         {
-            _ticker.OnTick(_clientTickManager.tickDelta);
+            _ticker?.OnTick(_clientTickManager.tickDelta);
 
             for (var i = 0; i < _tickables.Count; i++)
             {
@@ -270,13 +272,14 @@ namespace PurrNet
         {
             InternalOnServerTick();
 
-            if (!isClient && _ticker != null)
-                _ticker.OnTick(_serverTickManager.tickDelta);
-            
-            for (var i = 0; i < _tickables.Count; i++)
+            if (!isClient)
             {
-                var ticker = _tickables[i];
-                ticker.OnTick(_serverTickManager.tickDelta);
+                _ticker?.OnTick(_serverTickManager.tickDelta);
+                for (var i = 0; i < _tickables.Count; i++)
+                {
+                    var ticker = _tickables[i];
+                    ticker.OnTick(_serverTickManager.tickDelta);
+                }
             }
         }
 
@@ -480,8 +483,10 @@ namespace PurrNet
                 RemoveOwnership();
                 return;
             }
+
+            var link = GetComponentInParent<PrefabLink>();
             
-            if (!networkManager)
+            if (!networkManager || (link && link._autoSpawnCalledFrame == Time.frameCount))
             {
                 _pendingOwnershipRequest = player;
                 return;

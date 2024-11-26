@@ -1,5 +1,3 @@
-using PurrNet.Packets;
-
 namespace PurrNet.StateMachine
 {
     public abstract class StateNode : NetworkBehaviour

@@ -9,7 +9,7 @@ using PurrNet.Utils;
 namespace PurrNet
 {
     [Serializable]
-    public class SyncVar<T> : NetworkModule where T : struct
+    public class SyncVar<T> : NetworkModule
     {
         private TickManager _tickManager;
 
@@ -77,7 +77,12 @@ namespace PurrNet
         {
             _tickManager.onTick -= OnTick;
         }
-        
+
+        public override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
+        {
+            _id = 0;
+        }
+
         public override void OnObserverAdded(PlayerID player)
         {
             SendLatestState(player, _id++, _value);
@@ -97,6 +102,14 @@ namespace PurrNet
             if (isServer)
                  SendToAllReliably(_id++, _value);
             else SendToServerReliably(_id++, _value);
+        }
+        
+        public void FlushImmediately()
+        {
+            ForceSendReliable();
+            _lastSendTime = Time.time;
+            _wasLastDirty = false;
+            _isDirty = false;
         }
 
         private void OnTick()

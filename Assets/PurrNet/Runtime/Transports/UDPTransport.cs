@@ -106,12 +106,12 @@ namespace PurrNet.Transports
             else request.Reject();
         }
 
-        internal override void StartServer()
+        public override void StartServer()
         {
             Listen(_serverPort);
         }
 
-        internal override void StartClient()
+        public override void StartClient()
         {
             Connect(_address, _serverPort);
         }

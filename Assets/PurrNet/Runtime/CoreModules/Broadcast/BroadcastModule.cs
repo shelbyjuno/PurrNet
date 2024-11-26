@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using MemoryPack;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEngine.PlayerLoop;
 
 namespace PurrNet.Modules
 {
@@ -66,60 +63,23 @@ namespace PurrNet.Modules
                 throw new InvalidOperationException(PurrLogger.FormatMessage(message));
         }
 
-        private static void WriteHeader(NetworkStream stream, Type typeData)
-        {
-            var typeId = Hasher.GetStableHashU32(typeData);
-            stream.Serialize<uint>(ref typeId);
-        }
-        
-        private static uint ReadHeader(NetworkStream stream)
-        {
-            uint typeId = 0;
-            stream.Serialize<uint>(ref typeId);
-            return typeId;
-        }
-        
         public static ByteData GetImmediateData(object data)
         {
-            var dataStream = ByteBufferPool.Alloc();
-            var stream = new NetworkStream(dataStream, false);
-            var dataType = data.GetType();
-            
-            WriteHeader(stream, dataType);
-
-            try
-            {
-                stream.Serialize(dataType, ref data);
-            }
-            catch (MemoryPackSerializationException e)
-            {
-                throw new MemoryPackSerializationException(PurrLogger.FormatMessage($"Cannot serialize {dataType.Name}, add the IAutoNetworkedData interface to the class.\n{e.Message}"));
-            }
-
-            var value = dataStream.ToByteData();
-            ByteBufferPool.Free(dataStream);
-            return value;
+            using var stream = BitPackerPool.Get();
+            Packer<uint>.Write(stream, Hasher.GetStableHashU32(data.GetType()));
+            Packer.Write(stream, data);
+            return stream.ToByteData();
         }
 
         private static ByteData GetData<T>(T data)
         {
-            var dataStream = ByteBufferPool.Alloc();
-            var stream = new NetworkStream(dataStream, false);
+            using var stream = BitPackerPool.Get();
+            var typeId = Hasher.GetStableHashU32<T>();
 
-            WriteHeader(stream, typeof(T));
+            Packer<uint>.Write(stream, typeId);
+            Packer<T>.Write(stream, data);
 
-            try
-            {
-                stream.Serialize(ref data);
-            }
-            catch (MemoryPackSerializationException e)
-            {
-                throw new MemoryPackSerializationException(PurrLogger.FormatMessage($"Cannot serialize {typeof(T).Name}, add the IAutoNetworkedData interface to the class.\n{e.Message}"));
-            }
-
-            var value = dataStream.ToByteData();
-            ByteBufferPool.Free(dataStream);
-            return value;
+            return stream.ToByteData();
         }
         
         public void SendToAll<T>(T data, Channel method = Channel.ReliableOrdered)
@@ -185,34 +145,28 @@ namespace PurrNet.Modules
             if (_asServer != asServer)
                 return;
             
-            var dataStream = ByteBufferPool.Alloc();
+            using var stream = BitPackerPool.Get(false);
+            
+            stream.WriteBytes(data.span);
+            stream.ResetPositionAndMode(true);
 
-            dataStream.Write(data);
-            dataStream.ResetPointer();
-
-            var stream = new NetworkStream(dataStream, true);
-            uint typeId = ReadHeader(stream);
+            uint typeId = default;
+            
+            Packer<uint>.Read(stream, ref typeId);
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {
-                PurrLogger.LogWarning($"Cannot find type with id {typeId}; probably nothing is listening to this type.");
+                PurrLogger.LogError($"Cannot find type with id {typeId}; probably nothing is listening to this type.");
                 return;
             }
-
-            //var instance = Activator.CreateInstance(typeInfo);
-            object instance = null;
-
-            stream.Serialize(typeInfo, ref instance);
             
-            ByteBufferPool.Free(dataStream);
-
+            object instance = null;
+            Packer.Read(stream, typeInfo, ref instance);
             TriggerCallback(conn, typeId, instance);
         }
 
         public void Subscribe<T>(BroadcastDelegate<T> callback)
         {
-            RegisterTypeForSerializer<T>();
-
             var hash = Hasher.GetStableHashU32(typeof(T));
 
             if (_actions.TryGetValue(hash, out var actions))
@@ -225,22 +179,6 @@ namespace PurrNet.Modules
             {
                 new BroadcastCallback<T>(callback)
             });
-        }
-
-        internal static void RegisterTypeForSerializer<T>()
-        {
-            if (!MemoryPackFormatterProvider.IsRegistered<T>())
-            {
-                if (typeof(INetworkedData).IsAssignableFrom(typeof(T)))
-                {
-                    PurrLogger.LogWarning($"Type {typeof(T).Name} is not registered in the MemoryPackFormatterProvider. Registering it now.");
-                    RuntimeHelpers.RunClassConstructor(typeof(T).TypeHandle);
-                }
-                else if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-                {
-                    MemoryPackFormatterProvider.Register(new UnmanagedFormatterUnsage<T>());
-                }
-            }
         }
 
         public void Unsubscribe<T>(BroadcastDelegate<T> callback)

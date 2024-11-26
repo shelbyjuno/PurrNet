@@ -1,9 +1,8 @@
 using System;
-using PurrNet.Packets;
 
 namespace PurrNet.Transports
 {
-    public partial struct Connection : IEquatable<Connection>, IAutoNetworkedData
+    public struct Connection : IEquatable<Connection>
     {
         public override int GetHashCode()
         {

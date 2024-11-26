@@ -1,4 +1,4 @@
-using PurrNet.Logging;
+using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -22,7 +22,20 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        void Start()
+        private bool _autoSpawnCalled;
+
+        void Awake()
+        {
+            DoAutoSpawn();
+        }
+
+        private void Start()
+        {
+            if (!_autoSpawnCalled)
+                DoAutoSpawn();
+        }
+
+        private void DoAutoSpawn()
         {
             if (_muteAutoSpawn)
                 return;
@@ -34,6 +47,12 @@ namespace PurrNet
             
             if (!manager)
                 return;
+
+            if (manager.TryGetModule<ScenesModule>(manager.isServer, out var scenesModule))
+            {
+                if (!scenesModule.TryGetSceneID(gameObject.scene, out _))
+                    return;
+            }
             
             bool anyConnected = manager.isClient || manager.isServer;
 
@@ -50,8 +69,12 @@ namespace PurrNet
                 return;
             }
 
-            var spawnModule = manager.GetModule<HierarchyModule>(manager.isServer);
+            if (!manager.TryGetModule<HierarchyModule>(manager.isServer, out var spawnModule))
+                return;
+                    
             spawnModule.AutoSpawn(gameObject);
+            _autoSpawnCalledFrame = Time.frameCount;
+            _autoSpawnCalled = true;
         }
 
         internal bool SetGUID(string guid)

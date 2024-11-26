@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using PurrNet.Packets;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
-using INetworkedData = PurrNet.Packing.INetworkedData;
 using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
@@ -20,7 +18,8 @@ namespace PurrNet.Codegen
             List,
             Array,
             HashSet,
-            Dictionary
+            Dictionary,
+            Nullable
         }
 
         static bool ValideType(TypeReference type)
@@ -34,6 +33,9 @@ namespace PurrNet.Codegen
             // Check if the type is a generic instance
             if (type is GenericInstanceType genericInstance)
             {
+                if (genericInstance.GenericArguments.Count == 0)
+                    return false;
+                
                 // Recursively validate all generic arguments
                 foreach (var argument in genericInstance.GenericArguments)
                 {
@@ -49,13 +51,22 @@ namespace PurrNet.Codegen
                 return false;
             }
 
+            if (type.HasGenericParameters)
+            {
+                foreach (var param in type.GenericParameters)
+                {
+                    if (!PostProcessor.IsConcreteType(param, out _))
+                        return false;
+                }
+            }
+
             // If no open generics or interfaces are found, return true
             return true;
         }
         
         static string MakeFullNameValidCSharp(string name)
         {
-            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_");
+            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_");
         }
         
         public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, List<DiagnosticMessage> messages)
@@ -66,6 +77,12 @@ namespace PurrNet.Codegen
             if (!ValideType(type))
                 return;
             
+            /*messages.Add(new DiagnosticMessage
+            {
+                DiagnosticType = DiagnosticType.Error,
+                MessageData = type.FullName,
+            });*/
+
             if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
                 return;
             
@@ -92,11 +109,11 @@ namespace PurrNet.Codegen
             bool isNetworkIdentity = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkIdentity).FullName);
             bool isNetworkModule = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkModule).FullName);
             
-            if (!isNetworkIdentity && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) &&
-                !HasInterface(resolvedType, typeof(INetworkedData)))
-            {
+            if (!isNetworkIdentity && !isNetworkModule && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) && 
+                !HasInterface(resolvedType, typeof(IPacked)) && 
+                !HasInterface(resolvedType, typeof(IPackedAuto)) && 
+                !HasInterface(resolvedType, typeof(IPackedSimple)))
                 return;
-            }
             
             if (isNetworkModule)
                 return;
@@ -277,6 +294,13 @@ namespace PurrNet.Codegen
                     
                     il.Emit(OpCodes.Call, genericRegisterDictionaryMethod);
                     break;
+                case HandledGenericTypes.Nullable when importedType is GenericInstanceType nullableType:
+                    var registerNullableMethod = packCollectionsType.GetMethod("RegisterNullable", true).Import(module);
+                    var genericRegisterNullableMethod = new GenericInstanceMethod(registerNullableMethod);
+                    genericRegisterNullableMethod.GenericArguments.Add(nullableType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericRegisterNullableMethod);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(handledType), handledType, null);
             }
@@ -324,25 +348,66 @@ namespace PurrNet.Codegen
             bool isWriting, MethodDefinition method, MethodReference serialize, TypeDefinition type, ILProcessor il,
             ModuleDefinition mainmodule, ParameterDefinition valueArg)
         {
+            var bitPackerType = mainmodule.GetTypeDefinition(typeof(BitPacker)).Import(mainmodule);
             var packerType = mainmodule.GetTypeDefinition(typeof(Packer<>)).Import(mainmodule);
+            
+            var writeIsNull = bitPackerType.GetMethod("WriteIsNull", true).Import(mainmodule);
+            var readIsNull = bitPackerType.GetMethod("ReadIsNull", true).Import(mainmodule);
+            bool isClass = !type.IsValueType;
 
+            var ret = il.Create(OpCodes.Ret);
+
+            if (isClass)
+            {
+                // write null check
+                if (isWriting)
+                {
+                    var genericIsNull = new GenericInstanceMethod(writeIsNull);
+                    genericIsNull.GenericArguments.Add(type);
+                    
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Call, genericIsNull);
+                }
+                else
+                {
+                    var genericIsNull = new GenericInstanceMethod(readIsNull);
+                    genericIsNull.GenericArguments.Add(type);
+                    
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Call, genericIsNull);
+                }
+                
+                // if returned false, just return
+                il.Emit(OpCodes.Brfalse, ret);
+            }
+           
             if (type.IsEnum)
             {
                 HandleEnums(isWriting, method, serialize, type, il, packerType, mainmodule);
                 return;
             }
 
-            if (HasInterface(type, typeof(INetworkedData)))
+            if (HasInterface(type, typeof(IPacked)))
             {
                 HandleIData(isWriting, type, il, mainmodule, valueArg);
                 return;
             }
             
+            if (HasInterface(type, typeof(IPackedSimple)))
+            {
+                HandleIDataSimple(isWriting, type, il, mainmodule, valueArg);
+                return;
+            }
+            
             foreach (var field in type.Fields)
             {
+                if (field.IsStatic)
+                    continue;
+                
                 var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
-
-
+                
                 // make field public
                 if (!field.IsPublic)
                 {
@@ -351,7 +416,7 @@ namespace PurrNet.Codegen
                         var getter = CreateGetterMethod(type, field);
                         
                         il.Emit(OpCodes.Ldarg_0);
-                        il.Emit(OpCodes.Ldarga_S, valueArg);
+                        il.Emit(isClass ? OpCodes.Ldarg_S : OpCodes.Ldarga_S, valueArg);
                         il.Emit(OpCodes.Call, getter);
                         il.Emit(OpCodes.Call, genericM);
                     }
@@ -367,6 +432,8 @@ namespace PurrNet.Codegen
                         il.Emit(OpCodes.Call, genericM);
                         
                         il.Emit(OpCodes.Ldarg_1);
+                        if (isClass) il.Emit(OpCodes.Ldind_Ref);
+
                         il.Emit(OpCodes.Ldloc, variable);
                         il.Emit(OpCodes.Call, setter);
                     }
@@ -375,35 +442,64 @@ namespace PurrNet.Codegen
                 {
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldarg_1);
+                    if (isClass && !isWriting) il.Emit(OpCodes.Ldind_Ref);
                     il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, field);
                     il.Emit(OpCodes.Call, genericM);
                 }
 
             }
             
-            il.Emit(OpCodes.Ret);
+            /*il.Emit(OpCodes.Ldarg_S, valueArg);
+            if (isClass) il.Emit(OpCodes.Ldind_Ref);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, readData);*/
+            
+            il.Append(ret);
         }
 
         private static void HandleIData(bool isWriting, TypeDefinition type,
             ILProcessor il, ModuleDefinition mainmodule, ParameterDefinition valueArg)
         {
+            bool isClass = !type.IsValueType;
+
             if (isWriting)
             {
                 var writeData = type.GetMethod("Write").Import(mainmodule);
-
-                il.Emit(OpCodes.Ldarga_S, valueArg);
+                il.Emit(isClass ? OpCodes.Ldarg : OpCodes.Ldarga_S, valueArg);
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Call, writeData);
             }
             else
             {
                 var readData = type.GetMethod("Read").Import(mainmodule);
-
                 il.Emit(OpCodes.Ldarg_S, valueArg);
+                if (isClass) il.Emit(OpCodes.Ldind_Ref);
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Call, readData);
             }
-            
+                
+            il.Emit(OpCodes.Ret);
+        }
+        
+        private static void HandleIDataSimple(bool isWriting, TypeDefinition type,
+            ILProcessor il, ModuleDefinition mainmodule, ParameterDefinition valueArg)
+        {
+            bool isClass = !type.IsValueType;
+            if (isWriting)
+            {
+                var writeData = type.GetMethod("Serialize").Import(mainmodule);
+                il.Emit(isClass ? OpCodes.Ldarg : OpCodes.Ldarga_S, valueArg);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, writeData);
+            }
+            else
+            {
+                var readData = type.GetMethod("Serialize").Import(mainmodule);
+                il.Emit(OpCodes.Ldarg_S, valueArg);
+                if (isClass) il.Emit(OpCodes.Ldind_Ref);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, readData);
+            }
                 
             il.Emit(OpCodes.Ret);
         }
@@ -483,6 +579,12 @@ namespace PurrNet.Codegen
             if (IsGeneric(typeDef, typeof(Dictionary<,>)))
             {
                 type = HandledGenericTypes.Dictionary;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(Nullable<>)))
+            {
+                type = HandledGenericTypes.Nullable;
                 return true;
             }
 

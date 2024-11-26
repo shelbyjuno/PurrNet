@@ -1,4 +1,5 @@
-﻿using PurrNet.Packets;
+﻿using PurrNet.Logging;
+using PurrNet.Packing;
 using UnityEngine;
 
 namespace PurrNet
@@ -59,7 +60,7 @@ namespace PurrNet
         SetIKHintPositionWeight
     }
     
-    internal partial struct SetIKHintPosition : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetIKHintPosition : IPackedAuto, IApplyOnAnimator
     {
         public AvatarIKHint hint;
         public Vector3 position;
@@ -70,7 +71,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetIKPositionWeight : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetIKPositionWeight : IPackedAuto, IApplyOnAnimator
     {
         public AvatarIKGoal goal;
         public float value;
@@ -81,7 +82,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetIKRotationWeight : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetIKRotationWeight : IPackedAuto, IApplyOnAnimator
     {
         public AvatarIKGoal goal;
         public float value;
@@ -92,7 +93,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetIKHintPositionWeight : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetIKHintPositionWeight : IPackedAuto, IApplyOnAnimator
     {
         public AvatarIKHint hint;
         public float value;
@@ -103,7 +104,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct CrossFadeInFixedTime : IAutoNetworkedData, IApplyOnAnimator
+    internal struct CrossFadeInFixedTime : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public float fixedTime;
@@ -117,7 +118,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetLookAtPosition : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetLookAtPosition : IPackedAuto, IApplyOnAnimator
     {
         public Vector3 position;
         
@@ -127,7 +128,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetLookAtWeight : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetLookAtWeight : IPackedAuto, IApplyOnAnimator
     {
         public float weight, bodyWeight, headWeight, eyesWeight, clampWeight;
         
@@ -137,7 +138,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetIKPosition : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetIKPosition : IPackedAuto, IApplyOnAnimator
     {
         public AvatarIKGoal goal;
         public Vector3 position;
@@ -148,7 +149,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetIKRotation : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetIKRotation : IPackedAuto, IApplyOnAnimator
     {
         public AvatarIKGoal goal;
         public Quaternion rotation;
@@ -159,7 +160,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetBoneLocalRotation : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetBoneLocalRotation : IPackedAuto, IApplyOnAnimator
     {
         public HumanBodyBones bone;
         public Quaternion rotation;
@@ -170,7 +171,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetBool : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetBool : IPackedAuto, IApplyOnAnimator
     {
         public int nameHash;
         public bool value;
@@ -181,7 +182,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetFloat : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetFloat : IPackedAuto, IApplyOnAnimator
     {
         public int nameHash;
         public float value;
@@ -192,7 +193,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetInt : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetInt : IPackedAuto, IApplyOnAnimator
     {
         public int nameHash;
         public int value;
@@ -203,7 +204,7 @@ namespace PurrNet
         }
     }
     
-    public partial struct SetTrigger : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetTrigger : IPackedAuto, IApplyOnAnimator
     {
         public int nameHash;
         
@@ -213,7 +214,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct ResetTrigger : IAutoNetworkedData, IApplyOnAnimator
+    internal struct ResetTrigger : IPackedAuto, IApplyOnAnimator
     {
         public int nameHash;
         
@@ -223,7 +224,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetSpeed : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetSpeed : IPackedAuto, IApplyOnAnimator
     {
         public float speed;
         
@@ -233,7 +234,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetAnimatePhysics : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetAnimatePhysics : IApplyOnAnimator
     {
         public bool value;
         
@@ -243,7 +244,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetBodyPosition : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetBodyPosition : IPackedAuto, IApplyOnAnimator
     {
         public Vector3 value;
         
@@ -253,7 +254,7 @@ namespace PurrNet
         }
     }
         
-    internal partial struct SetBodyRotation : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetBodyRotation : IPackedAuto, IApplyOnAnimator
     {
         public Quaternion value;
         
@@ -263,7 +264,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetCullingMode : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetCullingMode : IPackedAuto, IApplyOnAnimator
     {
         public AnimatorCullingMode value;
         
@@ -273,7 +274,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetFireEvents : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetFireEvents : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -283,7 +284,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetPlaybackTime : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetPlaybackTime : IPackedAuto, IApplyOnAnimator
     {
         public float value;
         
@@ -293,7 +294,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetRootPosition : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetRootPosition : IPackedAuto, IApplyOnAnimator
     {
         public Vector3 value;
         
@@ -303,7 +304,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetRootRotation : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetRootRotation : IPackedAuto, IApplyOnAnimator
     {
         public Quaternion value;
         
@@ -313,7 +314,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetStabilizeFeet : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetStabilizeFeet : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -323,7 +324,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetUpdateMode : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetUpdateMode : IPackedAuto, IApplyOnAnimator
     {
         public AnimatorUpdateMode value;
         
@@ -333,7 +334,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetApplyRootMotion : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetApplyRootMotion : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -343,7 +344,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetFeetPivotActive : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetFeetPivotActive : IPackedAuto, IApplyOnAnimator
     {
         public float value;
         
@@ -353,7 +354,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetKeepAnimatorStateOnDisable : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetKeepAnimatorStateOnDisable : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -363,7 +364,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetWriteDefaultValuesOnDisable : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetWriteDefaultValuesOnDisable : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -373,7 +374,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetLogWarnings : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetLogWarnings : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -383,7 +384,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetLayersAffectMassCenter : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetLayersAffectMassCenter : IPackedAuto, IApplyOnAnimator
     {
         public bool value;
         
@@ -393,7 +394,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct Play_STATEHASH_LAYER_NORMALIZEDTIME : IAutoNetworkedData, IApplyOnAnimator
+    internal struct Play_STATEHASH_LAYER_NORMALIZEDTIME : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public int layer;
@@ -405,7 +406,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct Play_STATEHASH_LAYER : IAutoNetworkedData, IApplyOnAnimator
+    internal struct Play_STATEHASH_LAYER : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public int layer;
@@ -416,7 +417,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct PLAY_STATEHASH : IAutoNetworkedData, IApplyOnAnimator
+    internal struct PLAY_STATEHASH : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         
@@ -426,7 +427,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct Rebind : IAutoNetworkedData, IApplyOnAnimator
+    internal struct Rebind : IPackedAuto, IApplyOnAnimator
     {
         public void Apply(Animator anim)
         {
@@ -434,7 +435,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct UpdateWithDelta : IAutoNetworkedData, IApplyOnAnimator
+    internal struct UpdateWithDelta : IPackedAuto, IApplyOnAnimator
     {
         public float delta;
         
@@ -444,7 +445,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct CrossFade_5 : IAutoNetworkedData, IApplyOnAnimator
+    internal struct CrossFade_5 : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public float normalizedTime;
@@ -458,7 +459,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct CrossFade_4 : IAutoNetworkedData, IApplyOnAnimator
+    internal struct CrossFade_4 : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public float normalizedTime;
@@ -471,7 +472,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct CrossFade_3 : IAutoNetworkedData, IApplyOnAnimator
+    internal struct CrossFade_3 : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public float normalizedTime;
@@ -483,7 +484,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct CrossFade_2 : IAutoNetworkedData, IApplyOnAnimator
+    internal struct CrossFade_2 : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public float normalizedTime;
@@ -494,7 +495,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct MatchTarget : IAutoNetworkedData, IApplyOnAnimator
+    internal struct MatchTarget : IPackedAuto, IApplyOnAnimator
     {
         public Vector3 matchPosition;
         public Quaternion matchRotation;
@@ -510,7 +511,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct InterruptMatchTarget : IAutoNetworkedData, IApplyOnAnimator
+    internal struct InterruptMatchTarget : IPackedAuto, IApplyOnAnimator
     {
         public bool completeMatch;
         
@@ -520,7 +521,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct SetLayerWeight : IAutoNetworkedData, IApplyOnAnimator
+    internal struct SetLayerWeight : IPackedAuto, IApplyOnAnimator
     {
         public int layerIndex;
         public float weight;
@@ -531,7 +532,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct WriteDefaultValues : IAutoNetworkedData, IApplyOnAnimator
+    internal struct WriteDefaultValues : IPackedAuto, IApplyOnAnimator
     {
         public void Apply(Animator anim)
         {
@@ -539,7 +540,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct ApplyBuiltinRootMotion : IAutoNetworkedData, IApplyOnAnimator
+    internal struct ApplyBuiltinRootMotion : IPackedAuto, IApplyOnAnimator
     {
         public void Apply(Animator anim)
         {
@@ -547,7 +548,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct PlayInFixedTime : IAutoNetworkedData, IApplyOnAnimator
+    internal struct PlayInFixedTime : IPackedAuto, IApplyOnAnimator
     {
         public int stateHash;
         public int layer;
@@ -559,7 +560,7 @@ namespace PurrNet
         }
     }
     
-    internal partial struct NetAnimatorRPC : INetworkedData
+    internal struct NetAnimatorRPC : IPackedSimple
     {
         internal NetAnimatorAction type;
         
@@ -949,59 +950,59 @@ namespace PurrNet
             }
         }
 
-        public void Serialize(NetworkStream packer)
+        public void Serialize(BitPacker packer)
         {
-            packer.Serialize(ref type);
-            
+            Packer<NetAnimatorAction>.Serialize(packer, ref type);
+
             switch (type)
             {
-                case NetAnimatorAction.SetBool: packer.Serialize(ref _bool); break;
-                case NetAnimatorAction.SetFloat: packer.Serialize(ref _float); break;
-                case NetAnimatorAction.SetInt: packer.Serialize(ref _int); break;
-                case NetAnimatorAction.SetTrigger: packer.Serialize(ref _trigger); break;
-                case NetAnimatorAction.SetSpeed: packer.Serialize(ref _speed); break;
-                case NetAnimatorAction.SetAnimatePhysics: packer.Serialize(ref _animatePhysics); break;
-                case NetAnimatorAction.SetBodyPosition: packer.Serialize(ref _bodyPosition); break;
-                case NetAnimatorAction.SetBodyRotation: packer.Serialize(ref _bodyRotation); break;
-                case NetAnimatorAction.SetCullingMode: packer.Serialize(ref _cullingMode); break;
-                case NetAnimatorAction.SetFireEvents: packer.Serialize(ref _fireEvents); break;
-                case NetAnimatorAction.SetPlaybackTime: packer.Serialize(ref _playbackTime); break;
-                case NetAnimatorAction.SetRootPosition: packer.Serialize(ref _rootPosition); break;
-                case NetAnimatorAction.SetRootRotation: packer.Serialize(ref _rootRotation); break;
-                case NetAnimatorAction.SetStabilizeFeet: packer.Serialize(ref _stabilizeFeet); break;
-                case NetAnimatorAction.SetUpdateMode: packer.Serialize(ref _updateMode); break;
-                case NetAnimatorAction.SetApplyRootMotion: packer.Serialize(ref _applyRootMotion); break;
-                case NetAnimatorAction.SetFeetPivotActive: packer.Serialize(ref _feetPivotActive); break;
-                case NetAnimatorAction.SetKeepAnimatorStateOnDisable: packer.Serialize(ref _keepAnimatorStateOnDisable); break;
-                case NetAnimatorAction.SetWriteDefaultValuesOnDisable: packer.Serialize(ref _writeDefaultValuesOnDisable); break;
-                case NetAnimatorAction.SetLogWarnings: packer.Serialize(ref _logWarnings); break;
-                case NetAnimatorAction.SetLayersAffectMassCenter: packer.Serialize(ref _layersAffectMassCenter); break;
-                case NetAnimatorAction.ResetTrigger: packer.Serialize(ref _resetTrigger); break;
-                case NetAnimatorAction.Play_STATEHASH_LAYER_NORMALIZEDTIME: packer.Serialize(ref _play_STATEHASH_LAYER_NORMALIZEDTIME); break;
-                case NetAnimatorAction.Play_STATEHASH_LAYER: packer.Serialize(ref _play_STATEHASH_LAYER); break;
-                case NetAnimatorAction.PLAY_STATEHASH: packer.Serialize(ref _PLAY_STATEHASH); break;
-                case NetAnimatorAction.Rebind: packer.Serialize(ref _rebind); break;
-                case NetAnimatorAction.UpdateWithDelta: packer.Serialize(ref _updateWithDelta); break;
-                case NetAnimatorAction.CrossFade_5: packer.Serialize(ref _crossFade_5); break;
-                case NetAnimatorAction.CrossFade_4: packer.Serialize(ref _crossFade_4); break;
-                case NetAnimatorAction.CrossFade_3: packer.Serialize(ref _crossFade_3); break;
-                case NetAnimatorAction.CrossFade_2: packer.Serialize(ref _crossFade_2); break;
-                case NetAnimatorAction.MatchTarget: packer.Serialize(ref _matchTarget); break;
-                case NetAnimatorAction.InterruptMatchTarget: packer.Serialize(ref _interruptMatchTarget); break;
-                case NetAnimatorAction.SetLayerWeight: packer.Serialize(ref _setLayerWeight); break;
-                case NetAnimatorAction.WriteDefaultValues: packer.Serialize(ref _writeDefaultValues); break;
-                case NetAnimatorAction.ApplyBuiltinRootMotion: packer.Serialize(ref _applyBuiltinRootMotion); break;
-                case NetAnimatorAction.PlayInFixedTime: packer.Serialize(ref _playInFixedTime); break;
-                case NetAnimatorAction.SetBoneLocalRotation: packer.Serialize(ref _setBoneLocalRotation); break;
-                case NetAnimatorAction.SetIKPosition: packer.Serialize(ref _setIKPosition); break;
-                case NetAnimatorAction.SetIKRotation: packer.Serialize(ref _setIKRotation); break;
-                case NetAnimatorAction.SetLookAtPosition: packer.Serialize(ref _setLookAtPosition); break;
-                case NetAnimatorAction.SetLookAtWeight: packer.Serialize(ref _setLookAtWeight); break;
-                case NetAnimatorAction.CrossFadeInFixedTime: packer.Serialize(ref _crossFadeInFixedTime); break;
-                case NetAnimatorAction.SetIKHintPosition: packer.Serialize(ref _setIKHintPosition); break;
-                case NetAnimatorAction.SetIKPositionWeight: packer.Serialize(ref _setIKPositionWeight); break;
-                case NetAnimatorAction.SetIKRotationWeight: packer.Serialize(ref _setIKRotationWeight); break;
-                case NetAnimatorAction.SetIKHintPositionWeight: packer.Serialize(ref _setIKHintPositionWeight); break;
+                case NetAnimatorAction.SetBool: Packer<SetBool>.Serialize(packer, ref _bool); break;
+                case NetAnimatorAction.SetFloat: Packer<SetFloat>.Serialize(packer, ref _float); break;
+                case NetAnimatorAction.SetInt: Packer<SetInt>.Serialize(packer, ref _int); break;
+                case NetAnimatorAction.SetTrigger: Packer<SetTrigger>.Serialize(packer, ref _trigger); break;
+                case NetAnimatorAction.SetSpeed: Packer<SetSpeed>.Serialize(packer, ref _speed); break;
+                case NetAnimatorAction.SetAnimatePhysics: Packer<SetAnimatePhysics>.Serialize(packer, ref _animatePhysics); break;
+                case NetAnimatorAction.SetBodyPosition: Packer<SetBodyPosition>.Serialize(packer, ref _bodyPosition); break;
+                case NetAnimatorAction.SetBodyRotation: Packer<SetBodyRotation>.Serialize(packer, ref _bodyRotation); break;
+                case NetAnimatorAction.SetCullingMode: Packer<SetCullingMode>.Serialize(packer, ref _cullingMode); break;
+                case NetAnimatorAction.SetFireEvents: Packer<SetFireEvents>.Serialize(packer, ref _fireEvents); break;
+                case NetAnimatorAction.SetPlaybackTime: Packer<SetPlaybackTime>.Serialize(packer, ref _playbackTime); break;
+                case NetAnimatorAction.SetRootPosition: Packer<SetRootPosition>.Serialize(packer, ref _rootPosition); break;
+                case NetAnimatorAction.SetRootRotation: Packer<SetRootRotation>.Serialize(packer, ref _rootRotation); break;
+                case NetAnimatorAction.SetStabilizeFeet: Packer<SetStabilizeFeet>.Serialize(packer, ref _stabilizeFeet); break;
+                case NetAnimatorAction.SetUpdateMode: Packer<SetUpdateMode>.Serialize(packer, ref _updateMode); break;
+                case NetAnimatorAction.SetApplyRootMotion: Packer<SetApplyRootMotion>.Serialize(packer, ref _applyRootMotion); break;
+                case NetAnimatorAction.SetFeetPivotActive: Packer<SetFeetPivotActive>.Serialize(packer, ref _feetPivotActive); break;
+                case NetAnimatorAction.SetKeepAnimatorStateOnDisable: Packer<SetKeepAnimatorStateOnDisable>.Serialize(packer, ref _keepAnimatorStateOnDisable); break;
+                case NetAnimatorAction.SetWriteDefaultValuesOnDisable: Packer<SetWriteDefaultValuesOnDisable>.Serialize(packer, ref _writeDefaultValuesOnDisable); break;
+                case NetAnimatorAction.SetLogWarnings: Packer<SetLogWarnings>.Serialize(packer, ref _logWarnings); break;
+                case NetAnimatorAction.SetLayersAffectMassCenter: Packer<SetLayersAffectMassCenter>.Serialize(packer, ref _layersAffectMassCenter); break;
+                case NetAnimatorAction.ResetTrigger: Packer<ResetTrigger>.Serialize(packer, ref _resetTrigger); break;
+                case NetAnimatorAction.Play_STATEHASH_LAYER_NORMALIZEDTIME: Packer<Play_STATEHASH_LAYER_NORMALIZEDTIME>.Serialize(packer, ref _play_STATEHASH_LAYER_NORMALIZEDTIME); break;
+                case NetAnimatorAction.Play_STATEHASH_LAYER: Packer<Play_STATEHASH_LAYER>.Serialize(packer, ref _play_STATEHASH_LAYER); break;
+                case NetAnimatorAction.PLAY_STATEHASH: Packer<PLAY_STATEHASH>.Serialize(packer, ref _PLAY_STATEHASH); break;
+                case NetAnimatorAction.Rebind: Packer<Rebind>.Serialize(packer, ref _rebind); break;
+                case NetAnimatorAction.UpdateWithDelta: Packer<UpdateWithDelta>.Serialize(packer, ref _updateWithDelta); break;
+                case NetAnimatorAction.CrossFade_5: Packer<CrossFade_5>.Serialize(packer, ref _crossFade_5); break;
+                case NetAnimatorAction.CrossFade_4: Packer<CrossFade_4>.Serialize(packer, ref _crossFade_4); break;
+                case NetAnimatorAction.CrossFade_3: Packer<CrossFade_3>.Serialize(packer, ref _crossFade_3); break;
+                case NetAnimatorAction.CrossFade_2: Packer<CrossFade_2>.Serialize(packer, ref _crossFade_2); break;
+                case NetAnimatorAction.MatchTarget: Packer<MatchTarget>.Serialize(packer, ref _matchTarget); break;
+                case NetAnimatorAction.InterruptMatchTarget: Packer<InterruptMatchTarget>.Serialize(packer, ref _interruptMatchTarget); break;
+                case NetAnimatorAction.SetLayerWeight: Packer<SetLayerWeight>.Serialize(packer, ref _setLayerWeight); break;
+                case NetAnimatorAction.WriteDefaultValues: Packer<WriteDefaultValues>.Serialize(packer, ref _writeDefaultValues); break;
+                case NetAnimatorAction.ApplyBuiltinRootMotion: Packer<ApplyBuiltinRootMotion>.Serialize(packer, ref _applyBuiltinRootMotion); break;
+                case NetAnimatorAction.PlayInFixedTime: Packer<PlayInFixedTime>.Serialize(packer, ref _playInFixedTime); break;
+                case NetAnimatorAction.SetBoneLocalRotation: Packer<SetBoneLocalRotation>.Serialize(packer, ref _setBoneLocalRotation); break;
+                case NetAnimatorAction.SetIKPosition: Packer<SetIKPosition>.Serialize(packer, ref _setIKPosition); break;
+                case NetAnimatorAction.SetIKRotation: Packer<SetIKRotation>.Serialize(packer, ref _setIKRotation); break;
+                case NetAnimatorAction.SetLookAtPosition: Packer<SetLookAtPosition>.Serialize(packer, ref _setLookAtPosition); break;
+                case NetAnimatorAction.SetLookAtWeight: Packer<SetLookAtWeight>.Serialize(packer, ref _setLookAtWeight); break;
+                case NetAnimatorAction.CrossFadeInFixedTime: Packer<CrossFadeInFixedTime>.Serialize(packer, ref _crossFadeInFixedTime); break;
+                case NetAnimatorAction.SetIKHintPosition: Packer<SetIKHintPosition>.Serialize(packer, ref _setIKHintPosition); break;
+                case NetAnimatorAction.SetIKPositionWeight: Packer<SetIKPositionWeight>.Serialize(packer, ref _setIKPositionWeight); break;
+                case NetAnimatorAction.SetIKRotationWeight: Packer<SetIKRotationWeight>.Serialize(packer, ref _setIKRotationWeight); break;
+                case NetAnimatorAction.SetIKHintPositionWeight: Packer<SetIKHintPositionWeight>.Serialize(packer, ref _setIKHintPositionWeight); break;
                 default:
                     throw new System.NotImplementedException(type.ToString());
             }

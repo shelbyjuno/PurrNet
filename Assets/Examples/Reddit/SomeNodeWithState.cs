@@ -1,12 +1,16 @@
+using System.Collections.Generic;
+using PurrNet;
 using PurrNet.StateMachine;
 using UnityEngine;
 
-public struct FuckYouBitch
+public class SomeNodeWithState : StateNode
 {
-    public ulong data;
-}
+    public override void StateUpdate(bool asServer)
+    {
+        base.StateUpdate(asServer);
 
-public class SomeNodeWithState : StateNode<FuckYouBitch>
-{
-    
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+        }
+    }
 }

@@ -6,9 +6,10 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEngine;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
 
@@ -49,7 +50,7 @@ namespace PurrNet
         internal static readonly Dictionary<InstanceGenericKey, MethodInfo> genericMethods = new ();
         
         [UsedByIL]
-        public static void ReadGenericHeader(NetworkStream stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
+        public static void ReadGenericHeader(BitPacker stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
         {
             uint hash = 0;
 
@@ -63,7 +64,7 @@ namespace PurrNet
             
             for (int i = 0; i < genericCount; i++)
             {
-                stream.Serialize<uint>(ref hash);
+                Packer<uint>.Read(stream, ref hash);
                 var type = Hasher.ResolveType(hash);
 
                 rpcHeader.types[i] = type;
@@ -217,19 +218,22 @@ namespace PurrNet
         {
             if (!isSpawned)
             {
-                PurrLogger.LogError($"Trying to send RPC from '{GetType().Name}' which is not spawned.", this);
+                if (!signature.runLocally)
+                    PurrLogger.LogError($"Trying to send RPC from '{GetType().Name}' which is not spawned.", this);
                 return;
             }
 
             if (!networkManager.TryGetModule<RPCModule>(networkManager.isServer, out var module))
             {
-                PurrLogger.LogError("Failed to get RPC module.", this);
+                if (!signature.runLocally)
+                    PurrLogger.LogError("Failed to get RPC module.", this);
                 return;
             }
             
             if (signature.requireOwnership && !isOwner)
             {
-                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without ownership.", this);
+                if (!signature.runLocally)
+                    PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without ownership.", this);
                 return;
             }
             
@@ -238,7 +242,8 @@ namespace PurrNet
             
             if (!shouldIgnore && signature.requireServer && !networkManager.isServer)
             {
-                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without server.", this);
+                if (!signature.runLocally)
+                    PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without server.", this);
                 return;
             }
             

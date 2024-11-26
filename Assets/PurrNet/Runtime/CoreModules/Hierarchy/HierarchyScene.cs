@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
-    internal struct TriggerQueuedSpawnEvents : IAutoNetworkedData
+    internal struct TriggerQueuedSpawnEvents : IPackedAuto
     {
         public SceneID sceneId;
     }

@@ -1,12 +1,12 @@
 ﻿using System;
 using JetBrains.Annotations;
-using PurrNet.Packets;
+using PurrNet.Packing;
 
 namespace PurrNet
 {
     public struct GenericRPCHeader
     {
-        public NetworkStream stream;
+        public BitPacker stream;
         public uint hash;
         public Type[] types;
         public object[] values;
@@ -27,16 +27,14 @@ namespace PurrNet
         [UsedImplicitly]
         public void Read(int genericIndex, int index)
         {
-            object value = default;
-            stream.Serialize(types[genericIndex], ref value);
-            values[index] = value;
+            Packer.Read(stream, types[genericIndex], ref values[index]);
         }
         
         [UsedImplicitly]
         public void Read<T>(int index)
         {
             T value = default;
-            stream.Serialize(ref value);
+            Packer<T>.Read(stream, ref value);
             values[index] = value;
         }
     }

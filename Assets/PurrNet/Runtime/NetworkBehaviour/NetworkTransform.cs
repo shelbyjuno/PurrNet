@@ -150,8 +150,14 @@ namespace PurrNet
 
         protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
         {
-            if (asServer && newOwner.HasValue)
-                SendLatestTransform(newOwner.Value, GetCurrentTransformData());
+            _id = 0;
+            
+            if (!_trs)
+                _trs = transform;
+
+            _position?.Teleport(_trs.position);
+            _rotation?.Teleport(_trs.rotation);
+            _scale?.Teleport(_trs.localScale);
         }
 
         private int _ticksSinceLastSend;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
+using PurrNet.Packing;
 using UnityEngine;
 
 namespace PurrNet.StateMachine
@@ -241,43 +241,21 @@ namespace PurrNet.StateMachine
         }
     }
     
-    public partial struct StateMachineState : INetworkedData
+    public struct StateMachineState : IPacked
     {
         public int stateId;
         public object data;
         
-        static StateMachine machine => StateMachine.instance;
-        
-        private Type RequireDataType()
+        public void Write(BitPacker packer)
         {
-            var dataType = machine.GetDataType(stateId);
-            
-            if (dataType == null)
-                PurrLogger.LogException($"StateNode at index {stateId} was expected to have a generic type argument, but did not.");
-            
-            return dataType;
+            Packer<int>.Write(packer, stateId);
+            Packer<object>.Write(packer, data);
         }
-        
-        public void Serialize(NetworkStream stream)
+
+        public void Read(BitPacker packer)
         {
-            stream.Serialize(ref stateId);
-            
-            bool isNull = data == null || stateId < 0 || stateId >= machine.states.Count;
-            stream.Serialize(ref isNull);
-
-            if (isNull)
-            {
-                data = null;
-                return;
-            }
-            
-            var dataType = RequireDataType();
-            
-            if (data == null || data.GetType() != dataType)
-                data = Activator.CreateInstance(dataType);
-
-            if (data is INetworkedData networkedData)
-                networkedData.Serialize(stream);
+            Packer<int>.Read(packer, ref stateId);
+            Packer<object>.Read(packer, ref data);
         }
     }
 }

@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packets;
 
 namespace PurrNet.Modules
 {
-    internal partial struct ClientFinishedLoadingScene : IAutoNetworkedData
+    internal struct ClientFinishedLoadingScene
     {
         public SceneID scene;
     }

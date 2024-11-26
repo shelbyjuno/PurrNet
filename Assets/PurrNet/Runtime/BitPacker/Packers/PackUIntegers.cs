@@ -5,6 +5,18 @@ namespace PurrNet.Packing
     public static class PackUIntegers
     {
         [UsedByIL]
+        public static void Write(this BitPacker packer, ulong value)
+        {
+            packer.WriteBits(value, 64);
+        }
+
+        [UsedByIL]
+        public static void Read(this BitPacker packer, ref ulong value)
+        {
+            value = packer.ReadBits(64);
+        }
+        
+        [UsedByIL]
         public static void Write(this BitPacker packer, uint value)
         {
             packer.WriteBits(value, 32);
@@ -31,13 +43,13 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void Write(this BitPacker packer, byte value)
         {
-            packer.WriteBits(value, 16);
+            packer.WriteBits(value, 8);
         }
 
         [UsedByIL]
         public static void Read(this BitPacker packer, ref byte value)
         {
-            value = (byte)packer.ReadBits(16);
+            value = (byte)packer.ReadBits(8);
         }
     }
 }
