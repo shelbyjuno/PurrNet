@@ -175,7 +175,7 @@ namespace PurrNet
                 _serverTickManager = networkManager.GetModule<TickManager>(true);
                 _serverTickManager.onTick += ServerTick;
             }
-            else if (_ticker != null)
+            else if (_ticker != null || _tickables.Count > 0)
             {
                 _clientTickManager = networkManager.GetModule<TickManager>(false);
                 _clientTickManager.onTick += ClientTick;
@@ -210,7 +210,7 @@ namespace PurrNet
                 if (_serverTickManager != null)
                     _serverTickManager.onTick -= ServerTick;
             }
-            else if (_ticker != null) 
+            else if (_ticker != null || _tickables.Count > 0) 
             {
                 if (_clientTickManager != null)
                     _clientTickManager.onTick -= ClientTick;
@@ -259,7 +259,7 @@ namespace PurrNet
         
         private void ClientTick()
         {
-            _ticker.OnTick(_clientTickManager.tickDelta);
+            _ticker?.OnTick(_clientTickManager.tickDelta);
 
             for (var i = 0; i < _tickables.Count; i++)
             {
