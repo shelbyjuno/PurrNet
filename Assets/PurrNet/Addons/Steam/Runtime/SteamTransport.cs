@@ -14,6 +14,30 @@ namespace PurrNet.Steam
         [Header("Client Settings")] 
         [SerializeField] private string _address = "127.0.0.1";
 
+        public ushort serverPort
+        {
+            get => _serverPort;
+            set => _serverPort = value;
+        }
+        
+        public bool dedicatedServer
+        {
+            get => _dedicatedServer;
+            set => _dedicatedServer = value;
+        }
+        
+        public bool peerToPeer
+        {
+            get => _peerToPeer;
+            set => _peerToPeer = value;
+        }
+        
+        public string address
+        {
+            get => _address;
+            set => _address = value;
+        }
+
         public override bool isSupported => Application.platform != RuntimePlatform.WebGLPlayer;
 
         public override ITransport transport => this;
