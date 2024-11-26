@@ -98,6 +98,15 @@ namespace PurrNet
             }
         }
 
+        public override void OnSpawn()
+        {
+            if (!IsController(_ownerAuth)) return;
+            
+            if (isServer)
+                 SendInitialStateToAll(_list);
+            else SendInitialStateToServer(_list);
+        }
+
         public override void OnObserverAdded(PlayerID player)
         {
             SendInitialStateToAll(_list);
