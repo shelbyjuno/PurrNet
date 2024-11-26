@@ -142,8 +142,8 @@ namespace PurrNet.Transports
 
         private readonly CompositeTransportEvents _clientEvent = new();
         
-        public override bool isSupported
-        {
+        public override bool isSupported => true;
+        /*{
             get
             {
                 if(_transports.Length == 0)
@@ -157,7 +157,7 @@ namespace PurrNet.Transports
 
                 return false;
             }
-        }
+        }*/
         
         Connection GetNextConnection(int transportIdx, Connection original)
         {
