@@ -20,6 +20,7 @@ MonoBehaviour:
     despawnIfOwnerDisconnects: 1
   _defaultRpcRules:
     ignoreRequireServerAttribute: 1
+    ignoreRequireOwnerAttribute: 1
   _defaultVisibilityRules:
     visibilityMode: 0
   _defaultOwnershipRules:

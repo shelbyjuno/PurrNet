@@ -230,14 +230,16 @@ namespace PurrNet
                 return;
             }
             
-            if (signature.requireOwnership && !isOwner)
+            var rules = networkManager.networkRules;
+            bool shouldIgnoreOwnership = rules && rules.ShouldIgnoreRequireOwner();
+            
+            if (!shouldIgnoreOwnership && signature.requireOwnership && !isOwner)
             {
                 if (!signature.runLocally)
                     PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without ownership.", this);
                 return;
             }
             
-            var rules = networkManager.networkRules;
             bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
             
             if (!shouldIgnore && signature.requireServer && !networkManager.isServer)

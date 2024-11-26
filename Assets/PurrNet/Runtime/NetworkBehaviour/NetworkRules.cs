@@ -18,6 +18,10 @@ namespace PurrNet
         [UsedImplicitly]
         [Tooltip("This allows client to call any ObserversRpc or TargetRpc without the need to set requireServer to false")]
         public bool ignoreRequireServerAttribute;
+
+        [UsedImplicitly]
+        [Tooltip("This allows client to call any OwnerRpc without the need to set requireOwner to false")]
+        public bool ignoreRequireOwnerAttribute;
     }
     
     [Serializable]
@@ -91,7 +95,8 @@ namespace PurrNet
         
         [SerializeField] private RpcRules _defaultRpcRules = new()
         {
-            ignoreRequireServerAttribute = false
+            ignoreRequireServerAttribute = false,
+            ignoreRequireOwnerAttribute = false
         };
         
         [PurrReadOnly]
@@ -241,6 +246,11 @@ namespace PurrNet
         public bool ShouldIgnoreRequireServer()
         {
             return _defaultRpcRules.ignoreRequireServerAttribute;
+        }
+        
+        public bool ShouldIgnoreRequireOwner()
+        {
+            return _defaultRpcRules.ignoreRequireOwnerAttribute;
         }
     }
 }
