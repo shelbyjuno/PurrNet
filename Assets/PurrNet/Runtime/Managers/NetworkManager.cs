@@ -411,12 +411,6 @@ namespace PurrNet
             _clientModules.TriggerOnUpdate();
         }
 
-        private void LateUpdate()
-        {
-            _serverModules.TriggerOnLateUpdate();
-            _clientModules.TriggerOnLateUpdate();
-        }
-
         private void FixedUpdate()
         {
             bool serverConnected = serverState == ConnectionState.Connected;
@@ -437,12 +431,6 @@ namespace PurrNet
             if (clientConnected)
                 _clientModules.TriggerOnFixedUpdate();
             
-            if (serverConnected)
-                _serverModules.TriggerOnPostFixedUpdate();
-            
-            if (clientConnected)
-                _clientModules.TriggerOnPostFixedUpdate();
-
             if (_isCleaningClient && _clientModules.Cleanup())
             {
                 _clientModules.UnregisterModules();
