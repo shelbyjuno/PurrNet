@@ -1,5 +1,3 @@
-using System;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
