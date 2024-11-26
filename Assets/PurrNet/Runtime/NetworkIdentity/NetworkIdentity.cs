@@ -272,13 +272,14 @@ namespace PurrNet
         {
             InternalOnServerTick();
 
-            if (!isClient && _ticker != null)
-                _ticker.OnTick(_serverTickManager.tickDelta);
-            
-            for (var i = 0; i < _tickables.Count; i++)
+            if (!isClient)
             {
-                var ticker = _tickables[i];
-                ticker.OnTick(_serverTickManager.tickDelta);
+                _ticker?.OnTick(_serverTickManager.tickDelta);
+                for (var i = 0; i < _tickables.Count; i++)
+                {
+                    var ticker = _tickables[i];
+                    ticker.OnTick(_serverTickManager.tickDelta);
+                }
             }
         }
 
