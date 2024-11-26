@@ -1738,7 +1738,7 @@ namespace PurrNet.Codegen
                 
                 if (type is GenericInstanceType genericInstance)
                     AddNestedGenerics(assembly, genericInstance, typesToHandle, visited2, messages);
-                AddNestedFields(assembly, resolved, typesToHandle, visited, messages);
+                AddNestedFields(assembly, type, resolved, typesToHandle, visited, messages);
             }
         }
 
@@ -1762,7 +1762,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void AddNestedFields(AssemblyDefinition assembly, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
+        private static void AddNestedFields(AssemblyDefinition assembly, TypeReference reference, TypeDefinition resolved, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
         {
             if (resolved == null)
                 return;
@@ -1795,7 +1795,7 @@ namespace PurrNet.Codegen
                             containsRelevantTypes = true;
                         }
 
-                        AddNestedFields(assembly, resolvedArg, typesToHandle, visited, messages);
+                        AddNestedFields(assembly, argument, resolvedArg, typesToHandle, visited, messages);
                     }
 
                     // If the GenericInstanceType contains relevant arguments, add it
@@ -1808,7 +1808,7 @@ namespace PurrNet.Codegen
                 {
                     // Handle non-generic field types
                     typesToHandle.Add(field.FieldType);
-                    AddNestedFields(assembly, field.FieldType.Resolve(), typesToHandle, visited, messages);
+                    AddNestedFields(assembly, field.FieldType, field.FieldType.Resolve(), typesToHandle, visited, messages);
                 }
             }
         }
@@ -1931,7 +1931,7 @@ namespace PurrNet.Codegen
                     var resolved = field.FieldType.Resolve();
                     if (resolved == null) continue;
                     
-                    AddAnySyncVarOrGenericNetworkModulesType(types, resolved, networkModule, field);
+                    AddAnySyncVarOrGenericNetworkModulesType(types, field.FieldType, resolved, networkModule);
                 }
 
                 for (int j = 0; j < type.Methods.Count; j++)
@@ -1969,14 +1969,14 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void AddAnySyncVarOrGenericNetworkModulesType(HashSet<TypeReference> types, TypeDefinition resolved,
-            TypeDefinition networkModule, FieldDefinition field)
+        private static void AddAnySyncVarOrGenericNetworkModulesType(HashSet<TypeReference> types, TypeReference type, TypeDefinition resolved,
+            TypeDefinition networkModule)
         {
             bool inheritsNetworkModule = InheritsFrom(resolved, networkModule.FullName);
 
             if (inheritsNetworkModule)
             {
-                if (field.FieldType is GenericInstanceType genericInstance)
+                if (type is GenericInstanceType genericInstance)
                 {
                     bool allConcrete = true;
                     foreach (var genericArg in genericInstance.GenericArguments)
@@ -1989,7 +1989,7 @@ namespace PurrNet.Codegen
                     }
                     
                     if (allConcrete)
-                        types.Add(field.FieldType);
+                        types.Add(type);
                 }
             }
         }
