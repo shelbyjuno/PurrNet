@@ -78,7 +78,7 @@ namespace PurrNet
 
         public void StartTimer(float duration)
         {
-            if (!isOwner && _ownerAuth || !_ownerAuth && !isServer) return;
+            if (!IsController(_ownerAuth)) return;
             
             _remaining = duration;
             _isRunning = true;
