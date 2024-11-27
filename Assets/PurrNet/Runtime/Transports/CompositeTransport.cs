@@ -105,6 +105,8 @@ namespace PurrNet.Transports
         public event OnDataReceived onDataReceived;
         public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
+        
+        public IReadOnlyList<GenericTransport> transports => _transports;
 
         public IReadOnlyList<Connection> connections => _connections;
 
@@ -153,21 +155,21 @@ namespace PurrNet.Transports
         private readonly CompositeTransportEvents _clientEvent = new();
         
         public override bool isSupported => true;
-        /*{
-            get
+        
+        public bool TryGetTransport<T>(out T result) where T : GenericTransport
+        {
+            for (int i = 0; i < _transports.Length; i++)
             {
-                if(_transports.Length == 0)
-                    return true; //Just defaulting to true to avoid calling an error
-                
-                for (int i = 0; i < _transports.Length; i++)
+                if (_transports[i] is T t)
                 {
-                    if (_transports[i] && _transports[i].isSupported)
-                        return true;
+                    result = t;
+                    return true;
                 }
-
-                return false;
             }
-        }*/
+
+            result = null;
+            return false;
+        }
         
         Connection GetNextConnection(int transportIdx, Connection original)
         {
