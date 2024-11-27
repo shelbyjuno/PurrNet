@@ -59,6 +59,8 @@ namespace PurrNet
         public bool hasOwner => owner.HasValue;
         
         protected int _autoSpawnCalledFrame;
+        
+        readonly Queue<Action> _onSpawnedQueue = new();
 
         /// <summary>
         /// Returns if you can control this object.
@@ -141,6 +143,11 @@ namespace PurrNet
         /// The root identity is the topmost parent that has a NetworkIdentity.
         /// </summary>
         public NetworkIdentity root { get; private set; }
+        
+        public void QueueOnSpawned(Action action)
+        {
+            _onSpawnedQueue.Enqueue(action);
+        }
         
         public NetworkIdentity GetRootIdentity()
         {
@@ -582,6 +589,8 @@ namespace PurrNet
 
             if (_spawnedCount == 0)
             {
+                while (_onSpawnedQueue.Count > 0)
+                    _onSpawnedQueue.Dequeue().Invoke();
                 OnSpawned();
 
                 for (int i = 0; i < _externalModulesView.Count; i++)
