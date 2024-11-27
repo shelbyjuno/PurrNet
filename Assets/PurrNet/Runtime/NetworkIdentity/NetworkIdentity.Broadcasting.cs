@@ -9,7 +9,6 @@ using PurrNet.Modules;
 using PurrNet.Packing;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEngine;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
 
@@ -348,7 +347,7 @@ namespace PurrNet
 
             bool ShouldSend(PlayerID player)
             {
-                if (player == info.sender && signature.excludeSender)
+                if (player == info.sender && (signature.excludeSender || signature.runLocally))
                     return false;
 
                 return !signature.excludeOwner || IsNotOwnerPredicate(player);
