@@ -60,7 +60,7 @@ namespace PurrNet
         
         protected int _autoSpawnCalledFrame;
         
-        readonly Queue<Action> _onSpawnedQueue = new();
+        Queue<Action> _onSpawnedQueue;
 
         /// <summary>
         /// Returns if you can control this object.
@@ -146,6 +146,7 @@ namespace PurrNet
         
         public void QueueOnSpawned(Action action)
         {
+            _onSpawnedQueue ??= new Queue<Action>();
             _onSpawnedQueue.Enqueue(action);
         }
         
@@ -589,8 +590,9 @@ namespace PurrNet
 
             if (_spawnedCount == 0)
             {
-                while (_onSpawnedQueue.Count > 0)
+                while (_onSpawnedQueue != null && _onSpawnedQueue.Count > 0)
                     _onSpawnedQueue.Dequeue().Invoke();
+
                 OnSpawned();
 
                 for (int i = 0; i < _externalModulesView.Count; i++)
