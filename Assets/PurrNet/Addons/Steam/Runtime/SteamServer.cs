@@ -1,6 +1,6 @@
 using System;
 using PurrNet.Transports;
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using PurrNet.Logging;
@@ -11,7 +11,7 @@ namespace PurrNet.Steam
 {
     public class SteamServer
     {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         const int MAX_MESSAGES = 256;
 
         private HSteamListenSocket _listenSocket;
@@ -34,7 +34,7 @@ namespace PurrNet.Steam
         public event Action<int, ByteData> onDataReceived;
 #pragma warning restore CS0067 // Event is never used
         
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         public bool listening => _listenSocket != HSteamListenSocket.Invalid;
 #else
         public bool listening => false;
@@ -42,7 +42,7 @@ namespace PurrNet.Steam
 
         public void Listen(ushort port, bool dedicated = false)
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             _isDedicated = dedicated;
             
             var localAddress = new SteamNetworkingIPAddr();
@@ -72,7 +72,7 @@ namespace PurrNet.Steam
         
         public void ListenP2P(bool dedicated = false)
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             _isDedicated = dedicated;
 
             if (dedicated)
@@ -96,7 +96,7 @@ namespace PurrNet.Steam
 #endif
         }
         
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         private void PostListen()
         {
             if (_listenSocket == HSteamListenSocket.Invalid)
@@ -113,13 +113,13 @@ namespace PurrNet.Steam
 
         public void RunCallbacks()
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             SendQueuesMessages();
             ReceiveMessages();
 #endif
         }
 
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         private void SendQueuesMessages()
         {
             for (var i = 0; i < _connections.Count; i++)
@@ -165,7 +165,7 @@ namespace PurrNet.Steam
 
         public void Kick(int id)
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
 
             if (!_connectionById.TryGetValue(id, out var conn))
                 return;
@@ -176,7 +176,7 @@ namespace PurrNet.Steam
 #endif
         }
 
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         private static void MakeSureBufferCanFit(int packetLength)
         {
             if (buffer.Length < packetLength)
@@ -185,7 +185,7 @@ namespace PurrNet.Steam
 #endif
         public void SendToConnection(int connId, ByteData data, Channel channel)
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
 
             if (!_connectionById.TryGetValue(connId, out var conn))
                 return;
@@ -212,7 +212,7 @@ namespace PurrNet.Steam
 #endif
         }
         
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         private void AddConnection(HSteamNetConnection connection)
         {
             int id = _connections.Count;
@@ -267,7 +267,7 @@ namespace PurrNet.Steam
 
         public void Stop()
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             if (_connectionStatusChanged != null)
             {
                 _connectionStatusChanged.Dispose();

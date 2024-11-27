@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using PurrNet.Transports;
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
 using System.Runtime.InteropServices;
 using PurrNet.Logging;
 using Steamworks;
@@ -11,7 +11,7 @@ namespace PurrNet.Steam
 {
     public class SteamClient
     {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         const int MAX_MESSAGES = 256;
         private Callback<SteamNetConnectionStatusChangedCallback_t> _onLocalConnectionState;
         
@@ -45,7 +45,7 @@ namespace PurrNet.Steam
         public IEnumerator Connect(string address, ushort port, bool dedicated = false)
         {
             yield return null;
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             _isDedicated = dedicated;
             
             var addr = new SteamNetworkingIPAddr();
@@ -63,7 +63,7 @@ namespace PurrNet.Steam
         public IEnumerator ConnectP2P(string steamId, bool dedicated = false)
         {
             yield return null;
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             if (ulong.TryParse(steamId, out var id) == false)
             {
                 PurrLogger.LogError("Invalid Steam ID provided as address to connect");
@@ -86,7 +86,7 @@ namespace PurrNet.Steam
         
         public void Send(ByteData data, Channel channel)
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             MakeSureBufferCanFit(data.length);
             
             var pinnedArray = GCHandle.Alloc(data.data, GCHandleType.Pinned);
@@ -111,13 +111,13 @@ namespace PurrNet.Steam
         
         public void RunCallbacks()
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             SendQueuesMessages();
             ReceiveMessages();
 #endif
         }
         
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
         private void SendQueuesMessages()
         {
             if (_isDedicated)
@@ -216,7 +216,7 @@ namespace PurrNet.Steam
 
         public void Stop()
         {
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
             if (_onLocalConnectionState != null)
             {
                 _onLocalConnectionState.Dispose();

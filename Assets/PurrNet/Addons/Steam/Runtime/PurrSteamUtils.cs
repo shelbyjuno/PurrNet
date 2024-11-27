@@ -1,4 +1,4 @@
-#if STEAMWORKS_NET
+#if STEAMWORKS_NET && !DISABLESTEAMWORKS
 using System.Net;
 using PurrNet.Logging;
 
