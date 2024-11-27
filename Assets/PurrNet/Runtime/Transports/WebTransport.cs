@@ -164,7 +164,7 @@ namespace PurrNet.Transports
             TriggerConnectionStateEvent(true);
         }
 
-        public override void StartServer()
+        protected override void StartServerInternal()
         {
             Listen(_serverPort);
         }
@@ -280,7 +280,7 @@ namespace PurrNet.Transports
             }
         }
 
-        public override void StartClient()
+        protected override void StartClientInternal()
         {
             Connect(_address, _serverPort);
         }

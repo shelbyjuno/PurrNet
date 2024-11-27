@@ -89,12 +89,12 @@ namespace PurrNet.Steam
         private SteamServer _server;
         private SteamClient _client;
 
-        public override void StartClient()
+        protected override void StartClientInternal()
         {
             Connect(_address, _serverPort);
         }
-        
-        public override void StartServer()
+
+        protected override void StartServerInternal()
         {
             Listen(_serverPort);
         }

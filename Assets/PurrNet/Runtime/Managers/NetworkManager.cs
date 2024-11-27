@@ -457,17 +457,24 @@ namespace PurrNet
         {
             if (!_transport)
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
-            _serverModules.RegisterModules();
             _transport.StartServer();
+        }
+
+        public void InternalRegisterServerModules()
+        {
+            _serverModules.RegisterModules();
+        }
+        
+        public void InternalRegisterClientModules()
+        {
+            _clientModules.RegisterModules();
         }
         
         public void StartClient()
         {
             localClientConnection = null;
-            
             if (!_transport)
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
-            _clientModules.RegisterModules();
             _transport.StartClient();
         }
 

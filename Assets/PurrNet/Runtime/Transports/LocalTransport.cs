@@ -37,7 +37,7 @@ namespace PurrNet.Transports
             }
         }
 
-        public override void StartServer()
+        protected override void StartServerInternal()
         {
             Listen(default);
         }
@@ -83,7 +83,7 @@ namespace PurrNet.Transports
             }
         }
 
-        public override void StartClient()
+        protected override void StartClientInternal()
         {
             Connect(default, default);
         }
@@ -135,7 +135,7 @@ namespace PurrNet.Transports
 
         public void CloseConnection(Connection conn)
         {
-            StopClient();
+            StopClientInternal();
         }
 
         public void UpdateEvents(float delta) { }
