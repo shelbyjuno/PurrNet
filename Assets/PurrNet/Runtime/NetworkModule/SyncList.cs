@@ -117,11 +117,13 @@ namespace PurrNet
         {
             if (!isHost)
             {
+                _list.Clear();
+                _list.AddRange(items);
+                
+                InvokeChange(new SyncListChange<T>(SyncListOperation.Cleared));
+
                 for (int i = 0; i < items.Count; i++)
-                {
-                    _list.Add(items[i]);
                     InvokeChange(new SyncListChange<T>(SyncListOperation.Added, items[i], i));
-                }
             }
         }
         
@@ -137,11 +139,13 @@ namespace PurrNet
         {
             if (!isServer || isHost)
             {
+                _list.Clear();
+                _list.AddRange(items);
+                
+                InvokeChange(new SyncListChange<T>(SyncListOperation.Cleared));
+                
                 for (int i = 0; i < items.Count; i++)
-                {
-                    _list.Add(items[i]);
                     InvokeChange(new SyncListChange<T>(SyncListOperation.Added, items[i], i));
-                }
             }
         }
 

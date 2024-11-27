@@ -8,10 +8,17 @@ public class SomeBehaviour : NetworkBehaviour
     
     protected override void OnSpawned(bool asServer)
     {
-        if (IsController(_list.ownerAuth))
+        if (!asServer)
         {
             var instance = Instantiate(_prefab);
-            _list.Add(instance);
+            instance.GiveOwnership(localPlayer);
+
+            if (IsController(_list.ownerAuth))
+                _list.Add(instance);
+            
+            instance.CreateMore(_prefab, localPlayer);
+            instance.CreateMore(_prefab, localPlayer);
+            instance.CreateMore(_prefab, localPlayer);
         }
     }
 }

@@ -699,7 +699,9 @@ namespace PurrNet.Modules
             PostObserverEvents();
         }
 
-        readonly List<NetworkIdentity> _spawnedThisFrame = new ();
+        List<NetworkIdentity> _spawnedThisFrame = new ();
+        List<NetworkIdentity> _spawnedThisFrameBuffer = new ();
+        
         readonly List<NetworkIdentity> _triggerPostIdentityFunc = new ();
         
         public void Spawn(ref GameObject instance)
@@ -756,7 +758,6 @@ namespace PurrNet.Modules
                 var siblingIdx = child.transform.parent ? child.transform.GetSiblingIndex() : 0;
                 
                 child.SetIdentity(_manager, _sceneID, prefabId, siblingIdx, nid, (ushort)i, _asServer);
-                
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
                 
@@ -1168,11 +1169,15 @@ namespace PurrNet.Modules
 
             if (spawnedThisFrameCount > 0)
             {
+                (_spawnedThisFrame, _spawnedThisFrameBuffer) = (_spawnedThisFrameBuffer, _spawnedThisFrame);
+            
+                _spawnedThisFrame.Clear();
+                
                 for (int i = 0; i < spawnedThisFrameCount; i++)
                 {
                     try
                     {
-                        var identity = _spawnedThisFrame[i];
+                        var identity = _spawnedThisFrameBuffer[i];
 
                         if (!identity)
                             continue;
@@ -1197,8 +1202,6 @@ namespace PurrNet.Modules
                     }
                 }
             }
-            
-            _spawnedThisFrame.Clear();
         }
 
         private void SendDeltaToPlayers(HierarchyActionBatch delta)

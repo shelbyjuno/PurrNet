@@ -62,3 +62,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
+  _list:
+    _ownerAuth: 1
+    _list: []
