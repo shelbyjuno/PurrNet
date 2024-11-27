@@ -160,7 +160,7 @@ namespace PurrNet.Transports
         {
             for (int i = 0; i < _transports.Length; i++)
             {
-                if (_transports[i] is T t)
+                if (_transports[i] && _transports[i] is T t)
                 {
                     result = t;
                     return true;
