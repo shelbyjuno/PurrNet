@@ -106,9 +106,73 @@ namespace PurrNet
             _dict = _serializedDict.ToDictionary();
         }
 
+        public override void OnSpawn()
+        {
+            if (!IsController(_ownerAuth)) return;
+            
+            if (isServer)
+                SendInitialStateToAll(_dict);
+            else SendInitialStateToServer(_dict);
+        }
+
         protected virtual void OnBeforeSerialize()
         {
             _serializedDict.FromDictionary(_dict);
+        }
+
+        public override void OnObserverAdded(PlayerID player)
+        {
+            HandleInitialStateTarget(player, _serializedDict.ToDictionary());
+        }
+        
+        [TargetRpc(Channel.ReliableOrdered)]
+        private void HandleInitialStateTarget(PlayerID player, Dictionary<TKey, TValue> initialState)
+        {
+            HandleInitialState(initialState);
+        }
+        
+        [ObserversRpc(Channel.ReliableOrdered)]
+        private void SendInitialStateToAll(Dictionary<TKey, TValue> initialState)
+        {
+            HandleInitialState(initialState);
+        }
+        
+        [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
+        private void SendInitialStateToServer(Dictionary<TKey, TValue> initialState)
+        {
+            if (!_ownerAuth) return;
+            SendInitialStateToOthers(initialState);
+        }
+        
+        [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
+        private void SendInitialStateToOthers(Dictionary<TKey, TValue> initialState)
+        {
+            if (!isServer || isHost)
+            {
+                _dict = initialState;
+                
+                InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Cleared));
+
+                foreach (var kvp in _dict)
+                {
+                    InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Added, kvp.Key, kvp.Value));
+                }
+            }
+        }
+
+        private void HandleInitialState(Dictionary<TKey, TValue> initialState)
+        {
+            if (!isHost)
+            {
+                _dict = initialState;
+                
+                InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Cleared));
+
+                foreach (var kvp in _dict)
+                {
+                    InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Added, kvp.Key, kvp.Value));
+                }
+            }
         }
         
 #if UNITY_EDITOR

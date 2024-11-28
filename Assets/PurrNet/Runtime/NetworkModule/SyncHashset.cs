@@ -3,6 +3,7 @@ using PurrNet.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using PurrNet.Transports;
 
 namespace PurrNet
@@ -82,7 +83,71 @@ namespace PurrNet
             _serializedSet.Clear();
             _serializedSet.AddRange(_set);
         }
+
+        public override void OnSpawn()
+        {
+            if (!IsController(_ownerAuth)) return;
+            
+            if (isServer)
+                SendInitialStateToAll(_set);
+            else SendInitialStateToServer(_set);
+        }
         
+        public override void OnObserverAdded(PlayerID player)
+        {
+            HandleInitialStateTarget(player, _serializedSet.ToHashSet());
+        }
+        
+        [TargetRpc(Channel.ReliableOrdered)]
+        private void HandleInitialStateTarget(PlayerID player, HashSet<T> initialState)
+        {
+            HandleInitialState(initialState);
+        }
+        
+        [ObserversRpc(Channel.ReliableOrdered)]
+        private void SendInitialStateToAll(HashSet<T> initialState)
+        {
+            HandleInitialState(initialState);
+        }
+        
+        [ServerRpc(Channel.ReliableOrdered, requireOwnership: true)]
+        private void SendInitialStateToServer(HashSet<T> initialState)
+        {
+            if (!_ownerAuth) return;
+            SendInitialStateToOthers(initialState);
+        }
+        
+        [ObserversRpc(Channel.ReliableOrdered, excludeOwner: true)]
+        private void SendInitialStateToOthers(HashSet<T> initialState)
+        {
+            if (!isServer || isHost)
+            {
+                _set = initialState;
+                
+                InvokeChange(new SyncHashSetChange<T>(SyncHashSetOperation.Cleared));
+
+                foreach (var value in _set)
+                {
+                    InvokeChange(new SyncHashSetChange<T>(SyncHashSetOperation.Added, value));
+                }
+            }
+        }
+
+        private void HandleInitialState(HashSet<T> initialState)
+        {
+            if (!isHost)
+            {
+                _set = initialState;
+                
+                InvokeChange(new SyncHashSetChange<T>(SyncHashSetOperation.Cleared));
+
+                foreach (var value in _set)
+                {
+                    InvokeChange(new SyncHashSetChange<T>(SyncHashSetOperation.Added, value));
+                }
+            }
+        }
+
 #if UNITY_EDITOR
         private void UpdateSerializedSet(SyncHashSetChange<T> _)
         {

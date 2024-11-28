@@ -109,11 +109,22 @@ namespace PurrNet
 
         public override void OnObserverAdded(PlayerID player)
         {
-            SendInitialStateToAll(_list);
+            SendInitialToTarget(player, _list);
+        }
+
+        [TargetRpc(Channel.ReliableOrdered)]
+        private void SendInitialToTarget(PlayerID player, List<T> items)
+        {
+            HandleInitialState(items);
         }
 
         [ObserversRpc(Channel.ReliableOrdered)]
         private void SendInitialStateToAll(List<T> items)
+        {
+            HandleInitialState(items);
+        }
+        
+        private void HandleInitialState(List<T> items)
         {
             if (!isHost)
             {
