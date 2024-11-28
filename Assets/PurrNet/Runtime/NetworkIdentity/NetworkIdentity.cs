@@ -441,13 +441,13 @@ namespace PurrNet
             if (!wasAlreadySpawned)
             {
                 _modules.Clear();
+                _externalModulesView.Clear();
+                
                 OnInitializeModules();
                 CallInitMethods();
 
                 foreach (var module in _externalModulesView)
-                {
                     module.OnInitializeModules();
-                }
                 
                 _tickables.Clear();
                 RegisterEvents();
