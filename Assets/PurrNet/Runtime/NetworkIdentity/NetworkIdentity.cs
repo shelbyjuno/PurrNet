@@ -440,6 +440,7 @@ namespace PurrNet
 
             if (!wasAlreadySpawned)
             {
+                _modules.Clear();
                 OnInitializeModules();
                 CallInitMethods();
 
