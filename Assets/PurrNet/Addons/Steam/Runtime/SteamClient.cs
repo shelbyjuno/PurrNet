@@ -180,12 +180,10 @@ namespace PurrNet.Steam
                 case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected:
                     connectionState = ConnectionState.Connected;
                     break;
-                default:
+                case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally:
+                case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
                     connectionState = ConnectionState.Disconnecting;
                     connectionState = ConnectionState.Disconnected;
-                    
-                    
-                    
                     break;
             }
         }
