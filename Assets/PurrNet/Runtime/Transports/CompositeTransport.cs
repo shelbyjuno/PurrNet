@@ -96,6 +96,7 @@ namespace PurrNet.Transports
     
     public class CompositeTransport : GenericTransport, ITransport
     {
+        [SerializeField] private bool _ensureAllServersStart;
         [SerializeField] private GenericTransport[] _transports = {};
         
         private GenericTransport _clientTransport;
@@ -123,6 +124,7 @@ namespace PurrNet.Transports
             get
             {
                 bool anyConnecting = false;
+                bool anyConnected = false;
                 bool anyDisconnecting = false;
                 
                 for (int i = 0; i < _transports.Length; i++)
@@ -135,12 +137,18 @@ namespace PurrNet.Transports
                         {
                             case ConnectionState.Connecting: anyConnecting = true; break;
                             case ConnectionState.Disconnecting: anyDisconnecting = true; break;
+                            case ConnectionState.Connected: anyConnected = true; break;
                         }
                     }
                 }
 
                 if (_internalIsListening)
-                    return anyConnecting ? ConnectionState.Connecting : ConnectionState.Connected;
+                {
+                    if (_ensureAllServersStart)
+                         return anyConnecting ? ConnectionState.Connected : ConnectionState.Connecting;
+                    return anyConnected ? ConnectionState.Connected : ConnectionState.Connecting;
+                }
+                
                 return anyDisconnecting ? ConnectionState.Disconnecting : ConnectionState.Disconnected;
             }
         }
@@ -265,11 +273,9 @@ namespace PurrNet.Transports
             {
                 var pair = new ConnectionPair(transportidx, conn);
 
-                if (_router.TryGetValue(pair, out var target))
+                if (_router.Remove(pair, out var target))
                 {
-                    _router.Remove(pair);
                     _connections.Remove(target);
-
                     onDisconnected?.Invoke(target, DisconnectReason.Timeout, true);
                 }
                 else Debug.LogError($"Connection {conn} coming from transport {transportidx} is not routed.");
