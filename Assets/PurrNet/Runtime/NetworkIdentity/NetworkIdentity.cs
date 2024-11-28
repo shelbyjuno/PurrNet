@@ -442,6 +442,7 @@ namespace PurrNet
             {
                 _modules.Clear();
                 _externalModulesView.Clear();
+                _moduleId = 0;
                 
                 OnInitializeModules();
                 CallInitMethods();
