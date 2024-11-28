@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Transports
@@ -363,7 +364,15 @@ namespace PurrNet.Transports
                     if (!e.isSubscribed)
                     {
                         _events[i].Subscribe(i, _transports[i].transport);
-                        _transports[i].StartServer();
+                        
+                        try
+                        {
+                            _transports[i].StartServer();
+                        }
+                        catch (Exception ex)
+                        {
+                            PurrLogger.LogError($"Failed to start {_transports[i].GetType().Name} transport: {ex.Message}");
+                        }
                     }
                 }
             }
