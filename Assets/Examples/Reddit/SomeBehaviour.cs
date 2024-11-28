@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using PurrNet;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,6 +9,12 @@ public class SomeBehaviour : NetworkBehaviour
     public SyncVar<SomeNode> fesfes { get; } = new();
     [SerializeField] SyncList<SomeNode> _list = new ();
     [SerializeField] UnityEvent<int> _evemt = new ();
+    
+    [ServerRpc(requireOwnership: false)]
+    public void SetReady(RPCInfo info = default)
+    {
+        Debug.Log("SetReady " + owner, this);
+    }
 
     protected override void OnSpawned()
     {

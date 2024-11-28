@@ -924,8 +924,15 @@ namespace PurrNet.Codegen
             {
                 if (IsConcreteType(param.ParameterType, out var concreteParam))
                     usedTypes.Add(concreteParam);
+
+                var p = new ParameterDefinition(param.Name, param.Attributes, param.ParameterType);
+                newMethod.Parameters.Add(p);
                 
-                newMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
+                foreach (var t in param.CustomAttributes)
+                    p.CustomAttributes.Add(t);
+                
+                p.HasDefault = param.HasDefault;
+                p.Constant = param.Constant;
             }
             
             var code = newMethod.Body.GetILProcessor();
