@@ -126,7 +126,7 @@ namespace PurrNet
             _remaining = 0;
             
             if (isServer)
-                SendStopTimerToAll(remainingTime);
+                SendStopTimerToAll(remainingTime, localPlayer);
             else
                 SendStopTimerToServer(remainingTime);
         }
