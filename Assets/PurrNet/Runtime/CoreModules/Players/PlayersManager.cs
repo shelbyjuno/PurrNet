@@ -65,6 +65,7 @@ namespace PurrNet.Modules
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
     {
+        private readonly NetworkManager _manager;
         private readonly CookiesModule _cookiesModule;
         private readonly BroadcastModule _broadcastModule;
         private readonly ITransport _transport;
@@ -125,6 +126,7 @@ namespace PurrNet.Modules
 
         public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaste)
         {
+            _manager = nm;
             _transport = nm.transport.transport;
             _cookiesModule = cookiesModule;
             _broadcastModule = broadcaste;
@@ -271,6 +273,9 @@ namespace PurrNet.Modules
             }
             
             _broadcastModule.Send(conn, new ServerLoginResponse(playerId));
+
+            if (_manager.localClientConnection == conn)
+                localPlayerId = playerId;
 
             SendSnapshotToClient(conn);
             if (RegisterPlayer(conn, playerId, out var isReconnect))
