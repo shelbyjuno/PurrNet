@@ -100,6 +100,8 @@ namespace PurrNet.Transports
         
         private GenericTransport _clientTransport;
         
+        public GenericTransport clientTransport => _clientTransport;
+        
         public event OnConnected onConnected;
         public event OnDisconnected onDisconnected;
         public event OnDataReceived onDataReceived;
