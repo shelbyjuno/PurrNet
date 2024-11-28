@@ -145,7 +145,7 @@ namespace PurrNet.Transports
                 if (_internalIsListening)
                 {
                     if (_ensureAllServersStart)
-                         return anyConnecting ? ConnectionState.Connected : ConnectionState.Connecting;
+                         return anyConnecting ? ConnectionState.Connecting : ConnectionState.Connected;
                     return anyConnected ? ConnectionState.Connected : ConnectionState.Connecting;
                 }
                 
@@ -332,7 +332,7 @@ namespace PurrNet.Transports
                 throw new NotSupportedException("No supported transport found for client.");
 
             _clientEvent.Subscribe(-1, _clientTransport.transport);
-            _clientTransport.StartClient();
+            _clientTransport.StartClientInternalOnly();
             
             TriggerConnectionStateEvent(false);
         }
