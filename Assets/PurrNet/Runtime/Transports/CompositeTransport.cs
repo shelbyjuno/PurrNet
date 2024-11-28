@@ -311,6 +311,12 @@ namespace PurrNet.Transports
             
             _clientTransport = target;
         }
+        
+        public void SetClientTransport<T>() where T : GenericTransport
+        {
+            if (TryGetTransport<T>(out var t))
+                SetClientTransport(t);
+        }
 
         protected override void StartClientInternal()
         {
