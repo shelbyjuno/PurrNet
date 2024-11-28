@@ -1,13 +1,22 @@
 using PurrNet;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class SomeBehaviour : NetworkBehaviour
 {
     [SerializeField] private SomeNode _prefab;
+    public SyncVar<SomeNode> fesfes { get; } = new();
     [SerializeField] SyncList<SomeNode> _list = new ();
-    
+    [SerializeField] UnityEvent<int> _evemt = new ();
+
+    protected override void OnSpawned()
+    {
+        Debug.Log("OnSpawned " + owner, this);
+    }
+
     protected override void OnSpawned(bool asServer)
     {
+        Debug.Log("Spawned " + owner, this);
         if (!asServer)
         {
             var instance = Instantiate(_prefab);
@@ -20,5 +29,27 @@ public class SomeBehaviour : NetworkBehaviour
             instance.CreateMore(_prefab, localPlayer);
             instance.CreateMore(_prefab, localPlayer);
         }
+    }
+    
+    [ObserversRpc]
+    private static void OnEvent_STATIC_NON_GEn()
+    {
+        Debug.Log("Static event");
+    }
+    
+    [ObserversRpc]
+    protected static void OnEvent_STATIC<T>()
+    {
+        Debug.Log("Static event");
+    }
+    
+    [ObserversRpc]
+    protected void OnEvent<T, G>()
+    {
+    }
+    
+    [ObserversRpc]
+    private void OnEvent2<H>() where H : class
+    {
     }
 }

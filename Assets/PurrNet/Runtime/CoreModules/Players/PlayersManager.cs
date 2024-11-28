@@ -190,8 +190,11 @@ namespace PurrNet.Modules
             }
             
             var playerId = new PlayerID(++_playerIdCounter, true);
-            RegisterPlayer(default, playerId);
-            SendNewUserToAllClients(default, playerId);
+            if (RegisterPlayer(default, playerId, out var isReconnect))
+            {
+                SendNewUserToAllClients(default, playerId);
+                TriggerOnJoinedEvent(playerId, isReconnect);
+            }
             return playerId;
         }
         
@@ -227,7 +230,8 @@ namespace PurrNet.Modules
 
         private void OnPlayerJoinedEvent(Connection conn, PlayerJoinedEvent data, bool asserver)
         {
-            RegisterPlayer(data.connection, data.playerId);
+            if (RegisterPlayer(data.connection, data.playerId, out var isReconnect))
+                TriggerOnJoinedEvent(data.playerId, isReconnect);
         }
 
         private void OnPlayerLeftEvent(Connection conn, PlayerLeftEvent data, bool asserver)
@@ -238,7 +242,10 @@ namespace PurrNet.Modules
         private void OnPlayerSnapshotEvent(Connection conn, PlayerSnapshotEvent data, bool asserver)
         {
             foreach (var (key, pid) in data.connectionToPlayerId)
-                RegisterPlayer(key, pid);
+            {
+                if (RegisterPlayer(key, pid, out var isReconnect))
+                    TriggerOnJoinedEvent(pid, isReconnect);
+            }
         }
 
         private void OnClientLoginResponse(Connection conn, ServerLoginResponse data, bool asServer)
@@ -266,8 +273,11 @@ namespace PurrNet.Modules
             _broadcastModule.Send(conn, new ServerLoginResponse(playerId));
 
             SendSnapshotToClient(conn);
-            RegisterPlayer(conn, playerId);
-            SendNewUserToAllClients(conn, playerId);
+            if (RegisterPlayer(conn, playerId, out var isReconnect))
+            {
+                SendNewUserToAllClients(conn, playerId);
+                TriggerOnJoinedEvent(playerId, isReconnect);
+            }
         }
         
         private void SendNewUserToAllClients(Connection conn, PlayerID playerId)
@@ -285,10 +295,13 @@ namespace PurrNet.Modules
             _broadcastModule.Send(conn, new PlayerSnapshotEvent(_connectionToPlayerId));
         }
  
-        private void RegisterPlayer(Connection conn, PlayerID player)
+        private bool RegisterPlayer(Connection conn, PlayerID player, out bool isReconnect)
         {
             if (_connectionToPlayerId.ContainsKey(conn))
-                return;
+            {
+                isReconnect = false;
+                return false;
+            }
 
             players.Add(player);
 
@@ -298,8 +311,12 @@ namespace PurrNet.Modules
                 _playerToConnection.Add(player, conn);
             }
             
-            bool isReconnect = !_allSeenPlayers.Add(player);
-            
+            isReconnect = !_allSeenPlayers.Add(player);
+            return true;
+        }
+
+        private void TriggerOnJoinedEvent(PlayerID player, bool isReconnect)
+        {
             onPrePlayerJoined?.Invoke(player, isReconnect, _asServer);
             onPlayerJoined?.Invoke(player, isReconnect, _asServer);
             onPostPlayerJoined?.Invoke(player, isReconnect, _asServer);

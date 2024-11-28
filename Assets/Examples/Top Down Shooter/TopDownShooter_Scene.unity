@@ -2015,7 +2015,6 @@ GameObject:
   - component: {fileID: 1273912353}
   - component: {fileID: 1273912356}
   - component: {fileID: 1273912355}
-  - component: {fileID: 1273912357}
   m_Layer: 0
   m_Name: StateMachine
   m_TagString: Untagged
@@ -2084,18 +2083,6 @@ MonoBehaviour:
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   forTwo: 0
---- !u!114 &1273912357
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1273912352}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef4bffeda13d7a748973ff9204401c07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1312733901
 PrefabInstance:
   m_ObjectHideFlags: 0
