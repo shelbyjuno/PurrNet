@@ -19,6 +19,8 @@ https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet
 
 ## Discord
 
-[![Discord Banner](https://discord.com/api/guilds/1288872904272121957/widget.png?style=banner2)](https://discord.gg/HnNKdkq9ta)
+<a href="https://discord.gg/HnNKdkq9ta" target="_blank">
+    <img src="https://discord.com/api/guilds/1288872904272121957/widget.png?style=banner2" alt="Discord Banner">
+</a>
 
 Join our Discord community!
