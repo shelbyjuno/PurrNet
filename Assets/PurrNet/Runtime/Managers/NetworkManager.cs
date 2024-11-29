@@ -68,6 +68,8 @@ namespace PurrNet
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
         [Header("Network Settings")]
+        [Tooltip("Whether the network manager should not be destroyed on load. " +
+                 "If true, the network manager will be moved to the DontDestroyOnLoad scene.")]
         [SerializeField] private bool _dontDestroyOnLoad = true;
         [PurrDocs("systems-and-modules/network-manager/transports")]
         [SerializeField] private GenericTransport _transport;
@@ -77,6 +79,7 @@ namespace PurrNet
         [SerializeField] private NetworkRules _networkRules;
         [PurrDocs("systems-and-modules/network-manager/network-visibility")]
         [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
+        [Tooltip("Number of target ticks per second.")]
         [SerializeField] private int _tickRate = 20;
         
         /// <summary>
