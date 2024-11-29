@@ -4,6 +4,7 @@ using UnityEngine;
 namespace PurrNet.Editor
 {
     [CustomEditor(typeof(NetworkIdentity), true)]
+    [CanEditMultipleObjects]
     public class NetworkIdentityInspector : UnityEditor.Editor
     {
         private SerializedProperty _networkRules;
@@ -28,6 +29,7 @@ namespace PurrNet.Editor
         {
             GUILayout.Space(5);
 
+            var identities = targets.Length;
             var identity = (NetworkIdentity)target;
             
             if (!identity)
@@ -35,44 +37,53 @@ namespace PurrNet.Editor
                 EditorGUILayout.LabelField("Invalid identity");
                 return;
             }
+
             
-            HandleOverrides(identity);
-            HandleStatus(identity);
+            HandleOverrides(identity, identities > 1);
+            HandleStatus(identity, identities > 1);
         }
         
         private bool _foldoutVisible;
 
-        private void HandleOverrides(NetworkIdentity identity)
+        private void HandleOverrides(NetworkIdentity identity, bool multi)
         {
-            if (identity.isSpawned)
+            if (multi || identity.isSpawned)
                 GUI.enabled = false;
             
-            bool isNetworkRulesOverridden = _networkRules.objectReferenceValue != null;
-            bool isVisibilityRulesOverridden = _visitiblityRules.objectReferenceValue != null;
-
             string label = "Override Defaults";
-            int overridenCount = (isNetworkRulesOverridden ? 1 : 0) + (isVisibilityRulesOverridden ? 1 : 0);
 
-            if (overridenCount > 0)
+            if (!multi)
             {
-                label += " (";
+                bool isNetworkRulesOverridden = _networkRules.objectReferenceValue != null;
+                bool isVisibilityRulesOverridden = _visitiblityRules.objectReferenceValue != null;
 
-                if (isNetworkRulesOverridden)
+                int overridenCount = (isNetworkRulesOverridden ? 1 : 0) + (isVisibilityRulesOverridden ? 1 : 0);
+
+                if (overridenCount > 0)
                 {
-                    label += overridenCount > 1 ? "P," : "P";
+                    label += " (";
+
+                    if (isNetworkRulesOverridden)
+                    {
+                        label += overridenCount > 1 ? "P," : "P";
+                    }
+
+                    if (isVisibilityRulesOverridden)
+                        label += "V";
+
+                    label += ")";
                 }
-                
-                if (isVisibilityRulesOverridden)
-                    label += "V";
-                
-                label += ")";
+            }
+            else
+            {
+                label += " (...)";
             }
 
             var old = GUI.enabled;
-            GUI.enabled = true;
+            GUI.enabled = !multi;
             _foldoutVisible = EditorGUILayout.BeginFoldoutHeaderGroup(_foldoutVisible, label);
             GUI.enabled = old;
-            if (_foldoutVisible)
+            if (!multi && _foldoutVisible)
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(_networkRules, new GUIContent("Permissions Override"));
@@ -86,9 +97,15 @@ namespace PurrNet.Editor
         private bool _debuggingVisible;
         private bool _observersVisible;
 
-        private void HandleStatus(NetworkIdentity identity)
+        private void HandleStatus(NetworkIdentity identity, bool multi)
         {
-            if (identity.isSpawned)
+            if (multi)
+            {
+                EditorGUILayout.BeginHorizontal("box");
+                EditorGUILayout.LabelField("...");
+                EditorGUILayout.EndHorizontal();
+            }
+            else if (identity.isSpawned)
             {
                 if (identity.isServer)
                 {

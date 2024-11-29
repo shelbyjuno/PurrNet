@@ -475,6 +475,11 @@ namespace PurrNet
         
         private PlayerID? _pendingOwnershipRequest;
         
+        /// <summary>
+        /// Gives ownership of this object to the player.
+        /// </summary>
+        /// <param name="player">PlayerID to give ownership to</param>
+        /// <param name="silent">Dont log any errors if in silent mode</param>
         public void GiveOwnership(PlayerID player, bool silent = false)
         {
             if (!networkManager)
@@ -484,6 +489,27 @@ namespace PurrNet
             }
             
             GiveOwnershipInternal(player, silent);
+        }
+        
+        /// <summary>
+        /// Spawns the object over the network.
+        /// The gameobject must contain a PrefabLink component in order to spawn.
+        /// Errors will be logged if something goes wrong.
+        /// </summary>
+        /// <param name="asServer">Weather to spawn from the prespective of the server or the client</param>
+        public void Spawn(bool asServer)
+        {
+            if (isSpawned)
+                return;
+            
+            if (!networkManager)
+                return;
+            
+            if (networkManager.TryGetModule(networkManager.isServer, out HierarchyModule module))
+            {
+                module.Spawn(gameObject);
+            }
+            else PurrLogger.LogError("Failed to get spawn module.", this);
         }
         
         public void GiveOwnership(PlayerID? player, bool silent = false)
