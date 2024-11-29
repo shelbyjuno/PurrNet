@@ -64,7 +64,7 @@ namespace PurrNet.Codegen
             return true;
         }
         
-        static string MakeFullNameValidCSharp(string name)
+        public static string MakeFullNameValidCSharp(string name)
         {
             return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_");
         }

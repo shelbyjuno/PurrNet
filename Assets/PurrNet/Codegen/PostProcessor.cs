@@ -1898,7 +1898,8 @@ namespace PurrNet.Codegen
 
         private static void CreateSyncVarInitMethod(bool isNetworkIdentity, ModuleDefinition module, TypeDefinition type, List<FieldDefinition> networkFields)
         {
-            var newMethod = new MethodDefinition($"__{type.Name}_CodeGen_Initialize", 
+            var methodName = GenerateSerializersProcessor.MakeFullNameValidCSharp(type.Name);
+            var newMethod = new MethodDefinition($"__{methodName}_CodeGen_Initialize", 
                 MethodAttributes.Public | MethodAttributes.HideBySig, module.TypeSystem.Void);
 
             var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
@@ -1945,7 +1946,7 @@ namespace PurrNet.Codegen
                 code.Append(Instruction.Create(OpCodes.Brfalse, endInstruction));
 
                 // call init method
-                var initMethodName = $"__{field.FieldType.Name}_CodeGen_Initialize";
+                var initMethodName = $"__{GenerateSerializersProcessor.MakeFullNameValidCSharp(field.FieldType.Name)}_CodeGen_Initialize";
                 var codeGenInitRef = new MethodReference(initMethodName, module.TypeSystem.Void, field.FieldType)
                 {
                     HasThis = true

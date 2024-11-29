@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using PurrNet;
 using TriInspector;
 using UnityEngine;
@@ -8,6 +7,7 @@ public class SomeBehaviour : NetworkBehaviour
 {
     [SerializeField] private SomeNode _prefab;
     public SyncVar<SomeNode> fesfes { get; } = new();
+    public SyncVar<SomeNode> fesfesfef { get; } = new();
     
     [InfoBox("Default info box")]
     [SerializeField] SyncList<SomeNode> _list = new ();
