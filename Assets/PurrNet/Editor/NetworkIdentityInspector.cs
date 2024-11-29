@@ -24,8 +24,15 @@ namespace PurrNet.Editor
 #if TRI_INSPECTOR_PACKAGE
             base.OnEnable();
 #endif
-            _networkRules = serializedObject.FindProperty("_networkRules");
-            _visitiblityRules = serializedObject.FindProperty("_visitiblityRules");
+            try
+            {
+                _networkRules = serializedObject.FindProperty("_networkRules");
+                _visitiblityRules = serializedObject.FindProperty("_visitiblityRules");
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         public override VisualElement CreateInspectorGUI()

@@ -428,14 +428,38 @@ namespace PurrNet
             _visibilityRules.RemoveRule(rule);
         }
         
+        /// <summary>
+        /// The scene module of the network manager.
+        /// Defaults to the server scene module if the server is active.
+        /// Otherwise it defaults to the client scene module.
+        /// </summary>
         public ScenesModule sceneModule => _serverSceneModule ?? _clientSceneModule;
         
+        /// <summary>
+        /// The players manager of the network manager.
+        /// Defaults to the server players manager if the server is active.
+        /// Otherwise it defaults to the client players manager.
+        /// </summary>
         public PlayersManager playerModule => _serverPlayersManager ?? _clientPlayersManager;
         
+        /// <summary>
+        /// The tick manager of the network manager.
+        /// Defaults to the server tick manager if the server is active.
+        /// Otherwise it defaults to the client tick manager.
+        /// </summary>
         public TickManager tickModule => _serverTickManager ?? _clientTickManager;
         
+        /// <summary>
+        /// The players broadcaster of the network manager.
+        /// Defaults to the server players broadcaster if the server is active.
+        /// Otherwise it defaults to the client players broadcaster.
+        /// </summary>
         public PlayersBroadcaster broadcastModule => _serverPlayersBroadcast ?? _clientPlayersBroadcast;
         
+        /// <summary>
+        /// The local player of the network manager.
+        /// If the local player is not set, this will return the default value of the player id.
+        /// </summary>
         public PlayerID localPlayer => playerModule.localPlayerId ?? default;
         
         private ScenesModule _clientSceneModule;
@@ -574,6 +598,10 @@ namespace PurrNet
             }
         }
 
+        /// <summary>
+        /// Starts the server.
+        /// This will start the transport server.
+        /// </summary>
         public void StartServer()
         {
             if (!_transport)
@@ -581,16 +609,28 @@ namespace PurrNet
             _transport.StartServer();
         }
 
+        /// <summary>
+        /// Internal method to register the server modules.
+        /// Avoid calling this method directly if you're not sure what you're doing.
+        /// </summary>
         public void InternalRegisterServerModules()
         {
             _serverModules.RegisterModules();
         }
         
+        /// <summary>
+        /// Internal method to register the client modules.
+        /// Avoid calling this method directly if you're not sure what you're doing.
+        /// </summary>
         public void InternalRegisterClientModules()
         {
             _clientModules.RegisterModules();
         }
         
+        /// <summary>
+        /// Starts the client.
+        /// This will start the transport client.
+        /// </summary>
         public void StartClient()
         {
             localClientConnection = null;
@@ -651,6 +691,13 @@ namespace PurrNet
             }
         }
         
+        /// <summary>
+        /// Tries to get the module of the given type.
+        /// </summary>
+        /// <param name="asServer">Whether to get the server module or the client module.</param>
+        /// <param name="module">The module if found, otherwise the default value of the type.</param>
+        /// <typeparam name="T">The type of the module.</typeparam>
+        /// <returns>Whether the module was found.</returns>
         public bool TryGetModule<T>(bool asServer, out T module) where T : INetworkModule
         {
             return asServer ? 
@@ -658,10 +705,23 @@ namespace PurrNet
                 _clientModules.TryGetModule(out module);
         }
 
+        /// <summary>
+        /// Stops the server.
+        /// This will stop the transport server.
+        /// </summary>
         public void StopServer() => _transport.StopServer();
-
+        
+        /// <summary>
+        /// Stops the client.
+        /// This will stop the transport client.
+        /// </summary>
         public void StopClient() => _transport.StopClient();
 
+        /// <summary>
+        /// Gets the prefab from the given guid.
+        /// </summary>
+        /// <param name="guid">The guid of the prefab to get.</param>
+        /// <returns>The prefab with the given guid.</returns>
         public GameObject GetPrefabFromGuid(string guid)
         {
             return _networkPrefabs.GetPrefabFromGuid(guid);
