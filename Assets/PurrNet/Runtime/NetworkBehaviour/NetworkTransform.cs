@@ -37,19 +37,23 @@ namespace PurrNet
     
     public sealed class NetworkTransform : NetworkIdentity, ITick
     {
-        [Header("What to Sync")] 
+        [Header("What to Sync")]
+        [Tooltip("Whether to sync the position of the transform. And if so, in what space.")]
         [SerializeField] private SyncMode _syncPosition = SyncMode.World;
+        [Tooltip("Whether to sync the rotation of the transform. And if so, in what space.")]
         [SerializeField] private SyncMode _syncRotation = SyncMode.World;
+        [Tooltip("Whether to sync the scale of the transform.")]
         [SerializeField] private bool _syncScale = true;
+        [Tooltip("Whether to sync the parent of the transform. Only works if the parent is a NetworkIdentiy.")]
         [SerializeField, PurrLock] private bool _syncParent = true;
         
         [Header("How to Sync")]
+        [Tooltip("What to interpolate when syncing the transform.")]
         [SerializeField, PurrLock] private TransformSyncMode _interpolateSettings = 
             TransformSyncMode.Position | TransformSyncMode.Rotation | TransformSyncMode.Scale;
 
         [Header("When to Sync")]
         [FormerlySerializedAs("_clientAuth")]
-        
         [Tooltip("If true, the client can send transform data to the server. If false, the client can't send transform data to the server.")]
         [SerializeField, PurrLock] private bool _ownerAuth = true;
         
@@ -63,28 +67,58 @@ namespace PurrNet
             scaleTolerance = 0.05f
         };
 
+        /// <summary>
+        /// How far the position can be from the target position before it is considered out of sync and sent over the network.
+        /// </summary>
         public Tolerances tolerances
         {
             get => _tolerances;
             set => _tolerances = value;
         }
 
+        /// <summary>
+        /// Whether to sync the parent of the transform. Only works if the parent is a NetworkIdentiy.
+        /// </summary>
         public bool syncParent => _syncParent;
         
+        /// <summary>
+        /// Whether to sync the position of the transform.
+        /// </summary>
         public bool syncPosition => _syncPosition != SyncMode.No;
         
+        /// <summary>
+        /// Whether to sync the rotation of the transform.
+        /// </summary>
         public bool syncRotation => _syncRotation != SyncMode.No;
         
+        /// <summary>
+        /// Whether to sync the scale of the transform.
+        /// </summary>
         public bool syncScale => _syncScale;
         
+        /// <summary>
+        /// Whether to interpolate the position of the transform.
+        /// </summary>
         public bool interpolatePosition => _interpolateSettings.HasFlag(TransformSyncMode.Position);
         
+        /// <summary>
+        /// Whether to interpolate the rotation of the transform.
+        /// </summary>
         public bool interpolateRotation => _interpolateSettings.HasFlag(TransformSyncMode.Rotation);
         
+        /// <summary>
+        /// Whether to interpolate the scale of the transform.
+        /// </summary>
         public bool interpolateScale => _interpolateSettings.HasFlag(TransformSyncMode.Scale);
         
+        /// <summary>
+        /// Whether the client controls the transform if they are the owner.
+        /// </summary>
         public bool ownerAuth => _ownerAuth;
 
+        /// <summary>
+        /// The interval in ticks to send the transform data. 0 means send every tick, 1 means send every other tick, etc.
+        /// </summary>
         public int sendIntervalInTicks
         {
             get => _sendIntervalInTicks;
