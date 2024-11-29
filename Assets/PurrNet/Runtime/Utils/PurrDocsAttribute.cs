@@ -22,18 +22,15 @@ namespace PurrNet.Utils
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (iconContent == null)
-            {
-                iconContent = EditorGUIUtility.IconContent("_Help");
-            }
+            iconContent ??= EditorGUIUtility.IconContent("_Help");
 
-            Rect iconRect = new Rect(position.x, position.y, IconWidth, EditorGUIUtility.singleLineHeight);
-            Rect propertyRect = new Rect(position.x + IconWidth, position.y, position.width - IconWidth, position.height);
+            var iconRect = new Rect(position.x, position.y, IconWidth, EditorGUIUtility.singleLineHeight);
+            var propertyRect = new Rect(position.x + IconWidth, position.y, position.width - IconWidth, position.height);
 
             if (GUI.Button(iconRect, iconContent, GUIStyle.none))
             {
-                PurrDocsAttribute helpLink = attribute as PurrDocsAttribute;
-                Application.OpenURL("https://purrnet.gitbook.io/docs/" + helpLink.url);
+                if (attribute is PurrDocsAttribute helpLink)
+                    Application.OpenURL("https://purrnet.gitbook.io/docs/" + helpLink.url);
             }
 
             EditorGUI.PropertyField(propertyRect, property, label);

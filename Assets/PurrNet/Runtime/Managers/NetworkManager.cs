@@ -62,13 +62,18 @@ namespace PurrNet
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
         [Header("Persistence Settings")]
+        [PurrDocs("systems-and-modules/network-manager")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
 
         [Header("Network Settings")]
         [SerializeField] private bool _dontDestroyOnLoad = true;
+        [PurrDocs("systems-and-modules/network-manager/transports")]
         [SerializeField] private GenericTransport _transport;
+        [PurrDocs("systems-and-modules/network-manager/network-prefabs")]
         [SerializeField] private NetworkPrefabs _networkPrefabs;
+        [PurrDocs("systems-and-modules/network-manager/network-rules")]
         [SerializeField] private NetworkRules _networkRules;
+        [PurrDocs("systems-and-modules/network-manager/network-visibility")]
         [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
         [SerializeField] private int _tickRate = 20;
         
