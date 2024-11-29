@@ -277,6 +277,16 @@ namespace PurrNet
             return ownershipModule.GetAllPlayerOwnedIds(player);
         }
         
+        /// <summary>
+        /// Gets all the objects owned by the given player.
+        /// Adds the result to the given list.
+        /// </summary>
+        public void GetAllPlayerOwnedIds(PlayerID player, bool asServer, List<NetworkIdentity> result)
+        {
+            var ownershipModule = GetModule<GlobalOwnershipModule>(asServer);
+            ownershipModule.GetAllPlayerOwnedIds(player, result);
+        }
+        
         public int playerCount => GetModule<PlayersManager>(isServer).players.Count;
         
         public IReadOnlyList<PlayerID> players => GetModule<PlayersManager>(isServer).players;
