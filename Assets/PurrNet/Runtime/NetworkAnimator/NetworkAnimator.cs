@@ -8,10 +8,28 @@ namespace PurrNet
 {
     public sealed partial class NetworkAnimator : NetworkIdentity
     {
+        [PurrDocs("systems-and-modules/plug-n-play-components/network-animator")]
         [Tooltip("The animator to sync")]
         [SerializeField, PurrLock] private Animator _animator;
+        [Tooltip("If true the owner has authority over this animator, if no owner is set it is controlled by the server")]
         [SerializeField, PurrLock] private bool _ownerAuth = true;
+        [Tooltip("Automatically sync parameters when they are changed, if you are using NetworkAnimator directly you should set this to false")]
         [SerializeField, PurrLock] private bool _autoSyncParameters = true;
+        
+        /// <summary>
+        /// If true the owner has authority over this animator, if no owner is set it is controlled by the server
+        /// </summary>
+        public bool ownerAuth => _ownerAuth;
+        
+        /// <summary>
+        /// Automatically sync parameters when they are changed, if you are using NetworkAnimator directly you should set this to false
+        /// </summary>
+        public bool autoSyncParameters => _autoSyncParameters;
+        
+        /// <summary>
+        /// The animator to sync
+        /// </summary>
+        public Animator animator => _animator;
 
         public override void OnEnable()
         {
