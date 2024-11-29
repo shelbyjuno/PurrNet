@@ -7,11 +7,48 @@ namespace PurrNet.Transports
         public abstract bool isSupported { get; }
         
         public abstract ITransport transport { get; }
+        
+        bool TryGetNetworkManager(NetworkManager manager, out NetworkManager networkManager)
+        {
+            if (manager)
+            {
+                networkManager = manager;
+                return true;
+            }
+            
+            if (TryGetComponent(out networkManager))
+                return true;
+            
+            var parentNm = GetComponentInParent<NetworkManager>();
+            
+            if (parentNm)
+            {
+                networkManager = parentNm;
+                return true;
+            }
+            
+            var childNm = GetComponentInChildren<NetworkManager>();
+            
+            if (childNm)
+            {
+                networkManager = childNm;
+                return true;
+            }
+            
+            if (NetworkManager.main)
+            {
+                networkManager = NetworkManager.main;
+                return true;
+            }
+            
+            networkManager = null;
+            return false;
+        }
 
         [ContextMenu("Start Server")]
-        public void StartServer()
+        public void StartServer(NetworkManager manager = null)
         {
-            if (TryGetComponent<NetworkManager>(out var networkManager))
+            if (TryGetNetworkManager(manager, out var networkManager))
                 networkManager.InternalRegisterServerModules();
             StartServerInternal();
         }
@@ -23,10 +60,11 @@ namespace PurrNet.Transports
         }
         
         [ContextMenu("Start Client")]
-        public void StartClient()
+        public void StartClient(NetworkManager manager = null)
         {
-            if (TryGetComponent<NetworkManager>(out var networkManager))
-                networkManager.InternalRegisterClientModules();
+            if (TryGetNetworkManager(manager, out var networkManager))
+                networkManager.InternalRegisterServerModules();
+            
             StartClientInternal();
         }
 

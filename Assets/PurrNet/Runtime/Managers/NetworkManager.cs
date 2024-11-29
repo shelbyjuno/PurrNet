@@ -635,7 +635,7 @@ namespace PurrNet
         {
             if (!_transport)
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
-            _transport.StartServer();
+            _transport.StartServer(this);
         }
 
         /// <summary>
@@ -665,7 +665,7 @@ namespace PurrNet
             localClientConnection = null;
             if (!_transport)
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
-            _transport.StartClient();
+            _transport.StartClient(this);
         }
 
         private void OnNewConnection(Connection conn, bool asserver)
