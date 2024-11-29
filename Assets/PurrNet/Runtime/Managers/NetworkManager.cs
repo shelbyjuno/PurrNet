@@ -91,7 +91,7 @@ namespace PurrNet
         /// <summary>
         /// The cookie scope of the network manager.
         /// This is used to determine when the cookies should be cleared.
-        /// And for persistence.
+        /// This detemines the lifetime of the cookies which are used to remember connections and their PlayerID.
         /// </summary>
         public CookieScope cookieScope
         {
