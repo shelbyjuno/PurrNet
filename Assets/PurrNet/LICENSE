@@ -5,13 +5,13 @@ owned by Pebbles Games Consultancy Corporation and Riten SARL (collectively, "th
 1. Usage Rights
 The Software may be used freely for personal and commercial projects, including the development and release of games or other software, without charge.
 
-2. Redistribution Requirements
-Redistribution of the Software, in original or modified form, is permitted only if:
-    A copy of this License is included with the redistributed Software.
-    The redistributed version makes it clear that the Software is governed by this License.
+2. No Redistribution
+Redistribution of the Software, in whole or in part, is strictly prohibited. This includes, 
+but is not limited to, sharing the source code, compiled binaries, or any modified versions of the Software.
 
 3. Derivative Works
-You may modify the Software for your own use or distribution. Any distributed derivative works must also include this License and remain subject to its terms.
+Users may create tools, extensions, or other projects that interact with or build upon the Software. 
+These derivative works are owned by their creators and may be freely distributed, provided they do not include any part of the Software itself.
 
 4. Game Releases
 Games or other software created using the Software are not bound by this License and may be distributed, sold, 
