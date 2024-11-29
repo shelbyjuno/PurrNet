@@ -13,6 +13,15 @@
   "plugins": [
     "@semantic-release/commit-analyzer", 
     "@semantic-release/release-notes-generator", 
-    "@semantic-release/github"
+    ["@iam1337/create-unitypackage", {
+      "packageRoot": "Assets/PurrNet",
+      "projectRoot": "./",
+      "output": "PurrNet_${nextRelease.version}.unitypackage"
+    }],
+    ["@semantic-release/github", {
+      "assets": [
+        {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "Package v${nextRelease.version}"}
+      ]
+    }]
   ]
 }
