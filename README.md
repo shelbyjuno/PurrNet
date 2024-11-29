@@ -12,7 +12,7 @@ Docs: https://purrnet.gitbook.io/docs
 You can install PurrNet through Unity's Package Manager by adding a package through this URL:
 
 ```bash
-https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet
+https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release
 ```
 
 *Asset store link is coming soon too.*
