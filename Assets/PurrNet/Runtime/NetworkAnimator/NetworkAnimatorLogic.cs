@@ -26,7 +26,7 @@ namespace PurrNet
                 return;
             }
             
-            if (_autoUpdateParameters)
+            if (_autoSyncParameters)
                 CheckForParameterChanges();
             SendDirtyActions();
         }

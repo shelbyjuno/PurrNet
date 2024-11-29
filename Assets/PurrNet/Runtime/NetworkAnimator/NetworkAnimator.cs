@@ -11,7 +11,7 @@ namespace PurrNet
         [Tooltip("The animator to sync")]
         [SerializeField, PurrLock] private Animator _animator;
         [SerializeField, PurrLock] private bool _ownerAuth = true;
-        [SerializeField, PurrLock] private bool _autoUpdateParameters = true;
+        [SerializeField, PurrLock] private bool _autoSyncParameters = true;
 
         public override void OnEnable()
         {

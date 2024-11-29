@@ -23,7 +23,7 @@ namespace PurrNet
             if (_wasController != isControlling)
             {
                 _wasController = isControlling;
-                if (_autoUpdateParameters)
+                if (_autoSyncParameters)
                     UpdateParamerCache();
             }
         }
