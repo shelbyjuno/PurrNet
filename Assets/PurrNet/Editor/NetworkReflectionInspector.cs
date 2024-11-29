@@ -89,7 +89,7 @@ namespace PurrNet.Editor
             string[] names = new string[_validNames.Count];
             
             for (var i = 0; i < _validNames.Count; i++)
-                names[i] = _validNames[i].name + " (" + _validNames[i].type + ")";
+                names[i] = $"{_validNames[i].type}/{_validNames[i].name}";
             
             if (reflection.trackedFields == null)
             {
