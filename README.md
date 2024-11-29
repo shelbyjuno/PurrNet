@@ -6,3 +6,13 @@ PurrNet is our attempt at the purrfect networking solution... It's a 100% free U
 You can use it to release, and we ask nothing in return! Read the Unique to PurrNet section to see what we offer above other solutions!
 
 Docs: https://purrnet.gitbook.io/docs
+
+## Install
+
+You can install PurrNet through Unity's Package Manager by adding a package through this URL:
+
+```bash
+https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet
+```
+
+*Asset store link is coming soon too.*
