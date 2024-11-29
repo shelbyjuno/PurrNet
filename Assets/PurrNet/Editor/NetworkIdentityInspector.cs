@@ -15,9 +15,15 @@ namespace PurrNet.Editor
         private SerializedProperty _networkRules;
         private SerializedProperty _visitiblityRules;
         
+#if TRI_INSPECTOR_PACKAGE
         protected override void OnEnable()
+#else
+        protected virtual void OnEnable()
+#endif
         {
+#if TRI_INSPECTOR_PACKAGE
             base.OnEnable();
+#endif
             _networkRules = serializedObject.FindProperty("_networkRules");
             _visitiblityRules = serializedObject.FindProperty("_visitiblityRules");
         }

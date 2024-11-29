@@ -1,5 +1,4 @@
 using PurrNet;
-using TriInspector;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -9,7 +8,6 @@ public class SomeBehaviour : NetworkBehaviour
     public SyncVar<SomeNode> fesfes { get; } = new();
     public SyncVar<SomeNode> fesfesfef { get; } = new();
     
-    [InfoBox("Default info box")]
     [SerializeField] SyncList<SomeNode> _list = new ();
     [SerializeField] UnityEvent<int> _evemt = new ();
     

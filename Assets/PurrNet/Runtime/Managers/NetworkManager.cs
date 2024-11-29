@@ -27,6 +27,9 @@ namespace PurrNet
     [DefaultExecutionOrder(-999)]
     public sealed partial class NetworkManager : MonoBehaviour
     {
+        /// <summary>
+        /// The main instance of the network manager.
+        /// </summary>
         [UsedImplicitly]
         public static NetworkManager main { get; private set; }
         
@@ -45,8 +48,17 @@ namespace PurrNet
         [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
         [SerializeField] private int _tickRate = 20;
         
+        /// <summary>
+        /// The local client connection.
+        /// Null if the client is not connected.
+        /// </summary>
         public Connection? localClientConnection { get; private set; }
 
+        /// <summary>
+        /// The cookie scope of the network manager.
+        /// This is used to determine when the cookies should be cleared.
+        /// And for persistence.
+        /// </summary>
         public CookieScope cookieScope
         {
             get => _cookieScope;
@@ -59,14 +71,32 @@ namespace PurrNet
             }
         }
 
+        /// <summary>
+        /// The start flags of the server.
+        /// This is used to determine when the server should automatically start.
+        /// </summary>
         public StartFlags startServerFlags { get => _startServerFlags; set => _startServerFlags = value; }
 
+        /// <summary>
+        /// The start flags of the client.
+        /// This is used to determine when the client should automatically start.
+        /// </summary>
         public StartFlags startClientFlags { get => _startClientFlags; set => _startClientFlags = value; }
 
+        /// <summary>
+        /// The prefab provider of the network manager.
+        /// </summary>
         public IPrefabProvider prefabProvider { get; private set; }
         
+        /// <summary>
+        /// The visibility rules of the network manager.
+        /// </summary>
         public NetworkVisibilityRuleSet visibilityRules => _visibilityRules;
         
+        /// <summary>
+        /// The original scene of the network manager.
+        /// This is the scene the network manager was created in.
+        /// </summary>
         public Scene originalScene { get; private set; }
         
         /// <summary>
@@ -79,6 +109,11 @@ namespace PurrNet
         /// </summary>
         public event Action<ConnectionState> onClientConnectionState;
 
+        /// <summary>
+        /// The transport of the network manager.
+        /// This is the main transport used when starting the server or client.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when trying to change the transport while it is being used.</exception>
         [NotNull]
         public GenericTransport transport
         {
@@ -112,12 +147,23 @@ namespace PurrNet
             }
         }
 
+        /// <summary>
+        /// Whether the server should automatically start.
+        /// </summary>
         public bool shouldAutoStartServer => transport && ShouldStart(_startServerFlags);
+        
+        /// <summary>
+        /// Whether the client should automatically start.
+        /// </summary>
         public bool shouldAutoStartClient => transport && ShouldStart(_startClientFlags);
 
         private bool _isCleaningClient;
         private bool _isCleaningServer;
         
+        /// <summary>
+        /// The state of the server connection.
+        /// This is based on the transport listener state.
+        /// </summary>
         public ConnectionState serverState
         {
             get
@@ -127,6 +173,10 @@ namespace PurrNet
             }
         }
 
+        /// <summary>
+        /// The state of the client connection.
+        /// This is based on the transport client state.
+        /// </summary>
         public ConnectionState clientState
         {
             get
@@ -136,20 +186,47 @@ namespace PurrNet
             }
         }
 
+        /// <summary>
+        /// Whether the network manager is a server.
+        /// </summary>
         public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
         
+        /// <summary>
+        /// Whether the network manager is a client.
+        /// </summary>
         public bool isClient => _transport.transport.clientState == ConnectionState.Connected;
         
+        /// <summary>
+        /// Whether the network manager is offline.
+        /// Not a server or a client.
+        /// </summary>
         public bool isOffline => !isServer && !isClient;
 
+        /// <summary>
+        /// Whether the network manager is a planned host.
+        /// This is true even if the server or client is not yet connected or ready.
+        /// </summary>
         public bool isPlannedHost => ShouldStart(_startServerFlags) && ShouldStart(_startClientFlags);
 
+        /// <summary>
+        /// Whether the network manager is a host.
+        /// This is true only if the server and client are connected and ready.
+        /// </summary>
         public bool isHost => isServer && isClient;
         
+        /// <summary>
+        /// Whether the network manager is a server only.
+        /// </summary>
         public bool isServerOnly => isServer && !isClient;
         
+        /// <summary>
+        /// Whether the network manager is a client only.
+        /// </summary>
         public bool isClientOnly => !isServer && isClient;
         
+        /// <summary>
+        /// The network rules of the network manager.
+        /// </summary>
         public NetworkRules networkRules => _networkRules;
         
         private ModulesCollection _serverModules;
@@ -157,12 +234,21 @@ namespace PurrNet
         
         private bool _subscribed;
         
+        /// <summary>
+        /// Sets the main instance of the network manager.
+        /// This is used for convinience but also for static RPCs and other static functionality.
+        /// </summary>
+        /// <param name="instance">The instance to set as the main instance.</param>
         public static void SetMainInstance(NetworkManager instance)
         {
             if (instance)
                 main = instance;
         }
 
+        /// <summary>
+        /// Sets the prefab provider.
+        /// </summary>
+        /// <param name="provider">The provider to set.</param>
         public void SetPrefabProvider(IPrefabProvider provider)
         {
             if (!isOffline)
@@ -251,6 +337,14 @@ namespace PurrNet
         }
 #endif
 
+        /// <summary>
+        /// Gets the module of the given type.
+        /// Throws an exception if the module is not found.
+        /// </summary>
+        /// <param name="asServer">Whether to get the server module or the client module.</param>
+        /// <typeparam name="T">The type of the module.</typeparam>
+        /// <returns>The module of the given type.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the module is not found.</exception>
         public T GetModule<T>(bool asServer) where T : INetworkModule
         {
             if (TryGetModule(out T module, asServer))
@@ -259,6 +353,11 @@ namespace PurrNet
             throw new InvalidOperationException(PurrLogger.FormatMessage($"Module {typeof(T).Name} not found - asServer : {asServer}."));
         }
 
+        /// <summary>
+        /// Tries to get the module of the given type.
+        /// </summary>
+        /// <param name="module">The module if found, otherwise the default value of the type.</param>
+        /// <param name="asServer">Whether to get the server module or the client module.</param>
         public bool TryGetModule<T>(out T module, bool asServer) where T : INetworkModule
         {
             return asServer ?
@@ -287,37 +386,53 @@ namespace PurrNet
             ownershipModule.GetAllPlayerOwnedIds(player, result);
         }
         
+        /// <summary>
+        /// Gets the current player count.
+        /// </summary>
         public int playerCount => GetModule<PlayersManager>(isServer).players.Count;
         
+        /// <summary>
+        /// Gets the current player list.
+        /// This will be update every time a player joins or leaves.
+        /// </summary>
         public IReadOnlyList<PlayerID> players => GetModule<PlayersManager>(isServer).players;
         
+        /// <summary>
+        /// Enumerates all the objects owned by the given player.
+        /// </summary>
+        /// <param name="player">The player to enumerate the objects of.</param>
+        /// <param name="asServer">Whether to get the server module or the client module.</param>
+        /// <returns>An enumerable of all the objects owned by the given player.</returns>
         public IEnumerable<NetworkIdentity> EnumerateAllPlayerOwnedIds(PlayerID player, bool asServer)
         {
             var ownershipModule = GetModule<GlobalOwnershipModule>(asServer);
             return ownershipModule.EnumerateAllPlayerOwnedIds(player);
         }
         
+        /// <summary>
+        /// Adds a visibility rule to the rule set.
+        /// </summary>
+        /// <param name="manager">The network manager to add the rule to.</param>
+        /// <param name="rule">The rule to add.</param>
         public void AddVisibilityRule(NetworkManager manager, INetworkVisibilityRule rule)
         {
             _visibilityRules.AddRule(manager, rule);
         }
 
+        /// <summary>
+        /// Removes a visibility rule from the rule set.
+        /// </summary>
+        /// <param name="rule">The rule to remove.</param>
         public void RemoveVisibilityRule(INetworkVisibilityRule rule)
         {
             _visibilityRules.RemoveRule(rule);
         }
         
-        public TickManager clientTickManager { get; private set; }
-        
-        public TickManager serverTickManager { get; private set; }
-        
-        public TickManager GetTickManager(bool asServer) => asServer ? serverTickManager : clientTickManager;
-        
         public ScenesModule sceneModule => _serverSceneModule ?? _clientSceneModule;
         
         public PlayersManager playerModule => _serverPlayersManager ?? _clientPlayersManager;
         
-        public TickManager tickModule => serverTickManager ?? clientTickManager;
+        public TickManager tickModule => _serverTickManager ?? _clientTickManager;
         
         public PlayersBroadcaster broadcastModule => _serverPlayersBroadcast ?? _clientPlayersBroadcast;
         
@@ -340,12 +455,8 @@ namespace PurrNet
             var tickManager = new TickManager(_tickRate);
             
             if (asServer)
-                 serverTickManager = tickManager;
-            else clientTickManager = tickManager;
-            
-            if (asServer)
-                serverTickManager = tickManager;
-            else clientTickManager = tickManager;
+                _serverTickManager = tickManager;
+            else _clientTickManager = tickManager;
 
             var connBroadcaster = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
