@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Transports;
+using PurrNet.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -10,14 +11,24 @@ namespace PurrNet
 {
     public class NetworkReflection : NetworkIdentity, ITick
     {
+        [PurrDocs("systems-and-modules/plug-n-play-components/network-reflection-auto-sync")]
+        [Tooltip("The behaviour to track")]
         [SerializeField, HideInInspector] Object _trackedBehaviour;
+        [Tooltip("The fields/properties to track and sync on the behaviour")]
         [SerializeField, HideInInspector] List<ReflectionData> _trackedFields;
+        [Tooltip("If true the owner has authority over this animator, if no owner is set it is controlled by the server")]
         [SerializeField, HideInInspector] private bool _ownerAuth = true;
 
         private ReflectedValue[] _reflectedValues;
         
+        /// <summary>
+        /// The type of the tracked behaviour
+        /// </summary>
         public Type trackedType => _trackedBehaviour ? _trackedBehaviour.GetType() : null;
         
+        /// <summary>
+        /// The fields/properties to track and sync on the behaviour
+        /// </summary>
         public List<ReflectionData> trackedFields
         {
             get => _trackedFields;
