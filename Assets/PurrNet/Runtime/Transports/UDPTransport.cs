@@ -7,10 +7,13 @@ namespace PurrNet.Transports
     public class UDPTransport : GenericTransport, ITransport, INetLogger
     {
         [Header("Server Settings")]
+        [Tooltip("The port which the server will start on, and clients connect.")]
         [SerializeField] private ushort _serverPort = 5000;
+        [Tooltip("The max amount of client connections allowed.")]
         [SerializeField] private int _maxConnections = 100;
 
         [Header("Client Settings")]
+        [Tooltip("This is the IP the client will use to connect to the server.")]
         [SerializeField] private string _address = "127.0.0.1";
         
         public event OnConnected onConnected;

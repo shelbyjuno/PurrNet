@@ -4,8 +4,18 @@ namespace PurrNet.Transports
 {
     public abstract class GenericTransport : MonoBehaviour
     {
+        /// <summary>
+        /// Returns true if the transport is supported on the current platform.
+        /// For example, WebGL does not support UDP or SteamTransport.
+        /// This will return false if the transport is not supported.
+        /// </summary>
         public abstract bool isSupported { get; }
         
+        /// <summary>
+        /// Access the underlying transport interface.
+        /// This is used for low-level operations and should not be used directly.
+        /// Unless you know what you are doing.
+        /// </summary>
         public abstract ITransport transport { get; }
         
         bool TryGetNetworkManager(NetworkManager manager, out NetworkManager networkManager)
@@ -45,6 +55,12 @@ namespace PurrNet.Transports
             return false;
         }
 
+        /// <summary>
+        /// Starts the server.
+        /// Optionally, you can pass a NetworkManager to register server modules.
+        /// If you do not pass a NetworkManager, it will try to find one in the hierarchy.
+        /// </summary>
+        /// <param name="manager">The NetworkManager to register server modules.</param>
         [ContextMenu("Start Server")]
         public void StartServer(NetworkManager manager = null)
         {
@@ -53,12 +69,22 @@ namespace PurrNet.Transports
             StartServerInternal();
         }
         
+        /// <summary>
+        /// Stops the server.
+        /// This will disconnect all clients.
+        /// </summary>
         [ContextMenu("Stop Server")]
         public void StopServer()
         {
             StopServerInternal();
         }
         
+        /// <summary>
+        /// Starts the client.
+        /// Optionally, you can pass a NetworkManager to register client modules.
+        /// If you do not pass a NetworkManager, it will try to find one in the hierarchy.
+        /// </summary>
+        /// <param name="manager">The NetworkManager to register client modules.</param>
         [ContextMenu("Start Client")]
         public void StartClient(NetworkManager manager = null)
         {
@@ -68,6 +94,10 @@ namespace PurrNet.Transports
             StartClientInternal();
         }
 
+        /// <summary>
+        /// Stops the client.
+        /// This will disconnect from the server.
+        /// </summary>
         [ContextMenu("Stop Client")]
         public void StopClient()
         {
