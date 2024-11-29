@@ -2,7 +2,8 @@
     "name": "PurrNet.Editor",
     "rootNamespace": "PurrNet.Editor",
     "references": [
-        "GUID:6e20f757a1bae164fa42750dd2b27dcb"
+        "GUID:6e20f757a1bae164fa42750dd2b27dcb",
+        "GUID:e851236b9ac2b9b4eaaa99506366edea"
     ],
     "includePlatforms": [
         "Editor"
@@ -15,6 +16,12 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.codewriter.triinspector",
+            "expression": "",
+            "define": "TRI_INSPECTOR_PACKAGE"
+        }
+    ],
     "noEngineReferences": false
 }

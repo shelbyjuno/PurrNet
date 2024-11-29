@@ -1,19 +1,31 @@
+using System.Runtime.Remoting.Messaging;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace PurrNet.Editor
 {
     [CustomEditor(typeof(NetworkIdentity), true)]
     [CanEditMultipleObjects]
+#if TRI_INSPECTOR_PACKAGE
+    public class NetworkIdentityInspector : TriInspector.Editors.TriEditor
+#else
     public class NetworkIdentityInspector : UnityEditor.Editor
+#endif
     {
         private SerializedProperty _networkRules;
         private SerializedProperty _visitiblityRules;
         
-        protected virtual void OnEnable()
+        protected override void OnEnable()
         {
+            base.OnEnable();
             _networkRules = serializedObject.FindProperty("_networkRules");
             _visitiblityRules = serializedObject.FindProperty("_visitiblityRules");
+        }
+
+        public override VisualElement CreateInspectorGUI()
+        {
+            return null;
         }
 
         public override void OnInspectorGUI()
