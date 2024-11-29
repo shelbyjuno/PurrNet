@@ -966,6 +966,7 @@ MonoBehaviour:
   _visitiblityRules: {fileID: 0}
   _animator: {fileID: 5672926956231318123}
   _ownerAuth: 1
+  _autoUpdateParameters: 0
 --- !u!1 &1801178370455642223
 GameObject:
   m_ObjectHideFlags: 0

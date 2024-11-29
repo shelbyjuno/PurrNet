@@ -26,6 +26,8 @@ namespace PurrNet
                 return;
             }
             
+            if (_autoUpdateParameters)
+                CheckForParameterChanges();
             SendDirtyActions();
         }
         
@@ -107,8 +109,9 @@ namespace PurrNet
                 _reconcilePlayers.Clear();
                 return;
             }
-            else _reconcilePlayers.Clear();
-            
+
+            _reconcilePlayers.Clear();
+
             for (var i = 0; i < _ikActions.Count; i++)
                 _ikActions[i].Apply(_animator);
         }

@@ -11,6 +11,7 @@ namespace PurrNet
         [Tooltip("The animator to sync")]
         [SerializeField, PurrLock] private Animator _animator;
         [SerializeField, PurrLock] private bool _ownerAuth = true;
+        [SerializeField, PurrLock] private bool _autoUpdateParameters = true;
 
         public override void OnEnable()
         {
@@ -466,6 +467,7 @@ namespace PurrNet
             
             var setFloat = new SetFloat {nameHash = nameHash, value = value};
             setFloat.Apply(_animator);
+            _floatValues[nameHash] = value;
 
             IfSameReplace(new NetAnimatorRPC(setFloat), 
                 (a, b) => a._float.nameHash == b._float.nameHash);
@@ -478,6 +480,7 @@ namespace PurrNet
             
             var setBool = new SetBool {nameHash = nameHash, value = value};
             setBool.Apply(_animator);
+            _boolValues[nameHash] = value;
             
             IfSameReplace(new NetAnimatorRPC(setBool), 
                 (a, b) => a._bool.nameHash == b._bool.nameHash);
@@ -490,6 +493,7 @@ namespace PurrNet
             
             var setInt = new SetInt {nameHash = nameHash, value = value};
             setInt.Apply(_animator);
+            _intValues[nameHash] = value;
             
             IfSameReplace(new NetAnimatorRPC(setInt), 
                 (a, b) => a._int.nameHash == b._int.nameHash);
