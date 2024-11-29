@@ -58,7 +58,9 @@ namespace PurrNet
         public static NetworkManager main { get; private set; }
         
         [Header("Auto Start Settings")]
+        [Tooltip("The flags to determine when the server should automatically start.")]
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
+        [Tooltip("The flags to determine when the client should automatically start.")]
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
         
         [Header("Persistence Settings")]
