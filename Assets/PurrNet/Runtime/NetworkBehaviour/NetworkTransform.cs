@@ -182,6 +182,11 @@ namespace PurrNet
             SendLatestTransform(player, GetCurrentTransformData());
         }
 
+        protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
+        {
+            _id = 0;
+        }
+
         protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
         {
             _id = 0;

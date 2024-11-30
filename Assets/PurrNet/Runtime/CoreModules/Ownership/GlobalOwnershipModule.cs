@@ -81,8 +81,8 @@ namespace PurrNet.Modules
             
             _visibilityFactory.onLateObserverAdded += OnPlayerObserverAdded;
             
-            _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
             _scenePlayers.onPlayerLeftScene += OnPlayerLeftScene;
+            _scenePlayers.onPlayerLoadedScene += OnPlayerLoadedScene;
             
             _playersManager.onPlayerLeft += OnPlayerLeft;
             
@@ -100,9 +100,9 @@ namespace PurrNet.Modules
 
             _visibilityFactory.onLateObserverAdded -= OnPlayerObserverAdded;
             
-            _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
             _scenePlayers.onPlayerLeftScene -= OnPlayerLeftScene;
-            
+            _scenePlayers.onPlayerLoadedScene -= OnPlayerLoadedScene;
+
             _playersManager.onPlayerLeft -= OnPlayerLeft;
 
             _playersManager.Unsubscribe<OwnershipChangeBatch>(OnOwnershipChange);
@@ -255,7 +255,7 @@ namespace PurrNet.Modules
             }
         }
         
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (!_sceneOwnerships.TryGetValue(scene, out var ownerships)) return;
 
