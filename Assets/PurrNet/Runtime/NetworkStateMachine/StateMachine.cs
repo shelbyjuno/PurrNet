@@ -134,6 +134,12 @@ namespace PurrNet.StateMachine
             _currentState.stateId = newStateId;
         }
 
+        /// <summary>
+        /// Goes to a specific state in the StateMachine list
+        /// </summary>
+        /// <param name="state">Reference to the state you want to go to</param>
+        /// <param name="data">Data to send with the state</param>
+        /// <typeparam name="T">Your data type</typeparam>
         public void SetState<T>(StateNode<T> state, T data)
         {
             if (!isServer)
@@ -162,6 +168,10 @@ namespace PurrNet.StateMachine
             }
         }
 
+        /// <summary>
+        /// Goes to a specific state in the StateMachine list
+        /// </summary>
+        /// <param name="state">Reference to the state you want to go to</param>
         public void SetState(StateNode state)
         {
             if (!isServer)
@@ -186,6 +196,11 @@ namespace PurrNet.StateMachine
             }
         }
 
+        /// <summary>
+        /// Takes the state machine to the next state in the states list
+        /// </summary>
+        /// <param name="data">Data to send with the state</param>
+        /// <typeparam name="T">The type of your data</typeparam>
         public void Next<T>(T data)
         {
             var nextNodeId = _currentState.stateId + 1;
@@ -203,7 +218,9 @@ namespace PurrNet.StateMachine
                 PurrLogger.LogException($"Node {nextNode.name}:{nextNode.GetType().Name} does not have a generic type argument of type {typeof(T).Name}");
             }
         }
-
+        /// <summary>
+        /// Takes the state machine to the next state in the states list
+        /// </summary>
         public void Next()
         {
             var nextNodeId = _currentState.stateId + 1;
@@ -213,6 +230,9 @@ namespace PurrNet.StateMachine
             SetState(_states[nextNodeId]);
         }
 
+        /// <summary>
+        /// Takes the state machine to the previous state in the states list
+        /// </summary>
         public void Previous()
         {
             var prevNodeId = _currentState.stateId - 1;
@@ -222,6 +242,11 @@ namespace PurrNet.StateMachine
             SetState(_states[prevNodeId]);
         }
 
+        /// <summary>
+        /// Takes the state machine to the previous state in the states list
+        /// </summary>
+        /// <param name="data">Data to send to the previous state</param>
+        /// <typeparam name="T">The type of your data</typeparam>
         public void Previous<T>(T data)
         {
             var prevNodeId = _currentState.stateId - 1;
