@@ -85,7 +85,7 @@ namespace PurrNet.Editor
             
             EditorGUILayout.PropertyField(_dontDestroyOnLoad);
             EditorGUILayout.PropertyField(_transport);
-            EditorGUILayout.PropertyField(_networkPrefabs);
+            DrawNetworkPrefabs();
             EditorGUILayout.PropertyField(_networkRules);
             EditorGUILayout.PropertyField(_visibilityRules);
 
@@ -99,6 +99,64 @@ namespace PurrNet.Editor
             GUI.enabled = true;
             
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawNetworkPrefabs()
+        {
+            EditorGUILayout.BeginHorizontal();
+            Color originalBgColor = GUI.backgroundColor;
+            if (_networkPrefabs.objectReferenceValue == null)
+            {
+                GUI.backgroundColor = Color.yellow;
+            }
+            EditorGUILayout.PropertyField(_networkPrefabs);
+            GUI.backgroundColor = originalBgColor;
+
+            if (_networkPrefabs.objectReferenceValue == null)
+            {
+                if (GUILayout.Button("New", GUILayout.Width(50)))
+                {
+                    CreateNewNetworkPrefabs();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void CreateNewNetworkPrefabs()
+        {
+            string folderPath = "Assets";
+            UnityEngine.Object prefabsFolder = null;
+            string[] prefabsFolders = AssetDatabase.FindAssets("t:Folder Prefabs");
+    
+            foreach (string guid in prefabsFolders)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if ((path.ToLower().EndsWith("/prefabs") || path.ToLower().EndsWith("/_prefabs")) && 
+                    path.Split('/').Length == 2)
+                {
+                    folderPath = path;
+                    prefabsFolder = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
+                    break;
+                }
+            }
+
+            var networkPrefabs = ScriptableObject.CreateInstance<NetworkPrefabs>();
+    
+            if (prefabsFolder != null)
+            {
+                networkPrefabs.folder = prefabsFolder;
+            }
+    
+            string assetPath = $"{folderPath}/NetworkPrefabs.asset";
+            assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
+    
+            AssetDatabase.CreateAsset(networkPrefabs, assetPath);
+            AssetDatabase.SaveAssets();
+    
+            _networkPrefabs.objectReferenceValue = networkPrefabs;
+            serializedObject.ApplyModifiedProperties();
+    
+            EditorGUIUtility.PingObject(networkPrefabs);
         }
 
         private void RenderTickSlider()
