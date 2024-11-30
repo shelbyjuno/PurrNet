@@ -93,6 +93,11 @@ namespace PurrNet.Modules
             onPostSceneLoaded?.Invoke(id, _asServer);
         }
         
+        /// <summary>
+        /// Used to modify whether the given scene is public or not
+        /// </summary>
+        /// <param name="scene">The SceneID of the scene to modify</param>
+        /// <param name="isPublic">Whether the given scene should be public</param>
         public void UpdateSceneVisibility(SceneID scene, bool isPublic)
         {
             if (_asServer)
@@ -363,12 +368,22 @@ namespace PurrNet.Modules
             return -1;
         }
         
+        /// <summary>
+        /// Loads a scene asynchronously by its build index - Must be in build settings
+        /// </summary>
+        /// <param name="sceneIndex">Build index of the scene</param>
+        /// <param name="mode">What UnityEngine scene load mode to use</param>
         public AsyncOperation LoadSceneAsync(int sceneIndex, LoadSceneMode mode = LoadSceneMode.Single)
         {
             var parameters = new LoadSceneParameters(mode);
             return LoadSceneAsync(sceneIndex, parameters);
         }
 
+        /// <summary>
+        /// Loads a scene asynchronously by its name - Must be in build settings
+        /// </summary>
+        /// <param name="sceneName">The name of the scene to load</param>
+        /// <param name="mode">What UnityEngine scene load mode to use</param>
         public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode mode = LoadSceneMode.Single)
         {
             var idx = SceneNameToBuildIndex(sceneName);
@@ -383,6 +398,11 @@ namespace PurrNet.Modules
             return LoadSceneAsync(idx, parameters);
         }
 
+        /// <summary>
+        /// Loads a scene asynchronously by its name - Must be in build settings
+        /// </summary>
+        /// <param name="sceneName">The name of the scene to load</param>
+        /// <param name="parameters">The UnityEngine LoadSceneParameters to use</param>
         public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneParameters parameters)
         {
             var idx = SceneNameToBuildIndex(sceneName);
@@ -396,6 +416,11 @@ namespace PurrNet.Modules
             return LoadSceneAsync(idx, parameters);
         }
         
+        /// <summary>
+        /// Loads a scene asynchronously by its name - Must be in build settings
+        /// </summary>
+        /// <param name="sceneName">The name of the scene to load</param>
+        /// <param name="settings">The PurrSceneSettings to use when loading the scene</param>
         public AsyncOperation LoadSceneAsync(string sceneName, PurrSceneSettings settings)
         {
             var idx = SceneNameToBuildIndex(sceneName);
@@ -409,6 +434,12 @@ namespace PurrNet.Modules
             return LoadSceneAsync(idx, settings);
         }
 
+        /// <summary>
+        /// Loads a scene asynchronously by its build index - Must be in build settings
+        /// </summary>
+        /// <param name="sceneIndex">Build index of the scene</param>
+        /// <param name="parameters">The UnityEngine LoadSceneParameters to use</param>
+        /// <returns></returns>
         public AsyncOperation LoadSceneAsync(int sceneIndex, LoadSceneParameters parameters)
         {
             if (!_asServer)
@@ -427,6 +458,12 @@ namespace PurrNet.Modules
 
         public SceneID lastSceneId => new((ushort)(_nextSceneID - 1));
 
+        /// <summary>
+        /// Loads a scene asynchronously by its build index - Must be in build settings
+        /// </summary>
+        /// <param name="sceneIndex">Build index of the scene</param>
+        /// <param name="settings">The PurrSceneSettings to use when loading the scene</param>
+        /// <returns></returns>
         public AsyncOperation LoadSceneAsync(int sceneIndex, PurrSceneSettings settings)
         {
             if (!_asServer)
@@ -485,6 +522,11 @@ namespace PurrNet.Modules
             return op;
         }
         
+        /// <summary>
+        /// Unloads a scene asynchronously by its name - Must be in build settings
+        /// </summary>
+        /// <param name="sceneName">Name of the scene to unload</param>
+        /// <param name="options">The UnityEngine UnloadSceneOptions to use for the unloading</param>
         public void UnloadSceneAsync(string sceneName, UnloadSceneOptions options = UnloadSceneOptions.None)
         {
             var scene = SceneManager.GetSceneByName(sceneName);
@@ -498,6 +540,11 @@ namespace PurrNet.Modules
             UnloadSceneAsync(scene, options);
         }
 
+        /// <summary>
+        /// Unloads a scene asynchronously by its build index - Must be in build settings
+        /// </summary>
+        /// <param name="buildIndex">Build index of the scene to unload</param>
+        /// <param name="options">The UnityEngine UnloadSceneOptions to use for the unloading</param>
         public void UnloadSceneAsync(int buildIndex, UnloadSceneOptions options = UnloadSceneOptions.None)
         {
             var scene = SceneManager.GetSceneByBuildIndex(buildIndex);
@@ -511,6 +558,11 @@ namespace PurrNet.Modules
             UnloadSceneAsync(scene, options);
         }
         
+        /// <summary>
+        /// Unloads a scene asynchronously by its Scene object - Must be in build settings
+        /// </summary>
+        /// <param name="scene">The Scene to unload</param>
+        /// <param name="options">The UnityEngine UnloadSceneOptions to use for the unloading</param>
         public void UnloadSceneAsync(Scene scene, UnloadSceneOptions options = UnloadSceneOptions.None)
         {
             if (!_asServer)
@@ -675,12 +727,25 @@ namespace PurrNet.Modules
             return true;
         }
 
-        public bool TryGetSceneID(Scene scene, out SceneID o)
+        /// <summary>
+        /// Attempts to get the Networked SceneId of a scene
+        /// </summary>
+        /// <param name="scene">Scene to try and get</param>
+        /// <param name="sceneId">Networked SceneID of the scene</param>
+        /// <returns>Whether it successfully retrieved a scene or not</returns>
+        public bool TryGetSceneID(Scene scene, out SceneID sceneId)
         {
-            return _idToScene.TryGetValue(scene, out o);
+            return _idToScene.TryGetValue(scene, out sceneId);
         }
         
-        public bool TryGetScene(int buildIndex, out SceneID scene)
+        
+        /// <summary>
+        /// Attempts to get the Networked SceneId of a scene
+        /// </summary>
+        /// <param name="buildIndex">BuildIndex of Scene to try and get</param>
+        /// <param name="sceneId">Networked SceneID of the scene</param>
+        /// <returns>Whether it successfully retrieved a scene or not</returns>
+        public bool TryGetScene(int buildIndex, out SceneID sceneId)
         {
             for (int i = 0; i < _rawScenes.Count; i++)
             {
@@ -688,16 +753,21 @@ namespace PurrNet.Modules
                 {
                     if (state.scene.buildIndex == buildIndex)
                     {
-                        scene = _rawScenes[i];
+                        sceneId = _rawScenes[i];
                         return true;
                     }
                 }
             }
 
-            scene = default;
+            sceneId = default;
             return false;
         }
 
+        /// <summary>
+        /// Checks whether a scene is loaded on the network
+        /// </summary>
+        /// <param name="buildIndex">Build index of scene to check</param>
+        /// <returns>Whether the scene is loaded on the network or not</returns>
         public bool IsSceneLoaded(int buildIndex)
         {
             for (int i = 0; i < _rawScenes.Count; i++)
