@@ -642,7 +642,7 @@ namespace PurrNet
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
             _transport.StartServer(this);
         }
-
+        
         /// <summary>
         /// Internal method to register the server modules.
         /// Avoid calling this method directly if you're not sure what you're doing.
@@ -666,13 +666,11 @@ namespace PurrNet
         public void InternalUnregisterServerModules()
         {
             TriggerUnsubscribeEvents(true);
-            _serverModules.UnregisterModules();
         }
         
         public void InternalUnregisterClientModules()
         {
             TriggerUnsubscribeEvents(false);
-            _clientModules.UnregisterModules();
         }
         
         /// <summary>

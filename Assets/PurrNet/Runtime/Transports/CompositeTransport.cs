@@ -484,7 +484,7 @@ namespace PurrNet.Transports
                         onConnectionState?.Invoke(ConnectionState.Disconnecting, false);
                     
                     if (clientState == ConnectionState.Connected && _prevClientState != ConnectionState.Connecting)
-                        onConnectionState?.Invoke(ConnectionState.Disconnecting, false);
+                        onConnectionState?.Invoke(ConnectionState.Connecting, false);
                     
                     onConnectionState?.Invoke(clientState, false);
                     _prevClientState = clientState;

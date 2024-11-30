@@ -53,7 +53,7 @@ namespace PurrNet
         
         public void RegisterModules()
         {
-            UnregisterModules();
+            // UnregisterModules();
             
             _manager.RegisterModules(this, _asServer);
 
