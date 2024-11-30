@@ -35,8 +35,6 @@ namespace PurrNet.Modules
         
         public event Action onPreTick, onTick, onPostTick;
         
-        private bool _asServer;
-
         public TickManager(int tickRate)
         {
             tickDelta = 1f / tickRate;
@@ -44,10 +42,7 @@ namespace PurrNet.Modules
             this.tickRate = tickRate;
         }
 
-        public void Enable(bool asServer)
-        {
-            _asServer = asServer;
-        }
+        public void Enable(bool asServer) { }
 
         public void Disable(bool asServer)
         {
