@@ -277,7 +277,10 @@ namespace PurrNet
         [UsedByIL]
         public bool ValidateReceivingRPC(RPCInfo info, RPCSignature signature, IRpc data, bool asServer)
         {
-            if (signature.requireOwnership && info.sender != owner)
+            var rules = networkManager.networkRules;
+            bool shouldIgnoreOwnership = rules && rules.ShouldIgnoreRequireOwner();
+
+            if (!shouldIgnoreOwnership && signature.requireOwnership && info.sender != owner)
                 return false;
 
             if (signature.excludeOwner && isOwner)
@@ -313,7 +316,6 @@ namespace PurrNet
                 return true;
             }
             
-            var rules = networkManager.networkRules;
             bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
             
             if (!shouldIgnore && signature.requireServer)
