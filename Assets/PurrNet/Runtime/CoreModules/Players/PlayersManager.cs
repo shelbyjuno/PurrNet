@@ -58,9 +58,9 @@ namespace PurrNet.Modules
         }
     }
     
-    public delegate void OnPlayerJoinedEvent(PlayerID player, bool isReconnect, bool asserver);
+    public delegate void OnPlayerJoinedEvent(PlayerID player, bool isReconnect, bool asServer);
     
-    public delegate void OnPlayerLeftEvent(PlayerID player, bool asserver);
+    public delegate void OnPlayerLeftEvent(PlayerID player, bool asServer);
     public delegate void OnPlayerEvent(PlayerID player);
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
@@ -81,14 +81,39 @@ namespace PurrNet.Modules
 
         public PlayerID? localPlayerId { get; private set; }
 
+        /// <summary>
+        /// First callback for whne a new player has joined
+        /// </summary>
         public event OnPlayerJoinedEvent onPrePlayerJoined;
+        
+        /// <summary>
+        /// Callback for when a new player has joined
+        /// </summary>
         public event OnPlayerJoinedEvent onPlayerJoined;
+        
+        /// <summary>
+        /// Last callback for when a new player has joined
+        /// </summary>
         public event OnPlayerJoinedEvent onPostPlayerJoined;
         
+        /// <summary>
+        /// First callback for when a player has left
+        /// </summary>
         public event OnPlayerLeftEvent onPrePlayerLeft;
+        
+        /// <summary>
+        /// Callback for when a player has left
+        /// </summary>
         public event OnPlayerLeftEvent onPlayerLeft;
+        
+        /// <summary>
+        /// Last callback for when a player has left
+        /// </summary>
         public event OnPlayerLeftEvent onPostPlayerLeft;
         
+        /// <summary>
+        /// Callback for when the local player has received their PlayerID
+        /// </summary>
         public event OnPlayerEvent onLocalPlayerReceivedID;
 
         private bool _asServer;
@@ -150,6 +175,11 @@ namespace PurrNet.Modules
             return _playerToConnection.TryGetValue(playerId, out conn);
         }
         
+        /// <summary>
+        /// Check if a playerId is connected to the server.
+        /// </summary>
+        /// <param name="playerId">PlayerID to check</param>
+        /// <returns>Whether the player is connected</returns>
         public bool IsPlayerConnected(PlayerID playerId)
         {
             return _playerToConnection.ContainsKey(playerId);

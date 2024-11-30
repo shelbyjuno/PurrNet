@@ -1,23 +1,35 @@
+using System.Threading.Tasks;
 using PurrNet;
-using PurrNet.Modules;
 using UnityEngine;
 
-public class SomeBehaviour : PurrMonoBehaviour
+public class SomeBehaviour : NetworkIdentity
 {
-    public override void Subscribe(NetworkManager manager, bool asServer)
+    protected override void OnSpawned(bool asServer)
     {
-        var players = manager.GetModule<PlayersManager>(asServer);
-        players.onPlayerJoined += OnPlayerJoined;
-    }
+        if (asServer)
+            return;
 
-    public override void Unsubscribe(NetworkManager manager, bool asServer)
-    {
-        var players = manager.GetModule<PlayersManager>(asServer);
-        players.onPlayerJoined += OnPlayerJoined;
+        _ = RequestOwnership();
     }
     
-    static void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
+    [ServerRpc]
+    private async Task RequestOwnership(RPCInfo info = default)
     {
-        Debug.Log($"Player {player} joined. Reconnect: {isReconnect}. As server: {asserver}");
+        Debug.Log("RequestOwnership");
+        
+        await Task.Delay(1000);
+        await DoSomething(info.sender);
+        
+        Debug.Log("RequestOwnership done ====");
+    }
+    
+    [TargetRpc]
+    private async Task DoSomething(PlayerID target, RPCInfo info = default)
+    {
+        Debug.Log("Doing something");
+
+        await Task.Yield();
+        
+        Debug.Log("Done");
     }
 }

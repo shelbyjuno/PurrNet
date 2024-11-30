@@ -325,7 +325,7 @@ namespace PurrNet.Modules
             {
                 manager.StartCoroutine(WaitThen(response, () =>
                 {
-                    if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                    if (manager.TryGetModule<RpcRequestResponseModule>(info.asServer, out var rpcModule))
                     {
                         // rpcModule
                         var responsePacket = new RpcResponse
@@ -359,7 +359,7 @@ namespace PurrNet.Modules
             {
                 await response;
                 
-                if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                if (manager.TryGetModule<RpcRequestResponseModule>(info.asServer, out var rpcModule))
                 {
                     // rpcModule
                     var responsePacket = new RpcResponse
@@ -369,9 +369,9 @@ namespace PurrNet.Modules
                     };
                     
                     var channel = info.compileTimeSignature.channel;
-                    
+
                     if (info.asServer)
-                        rpcModule._playersManager.Send(info.sender, responsePacket, channel);
+                         rpcModule._playersManager.Send(info.sender, responsePacket, channel);
                     else rpcModule._playersManager.SendToServer(responsePacket, channel);
                 }
                 else
@@ -404,7 +404,7 @@ namespace PurrNet.Modules
             {
                 var result = await response;
                 
-                if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                if (manager.TryGetModule<RpcRequestResponseModule>(info.asServer, out var rpcModule))
                 {
                     using var tmpStream = RPCModule.AllocStream(false);
                     
@@ -441,7 +441,7 @@ namespace PurrNet.Modules
             {
                 await response;
                 
-                if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                if (manager.TryGetModule<RpcRequestResponseModule>(info.asServer, out var rpcModule))
                 {
                     // rpcModule
                     var responsePacket = new RpcResponse
@@ -486,7 +486,7 @@ namespace PurrNet.Modules
             {
                 var result = await response;
                 
-                if (manager.TryGetModule<RpcRequestResponseModule>(manager.isServer, out var rpcModule))
+                if (manager.TryGetModule<RpcRequestResponseModule>(info.asServer, out var rpcModule))
                 {
                     using var tmpStream = RPCModule.AllocStream(false);
                     

@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEditor;
-using System;
 
 namespace PurrNet
 {
@@ -21,7 +20,18 @@ namespace PurrNet
             SceneAsset sceneObj = null;
             if (!string.IsNullOrEmpty(property.stringValue))
             {
-                sceneObj = AssetDatabase.LoadAssetAtPath<SceneAsset>(property.stringValue);
+                // Find the scene asset by searching for the stored scene name
+                string[] sceneGuids = AssetDatabase.FindAssets("t:SceneAsset");
+                foreach (string guid in sceneGuids)
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    SceneAsset scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+                    if (scene.name == property.stringValue)
+                    {
+                        sceneObj = scene;
+                        break;
+                    }
+                }
             }
 
             var newScene = EditorGUI.ObjectField(
@@ -34,10 +44,10 @@ namespace PurrNet
 
             if (newScene != null)
             {
-                string newPath = AssetDatabase.GetAssetPath(newScene);
-                if (newPath != property.stringValue)
+                string sceneName = newScene.name;
+                if (sceneName != property.stringValue)
                 {
-                    property.stringValue = newPath;
+                    property.stringValue = sceneName;
                 }
             }
             else if (sceneObj != null)
@@ -48,5 +58,5 @@ namespace PurrNet
             EditorGUI.EndProperty();
         }
     }
-}
 #endif
+}

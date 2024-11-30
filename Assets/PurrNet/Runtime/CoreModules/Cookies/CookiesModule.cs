@@ -6,8 +6,17 @@ namespace PurrNet.Modules
 {
     public enum CookieScope
     {
+        /// <summary>
+        /// Nothing is stored once the connection stops
+        /// </summary>
         LiveWithConnection,
+        /// <summary>
+        /// Nothing is stored once the game/process stops
+        /// </summary>
         LiveWithProcess,
+        /// <summary>
+        /// Cookies are stored in the player prefs of your system
+        /// </summary>
         StorePersistently
     }
     
