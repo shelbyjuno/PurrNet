@@ -80,7 +80,7 @@ namespace PurrNet.Editor
 
             EditorGUILayout.PropertyField(_cookieScope);
 
-            if (networkManager.isClient || networkManager.isServer)
+            if (networkManager && networkManager.isClient || networkManager.isServer)
                 GUI.enabled = false;
             
             EditorGUILayout.PropertyField(_dontDestroyOnLoad);

@@ -223,12 +223,12 @@ namespace PurrNet
         /// <summary>
         /// Whether the network manager is a server.
         /// </summary>
-        public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
+        public bool isServer => _transport && _transport.transport.listenerState == ConnectionState.Connected;
         
         /// <summary>
         /// Whether the network manager is a client.
         /// </summary>
-        public bool isClient => _transport.transport.clientState == ConnectionState.Connected;
+        public bool isClient => _transport && _transport.transport.clientState == ConnectionState.Connected;
         
         /// <summary>
         /// Whether the network manager is offline.
