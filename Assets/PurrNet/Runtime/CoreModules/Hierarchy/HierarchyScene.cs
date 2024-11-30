@@ -585,6 +585,7 @@ namespace PurrNet.Modules
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
 
+            component.onFlush += OnIdentityFlush;
             component.onRemoved += OnIdentityRemoved;
             component.onEnabledChanged += OnIdentityEnabledChanged;
             component.onActivatedChanged += OnIdentityGoActivatedChanged;
@@ -594,7 +595,7 @@ namespace PurrNet.Modules
 
             _spawnedThisFrame.Add(component);
         }
-
+        
         internal static readonly List<NetworkIdentity> CACHE = new ();
         
         private static GameObject GetChildPrefab(GameObject root, int child)
@@ -763,6 +764,7 @@ namespace PurrNet.Modules
                 
                 onIdentityAdded?.Invoke(child);
 
+                child.onFlush += OnIdentityFlush;
                 child.onRemoved += OnIdentityRemoved;
                 child.onEnabledChanged += OnIdentityEnabledChanged;
                 child.onActivatedChanged += OnIdentityGoActivatedChanged;
@@ -1081,6 +1083,15 @@ namespace PurrNet.Modules
                 identityId = identity.id.Value,
                 active = active
             }, actor);
+        }
+        
+        private void OnIdentityFlush(NetworkIdentity obj)
+        {
+            if (_history.hasUnflushedActions)
+            {
+                SendDeltaToPlayers(_history.GetDelta());
+                SendOwnershipChanges();
+            }
         }
         
         public void PreFixedUpdate()

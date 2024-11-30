@@ -114,6 +114,7 @@ namespace PurrNet
         public PlayerID localPlayerForced => localPlayer ?? default;
         
         public event OnRootChanged onRootChanged;
+        public event Action<NetworkIdentity> onFlush;
         public event Action<NetworkIdentity> onRemoved;
         public event Action<NetworkIdentity, bool> onEnabledChanged;
         public event Action<NetworkIdentity, bool> onActivatedChanged;
@@ -713,6 +714,17 @@ namespace PurrNet
             if (asServer)
                  _isSpawnedServer = value;
             else _isSpawnedClient = value;
+        }
+
+        /// <summary>
+        /// Sends all the queued actions to the server.
+        /// For example an auto-spawn or destroying a networked gameobject.
+        /// Without flushing your RPC could be sent before the auto-spawn or destroy.
+        /// Same for parent changes, etc.
+        /// </summary>
+        public void FlushHierarchyActions()
+        {
+            onFlush?.Invoke(this);
         }
     }
 }
