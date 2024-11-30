@@ -1,63 +1,23 @@
 using PurrNet;
+using PurrNet.Modules;
 using UnityEngine;
-using UnityEngine.Events;
 
-public class SomeBehaviour : NetworkBehaviour
+public class SomeBehaviour : PurrMonoBehaviour
 {
-    [SerializeField] private SomeNode _prefab;
-    public SyncVar<SomeNode> fesfes { get; } = new();
-    public SyncVar<SomeNode> fesfesfef { get; } = new();
-    
-    [SerializeField] SyncList<SomeNode> _list = new ();
-    [SerializeField] UnityEvent<int> _evemt = new ();
-    
-    [ServerRpc(requireOwnership: false)]
-    public void SetReady(RPCInfo info = default)
+    public override void Subscribe(NetworkManager manager, bool asServer)
     {
-        Debug.Log("SetReady " + owner, this);
+        var players = manager.GetModule<PlayersManager>(asServer);
+        players.onPlayerJoined += OnPlayerJoined;
     }
 
-    protected override void OnSpawned()
+    public override void Unsubscribe(NetworkManager manager, bool asServer)
     {
-        Debug.Log("OnSpawned " + owner, this);
-    }
-
-    protected override void OnSpawned(bool asServer)
-    {
-        Debug.Log("Spawned " + owner, this);
-        if (!asServer)
-        {
-            var instance = Instantiate(_prefab);
-            instance.GiveOwnership(localPlayer);
-
-            if (IsController(_list.ownerAuth))
-                _list.Add(instance);
-            
-            instance.CreateMore(_prefab, localPlayer);
-            instance.CreateMore(_prefab, localPlayer);
-            instance.CreateMore(_prefab, localPlayer);
-        }
+        var players = manager.GetModule<PlayersManager>(asServer);
+        players.onPlayerJoined += OnPlayerJoined;
     }
     
-    [ObserversRpc]
-    private static void OnEvent_STATIC_NON_GEn()
+    static void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
     {
-        Debug.Log("Static event");
-    }
-    
-    [ObserversRpc]
-    protected static void OnEvent_STATIC<T>()
-    {
-        Debug.Log("Static event");
-    }
-    
-    [ObserversRpc]
-    protected void OnEvent<T, G>()
-    {
-    }
-    
-    [ObserversRpc]
-    private void OnEvent2<H>() where H : class
-    {
+        Debug.Log($"Player {player} joined. Reconnect: {isReconnect}. As server: {asserver}");
     }
 }

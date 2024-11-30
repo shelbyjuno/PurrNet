@@ -628,6 +628,9 @@ namespace PurrNet.Modules
                 if (id == default) 
                     continue;
                 
+                if (scene.settings.wasPresentFromStart)
+                    continue;
+                
                 SceneManager.UnloadSceneAsync(scene.scene);
             }
         }

@@ -289,13 +289,16 @@ namespace PurrNet.Transports
 
         private void OnTransportConnected(int transportidx, Connection conn, bool asserver)
         {
+            /*if (!asserver && transportidx != -1)
+                return;*/
+            
             switch (asserver)
             {
                 case false when transportidx != -1:
                 case true when transportidx == -1:
                     return;
             }
-
+            
             TriggerConnectionStateEvent(asserver);
 
             if (asserver)
@@ -371,7 +374,7 @@ namespace PurrNet.Transports
                         }
                         catch (Exception ex)
                         {
-                            PurrLogger.LogError($"Failed to start {_transports[i].GetType().Name}: {ex.Message}");
+                            PurrLogger.LogError($"Failed to start {_transports[i].GetType().Name}: {ex.Message}\n{ex.StackTrace}");
                         }
                     }
                 }
@@ -404,6 +407,8 @@ namespace PurrNet.Transports
                     e.Unsubscribe();
                 }
             }
+            
+            _clientEvent.Unsubscribe();
             
             TriggerConnectionStateEvent(true);
             
@@ -484,7 +489,7 @@ namespace PurrNet.Transports
                         onConnectionState?.Invoke(ConnectionState.Disconnecting, false);
                     
                     if (clientState == ConnectionState.Connected && _prevClientState != ConnectionState.Connecting)
-                        onConnectionState?.Invoke(ConnectionState.Disconnecting, false);
+                        onConnectionState?.Invoke(ConnectionState.Connecting, false);
                     
                     onConnectionState?.Invoke(clientState, false);
                     _prevClientState = clientState;

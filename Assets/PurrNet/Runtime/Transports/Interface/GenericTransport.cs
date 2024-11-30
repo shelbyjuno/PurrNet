@@ -74,8 +74,11 @@ namespace PurrNet.Transports
         /// This will disconnect all clients.
         /// </summary>
         [ContextMenu("Stop Server")]
-        public void StopServer()
+        public void StopServer(NetworkManager manager = null)
         {
+            if (TryGetNetworkManager(manager, out var networkManager))
+                networkManager.InternalUnregisterServerModules();
+
             StopServerInternal();
         }
         
@@ -97,10 +100,16 @@ namespace PurrNet.Transports
         /// <summary>
         /// Stops the client.
         /// This will disconnect from the server.
+        /// Optionally, you can pass a NetworkManager to register client modules.
+        /// If you do not pass a NetworkManager, it will try to find one in the hierarchy.
         /// </summary>
+        /// <param name="manager">The NetworkManager to unregister client modules.</param>
         [ContextMenu("Stop Client")]
-        public void StopClient()
+        public void StopClient(NetworkManager manager = null)
         {
+            if (TryGetNetworkManager(manager, out var networkManager))
+                networkManager.InternalUnregisterClientModules();
+            
             StopClientInternal();
         }
 

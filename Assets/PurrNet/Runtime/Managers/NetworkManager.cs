@@ -223,12 +223,12 @@ namespace PurrNet
         /// <summary>
         /// Whether the network manager is a server.
         /// </summary>
-        public bool isServer => _transport.transport.listenerState == ConnectionState.Connected;
+        public bool isServer => _transport && _transport.transport.listenerState == ConnectionState.Connected;
         
         /// <summary>
         /// Whether the network manager is a client.
         /// </summary>
-        public bool isClient => _transport.transport.clientState == ConnectionState.Connected;
+        public bool isClient => _transport && _transport.transport.clientState == ConnectionState.Connected;
         
         /// <summary>
         /// Whether the network manager is offline.
@@ -642,7 +642,7 @@ namespace PurrNet
                 PurrLogger.Throw<InvalidOperationException>("Transport is not set (null).");
             _transport.StartServer(this);
         }
-
+        
         /// <summary>
         /// Internal method to register the server modules.
         /// Avoid calling this method directly if you're not sure what you're doing.
@@ -650,6 +650,7 @@ namespace PurrNet
         public void InternalRegisterServerModules()
         {
             _serverModules.RegisterModules();
+            TriggerSubscribeEvents(true);
         }
         
         /// <summary>
@@ -659,6 +660,17 @@ namespace PurrNet
         public void InternalRegisterClientModules()
         {
             _clientModules.RegisterModules();
+            TriggerSubscribeEvents(false);
+        }
+        
+        public void InternalUnregisterServerModules()
+        {
+            TriggerUnsubscribeEvents(true);
+        }
+        
+        public void InternalUnregisterClientModules()
+        {
+            TriggerUnsubscribeEvents(false);
         }
         
         /// <summary>
@@ -679,9 +691,6 @@ namespace PurrNet
                  _serverModules.OnNewConnection(conn, true);
             else
             {
-                if (localClientConnection.HasValue)
-                    PurrLogger.LogError($"A client connection already exists '{localClientConnection}', overwriting it with {conn}.");
-                
                 localClientConnection = conn;
                 _clientModules.OnNewConnection(conn, false);
             }
@@ -743,13 +752,19 @@ namespace PurrNet
         /// Stops the server.
         /// This will stop the transport server.
         /// </summary>
-        public void StopServer() => _transport.StopServer();
-        
+        public void StopServer()
+        {
+            _transport.StopServer(this);
+        }
+
         /// <summary>
         /// Stops the client.
         /// This will stop the transport client.
         /// </summary>
-        public void StopClient() => _transport.StopClient();
+        public void StopClient()
+        {
+            _transport.StopClient(this);
+        }
 
         /// <summary>
         /// Gets the prefab from the given guid.

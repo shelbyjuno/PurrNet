@@ -1,0 +1,27 @@
+{
+  "branches": [
+    {
+      "name": "release",
+      "channel": "latest",
+      "type": "release"
+    },
+    {
+      "name": "dev",
+      "prerelease": "beta"
+    }
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer", 
+    "@semantic-release/release-notes-generator", 
+    ["@iam1337/create-unitypackage", {
+      "packageRoot": "Assets/PurrNet",
+      "projectRoot": "./",
+      "output": "PurrNet_${nextRelease.version}.unitypackage"
+    }],
+    ["@semantic-release/github", {
+      "assets": [
+        {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "PurrNet v${nextRelease.version}"}
+      ]
+    }]
+  ]
+}
