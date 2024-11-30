@@ -58,9 +58,9 @@ namespace PurrNet.Modules
         }
     }
     
-    public delegate void OnPlayerJoinedEvent(PlayerID player, bool isReconnect, bool asserver);
+    public delegate void OnPlayerJoinedEvent(PlayerID player, bool isReconnect, bool asServer);
     
-    public delegate void OnPlayerLeftEvent(PlayerID player, bool asserver);
+    public delegate void OnPlayerLeftEvent(PlayerID player, bool asServer);
     public delegate void OnPlayerEvent(PlayerID player);
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster

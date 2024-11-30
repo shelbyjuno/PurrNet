@@ -491,6 +491,13 @@ namespace PurrNet
         public PlayersBroadcaster broadcastModule => _serverPlayersBroadcast ?? _clientPlayersBroadcast;
         
         /// <summary>
+        /// The scene players module of the network manager.
+        /// Defaults to the server scene players module if the server is active.
+        /// Otherwise it defaults to the client scene players module.
+        /// </summary>
+        public ScenePlayersModule scenePlayersModule => _serverScenePlayersModule ?? _clientScenePlayersModule;
+
+        /// <summary>
         /// The local player of the network manager.
         /// If the local player is not set, this will return the default value of the player id.
         /// </summary>
@@ -508,21 +515,140 @@ namespace PurrNet
         private PlayersBroadcaster _clientPlayersBroadcast;
         private PlayersBroadcaster _serverPlayersBroadcast;
         
+        private ScenePlayersModule _clientScenePlayersModule;
+        private ScenePlayersModule _serverScenePlayersModule;
+        
+        /// <summary>
+        /// This event is triggered before the tick.
+        /// It may be triggered multiple times if you are both a server and a client.
+        /// The parameter is true if the network manager is a server.
+        /// </summary>
+        public event Action<bool> onPreTick;
+        
+        /// <summary>
+        /// This event is triggered on tick.
+        /// It may be triggered multiple times if you are both a server and a client.
+        /// The parameter is true if the network manager is a server.
+        /// </summary>
+        public event Action<bool> onTick;
+        
+        /// <summary>
+        /// This event is triggered after the tick.
+        /// It may be triggered multiple times if you are both a server and a client.
+        /// The parameter is true if the network manager is a server.
+        /// </summary>
+        public event Action<bool> onPostTick;
+
+        /// <summary>
+        /// This event is triggered when a player joins.
+        /// Note that before a player joins it has a connection step.
+        /// </summary>
+        public event OnPlayerJoinedEvent onPlayerJoined;
+        
+        /// <summary>
+        /// This event is triggered when a player leaves.
+        /// </summary>
+        public event OnPlayerLeftEvent onPlayerLeft;
+        
+        /// <summary>
+        /// This event is triggered when the local player receives an ID.
+        /// </summary>
+        public event OnPlayerEvent onLocalPlayerReceivedID;
+        
+        /// <summary>
+        /// This event is triggered when a player joins the scene.
+        /// It might not be triggered if the user reconnects but was already in the scene due to persistence.
+        /// For that use onPlayerLoadedScene instead.
+        /// </summary>
+        public event OnPlayerSceneEvent onPlayerJoinedScene;
+        
+        /// <summary>
+        /// This event is triggered when a player loads the scene.
+        /// </summary>
+        public event OnPlayerSceneEvent onPlayerLoadedScene;
+        
+        /// <summary>
+        /// This event is triggered when a player unloads the scene.
+        /// Or when they leave the server and had it loaded.
+        /// </summary>
+        public event OnPlayerSceneEvent onPlayerUnloadedScene;
+        
+        /// <summary>
+        /// This event is triggered when a player leaves the scene.
+        /// This might not be triggered if the network rules keep the player in the scene.
+        /// In that case, you want to use onPlayerUnloadedScene.
+        /// </summary>
+        public event OnPlayerSceneEvent onPlayerLeftScene;
+        
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
             var tickManager = new TickManager(_tickRate);
-            
+
             if (asServer)
+            {
+                if (_serverTickManager != null)
+                {
+                    _serverTickManager.onPreTick -= OnServerPreTick;
+                    _serverTickManager.onTick -= OnServerTick;
+                    _serverTickManager.onPostTick -= OnServerPostTick;
+                }
+                
                 _serverTickManager = tickManager;
-            else _clientTickManager = tickManager;
+                
+                _serverTickManager.onPreTick += OnServerPreTick;
+                _serverTickManager.onTick += OnServerTick;
+                _serverTickManager.onPostTick += OnServerPostTick;
+            }
+            else
+            {
+                if (_clientTickManager != null)
+                {
+                    _clientTickManager.onPreTick -= OnClientPreTick;
+                    _clientTickManager.onTick -= OnClientTick;
+                    _clientTickManager.onPostTick -= OnClientPostTick;
+                }
+                
+                _clientTickManager = tickManager;
+                
+                _clientTickManager.onPreTick += OnClientPreTick;
+                _clientTickManager.onTick += OnClientTick;
+                _clientTickManager.onPostTick += OnClientPostTick;
+            }
 
             var connBroadcaster = new BroadcastModule(this, asServer);
             var networkCookies = new CookiesModule(_cookieScope);
             var playersManager = new PlayersManager(this, networkCookies, connBroadcaster);
-            
+
             if (asServer)
-                 _serverPlayersManager = playersManager;
-            else _clientPlayersManager = playersManager;
+            {
+                if (_serverPlayersManager != null)
+                {
+                    _serverPlayersManager.onPlayerJoined -= onPlayerJoined;
+                    _serverPlayersManager.onPlayerLeft -= onPlayerLeft;
+                    _serverPlayersManager.onLocalPlayerReceivedID -= onLocalPlayerReceivedID;
+                }
+                
+                _serverPlayersManager = playersManager;
+                
+                _serverPlayersManager.onPlayerJoined += onPlayerJoined;
+                _serverPlayersManager.onPlayerLeft += onPlayerLeft;
+                _serverPlayersManager.onLocalPlayerReceivedID += onLocalPlayerReceivedID;
+            }
+            else
+            {
+                if (_clientPlayersManager != null)
+                {
+                    _clientPlayersManager.onPlayerJoined -= onPlayerJoined;
+                    _clientPlayersManager.onPlayerLeft -= onPlayerLeft;
+                    _clientPlayersManager.onLocalPlayerReceivedID -= onLocalPlayerReceivedID;
+                }
+                
+                _clientPlayersManager = playersManager;
+                
+                _clientPlayersManager.onPlayerJoined += onPlayerJoined;
+                _clientPlayersManager.onPlayerLeft += onPlayerLeft;
+                _clientPlayersManager.onLocalPlayerReceivedID += onLocalPlayerReceivedID;
+            }
             
             var playersBroadcast = new PlayersBroadcaster(connBroadcaster, playersManager);
             
@@ -536,16 +662,51 @@ namespace PurrNet
                  _serverSceneModule = scenesModule;
             else _clientSceneModule = scenesModule;
 
-            var scenePlayersModule = new ScenePlayersModule(this, scenesModule, playersManager);
+            var scenePlayers = new ScenePlayersModule(this, scenesModule, playersManager);
+
+            if (asServer)
+            {
+                if (_serverScenePlayersModule != null)
+                {
+                    _serverScenePlayersModule.onPlayerJoinedScene -= onPlayerJoinedScene;
+                    _serverScenePlayersModule.onPlayerLoadedScene -= onPlayerLoadedScene;
+                    _serverScenePlayersModule.onPlayerUnloadedScene -= onPlayerUnloadedScene;
+                    _serverScenePlayersModule.onPlayerLeftScene -= onPlayerLeftScene;
+                }
+                
+                _serverScenePlayersModule = scenePlayers;
+                
+                _serverScenePlayersModule.onPlayerJoinedScene += onPlayerJoinedScene;
+                _serverScenePlayersModule.onPlayerLoadedScene += onPlayerLoadedScene;
+                _serverScenePlayersModule.onPlayerUnloadedScene += onPlayerUnloadedScene;
+                _serverScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
+            }
+            else
+            {
+                if (_clientScenePlayersModule != null)
+                {
+                    _clientScenePlayersModule.onPlayerJoinedScene -= onPlayerJoinedScene;
+                    _clientScenePlayersModule.onPlayerLoadedScene -= onPlayerLoadedScene;
+                    _clientScenePlayersModule.onPlayerUnloadedScene -= onPlayerUnloadedScene;
+                    _clientScenePlayersModule.onPlayerLeftScene -= onPlayerLeftScene;
+                }
+                
+                _clientScenePlayersModule = scenePlayers;
+                
+                _clientScenePlayersModule.onPlayerJoinedScene += onPlayerJoinedScene;
+                _clientScenePlayersModule.onPlayerLoadedScene += onPlayerLoadedScene;
+                _clientScenePlayersModule.onPlayerUnloadedScene += onPlayerUnloadedScene;
+                _clientScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
+            }
             
-            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayersModule, prefabProvider);
-            var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayersModule);
-            var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayersModule, scenesModule);
+            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayers, prefabProvider);
+            var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayers);
+            var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayers, scenesModule);
             var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
             var rpcRequestResponseModule = new RpcRequestResponseModule(playersManager);
             
             hierarchyModule.SetVisibilityFactory(visibilityFactory);
-            scenesModule.SetScenePlayers(scenePlayersModule);
+            scenesModule.SetScenePlayers(scenePlayers);
             playersManager.SetBroadcaster(playersBroadcast);
             
             modules.AddModule(playersManager);
@@ -554,7 +715,7 @@ namespace PurrNet
             modules.AddModule(connBroadcaster);
             modules.AddModule(networkCookies);
             modules.AddModule(scenesModule);
-            modules.AddModule(scenePlayersModule);
+            modules.AddModule(scenePlayers);
             
             modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
@@ -563,6 +724,18 @@ namespace PurrNet
             modules.AddModule(rpcModule);
             modules.AddModule(rpcRequestResponseModule);
         }
+
+        private void OnServerPreTick() => onPreTick?.Invoke(true);
+
+        private void OnServerTick() => onTick?.Invoke(true);
+
+        private void OnServerPostTick() => onPostTick?.Invoke(true);
+
+        private void OnClientPreTick() => onPreTick?.Invoke(false);
+
+        private void OnClientTick() => onTick?.Invoke(false);
+
+        private void OnClientPostTick() => onPostTick?.Invoke(false);
 
         static bool ShouldStart(StartFlags flags)
         {
