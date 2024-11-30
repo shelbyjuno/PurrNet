@@ -650,6 +650,7 @@ namespace PurrNet
         public void InternalRegisterServerModules()
         {
             _serverModules.RegisterModules();
+            TriggerSubscribeEvents(true);
         }
         
         /// <summary>
@@ -659,6 +660,19 @@ namespace PurrNet
         public void InternalRegisterClientModules()
         {
             _clientModules.RegisterModules();
+            TriggerSubscribeEvents(false);
+        }
+        
+        public void InternalUnregisterServerModules()
+        {
+            _serverModules.UnregisterModules();
+            TriggerUnsubscribeEvents(true);
+        }
+        
+        public void InternalUnregisterClientModules()
+        {
+            _clientModules.UnregisterModules();
+            TriggerUnsubscribeEvents(false);
         }
         
         /// <summary>
@@ -743,13 +757,19 @@ namespace PurrNet
         /// Stops the server.
         /// This will stop the transport server.
         /// </summary>
-        public void StopServer() => _transport.StopServer();
-        
+        public void StopServer()
+        {
+            _transport.StopServer(this);
+        }
+
         /// <summary>
         /// Stops the client.
         /// This will stop the transport client.
         /// </summary>
-        public void StopClient() => _transport.StopClient();
+        public void StopClient()
+        {
+            _transport.StopClient(this);
+        }
 
         /// <summary>
         /// Gets the prefab from the given guid.
