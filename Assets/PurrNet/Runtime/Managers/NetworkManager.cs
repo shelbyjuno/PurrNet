@@ -691,9 +691,6 @@ namespace PurrNet
                  _serverModules.OnNewConnection(conn, true);
             else
             {
-                if (localClientConnection.HasValue)
-                    PurrLogger.LogError($"A client connection already exists '{localClientConnection}', overwriting it with {conn}.");
-                
                 localClientConnection = conn;
                 _clientModules.OnNewConnection(conn, false);
             }

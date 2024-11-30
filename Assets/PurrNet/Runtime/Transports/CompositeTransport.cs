@@ -289,13 +289,16 @@ namespace PurrNet.Transports
 
         private void OnTransportConnected(int transportidx, Connection conn, bool asserver)
         {
+            /*if (!asserver && transportidx != -1)
+                return;*/
+            
             switch (asserver)
             {
                 case false when transportidx != -1:
                 case true when transportidx == -1:
                     return;
             }
-
+            
             TriggerConnectionStateEvent(asserver);
 
             if (asserver)
@@ -404,6 +407,8 @@ namespace PurrNet.Transports
                     e.Unsubscribe();
                 }
             }
+            
+            _clientEvent.Unsubscribe();
             
             TriggerConnectionStateEvent(true);
             
