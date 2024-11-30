@@ -1,13 +1,11 @@
-using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
-using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet
 {
-    public class PlayerSpawner : MonoBehaviour
+    public class PlayerSpawner : PurrMonoBehaviour
     {
         [SerializeField] private NetworkIdentity playerPrefab;
 
@@ -16,10 +14,6 @@ namespace PurrNet
         
         private void Awake()
         {
-            if (NetworkManager.main.isServer)
-                OnServerConnectionState(ConnectionState.Connected);
-            NetworkManager.main.onServerConnectionState += OnServerConnectionState;
-            
             for (int i = 0; i < spawnPoints.Count; i++)
             {
                 if (!spawnPoints[i])
@@ -37,13 +31,16 @@ namespace PurrNet
                 playerPrefab = playerPrefab.GetComponent<PrefabLink>();
         }
 
-        private void OnServerConnectionState(ConnectionState obj)
+        public override void Subscribe(NetworkManager manager, bool asServer)
         {
-            if (obj != ConnectionState.Connected)
-                return;
-            
-            if(NetworkManager.main && NetworkManager.main.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
+            if (asServer && manager.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
                 scenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+        }
+
+        public override void Unsubscribe(NetworkManager manager, bool asServer)
+        {
+            if (asServer && manager.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
+                scenePlayersModule.onPlayerLoadedScene -= OnPlayerLoadedScene;
         }
  
         private void OnDestroy()
@@ -67,7 +64,6 @@ namespace PurrNet
                 return;
 
             bool isDestroyOnDisconnectEnabled = NetworkManager.main.networkRules.ShouldDespawnOnOwnerDisconnect();
-
             if (!isDestroyOnDisconnectEnabled && NetworkManager.main.TryGetModule(out GlobalOwnershipModule ownership, true) && 
                 ownership.PlayerOwnsSomething(player))
                 return;

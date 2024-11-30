@@ -1809,6 +1809,8 @@ GameObject:
   - component: {fileID: 1216416899}
   - component: {fileID: 1216416900}
   - component: {fileID: 1216416901}
+  - component: {fileID: 1216416902}
+  - component: {fileID: 1216416903}
   m_Layer: 0
   m_Name: Network
   m_TagString: Untagged
@@ -1847,7 +1849,7 @@ MonoBehaviour:
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
-  _transport: {fileID: 1216416896}
+  _transport: {fileID: 1216416902}
   _networkPrefabs: {fileID: 11400000, guid: 37af97d33ef8d9747b965053a79d21f4, type: 2}
   _networkRules: {fileID: 11400000, guid: 5879a6fa5625f844e9c773a4ca0099dc, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}
@@ -1914,6 +1916,34 @@ MonoBehaviour:
   _dedicatedServer: 0
   _peerToPeer: 0
   _address: 127.0.0.1
+--- !u!114 &1216416902
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216416895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8236d3bdb4b232c4e86ae303902bd5db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _ensureAllServersStart: 1
+  _transports:
+  - {fileID: 1216416896}
+  - {fileID: 1216416903}
+--- !u!114 &1216416903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216416895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfcb920b5e3b7924ea4f2b8a047e2edf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1247646078
 GameObject:
   m_ObjectHideFlags: 0
@@ -1949,6 +1979,7 @@ MonoBehaviour:
   _visitiblityRules: {fileID: 11400000, guid: 61bfdc7c387406945b02e80f829030d1, type: 2}
   _animator: {fileID: 1247646080}
   _ownerAuth: 1
+  _autoSyncParameters: 1
 --- !u!95 &1247646080
 Animator:
   serializedVersion: 7
