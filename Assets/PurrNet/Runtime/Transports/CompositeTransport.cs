@@ -371,7 +371,7 @@ namespace PurrNet.Transports
                         }
                         catch (Exception ex)
                         {
-                            PurrLogger.LogError($"Failed to start {_transports[i].GetType().Name}: {ex.Message}");
+                            PurrLogger.LogError($"Failed to start {_transports[i].GetType().Name}: {ex.Message}\n{ex.StackTrace}");
                         }
                     }
                 }
