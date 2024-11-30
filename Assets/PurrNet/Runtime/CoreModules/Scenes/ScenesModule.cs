@@ -51,11 +51,29 @@ namespace PurrNet.Modules
         private readonly Dictionary<Scene, SceneID> _idToScene = new ();
         private readonly List<SceneID> _rawScenes = new ();
         
-        internal event OnSceneActionEvent onPreSceneLoaded;
+        /// <summary>
+        /// First callback for when a scene is loaded
+        /// </summary>
+        public event OnSceneActionEvent onPreSceneLoaded;
+        
+        /// <summary>
+        /// Callback for when a scene is loaded
+        /// </summary>
         public event OnSceneActionEvent onSceneLoaded;
+        
+        /// <summary>
+        /// Callback for after onSceneLoaded has been called
+        /// </summary>
         public event OnSceneActionEvent onPostSceneLoaded;
         
+        /// <summary>
+        /// Callback for when a scene is unloaded
+        /// </summary>
         public event OnSceneActionEvent onSceneUnloaded;
+        
+        /// <summary>
+        /// Callback for when a scene's visibility changes
+        /// </summary>
         public event OnSceneVisibilityEvent onSceneVisibilityChanged;
 
         private ushort _nextSceneID;
