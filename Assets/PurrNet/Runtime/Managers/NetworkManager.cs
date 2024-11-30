@@ -665,14 +665,14 @@ namespace PurrNet
         
         public void InternalUnregisterServerModules()
         {
-            _serverModules.UnregisterModules();
             TriggerUnsubscribeEvents(true);
+            _serverModules.UnregisterModules();
         }
         
         public void InternalUnregisterClientModules()
         {
-            _clientModules.UnregisterModules();
             TriggerUnsubscribeEvents(false);
+            _clientModules.UnregisterModules();
         }
         
         /// <summary>
