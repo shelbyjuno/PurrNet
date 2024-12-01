@@ -23,4 +23,192 @@ https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release
     <img src="https://discord.com/api/guilds/1288872904272121957/widget.png?style=banner2" alt="Discord Banner">
 </a>
 
-Join our Discord community!
+## Quick Start
+
+### Spawning and Despawning
+
+```csharp
+[SerializedField] GameObject playerPrefab;
+
+private GameObject _player;
+
+void SpawnPlayer()
+{
+    _player = Instantiate(playerPrefab);
+}
+
+void DespawnPlayer()
+{
+    Destroy(_player);
+}
+
+```
+
+Yes, you are done! PurrNet will handle the rest for you.
+The best part is that if you want to allow flexibility over security, you can even have clients spawn and despawn their own objects depending on which NetworkRules you pick.
+With no changes to this code.
+
+### RPCs
+
+You have TargetRPCs, ServerRPCs, and ObserverRPCs.
+Depending on your network rules, these can all be called by clients too.
+Or if you want to keep it secure but still allow clients to call some of them, you can use the `requireServer: false` parameter.
+
+```csharp
+[ServerRPC]
+void DoSomethingOnServer()
+{
+    Debug.Log("Doing something on the server!");
+}
+```
+
+Static RPCs are also supported.
+
+```csharp
+[ServerRPC]
+static void DoSomethingOnServer()
+{
+    Debug.Log("Doing something on the server!");
+}
+```
+
+Awaitable RPCs are also supported.
+
+```csharp
+[ServerRPC]
+static Task<int> GetMyNymber()
+{
+    return Task.FromResult(42);
+}
+```
+
+UnitTask integration is also supported.
+
+```csharp
+[ServerRPC]
+static UniTask<int> GetMyNymber()
+{
+    return UniTask.FromResult(42);
+}
+```
+
+Why not Coroutine RPCs? We have that too!
+
+```csharp
+[ServerRPC]
+static IEnumerator DoSomethingOnServer()
+{
+    yield return new WaitForSeconds(1);
+    Debug.Log("Doing something on the server!");
+}
+```
+
+Generic RPCs are also supported.
+
+```csharp
+[ServerRPC]
+static void DoSomethingOnServer<T>(T value)
+{
+    Debug.Log($"Doing something on the server with {value}!");
+}
+```
+
+All of these can be combined. For example, you can have a static RPC that returns a value and is awaitable and generic.
+
+### Network Modules
+
+Network Modules are a way to extend PurrNet with your own custom logic.
+SyncVars are built using Network Modules, and you can create your own Network Modules to add custom logic to your networked objects.
+This opens up a whole new world of possibilities for modularity and extensibility.
+
+```csharp
+[Serializable]
+public class PlayerHealthMopdule : NetworkModule
+{
+    [SerializeField] int _health;
+    
+    [ServerRPC(requireOwnership: true)]
+    public void TakeDamage(int damage)
+    {
+        _health -= damage;
+    }
+}
+```
+
+The example above shows a simple health module that can be attached to any networked object.
+Note that any of the mentioned RPCs can be used in Network Modules.
+
+Here is how you would use it:
+
+```csharp
+class SomeIdentity : NetworkIdentity
+{
+    [SerializeField] PlayerHealthModule _healthModule;
+    
+    void TakeDamage(int damage)
+    {
+        _healthModule.TakeDamage(damage);
+    }
+}
+```
+
+This is just a simple example, but you can create much more complex modules with multiple RPCs and SyncVars.
+All our built-in features are implemented using Network Modules, so you can be sure that they are powerful and flexible.
+
+Don't forget they can also be generic!
+
+### Network Rules
+
+Network Rules are a way to define how your networked objects behave.
+You can define who can spawn, despawn, and call RPCs on your objects.
+You can also define who can observe your objects and how they are synchronized.
+Almost everything is customizable, and every object can have its own set of rules.
+
+![image](https://github.com/user-attachments/assets/aa702bc4-ad6b-4cd4-841b-700d21f28d3e)
+
+### Serialization
+
+PurrNet uses a custom serialization system that is both fast and flexible.
+I will keep this short as you shouldn't have to worry about it.
+
+Just want to mention some of the features:
+
+```csharp
+// sending an RPC with an object
+// PurrNet will automatically serialize it for you and resolve it's type
+[ServerRPC]
+void DoSomethingOnServer(object someValue)
+{
+    Debug.Log($"Doing something on the server with {someValue}!");
+}
+```
+
+You can also use the BitPacker directly if you want to send custom data.
+This avoids creating garbage and is much faster than using the object serialization.
+It also allows you to send data that might not be able to be represented by a type.
+
+```csharp
+void SendSometing()
+{
+    using var writer = BitPackerPool.Get();
+    
+    writer.Write(42);
+    writer.Write("Hello, World!");
+    
+    DoSomethingOnServer(writer);
+}
+
+[ServerRPC]
+void DoSomethingOnServer(BitPacker data)
+{
+    int value = default;
+    string message = default;
+    
+    Packer<int>.Read(data, ref value);
+    Packer<string>.Read(data, ref message);
+    
+    Debug.Log($"Doing something on the server with {value} and '{message}'!");
+    
+    data.Dispose();
+}
+```
