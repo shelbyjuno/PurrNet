@@ -15,7 +15,15 @@ namespace PurrNet.StateMachine
         
         public IReadOnlyList<StateNode> states => _states;
         
+        /// <summary>
+        /// Invoked for clients when receiving changes to the state machine from the server
+        /// </summary>
         public event Action onReceivedNewData;
+
+        /// <summary>
+        /// Invoked for both server and client when state changes
+        /// </summary>
+        public event Action onStateChanged;
         
         StateMachineState _currentState;
         private int _previousStateId = -1;
@@ -108,6 +116,7 @@ namespace PurrNet.StateMachine
                 newState.Enter(false);
             }
     
+            onStateChanged?.Invoke();
             onReceivedNewData?.Invoke();
         }
 
@@ -166,6 +175,8 @@ namespace PurrNet.StateMachine
                     //state.Enter(false);
                 }
             }
+            
+            onStateChanged?.Invoke();
         }
 
         /// <summary>
@@ -194,6 +205,8 @@ namespace PurrNet.StateMachine
                 if (!isServer)
                     state.Enter(false);
             }
+            
+            onStateChanged?.Invoke();
         }
 
         /// <summary>
