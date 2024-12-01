@@ -50,7 +50,7 @@ With no changes to this code.
 
 ### RPCs
 
-You have TargetRPCs, ServerRPCs, and ObserverRPCs.
+You have `TargetRPC`s, `ServerRPC`s, and `ObserverRPC`s.
 Depending on your network rules, these can all be called by clients too.
 Or if you want to keep it secure but still allow clients to call some of them, you can use the `requireServer: false` parameter.
 
@@ -120,6 +120,9 @@ All of these can be combined. For example, you can have a static RPC that return
 Network Modules are a way to extend PurrNet with your own custom logic.
 SyncVars are built using Network Modules, and you can create your own Network Modules to add custom logic to your networked objects.
 This opens up a whole new world of possibilities for modularity and extensibility.
+
+You can also nest these modules inside each other.
+So for this next example we could have used a `SyncVar<int>` (another `NetworkModule`) but for demonstration purposes we won't.
 
 ```csharp
 [Serializable]
