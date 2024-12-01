@@ -104,6 +104,9 @@ namespace PurrNet
         
         public NetworkManager networkManager { get; private set; }
         
+        /// <summary>
+        /// The cached value of the local player.
+        /// </summary>
         public PlayerID? localPlayer { get; private set; }
         
         /// <summary>
