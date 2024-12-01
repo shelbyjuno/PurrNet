@@ -23,7 +23,7 @@ https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release
     <img src="https://discord.com/api/guilds/1288872904272121957/widget.png?style=banner2" alt="Discord Banner">
 </a>
 
-## Quick Start
+## Quick Introduction
 
 ### Transports
 
@@ -54,6 +54,9 @@ void DespawnPlayer()
 Yes, you are done! PurrNet will handle the rest for you.
 The best part is that if you want to allow flexibility over security, you can even have clients spawn and despawn their own objects depending on which NetworkRules you pick.
 With no changes to this code.
+
+Bonus, you can also drag and drop prefabs into the scene and have them spawn automatically.
+As long as they have a NetworkIdentity component attached to them and are part of your NetworkPrefabs list.
 
 ### RPCs
 
