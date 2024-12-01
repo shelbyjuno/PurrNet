@@ -130,9 +130,6 @@ GameObject:
   - component: {fileID: 1488282996}
   - component: {fileID: 1488282998}
   - component: {fileID: 1488282997}
-  - component: {fileID: 1488282999}
-  - component: {fileID: 1488283001}
-  - component: {fileID: 1488283000}
   m_Layer: 0
   m_Name: PurrNet
   m_TagString: Untagged
@@ -186,55 +183,11 @@ MonoBehaviour:
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
-  _transport: {fileID: 1488283001}
-  _networkPrefabs: {fileID: 11400000, guid: 7e8d528809eb3d049aee237120863a81, type: 2}
+  _transport: {fileID: 1488282997}
+  _networkPrefabs: {fileID: 11400000, guid: 2c44813f7cd52a94b9d62d27b62e46e1, type: 2}
   _networkRules: {fileID: 11400000, guid: d8799083b96579a42b8b2d03e4ceae98, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}
   _tickRate: 20
---- !u!114 &1488282999
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488282995}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ccc454d6a19ac140b15f8d619d0fb5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _serverPort: 5003
-  _dedicatedServer: 0
-  _peerToPeer: 1
-  _address: 127.0.0.1
---- !u!114 &1488283000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488282995}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfcb920b5e3b7924ea4f2b8a047e2edf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1488283001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488282995}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8236d3bdb4b232c4e86ae303902bd5db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _ensureAllServersStart: 0
-  _transports:
-  - {fileID: 1488282997}
-  - {fileID: 1488283000}
 --- !u!1 &1797481523
 GameObject:
   m_ObjectHideFlags: 0
@@ -372,54 +325,9 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2015565982212175026
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5290480880154990889}
-  - component: {fileID: 8081084691678037748}
-  m_Layer: 0
-  m_Name: Example
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5290480880154990889
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2015565982212175026}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8081084691678037748
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2015565982212175026}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962d72201522faf47b5a6bcb1d1a5a54, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1797481527}
   - {fileID: 1488282996}
-  - {fileID: 5290480880154990889}

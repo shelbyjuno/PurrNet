@@ -25,6 +25,13 @@ https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release
 
 ## Quick Start
 
+### Transports
+
+- UDP (reliable and unreliable)
+- WebSockets
+- Steam
+- Local (no socket)
+
 ### Spawning and Despawning
 
 ```csharp
