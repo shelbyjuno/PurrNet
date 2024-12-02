@@ -6,14 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Examples/SceneLoading/SceneLoading0.unity
-    guid: 55117c3c2cd0e81448e829f0e5bff20f
-  - enabled: 1
-    path: Assets/Examples/SceneLoading/SceneLoading1.unity
-    guid: 8db8612d17efdc34c9802bb9b2f7d649
-  - enabled: 1
-    path: Assets/Examples/SceneLoading/SceneLoading2.unity
-    guid: 5a1de0134ee2e5743ba855d44896905b
+    path: Assets/Examples/Reddit/Rpcs.unity
+    guid: 7ee3f828dacf6e849be61c8e6e45e0b3
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
