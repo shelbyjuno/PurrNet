@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Authentication;
 using JamesFrowen.SimpleWeb;
+using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Transports
@@ -114,6 +115,7 @@ namespace PurrNet.Transports
         private void OnClientReceivedData(ArraySegment<byte> data)
         {
             var byteData = new ByteData(data.Array, data.Offset, data.Count);
+            PurrLogger.Log($"Received data from client {byteData.ToString()}");
             onDataReceived?.Invoke(new Connection(0), byteData, false);
         }
 
@@ -308,6 +310,8 @@ namespace PurrNet.Transports
             if (!target.isValid)
                 return;
             
+            PurrLogger.Log($"Sending data to client {data.ToString()}");
+
             _server.SendOne(target.connectionId, new ArraySegment<byte>(data.data, data.offset, data.length));
             RaiseDataSent(target, data, true);
         }

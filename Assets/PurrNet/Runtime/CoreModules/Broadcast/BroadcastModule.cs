@@ -145,18 +145,15 @@ namespace PurrNet.Modules
             if (_asServer != asServer)
                 return;
             
-            using var stream = BitPackerPool.Get(false);
+            using var stream = BitPackerPool.Get(data);
             
-            stream.WriteBytes(data.span);
-            stream.ResetPositionAndMode(true);
-
             uint typeId = default;
             
             Packer<uint>.Read(stream, ref typeId);
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {
-                PurrLogger.LogError($"Cannot find type with id {typeId}; probably nothing is listening to this type.");
+                PurrLogger.LogError($"Cannot find type with id {typeId}; type must not have been registered properly.\nData: {data.ToString()}");
                 return;
             }
             

@@ -37,6 +37,16 @@ namespace PurrNet.Transports
         public int port;
     }
     
+    [UsedImplicitly]
+    [Serializable]
+    internal struct ClientJoinInfo
+    {
+        public bool ssl;
+        public string secret;
+        public string host;
+        public int port;
+    }
+    
     internal static class PurrTransportUtils
     {
         static UniTask<string> Get(string url)
@@ -45,7 +55,27 @@ namespace PurrNet.Transports
             return request.SendWebRequest().ToUniTask().ContinueWith(_ => request.downloadHandler.text);
         }
         
-        internal static async UniTask<HostJoinInfo> AllocWS(RelayServer server, string roomName)
+        internal static async UniTask<ClientJoinInfo> Join(string roomName)
+        {
+#if USE_LOCAL_MASTER
+            var url = $"http://localhost:8080/join";
+#else
+            var url = $"https://purrbalancer.riten.dev:8080/join";
+#endif
+            var request = UnityWebRequest.Get(url);
+            request.SetRequestHeader("name", roomName);
+            var response = await request.SendWebRequest().ToUniTask();
+            var text = response.downloadHandler.text;
+            var res =  JsonUtility.FromJson<ClientJoinInfo>(text);
+#if USE_LOCAL_MASTER
+            res.ssl = false;
+#else
+            res.ssl = true;
+#endif
+            return res;
+        }
+        
+        internal static async UniTask<HostJoinInfo> Alloc(RelayServer server, string roomName)
         {
 #if USE_LOCAL_MASTER
             var url = $"http://localhost:8080/allocate_ws";
