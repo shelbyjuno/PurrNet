@@ -82,7 +82,7 @@ namespace PurrNet.Packing
         {
             int targetPos = (positionInBits + bits) / 8;
 
-            if (targetPos > _buffer.Length)
+            if (targetPos >= _buffer.Length)
             {
                 if (_isReading)
                     throw new IndexOutOfRangeException("Not enough bits in the buffer.");
