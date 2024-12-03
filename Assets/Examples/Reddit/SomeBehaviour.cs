@@ -1,26 +1,34 @@
+using System;
 using System.Threading.Tasks;
 using PurrNet;
 using UnityEngine;
 
 public class SomeBehaviour : NetworkIdentity
 {
-    protected override void OnSpawned(bool asServer)
+    /*protected override void OnSpawned(bool asServer)
     {
         if (asServer)
             return;
 
-        _ = RequestOwnership();
+        RequestOwnership();
     }
     
     [ServerRpc]
-    private async Task RequestOwnership(RPCInfo info = default)
+    private async void RequestOwnership(RPCInfo info = default)
     {
-        Debug.Log("RequestOwnership");
+        try
+        {
+            Debug.Log("RequestOwnership");
         
-        await Task.Delay(1000);
-        await DoSomething(info.sender);
+            await Task.Delay(1000);
+            await DoSomething(info.sender);
         
-        Debug.Log("RequestOwnership done ====");
+            Debug.Log("RequestOwnership done ====");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
     
     [TargetRpc]
@@ -31,5 +39,5 @@ public class SomeBehaviour : NetworkIdentity
         await Task.Yield();
         
         Debug.Log("Done");
-    }
+    }*/
 }
