@@ -936,7 +936,8 @@ namespace PurrNet.Codegen
                 
                 p.HasDefault = param.HasDefault;
                 p.IsLcid = param.IsLcid;
-                p.Constant = param.Constant;
+                if (p.HasDefault)
+                    p.Constant = param.Constant;
                 p.IsIn = param.IsIn;
                 p.IsOptional = param.IsOptional;
                 p.IsOut = param.IsOut;
@@ -1000,7 +1001,9 @@ namespace PurrNet.Codegen
 
             newMethod.Body.Variables.Add(streamVariable);
             newMethod.Body.Variables.Add(rpcDataVariable);
-            newMethod.Body.Variables.Add(typeHash);
+            
+            if (newMethod.GenericParameters.Count > 0)
+                newMethod.Body.Variables.Add(typeHash);
             newMethod.Body.Variables.Add(rpcSignature);
 
             var paramCount = newMethod.Parameters.Count;
@@ -1113,7 +1116,7 @@ namespace PurrNet.Codegen
                 var serializeGenericMethod = CreateSerializer(module, module.TypeSystem.UInt32, true);
                 
                 code.Append(Instruction.Create(OpCodes.Ldloc, streamVariable));
-                code.Append(Instruction.Create(OpCodes.Ldloca, rpcRequest));
+                code.Append(Instruction.Create(OpCodes.Ldloc, rpcRequest));
                 code.Append(Instruction.Create(OpCodes.Ldfld, reqIdField));
                 code.Append(Instruction.Create(OpCodes.Call, serializeGenericMethod));
             }
@@ -1258,13 +1261,10 @@ namespace PurrNet.Codegen
             // Pop return value if not void for now
             code.Append(Instruction.Create(OpCodes.Ret));
             code.Append(endOfRunLocallyCheck);
-            
-            if (returnMode != ReturnMode.Void)
-            {
-                code.Append(Instruction.Create(OpCodes.Ldloc, taskWithReturnType));
-                code.Append(Instruction.Create(OpCodes.Ret));
-            }
 
+            if (returnMode != ReturnMode.Void)
+                code.Append(Instruction.Create(OpCodes.Ldloc, taskWithReturnType));
+            
             code.Append(Instruction.Create(OpCodes.Ret));
 
             return newMethod;
