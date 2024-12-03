@@ -61,7 +61,6 @@ namespace PurrNet.Transports
         /// If you do not pass a NetworkManager, it will try to find one in the hierarchy.
         /// </summary>
         /// <param name="manager">The NetworkManager to register server modules.</param>
-        [ContextMenu("Start Server")]
         public void StartServer(NetworkManager manager = null)
         {
             if (TryGetNetworkManager(manager, out var networkManager))
@@ -73,7 +72,6 @@ namespace PurrNet.Transports
         /// Stops the server.
         /// This will disconnect all clients.
         /// </summary>
-        [ContextMenu("Stop Server")]
         public void StopServer(NetworkManager manager = null)
         {
             if (TryGetNetworkManager(manager, out var networkManager))
@@ -88,7 +86,6 @@ namespace PurrNet.Transports
         /// If you do not pass a NetworkManager, it will try to find one in the hierarchy.
         /// </summary>
         /// <param name="manager">The NetworkManager to register client modules.</param>
-        [ContextMenu("Start Client")]
         public void StartClient(NetworkManager manager = null)
         {
             if (TryGetNetworkManager(manager, out var networkManager))
@@ -104,7 +101,6 @@ namespace PurrNet.Transports
         /// If you do not pass a NetworkManager, it will try to find one in the hierarchy.
         /// </summary>
         /// <param name="manager">The NetworkManager to unregister client modules.</param>
-        [ContextMenu("Stop Client")]
         public void StopClient(NetworkManager manager = null)
         {
             if (TryGetNetworkManager(manager, out var networkManager))
