@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Examples/Reddit/Rpcs.unity
-    guid: 7ee3f828dacf6e849be61c8e6e45e0b3
+    path: Assets/Examples/Top Down Shooter/TopDownShooter_Scene.unity
+    guid: cd173e214694eb44ebbf6f2619dfbd04
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
