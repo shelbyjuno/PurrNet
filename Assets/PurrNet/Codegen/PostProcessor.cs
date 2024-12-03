@@ -94,7 +94,7 @@ namespace PurrNet.Codegen
             }
             catch (Exception e)
             {
-                throw new Exception($"InheritsFrom : Failed to resolve base type of {type.FullName}, {e.Message} \n {e.StackTrace}");
+                throw new Exception($"InheritsFrom : Failed to resolve base type of {type?.FullName}, {e.Message} \n {e.StackTrace}");
             }
         }
         
@@ -1641,7 +1641,7 @@ namespace PurrNet.Codegen
                         
                         try
                         {
-                            FindUsedTypes(module, types, _rpcMethods, usedTypes, messages);
+                            FindUsedTypes(module, types, usedTypes);
                             
                             foreach (var usedType in usedTypes)
                             {
@@ -1660,7 +1660,7 @@ namespace PurrNet.Codegen
                     }
                 }
                 
-                ExpandNested(assemblyDefinition, typesToGenerateSerializer, messages);
+                ExpandNested(assemblyDefinition, typesToGenerateSerializer);
                 
                 // remove any typesToGenerateSerializer from typesToPrepareHasher
                 typesToPrepareHasher.ExceptWith(typesToGenerateSerializer);
@@ -1746,7 +1746,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle, List<DiagnosticMessage> messages)
+        private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle)
         {
             HashSet<TypeReference> visited = new();
             HashSet<TypeReference> visited2 = new();
@@ -1756,12 +1756,12 @@ namespace PurrNet.Codegen
             {
                 var type = copy[i];
                 if (type is GenericInstanceType genericInstance)
-                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited2, messages);
-                AddNestedFields(assembly, type, typesToHandle, visited, messages);
+                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited2);
+                AddNestedFields(assembly, type, typesToHandle, visited);
             }
         }
 
-        private static void AddNestedGenerics(AssemblyDefinition assembly, GenericInstanceType type, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
+        private static void AddNestedGenerics(AssemblyDefinition assembly, GenericInstanceType type, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
         {
             for (int i = 0; i < type.GenericArguments.Count; i++)
             {
@@ -1772,7 +1772,7 @@ namespace PurrNet.Codegen
                 
                 if (argument is GenericInstanceType genericInstance)
                 {
-                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited, messages);
+                    AddNestedGenerics(assembly, genericInstance, typesToHandle, visited);
                 }
                 else if (IsTypeInOwnModule(argument, assembly.MainModule))
                 {
@@ -1781,7 +1781,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void AddNestedFields(AssemblyDefinition assembly, TypeReference reference, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited, List<DiagnosticMessage> messages)
+        private static void AddNestedFields(AssemblyDefinition assembly, TypeReference reference, HashSet<TypeReference> typesToHandle, HashSet<TypeReference> visited)
         {
             var fields = GetConcreteFields(reference);
             
@@ -1813,7 +1813,7 @@ namespace PurrNet.Codegen
                             containsRelevantTypes = true;
                         }
 
-                        AddNestedFields(assembly, argument, typesToHandle, visited, messages);
+                        AddNestedFields(assembly, argument, typesToHandle, visited);
                     }
 
                     // If the GenericInstanceType contains relevant arguments, add it
@@ -1822,13 +1822,13 @@ namespace PurrNet.Codegen
                         typesToHandle.Add(field);
                     }
                     
-                    AddNestedFields(assembly, field, typesToHandle, visited, messages);
+                    AddNestedFields(assembly, field, typesToHandle, visited);
                 }
                 else if (IsTypeInOwnModule(field, assembly.MainModule))
                 {
                     // Handle non-generic field types
                     typesToHandle.Add(field);
-                    AddNestedFields(assembly, field, typesToHandle, visited, messages);
+                    AddNestedFields(assembly, field, typesToHandle, visited);
                 }
             }
         }
@@ -2007,7 +2007,7 @@ namespace PurrNet.Codegen
             code.Append(Instruction.Create(OpCodes.Ret));
         }
 
-        private static void FindUsedTypes(ModuleDefinition module, List<TypeDefinition> allTypes, List<RPCMethod> methods, HashSet<TypeReference> types, List<DiagnosticMessage> messages)
+        private static void FindUsedTypes(ModuleDefinition module, List<TypeDefinition> allTypes, HashSet<TypeReference> types)
         {
             var playersBroadcasterSubscribe = module.GetTypeDefinition<PlayersBroadcaster>();
             var playersManagerSubscribe = module.GetTypeDefinition<PlayersManager>();
@@ -2045,7 +2045,7 @@ namespace PurrNet.Codegen
                         {
                             if (IsRpcMethod(currentMethod))
                             {
-                                FindUsedGenericRpcTypes(types, currentMethod, messages);
+                                FindUsedGenericRpcTypes(types, currentMethod);
                             }
                             
                             var isSubscribeMethod = currentMethod.GenericArguments.Count == 1 && currentMethod.Name.Equals("Subscribe") &&
@@ -2086,7 +2086,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void FindUsedGenericRpcTypes(HashSet<TypeReference> types, GenericInstanceMethod currentMethod, List<DiagnosticMessage> messages)
+        private static void FindUsedGenericRpcTypes(HashSet<TypeReference> types, GenericInstanceMethod currentMethod)
         {
             foreach (var argument in currentMethod.GenericArguments)
             {
