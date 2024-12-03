@@ -129,7 +129,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1488282996}
   - component: {fileID: 1488282998}
-  - component: {fileID: 1488282997}
+  - component: {fileID: 1488282999}
+  - component: {fileID: 1488283000}
   m_Layer: 0
   m_Name: PurrNet
   m_TagString: Untagged
@@ -152,21 +153,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1488282997
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488282995}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fc64ff707d914a64e95f2ac0bf554c09, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _serverPort: 5000
-  _maxConnections: 100
-  _address: 127.0.0.1
 --- !u!114 &1488282998
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -183,11 +169,45 @@ MonoBehaviour:
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
-  _transport: {fileID: 1488282997}
+  _transport: {fileID: 1488282999}
   _networkPrefabs: {fileID: 11400000, guid: 2c44813f7cd52a94b9d62d27b62e46e1, type: 2}
   _networkRules: {fileID: 11400000, guid: d8799083b96579a42b8b2d03e4ceae98, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}
   _tickRate: 20
+--- !u!114 &1488282999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488282995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 332e746c3c3253246aacad4d5559f1fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _roomName: purrnet
+--- !u!114 &1488283000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488282995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de4778b5edf2476448bcb3ac3d9c35d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _serverPort: 5001
+  _maxConnections: 100
+  _address: 127.0.0.1
+  _query: 
+  _path: 
+  _enableSSL: 0
+  _certPath: 
+  _certPassword: 
+  _sslProtocols: 0
 --- !u!1 &1797481523
 GameObject:
   m_ObjectHideFlags: 0
