@@ -406,20 +406,6 @@ namespace PurrNet.Codegen
             return method;
         }
         
-        private static bool TypeContainsFieldOrIsValueType(TypeDefinition type)
-        {
-            if (type.IsValueType)
-                return true;
-            
-            foreach (var field in type.Fields)
-            {
-                if (!field.IsStatic)
-                    return true;
-            }
-
-            return false;
-        }
-
         private static void GenerateMethod(
             bool isWriting, MethodDefinition method, MethodReference serialize, TypeReference typeRef, ILProcessor il,
             ModuleDefinition mainmodule, ParameterDefinition valueArg)
@@ -499,10 +485,28 @@ namespace PurrNet.Codegen
                         var getter = CreateGetterMethod(type, field);
 
                         if (typeRef is GenericInstanceType genericInstanceType)
-                            getter = new MethodReference(getter.Name, getter.ReturnType, genericInstanceType);
+                        {
+                            var copy = new MethodReference(getter.Name, getter.ReturnType, genericInstanceType)
+                            {
+                                HasThis = getter.HasThis
+                            };
+
+                            foreach (var param in getter.Parameters)
+                                copy.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
+                        
+                            foreach (var genericParam in getter.GenericParameters)
+                                copy.GenericParameters.Add(new GenericParameter(genericParam.Name, copy));
+                            
+                            getter = copy;
+                        }
                         
                         il.Emit(OpCodes.Ldarg_0);
-                        il.Emit(isClass ? OpCodes.Ldarg_S : OpCodes.Ldarga_S, valueArg);
+                        
+                        if (isClass)
+                            il.Emit(OpCodes.Ldarg_1);
+                        else
+                            il.Emit(OpCodes.Ldarga_S, valueArg);
+
                         il.Emit(OpCodes.Call, getter);
                         il.Emit(OpCodes.Call, genericM);
                     }
@@ -515,8 +519,11 @@ namespace PurrNet.Codegen
 
                         if (typeRef is GenericInstanceType genericInstanceType)
                         {
-                            var copy = new MethodReference(setter.Name, setter.ReturnType, genericInstanceType);
-                        
+                            var copy = new MethodReference(setter.Name, setter.ReturnType, genericInstanceType)
+                            {
+                                HasThis = setter.HasThis
+                            };
+                            
                             foreach (var param in setter.Parameters)
                                 copy.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
                         
