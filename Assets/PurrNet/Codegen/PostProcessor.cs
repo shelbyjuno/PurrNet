@@ -80,6 +80,9 @@ namespace PurrNet.Codegen
         {
             try
             {
+                if (type == null)
+                    return false;
+                
                 if (type.BaseType == null)
                     return false;
 
