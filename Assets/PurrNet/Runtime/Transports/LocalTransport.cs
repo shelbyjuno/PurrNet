@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Data;
+using PurrNet.Packing;
 
 namespace PurrNet.Transports
 {
@@ -10,7 +12,10 @@ namespace PurrNet.Transports
         public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
 
-        public IReadOnlyList<Connection> connections => new [] { new Connection(0) };
+        static readonly List<Connection> connectedList = new() { new Connection(1) };
+        static readonly List<Connection> disconnectedList = new();
+        
+        public IReadOnlyList<Connection> connections => clientState == ConnectionState.Connected ? connectedList : disconnectedList;
         
         public override bool isSupported => true;
         public override ITransport transport => this;
@@ -32,14 +37,27 @@ namespace PurrNet.Transports
                 clientState = ConnectionState.Connected;
                 TriggerConnectionStateEvent(false);
                 
-                onConnected?.Invoke(new Connection(0), true);
-                onConnected?.Invoke(new Connection(0), false);
+                onConnected?.Invoke(new Connection(1), true);
+                onConnected?.Invoke(new Connection(1), false);
             }
         }
 
         protected override void StartServerInternal()
         {
             Listen(default);
+        }
+        
+        readonly Queue<BitPacker> _serverQueue = new();
+        readonly Queue<BitPacker> _clientQueue = new();
+
+        private void QueuePacket(ByteData data, bool asServer)
+        {
+            var datac = BitPackerPool.Get();
+            datac.WriteBytes(data);
+            
+            if (asServer)
+                _serverQueue.Enqueue(datac);
+            else _clientQueue.Enqueue(datac);
         }
         
         public void RaiseDataReceived(Connection conn, ByteData data, bool asServer)
@@ -59,7 +77,7 @@ namespace PurrNet.Transports
             
             listenerState = ConnectionState.Disconnected;
             TriggerConnectionStateEvent(true);
-            
+
             if (clientState == ConnectionState.Connected)
                 Disconnect();
         }
@@ -78,8 +96,8 @@ namespace PurrNet.Transports
                 clientState = ConnectionState.Connected;
                 TriggerConnectionStateEvent(false);
                 
-                onConnected?.Invoke(new Connection(0), true);
-                onConnected?.Invoke(new Connection(0), false);
+                onConnected?.Invoke(new Connection(1), true);
+                onConnected?.Invoke(new Connection(1), false);
             }
         }
 
@@ -106,10 +124,8 @@ namespace PurrNet.Transports
             clientState = ConnectionState.Disconnected;
             TriggerConnectionStateEvent(false);
 
-            var conn = new Connection(0);
-
-            onDisconnected?.Invoke(conn, DisconnectReason.ServerRequest,true);
-            onDisconnected?.Invoke(conn, DisconnectReason.ClientRequest, false);
+            onDisconnected?.Invoke(new Connection(1), DisconnectReason.ServerRequest, true);
+            onDisconnected?.Invoke(new Connection(1), DisconnectReason.ClientRequest, false);
         }
         
         public void SendToClient(Connection target, ByteData data, Channel method = Channel.Unreliable)
@@ -118,7 +134,8 @@ namespace PurrNet.Transports
                 listenerState != ConnectionState.Connected)
                 return;
             
-            onDataReceived?.Invoke(target, data, false);
+            QueuePacket(data, false);
+            // onDataReceived?.Invoke(default, data, false);
             RaiseDataSent(target, data, true);
         }
 
@@ -128,8 +145,8 @@ namespace PurrNet.Transports
                 listenerState != ConnectionState.Connected)
                 return;
             
-            var conn = new Connection(0);
-            onDataReceived?.Invoke(conn, data, true);
+            QueuePacket(data, true);
+            //onDataReceived?.Invoke(conn, data, true);
             RaiseDataSent(default, data, false);
         }
 
@@ -138,7 +155,20 @@ namespace PurrNet.Transports
             StopClientInternal();
         }
 
-        public void UpdateEvents(float delta) { }
+        public void UpdateEvents(float delta)
+        {
+            while (_serverQueue.Count > 0)
+            {
+                using var data = _serverQueue.Dequeue();
+                onDataReceived?.Invoke(new Connection(1), data.ToByteData(), true);
+            }
+            
+            while (_clientQueue.Count > 0)
+            {
+                using var data = _clientQueue.Dequeue();
+                onDataReceived?.Invoke(default, data.ToByteData(), false);
+            }
+        }
 
         ConnectionState _prevClientState = ConnectionState.Disconnected;
         ConnectionState _prevServerState = ConnectionState.Disconnected;

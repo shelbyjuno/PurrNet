@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -65,9 +66,7 @@ namespace PurrNet
             if (_actions.TryGetValue(hash, out var actions))
             {
                 for (int i = 0; i < actions.Count; i++)
-                {
                     actions[i].TriggerCallback(player, data, _asServer);
-                }
             }
         }
 

@@ -34,7 +34,21 @@ namespace PurrNet
         public override void Subscribe(NetworkManager manager, bool asServer)
         {
             if (asServer && manager.TryGetModule(out ScenePlayersModule scenePlayersModule, true))
+            {
                 scenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+
+                if (!manager.TryGetModule(out ScenesModule scenes, true))
+                    return;
+            
+                if (!scenes.TryGetSceneID(gameObject.scene, out var sceneID))
+                    return;
+                
+                if (scenePlayersModule.TryGetPlayersInScene(sceneID, out var players))
+                {
+                    foreach (var player in players)
+                        OnPlayerLoadedScene(player, sceneID, true);
+                }
+            }
         }
 
         public override void Unsubscribe(NetworkManager manager, bool asServer)
