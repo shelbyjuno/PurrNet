@@ -40,7 +40,7 @@ namespace PurrNet.Modules
     public class BroadcastModule : INetworkModule, IDataListener
     {
         private readonly ITransport _transport;
-
+        
         private readonly bool _asServer;
 
         private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new();
@@ -53,9 +53,13 @@ namespace PurrNet.Modules
             _asServer = asServer;
         }
 
-        public void Enable(bool asServer) { }
+        public void Enable(bool asServer)
+        {
+        }
 
-        public void Disable(bool asServer) { }
+        public void Disable(bool asServer)
+        {
+        }
 
         void AssertIsServer(string message)
         {
@@ -145,18 +149,15 @@ namespace PurrNet.Modules
             if (_asServer != asServer)
                 return;
             
-            using var stream = BitPackerPool.Get(false);
+            using var stream = BitPackerPool.Get(data);
             
-            stream.WriteBytes(data.span);
-            stream.ResetPositionAndMode(true);
-
             uint typeId = default;
             
             Packer<uint>.Read(stream, ref typeId);
 
             if (!Hasher.TryGetType(typeId, out var typeInfo))
             {
-                PurrLogger.LogError($"Cannot find type with id {typeId}; probably nothing is listening to this type.");
+                PurrLogger.LogError($"Cannot find type with id {typeId}; type must not have been registered properly.\nData: {data.ToString()}");
                 return;
             }
             
@@ -210,4 +211,6 @@ namespace PurrNet.Modules
             onRawDataReceived?.Invoke(conn, hash, instance);
         }
     }
+    
+    public struct KeepAlivePacket : IPackedAuto {}
 }

@@ -5,7 +5,17 @@ using UnityEngine;
 public class StateOne : StateNode
 {
     [SerializeField] private int forTwo;
-    
+
+    private void Awake()
+    {
+        machine.onStateChanged += OnReceivedNewData;
+    }
+
+    private void OnReceivedNewData()
+    {
+        Debug.Log($"state changed");
+    }
+
     public override void Enter(bool asServer)
     {
         base.Enter(asServer);

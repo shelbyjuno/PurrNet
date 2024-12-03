@@ -184,12 +184,15 @@ namespace PurrNet
 
         protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
         {
-            _id = 0;
+            if (!asServer) return;
+            
+            ReconcileTickId(ownerId, _id);
         }
 
         protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
         {
-            _id = 0;
+            if (isController)
+                ReconcileTickIdToOthers();
             
             if (!_trs)
                 _trs = transform;
@@ -202,6 +205,36 @@ namespace PurrNet
         private int _ticksSinceLastSend;
         private bool _wasLastDirty;
         private NetworkTransformData _lastSentData;
+
+        private void ReconcileTickIdToOthers()
+        {
+            if (!isController)
+                return;
+            
+            if (isServer)
+                 ReconcileTickId(_id);
+            else ReconcileTickId_Server(_id);
+        }
+        
+        [ServerRpc]
+        private void ReconcileTickId_Server(ushort id)
+        {
+            _id = id;
+            
+            ReconcileTickId(id);
+        }
+        
+        [ObserversRpc]
+        private void ReconcileTickId(ushort id)
+        {
+            _id = id;
+        }
+        
+        [TargetRpc]
+        private void ReconcileTickId([UsedImplicitly] PlayerID player, ushort id)
+        {
+            _id = id;
+        }
 
         public void OnTick(float delta)
         {

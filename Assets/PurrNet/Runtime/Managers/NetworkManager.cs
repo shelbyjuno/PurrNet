@@ -180,7 +180,7 @@ namespace PurrNet
                 }
             }
         }
-
+        
         /// <summary>
         /// Whether the server should automatically start.
         /// </summary>
@@ -518,26 +518,28 @@ namespace PurrNet
         private ScenePlayersModule _clientScenePlayersModule;
         private ScenePlayersModule _serverScenePlayersModule;
         
+        public delegate void OnTickDelegate(bool asServer);
+
         /// <summary>
         /// This event is triggered before the tick.
         /// It may be triggered multiple times if you are both a server and a client.
         /// The parameter is true if the network manager is a server.
         /// </summary>
-        public event Action<bool> onPreTick;
+        public event OnTickDelegate onPreTick;
         
         /// <summary>
         /// This event is triggered on tick.
         /// It may be triggered multiple times if you are both a server and a client.
         /// The parameter is true if the network manager is a server.
         /// </summary>
-        public event Action<bool> onTick;
+        public event OnTickDelegate onTick;
         
         /// <summary>
         /// This event is triggered after the tick.
         /// It may be triggered multiple times if you are both a server and a client.
         /// The parameter is true if the network manager is a server.
         /// </summary>
-        public event Action<bool> onPostTick;
+        public event OnTickDelegate onPostTick;
 
         /// <summary>
         /// This event is triggered when a player joins.

@@ -54,7 +54,7 @@ namespace PurrNet
         
         public bool isHost => isSpawned && networkManager.isHost;
         
-        public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
+        public bool isOwner => isSpawned && isClient && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
         
@@ -104,6 +104,9 @@ namespace PurrNet
         
         public NetworkManager networkManager { get; private set; }
         
+        /// <summary>
+        /// The cached value of the local player.
+        /// </summary>
         public PlayerID? localPlayer { get; private set; }
         
         /// <summary>
@@ -114,6 +117,7 @@ namespace PurrNet
         public PlayerID localPlayerForced => localPlayer ?? default;
         
         public event OnRootChanged onRootChanged;
+        public event Action<NetworkIdentity> onFlush;
         public event Action<NetworkIdentity> onRemoved;
         public event Action<NetworkIdentity, bool> onEnabledChanged;
         public event Action<NetworkIdentity, bool> onActivatedChanged;
@@ -713,6 +717,17 @@ namespace PurrNet
             if (asServer)
                  _isSpawnedServer = value;
             else _isSpawnedClient = value;
+        }
+
+        /// <summary>
+        /// Sends all the queued actions to the server.
+        /// For example an auto-spawn or destroying a networked gameobject.
+        /// Without flushing your RPC could be sent before the auto-spawn or destroy.
+        /// Same for parent changes, etc.
+        /// </summary>
+        public void FlushHierarchyActions()
+        {
+            onFlush?.Invoke(this);
         }
     }
 }
