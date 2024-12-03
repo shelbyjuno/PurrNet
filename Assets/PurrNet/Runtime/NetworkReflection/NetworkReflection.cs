@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packing;
-using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -49,7 +47,7 @@ namespace PurrNet
             {
                 var value = new ReflectedValue(_trackedBehaviour, _trackedFields[i]);
                 if (value.valueType != null)
-                    Utils.Hasher.PrepareType(value.valueType);
+                    Hasher.PrepareType(value.valueType);
                 _reflectedValues[i] = value;
             }
         }
@@ -80,26 +78,20 @@ namespace PurrNet
 
         private void SendMemberUpdate(int index, object data)
         {
-            using var stream = BitPackerPool.Get();
-
-            Packer.Write(stream, data);
-            
-            var byteData = stream.ToByteData();
-            
             if (isServer)
-                 ObserversRpc(index, byteData);
-            else ForwardThroughServer(index, byteData);
+                 ObserversRpc(index, data);
+            else ForwardThroughServer(index, data);
         }
         
         [ServerRpc]
-        private void ForwardThroughServer(int index, ByteData data)
+        private void ForwardThroughServer(int index, object data)
         {
             if (_ownerAuth)
                 ObserversRpc(index, data);
         }
         
         [ObserversRpc]
-        private void ObserversRpc(int index, ByteData data)
+        private void ObserversRpc(int index, object value)
         {
             if (index < 0 || index >= _reflectedValues.Length)
             {
@@ -115,14 +107,7 @@ namespace PurrNet
                 return;
             }
             
-            using var stream = BitPackerPool.Get();
-            
-            stream.Write(data);
-            stream.ResetPositionAndMode(true);
-            
-            object reflectedData = null;
-            Packer.Read(stream, reflectedValue.valueType, ref reflectedData);
-            reflectedValue.SetValue(reflectedData);
+            reflectedValue.SetValue(value);
         }
     }
 }

@@ -7,7 +7,6 @@ using PurrNet.Modules;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
-using UnityEngine.Events;
 using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
