@@ -40,7 +40,7 @@ namespace PurrNet.Modules
     public class BroadcastModule : INetworkModule, IDataListener
     {
         private readonly ITransport _transport;
-
+        
         private readonly bool _asServer;
 
         private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new();
@@ -53,9 +53,13 @@ namespace PurrNet.Modules
             _asServer = asServer;
         }
 
-        public void Enable(bool asServer) { }
+        public void Enable(bool asServer)
+        {
+        }
 
-        public void Disable(bool asServer) { }
+        public void Disable(bool asServer)
+        {
+        }
 
         void AssertIsServer(string message)
         {
@@ -207,4 +211,6 @@ namespace PurrNet.Modules
             onRawDataReceived?.Invoke(conn, hash, instance);
         }
     }
+    
+    public struct KeepAlivePacket : IPackedAuto {}
 }

@@ -106,6 +106,14 @@ namespace PurrNet.Transports
         event OnConnectionState onConnectionState;
         
         public IReadOnlyList<Connection> connections { get; }
+        
+        bool shouldServerSendKeepAlive => false;
+
+        bool shouldClientSendKeepAlive => false;
+
+        void SendServerKeepAlive()
+        {
+        }
 
         void RaiseDataReceived(Connection conn, ByteData data, bool asServer);
         

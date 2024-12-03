@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Security.Authentication;
 using JamesFrowen.SimpleWeb;
-using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Transports
@@ -58,6 +57,8 @@ namespace PurrNet.Transports
         
         private SimpleWebServer _server;
         private SimpleWebClient _client;
+
+        public bool shouldClientSendKeepAlive => true;
         
         private readonly List<Connection> _connections = new ();
 
@@ -65,13 +66,13 @@ namespace PurrNet.Transports
         
         public override bool isSupported => true;
 
-        readonly TcpConfig _tcpConfig = new (noDelay: false, sendTimeout: 5000, receiveTimeout: 20000);
+        readonly TcpConfig _tcpConfig = new (noDelay: false, sendTimeout: 0, receiveTimeout: 0);
 
         private void Awake()
         {
             ReconstructServer();
             
-            _client = SimpleWebClient.Create(ushort.MaxValue, 5000, _tcpConfig);
+            _client = SimpleWebClient.Create(ushort.MaxValue, 5000, new TcpConfig(false, 0, 0));
             _client.onConnect += OnClientConnected;
             _client.onDisconnect += OnClientDisconnected;
             _client.onData += OnClientReceivedData;
@@ -115,7 +116,6 @@ namespace PurrNet.Transports
         private void OnClientReceivedData(ArraySegment<byte> data)
         {
             var byteData = new ByteData(data.Array, data.Offset, data.Count);
-            PurrLogger.Log($"Received data from client {byteData.ToString()}");
             onDataReceived?.Invoke(new Connection(0), byteData, false);
         }
 
@@ -310,8 +310,6 @@ namespace PurrNet.Transports
             if (!target.isValid)
                 return;
             
-            PurrLogger.Log($"Sending data to client {data.ToString()}");
-
             _server.SendOne(target.connectionId, new ArraySegment<byte>(data.data, data.offset, data.length));
             RaiseDataSent(target, data, true);
         }

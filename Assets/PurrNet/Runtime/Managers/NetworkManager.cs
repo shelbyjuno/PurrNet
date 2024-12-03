@@ -180,7 +180,7 @@ namespace PurrNet
                 }
             }
         }
-
+        
         /// <summary>
         /// Whether the server should automatically start.
         /// </summary>

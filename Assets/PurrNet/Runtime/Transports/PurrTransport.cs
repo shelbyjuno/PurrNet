@@ -23,11 +23,8 @@ namespace PurrNet.Transports
     
         enum HOST_PACKET_TYPE : byte
         {
-            SEND_ALL = 0,
-            SEND_ONE = 1,
-            SEND_MANY = 2,
-            SEND_ALL_EXCEPT = 3,
-            SEND_ALL_EXCEPT_MANY = 4
+            SEND_KEEPALIVE = 0,
+            SEND_ONE = 1
         }
         
         [Serializable]
@@ -57,6 +54,10 @@ namespace PurrNet.Transports
         
         private ConnectionState _listenerState = ConnectionState.Disconnected;
         private ConnectionState _clientState = ConnectionState.Disconnected;
+        
+        public bool shouldServerSendKeepAlive => true;
+
+        public bool shouldClientSendKeepAlive => true;
         
         public ConnectionState listenerState
         {
@@ -117,7 +118,7 @@ namespace PurrNet.Transports
         private SimpleWebClient _server;
         private SimpleWebClient _client;
         private HostJoinInfo _hostJoinInfo;
-        readonly TcpConfig _tcpConfig = new (noDelay: false, sendTimeout: 5000, receiveTimeout: 20000);
+        readonly TcpConfig _tcpConfig = new (noDelay: false, sendTimeout: 0, receiveTimeout: 0);
 
         protected override void StartServerInternal()
         {
@@ -404,6 +405,17 @@ namespace PurrNet.Transports
         }
         
         static readonly BitPacker _packer = new ();
+        
+        public void SendServerKeepAlive()
+        {
+            if (_server == null)
+                return;
+            
+            _packer.ResetPositionAndMode(false);
+            Packer<byte>.Write(_packer, (byte)HOST_PACKET_TYPE.SEND_KEEPALIVE);
+            var data = _packer.ToByteData();
+            _server.Send(new ArraySegment<byte>(data.data, data.offset, data.length));
+        }
 
         public void SendToClient(Connection target, ByteData odata, Channel method = Channel.ReliableOrdered)
         {
@@ -443,6 +455,12 @@ namespace PurrNet.Transports
         {
             _server?.ProcessMessageQueue();
             _client?.ProcessMessageQueue();
+        }
+
+        private void OnDisable()
+        {
+            StopListening();
+            Disconnect();
         }
     }
 }
