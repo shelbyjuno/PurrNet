@@ -319,7 +319,7 @@ namespace PurrNet.Codegen
             var compileTimeSignatureField = info.ParameterType.GetField("compileTimeSignature").Import(module);
             
             code.Append(Instruction.Create(OpCodes.Ldarga, info));
-            ReturnRPCSignature(module, code, originalRpc, true);
+            ReturnRPCSignature(module, code, originalRpc, true, isNetworkClass);
             code.Append(Instruction.Create(OpCodes.Stfld, compileTimeSignatureField));
             
             MethodReference validateReceivingRPC;
@@ -935,7 +935,14 @@ namespace PurrNet.Codegen
                     p.CustomAttributes.Add(t);
                 
                 p.HasDefault = param.HasDefault;
+                p.IsLcid = param.IsLcid;
                 p.Constant = param.Constant;
+                p.IsIn = param.IsIn;
+                p.IsOptional = param.IsOptional;
+                p.IsOut = param.IsOut;
+                p.IsReturnValue = param.IsReturnValue;
+                p.HasFieldMarshal = param.HasFieldMarshal;
+                p.MarshalInfo = param.MarshalInfo;
             }
             
             var code = newMethod.Body.GetILProcessor();
@@ -998,7 +1005,7 @@ namespace PurrNet.Codegen
 
             var paramCount = newMethod.Parameters.Count;
             
-            ReturnRPCSignature(module, code, methodRpc, false);
+            ReturnRPCSignature(module, code, methodRpc, false, isNetworkClass);
             code.Append(Instruction.Create(OpCodes.Stloc, rpcSignature));
             
             if (returnMode != ReturnMode.Void)
@@ -1289,7 +1296,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        private static void ReturnRPCSignature(ModuleDefinition module, ILProcessor code, RPCMethod rpc, bool isReceiving)
+        private static void ReturnRPCSignature(ModuleDefinition module, ILProcessor code, RPCMethod rpc, bool isReceiving, bool isNetworkModule)
         {
             var rpcDetails = module.GetTypeDefinition<RPCSignature>();
             var makeRpcDetails = rpcDetails.GetMethod("Make").Import(module);
@@ -1320,7 +1327,10 @@ namespace PurrNet.Codegen
                 {
                     if (!rpc.Signature.isStatic)
                     {
-                        var localPlayerProp = module.GetTypeDefinition<NetworkIdentity>().GetProperty("localPlayerForced").GetMethod.Import(module);
+                        var localPlayerProp = 
+                            isNetworkModule ? 
+                                module.GetTypeDefinition<NetworkModule>().GetProperty("localPlayerForced").GetMethod.Import(module) :
+                                module.GetTypeDefinition<NetworkIdentity>().GetProperty("localPlayerForced").GetMethod.Import(module);
 
                         code.Append(Instruction.Create(OpCodes.Ldarg_0));
                         code.Append(Instruction.Create(OpCodes.Call, localPlayerProp));
