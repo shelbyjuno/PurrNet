@@ -35,6 +35,7 @@ namespace PurrNet
         
         public PlayerID? localPlayer => parent ? parent.localPlayer : null;
         
+        [UsedByIL]
         protected PlayerID localPlayerForced => parent ? parent.localPlayerForced : default;
         
         public PlayerID? owner => parent ? parent.owner : null;
