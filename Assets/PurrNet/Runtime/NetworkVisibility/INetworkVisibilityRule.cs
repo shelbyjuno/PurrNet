@@ -13,7 +13,7 @@ namespace PurrNet
         {
             var root = node.root;
             
-            if (!root.id.HasValue)
+            if (!root || !root.id.HasValue)
                 return;
 
             if (!children.TryGetValue(root.id.Value, out var set))

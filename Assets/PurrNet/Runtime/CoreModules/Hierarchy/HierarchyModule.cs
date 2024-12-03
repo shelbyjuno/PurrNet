@@ -129,7 +129,7 @@ namespace PurrNet
                 return false;
             }
             
-            return hierarchy.TryGetIdentity(id, out identity);
+            return hierarchy.TryGetIdentity(id, out identity) && identity;
         }
         
         internal bool TryGetHierarchy(SceneID sceneID, out HierarchyScene hierarchy)
