@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
-  _visitiblityRules: {fileID: 11400000, guid: 61bfdc7c387406945b02e80f829030d1, type: 2}
+  _visitiblityRules: {fileID: 0}
   moveSpeed: 4
   acceleration: 4
   jumpForce: 1.5
