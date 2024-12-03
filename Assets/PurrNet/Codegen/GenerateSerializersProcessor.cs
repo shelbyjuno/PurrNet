@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using PurrNet.Modules;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
+using UnityEngine.Events;
 using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
@@ -29,6 +31,11 @@ namespace PurrNet.Codegen
             {
                 return false;
             }
+            
+            bool isDelegate = PostProcessor.InheritsFrom(type.Resolve(), typeof(Delegate).FullName);
+
+            if (isDelegate)
+                return false;
 
             // Check if the type is a generic instance
             if (type is GenericInstanceType genericInstance)
@@ -77,12 +84,6 @@ namespace PurrNet.Codegen
             if (!ValideType(type))
                 return;
             
-            /*messages.Add(new DiagnosticMessage
-            {
-                DiagnosticType = DiagnosticType.Error,
-                MessageData = type.FullName,
-            });*/
-
             if (!PostProcessor.IsTypeInOwnModule(type, assembly.MainModule))
                 return;
             
@@ -108,14 +109,15 @@ namespace PurrNet.Codegen
             
             bool isNetworkIdentity = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkIdentity).FullName);
             bool isNetworkModule = PostProcessor.InheritsFrom(resolvedType, typeof(NetworkModule).FullName);
+            bool hasINetworkModule = HasInterface(resolvedType, typeof(INetworkModule));
             
             if (!isNetworkIdentity && !isNetworkModule && PostProcessor.InheritsFrom(resolvedType, typeof(Object).FullName) && 
                 !HasInterface(resolvedType, typeof(IPacked)) && 
                 !HasInterface(resolvedType, typeof(IPackedAuto)) && 
                 !HasInterface(resolvedType, typeof(IPackedSimple)))
                 return;
-            
-            if (isNetworkModule)
+
+            if (isNetworkModule || hasINetworkModule)
                 return;
             
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitPacker)).Import(assembly.MainModule);
@@ -157,7 +159,7 @@ namespace PurrNet.Codegen
             var writeMethodP = packerType.GetMethod("Write").Import(mainmodule);
             
             var write = writeMethod.Body.GetILProcessor();
-            GenerateMethod(true, writeMethod, writeMethodP, resolvedType, write, mainmodule, valueArg);
+            GenerateMethod(true, writeMethod, writeMethodP, type, write, mainmodule, valueArg);
             serializerClass.Methods.Add(writeMethod);
             
             // create static read method
@@ -171,7 +173,7 @@ namespace PurrNet.Codegen
             };
             
             var read = readMethod.Body.GetILProcessor();
-            GenerateMethod(false, readMethod, readMethodP, resolvedType, read, mainmodule, valueArg);
+            GenerateMethod(false, readMethod, readMethodP, type, read, mainmodule, valueArg);
             serializerClass.Methods.Add(readMethod);
             
             RegisterSerializersProcessor.HandleType(type.Module, serializerClass, messages);
@@ -315,15 +317,45 @@ namespace PurrNet.Codegen
 
         private static MethodReference CreateSetterMethod(TypeDefinition parent, FieldDefinition field)
         {
-            var method = new MethodDefinition($"Purrnet_Set_{field.Name}", MethodAttributes.Public, parent.Module.TypeSystem.Void);
+            var name = MakeFullNameValidCSharp($"Purrnet_Set_{field.Name}");
+            
+            foreach (var m in parent.Methods)
+            {
+                if (m.Name == name)
+                    return m;
+            }
+            
+            var method = new MethodDefinition(name, MethodAttributes.Public, parent.Module.TypeSystem.Void);
             var valueArg = new ParameterDefinition("value", ParameterAttributes.None, field.FieldType);
             method.Parameters.Add(valueArg);
             
             var setter = method.Body.GetILProcessor();
             
+            FieldReference fieldRef;
+            
+            if (parent.HasGenericParameters)
+            {
+                // Link the field to the open generic instance
+                var resolvedParent = new GenericInstanceType(parent);
+
+                // Populate the generic arguments
+                foreach (var genericArg in parent.GenericParameters)
+                {
+                    resolvedParent.GenericArguments.Add(genericArg);
+                }
+
+                // Create the FieldReference with the resolved generic parent
+                fieldRef = new FieldReference(field.Name, field.FieldType, resolvedParent);
+            }
+            else
+            {
+                // Use the field directly if no generics are involved
+                fieldRef = field;
+            }
+            
             setter.Emit(OpCodes.Ldarg_0);
             setter.Emit(OpCodes.Ldarg_1);
-            setter.Emit(OpCodes.Stfld, field);
+            setter.Emit(OpCodes.Stfld, fieldRef);
             
             setter.Emit(OpCodes.Ret);
             
@@ -333,23 +365,68 @@ namespace PurrNet.Codegen
         
         private static MethodReference CreateGetterMethod(TypeDefinition parent, FieldDefinition field)
         {
-            var method = new MethodDefinition($"Purrnet_Get_{field.Name}", MethodAttributes.Public, field.FieldType);
+            var name = MakeFullNameValidCSharp($"Purrnet_Get_{field.Name}");
+            
+            foreach (var m in parent.Methods)
+            {
+                if (m.Name == name)
+                    return m;
+            }
+            
+            var method = new MethodDefinition(MakeFullNameValidCSharp($"Purrnet_Get_{field.Name}"), MethodAttributes.Public, field.FieldType);
             var getter = method.Body.GetILProcessor();
             
-            getter.Emit(OpCodes.Ldarg_0);
-            getter.Emit(OpCodes.Ldfld, field);
-            getter.Emit(OpCodes.Ret);
+            FieldReference fieldRef;
+            
+            if (parent.HasGenericParameters)
+            {
+                // Link the field to the open generic instance
+                var resolvedParent = new GenericInstanceType(parent);
+
+                // Populate the generic arguments
+                foreach (var genericArg in parent.GenericParameters)
+                {
+                    resolvedParent.GenericArguments.Add(genericArg);
+                }
+
+                // Create the FieldReference with the resolved generic parent
+                fieldRef = new FieldReference(field.Name, field.FieldType, resolvedParent);
+            }
+            else
+            {
+                // Use the field directly if no generics are involved
+                fieldRef = field;
+            }
+
+            getter.Emit(OpCodes.Ldarg_0); // Load "this"
+            getter.Emit(OpCodes.Ldfld, fieldRef); // Load field in the correct generic context
+            getter.Emit(OpCodes.Ret); // Return the field value
             
             parent.Methods.Add(method);
             return method;
         }
+        
+        private static bool TypeContainsFieldOrIsValueType(TypeDefinition type)
+        {
+            if (type.IsValueType)
+                return true;
+            
+            foreach (var field in type.Fields)
+            {
+                if (!field.IsStatic)
+                    return true;
+            }
+
+            return false;
+        }
 
         private static void GenerateMethod(
-            bool isWriting, MethodDefinition method, MethodReference serialize, TypeDefinition type, ILProcessor il,
+            bool isWriting, MethodDefinition method, MethodReference serialize, TypeReference typeRef, ILProcessor il,
             ModuleDefinition mainmodule, ParameterDefinition valueArg)
         {
             var bitPackerType = mainmodule.GetTypeDefinition(typeof(BitPacker)).Import(mainmodule);
             var packerType = mainmodule.GetTypeDefinition(typeof(Packer<>)).Import(mainmodule);
+            var type = typeRef.Resolve();
             
             var writeIsNull = bitPackerType.GetMethod("WriteIsNull", true).Import(mainmodule);
             var readIsNull = bitPackerType.GetMethod("ReadIsNull", true).Import(mainmodule);
@@ -363,7 +440,7 @@ namespace PurrNet.Codegen
                 if (isWriting)
                 {
                     var genericIsNull = new GenericInstanceMethod(writeIsNull);
-                    genericIsNull.GenericArguments.Add(type);
+                    genericIsNull.GenericArguments.Add(typeRef);
                     
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldarg_1);
@@ -372,7 +449,7 @@ namespace PurrNet.Codegen
                 else
                 {
                     var genericIsNull = new GenericInstanceMethod(readIsNull);
-                    genericIsNull.GenericArguments.Add(type);
+                    genericIsNull.GenericArguments.Add(typeRef);
                     
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldarg_1);
@@ -382,7 +459,7 @@ namespace PurrNet.Codegen
                 // if returned false, just return
                 il.Emit(OpCodes.Brfalse, ret);
             }
-           
+            
             if (type.IsEnum)
             {
                 HandleEnums(isWriting, method, serialize, type, il, packerType, mainmodule);
@@ -406,7 +483,13 @@ namespace PurrNet.Codegen
                 if (field.IsStatic)
                     continue;
                 
-                var genericM = CreateGenericMethod(packerType, field.FieldType, serialize, mainmodule);
+                bool isDelegate = PostProcessor.InheritsFrom(field.FieldType.Resolve(), typeof(Delegate).FullName);
+            
+                if (isDelegate)
+                    continue;
+
+                var fieldType = ResolveGenericFieldType(field, typeRef);
+                var genericM = CreateGenericMethod(packerType, fieldType, serialize, mainmodule);
                 
                 // make field public
                 if (!field.IsPublic)
@@ -414,6 +497,9 @@ namespace PurrNet.Codegen
                     if (isWriting)
                     {
                         var getter = CreateGetterMethod(type, field);
+
+                        if (typeRef is GenericInstanceType genericInstanceType)
+                            getter = new MethodReference(getter.Name, getter.ReturnType, genericInstanceType);
                         
                         il.Emit(OpCodes.Ldarg_0);
                         il.Emit(isClass ? OpCodes.Ldarg_S : OpCodes.Ldarga_S, valueArg);
@@ -422,11 +508,24 @@ namespace PurrNet.Codegen
                     }
                     else
                     {
-                        var variable = new VariableDefinition(field.FieldType);
+                        var variable = new VariableDefinition(fieldType);
                         method.Body.Variables.Add(variable);
                         
                         var setter = CreateSetterMethod(type, field);
-                         
+
+                        if (typeRef is GenericInstanceType genericInstanceType)
+                        {
+                            var copy = new MethodReference(setter.Name, setter.ReturnType, genericInstanceType);
+                        
+                            foreach (var param in setter.Parameters)
+                                copy.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, param.ParameterType));
+                        
+                            foreach (var genericParam in setter.GenericParameters)
+                                copy.GenericParameters.Add(new GenericParameter(genericParam.Name, copy));
+                            
+                            setter = copy;
+                        }
+                        
                         il.Emit(OpCodes.Ldarg_0);
                         il.Emit(OpCodes.Ldloca, variable);
                         il.Emit(OpCodes.Call, genericM);
@@ -455,6 +554,47 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Call, readData);*/
             
             il.Append(ret);
+        }
+        
+        static TypeReference ResolveGenericFieldType(FieldDefinition field, TypeReference declaringType)
+        {
+            var fieldType = field.FieldType;
+
+            // If the declaring type is a generic instance
+            if (declaringType is GenericInstanceType genericDeclaringType)
+            {
+                // If the field type has generic parameters
+                if (fieldType.IsGenericParameter)
+                {
+                    // Map the generic parameter to the actual type argument
+                    var genericParam = (GenericParameter)fieldType;
+                    int position = genericParam.Position;
+                    return genericDeclaringType.GenericArguments[position];
+                }
+
+                // If the field type is itself a generic instance
+                if (fieldType is GenericInstanceType fieldGenericInstance)
+                {
+                    var resolvedInstance = new GenericInstanceType(fieldGenericInstance.ElementType);
+                    foreach (var arg in fieldGenericInstance.GenericArguments)
+                    {
+                        if (arg.IsGenericParameter)
+                        {
+                            var genericParam = (GenericParameter)arg;
+                            int position = genericParam.Position;
+                            resolvedInstance.GenericArguments.Add(genericDeclaringType.GenericArguments[position]);
+                        }
+                        else
+                        {
+                            resolvedInstance.GenericArguments.Add(arg);
+                        }
+                    }
+                    return resolvedInstance;
+                }
+            }
+
+            // Return the original field type if no generics are involved
+            return fieldType;
         }
 
         private static void HandleIData(bool isWriting, TypeDefinition type,
