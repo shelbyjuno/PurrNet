@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JamesFrowen.SimpleWeb;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using UnityEngine;
@@ -27,7 +29,7 @@ namespace PurrNet.Transports
             SEND_ONE = 1
         }
         
-        [Serializable]
+        [Serializable, UsedImplicitly]
         private struct ClientAuthenticate
         {
             public string roomName;
@@ -85,7 +87,8 @@ namespace PurrNet.Transports
             }
         }
         
-        public IReadOnlyList<Connection> connections => new [] { new Connection(0) };
+        public IReadOnlyList<Connection> connections => _connections;
+        private readonly List<Connection> _connections = new ();
 
         private void Reset()
         {
@@ -152,6 +155,8 @@ namespace PurrNet.Transports
                     for (var i = 0; i < connectionCount; i++)
                     {
                         Packer<int>.Read(_packer, ref clientId);
+                        var conn = new Connection(clientId);
+                        _connections.Add(conn);
                         onConnected?.Invoke(new Connection(clientId), true);
                     }
 
@@ -167,7 +172,10 @@ namespace PurrNet.Transports
                     
                     int clientId = default;
                     Packer<int>.Read(_packer, ref clientId);
-                    onDisconnected?.Invoke(new Connection(clientId), DisconnectReason.ClientRequest, true);
+                    
+                    var conn = new Connection(clientId);
+                    _connections.Remove(conn);
+                    onDisconnected?.Invoke(conn, DisconnectReason.ClientRequest, true);
                     break;
                 }
                 case SERVER_PACKET_TYPE.SERVER_CLIENT_DATA:
@@ -306,6 +314,7 @@ namespace PurrNet.Transports
 
         public void StopListening()
         {
+            _connections.Clear();
             CancelAll(true);
 
             if (_server != null)
