@@ -6,6 +6,18 @@ namespace PurrNet
     public static class PackNetworkIdentity
     {
         [UsedByIL]
+        public static void WriteIdentityConcrete(this BitPacker packer, NetworkIdentity identity)
+        {
+            WriteIdentity(packer, identity);
+        }
+        
+        [UsedByIL]
+        public static void ReadIdentityConcrete(this BitPacker packer, ref NetworkIdentity identity)
+        {
+            ReadIdentity(packer, ref identity);
+        }
+        
+        [UsedByIL]
         public static void RegisterIdentity<T>() where T : NetworkIdentity
         {
             Packer<T>.RegisterWriter(WriteIdentity);
