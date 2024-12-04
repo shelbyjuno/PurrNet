@@ -161,7 +161,7 @@ namespace PurrNet
                 return;
             }
             
-            if (!_manager.isClientOnly || !_players.localPlayerId.HasValue)
+            if (!_manager.isClient || !_players.localPlayerId.HasValue)
                 return;
             
             var identity = gameObject.GetComponent<NetworkIdentity>();
