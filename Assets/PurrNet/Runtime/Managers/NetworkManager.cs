@@ -501,7 +501,7 @@ namespace PurrNet
         /// The local player of the network manager.
         /// If the local player is not set, this will return the default value of the player id.
         /// </summary>
-        public PlayerID localPlayer => playerModule.localPlayerId ?? default;
+        public PlayerID localPlayer => _clientPlayersManager?.localPlayerId ?? default;
         
         private ScenesModule _clientSceneModule;
         private ScenesModule _serverSceneModule;
@@ -863,7 +863,7 @@ namespace PurrNet
         private void OnNewConnection(Connection conn, bool asserver)
         {
             if (asserver)
-                 _serverModules.OnNewConnection(conn, true);
+                _serverModules.OnNewConnection(conn, true);
             else
             {
                 localClientConnection = conn;
