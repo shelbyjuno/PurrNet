@@ -35,13 +35,29 @@ namespace PurrNet.Transports
             public string clientSecret;
         }
         
-        [SerializeField] private string _roomName;
+        [SerializeField, HideInInspector] private string _roomName;
+        [SerializeField, HideInInspector] private string _region = "eu-central";
+        [SerializeField, HideInInspector] private string _host;
+
+        public string region
+        {
+            get => _region;
+            set => _region = value;
+        }
+        
+        public string host
+        {
+            get => _host;
+            set => _host = value;
+        }
         
         public string roomName
         {
             get => _roomName;
             set => _roomName = value;
         }
+        
+        public bool hasRegionAndHost => !string.IsNullOrEmpty(_region) && !string.IsNullOrEmpty(_host);
         
         public override bool isSupported => true;
         
@@ -280,17 +296,22 @@ namespace PurrNet.Transports
                     var token = new CancellationTokenSource();
                     AddCancellation(token, true);
 
-                    var relayServer = await PurrTransportUtils.GetRelayServerAsync();
+                    if (!hasRegionAndHost)
+                    {
+                        var relayServer = await PurrTransportUtils.GetRelayServerAsync();
+                        _region = relayServer.region;
+                        _host = relayServer.host;
+                    }
 
                     if (token.IsCancellationRequested)
                         return;
 
-                    _hostJoinInfo = await PurrTransportUtils.Alloc(relayServer, _roomName);
+                    _hostJoinInfo = await PurrTransportUtils.Alloc(_region, _roomName);
                     
                     var builder = new UriBuilder
                     {
                         Scheme = _hostJoinInfo.ssl ? "wss" : "ws",
-                        Host = relayServer.host,
+                        Host = _host,
                         Port = _hostJoinInfo.port,
                         Query = string.Empty,
                         Path = string.Empty

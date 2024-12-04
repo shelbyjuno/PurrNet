@@ -12,7 +12,7 @@ namespace PurrNet.Transports
 {
     [UsedImplicitly]
     [Serializable]
-    internal struct RelayServer
+    public struct RelayServer
     {
         public string host;
         public int restPort;
@@ -23,14 +23,14 @@ namespace PurrNet.Transports
     
     [UsedImplicitly]
     [Serializable]
-    internal struct Relayers
+    public struct Relayers
     {
         public RelayServer[] servers;
     }
     
     [UsedImplicitly]
     [Serializable]
-    internal struct HostJoinInfo
+    public struct HostJoinInfo
     {
         public bool ssl;
         public string secret;
@@ -39,7 +39,7 @@ namespace PurrNet.Transports
     
     [UsedImplicitly]
     [Serializable]
-    internal struct ClientJoinInfo
+    public struct ClientJoinInfo
     {
         public bool ssl;
         public string secret;
@@ -47,7 +47,7 @@ namespace PurrNet.Transports
         public int port;
     }
     
-    internal static class PurrTransportUtils
+    public static class PurrTransportUtils
     {
         static UniTask<string> Get(string url)
         {
@@ -75,16 +75,16 @@ namespace PurrNet.Transports
             return res;
         }
         
-        internal static async UniTask<HostJoinInfo> Alloc(RelayServer server, string roomName)
+        internal static async UniTask<HostJoinInfo> Alloc(string region, string roomName)
         {
 #if USE_LOCAL_MASTER
             var url = $"http://localhost:8080/allocate_ws";
 #else
             var url = $"https://purrbalancer.riten.dev:8080/allocate_ws";
 #endif
-            
+
             var request = UnityWebRequest.Get(url);
-            request.SetRequestHeader("region", server.region);
+            request.SetRequestHeader("region", region);
             request.SetRequestHeader("name", roomName);
             var response = await request.SendWebRequest().ToUniTask();
             var text = response.downloadHandler.text;
@@ -105,8 +105,8 @@ namespace PurrNet.Transports
             var received = DateTime.Now;
             return (float)(received - sent).TotalSeconds;
         }
-        
-        public static async UniTask<RelayServer> GetRelayServerAsync()
+
+        public static async UniTask<Relayers> GetRelayServersAsync()
         {
 #if USE_LOCAL_MASTER
             const string MASTER = "http://localhost:8080/servers";
@@ -115,7 +115,12 @@ namespace PurrNet.Transports
 #endif
             var response = await Get(MASTER);
             
-            var servers = JsonUtility.FromJson<Relayers>(response);
+            return JsonUtility.FromJson<Relayers>(response);
+        }
+        
+        public static async UniTask<RelayServer> GetRelayServerAsync()
+        {
+            var servers = await GetRelayServersAsync();
             float minPing = float.MaxValue;
             RelayServer result = default;
             
