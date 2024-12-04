@@ -1,11 +1,12 @@
-#if STEAMWORKS_NET && !DISABLESTEAMWORKS
 using System.Net;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 
 namespace PurrNet.Steam
 {
     public static class PurrSteamUtils
     {
+        [UsedImplicitly]
         public static uint GetIPv4(this string address)
         {
             if (!string.IsNullOrEmpty(address))
@@ -25,4 +26,3 @@ namespace PurrNet.Steam
         }
     }
 }
-#endif
