@@ -9,6 +9,7 @@ using PurrNet.Modules;
 using PurrNet.Packing;
 using PurrNet.Transports;
 using PurrNet.Utils;
+using UnityEngine.Rendering;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
 
@@ -250,18 +251,13 @@ namespace PurrNet
             
             module.AppendToBufferedRPCs(packet, signature);
 
-            Func<PlayerID, bool> predicate = null;
-            
-            if (signature.excludeOwner)
-                predicate = IsNotOwnerPredicate;
-
             switch (signature.type)
             {
                 case RPCType.ServerRPC: SendToServer(packet, signature.channel); break;
                 case RPCType.ObserversRPC:
                 {
                     if (isServer)
-                         SendToObservers(packet, predicate, signature.channel);
+                         SendToObservers(packet, ShouldSend, signature.channel);
                     else SendToServer(packet, signature.channel);
                     break;
                 }
@@ -271,6 +267,16 @@ namespace PurrNet
                     else SendToServer(packet, signature.channel);
                     break;
                 default: throw new ArgumentOutOfRangeException();
+            }
+            
+            return;
+            
+            bool ShouldSend(PlayerID player)
+            {
+                if (signature.runLocally && player == networkManager.localPlayer)
+                    return false;
+
+                return !signature.excludeOwner || IsNotOwnerPredicate(player);
             }
         }
         

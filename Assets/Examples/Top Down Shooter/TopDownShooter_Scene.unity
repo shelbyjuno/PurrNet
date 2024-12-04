@@ -1701,6 +1701,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _roomName: 62449e84f02b4ccf9dccb7d87fc598bd
+  _region: eu-central
+  _host: eu1.purrlay.riten.dev
 --- !u!1001 &1312733901
 PrefabInstance:
   m_ObjectHideFlags: 0
