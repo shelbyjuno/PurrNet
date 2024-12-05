@@ -175,6 +175,12 @@ namespace PurrNet
         protected override void OnSpawned()
         {
             _isFirstTransform = true;
+            int ticksPerSec = networkManager.tickModule.tickRate;
+            int ticksPerBuffer = Mathf.CeilToInt(ticksPerSec * 0.15f) * 2;
+            
+            if (syncPosition)  _position.maxBufferSize = ticksPerBuffer;
+            if (syncRotation) _rotation.maxBufferSize = ticksPerBuffer;
+            if (syncScale) _scale.maxBufferSize = ticksPerBuffer;
         }
 
         protected override void OnObserverAdded(PlayerID player)
