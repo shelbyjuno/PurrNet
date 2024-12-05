@@ -477,7 +477,7 @@ namespace PurrNet.Transports
 
         public void CloseConnection(Connection conn)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void UpdateEvents(float delta)
