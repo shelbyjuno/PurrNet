@@ -101,11 +101,19 @@ namespace PurrNet.Editor
         {
             base.OnInspectorGUI();
             
+            EditorGUILayout.Space();
+
+            // draw help box saying this is meant for dev use only
+            EditorGUILayout.HelpBox("This is meant for development use only.\n" +
+                                    "Usage in production is strictly permitted.", MessageType.Info);
+            
+            EditorGUILayout.Space();
+            
             var transport = (PurrTransport)target;
             
             // draw the room name
             EditorGUILayout.PropertyField(_roomName);
-
+            
             bool oldEnabled = GUI.enabled;
             if (_lookingForBestRegion)
                 GUI.enabled = false;
