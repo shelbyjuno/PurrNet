@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -1255,6 +1256,7 @@ GameObject:
   - component: {fileID: 1216416897}
   - component: {fileID: 1216416896}
   - component: {fileID: 1216416899}
+  - component: {fileID: 1216416900}
   m_Layer: 0
   m_Name: Network
   m_TagString: Untagged
@@ -1293,7 +1295,7 @@ MonoBehaviour:
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
-  _transport: {fileID: 1216416896}
+  _transport: {fileID: 1216416900}
   _networkPrefabs: {fileID: 11400000, guid: 6934ea60d14ebac4a8220004d5a529f5, type: 2}
   _networkRules: {fileID: 11400000, guid: b913c126c92da5a49b92f9d21679308f, type: 2}
   _visibilityRules: {fileID: 0}
@@ -1325,12 +1327,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ced7bf28cdbee104e8cdc34ab761b039, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerPrefab: {fileID: 7942944415848518481, guid: 76a08edfa72e6fe49ba8fc7c96eb70e7, type: 3}
+  playerPrefab: {fileID: 618040544269630320, guid: 76a08edfa72e6fe49ba8fc7c96eb70e7, type: 3}
   spawnPoints:
   - {fileID: 296507700}
   - {fileID: 667181804}
   - {fileID: 171128654}
   - {fileID: 148014638}
+--- !u!114 &1216416900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216416895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 332e746c3c3253246aacad4d5559f1fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _roomName: f3ef3f058ab04d3292371561662776a9
+  _region: africa-south
+  _host: za.purrlay.riten.dev
 --- !u!1001 &1460190913
 PrefabInstance:
   m_ObjectHideFlags: 0

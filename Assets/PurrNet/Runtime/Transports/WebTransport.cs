@@ -66,13 +66,13 @@ namespace PurrNet.Transports
         
         public override bool isSupported => true;
 
-        readonly TcpConfig _tcpConfig = new (noDelay: false, sendTimeout: 0, receiveTimeout: 0);
+        readonly TcpConfig _tcpConfig = new (noDelay: true, sendTimeout: 0, receiveTimeout: 0);
 
         private void Awake()
         {
             ReconstructServer();
             
-            _client = SimpleWebClient.Create(ushort.MaxValue, 5000, new TcpConfig(false, 0, 0));
+            _client = SimpleWebClient.Create(ushort.MaxValue, 5000, _tcpConfig);
             _client.onConnect += OnClientConnected;
             _client.onDisconnect += OnClientDisconnected;
             _client.onData += OnClientReceivedData;
