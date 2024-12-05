@@ -136,7 +136,7 @@ namespace PurrNet.Transports
         private SimpleWebClient _server;
         private SimpleWebClient _client;
         private HostJoinInfo _hostJoinInfo;
-        readonly TcpConfig _tcpConfig = new (noDelay: false, sendTimeout: 0, receiveTimeout: 0);
+        readonly TcpConfig _tcpConfig = new (noDelay: true, sendTimeout: 0, receiveTimeout: 0);
 
         protected override void StartServerInternal()
         {
