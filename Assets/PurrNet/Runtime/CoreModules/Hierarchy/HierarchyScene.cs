@@ -217,10 +217,7 @@ namespace PurrNet.Modules
         private void RemovedObserverFromIdentity(PlayerID player, NetworkIdentity identity)
         {
             if (!identity.IsSpawned(true))
-            {
-                PurrLogger.LogError($"Identity '{identity.name}' is not spawned but is being removed from observer list.");
                 return;
-            }
             
             if (_identitiesToDespawn.TryGetValue(player, out var actual))
             {
@@ -269,8 +266,8 @@ namespace PurrNet.Modules
 
         readonly struct ActionSignature
         {
-            readonly HierarchyActionType type;
-            readonly NetworkID identityId;
+            public readonly HierarchyActionType type;
+            public readonly NetworkID identityId;
             
             public ActionSignature(HierarchyAction action)
             {
@@ -754,8 +751,12 @@ namespace PurrNet.Modules
                     PurrLogger.LogError($"Identity with id {child.id} is already spawned", child);
                     return;
                 }
-
+                
                 var nid = new NetworkID(identities.GetNextId(), actor);
+
+                while (identities.HasIdentity(nid))
+                    nid = new NetworkID(identities.GetNextId(), actor);
+                
                 var siblingIdx = child.transform.parent ? child.transform.GetSiblingIndex() : 0;
                 
                 child.SetIdentity(_manager, _sceneID, prefabId, siblingIdx, nid, (ushort)i, _asServer);
@@ -1256,7 +1257,7 @@ namespace PurrNet.Modules
                         actions = filtered,
                         sceneId = _sceneID
                     };
-                    
+
                     _playersManager.Send(player, data);
                 }
 
@@ -1270,8 +1271,8 @@ namespace PurrNet.Modules
 
         private void FilterActions(List<HierarchyAction> original, List<HierarchyAction> filtered, PlayerID target)
         {
-            if (!_identitiesToSpawnHashset.TryGetValue(target, out var toSpawnSet))
-                toSpawnSet = new DisposableHashSet<NetworkID>(16);
+            if (_identitiesToSpawnHashset.ContainsKey(target))
+                return;
             
             for (int i = 0; i < original.Count; i++)
             {
@@ -1281,7 +1282,7 @@ namespace PurrNet.Modules
                 if (!netId.HasValue)
                     continue;
                 
-                if (action.type == HierarchyActionType.Spawn && toSpawnSet.Contains(netId.Value))
+                if (action.type == HierarchyActionType.Spawn)
                 {
                     filtered.Add(action);
                     continue;
@@ -1295,8 +1296,6 @@ namespace PurrNet.Modules
                     filtered.Add(action);
                 }
             }
-            
-            toSpawnSet.Dispose();
         }
 
         private void HandleIdentitiesThatNeedToBeSpawned(Dictionary<PlayerID, DisposableList<NetworkIdentity>> identitiesToSpawn)
@@ -1374,7 +1373,7 @@ namespace PurrNet.Modules
 
                 foreach (var (_, children) in nodes.children)
                     AddDespawnActionForAllChildren(children, _actionsCache);
-                
+
                 if (_actionsCache.Count > 0)
                     _playersManager.Send(player, actions);
 

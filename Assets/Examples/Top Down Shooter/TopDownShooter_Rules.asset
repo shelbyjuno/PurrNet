@@ -17,7 +17,7 @@ MonoBehaviour:
     despawnAuth: -1
     defaultOwner: 1
     propagateOwnershipByDefault: 1
-    despawnIfOwnerDisconnects: 1
+    despawnIfOwnerDisconnects: 0
   _defaultRpcRules:
     ignoreRequireServerAttribute: 0
     ignoreRequireOwnerAttribute: 0

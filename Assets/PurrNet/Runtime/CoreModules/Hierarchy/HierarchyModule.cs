@@ -163,7 +163,7 @@ namespace PurrNet
             
             var identity = gameObject.GetComponent<NetworkIdentity>();
 
-            if (!_manager.isClient || !_players.localPlayerId.HasValue)
+            if (!_manager.isClientOnly || !_players.localPlayerId.HasValue)
                 return;
             
             if (identity && identity.isSpawned && identity.ShouldClientGiveOwnershipOnSpawn())

@@ -89,5 +89,10 @@ namespace PurrNet
             
             _identities.Clear();
         }
+
+        public bool HasIdentity(NetworkID nid)
+        {
+            return _identities.ContainsKey(nid);
+        }
     }
 }
