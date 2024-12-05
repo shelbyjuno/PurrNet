@@ -488,7 +488,7 @@ namespace PurrNet
         {
             if (!networkManager)
             {
-                _pendingOwnershipRequest = player;
+                SetPendingOwnershipRequest(player);
                 return;
             }
             
@@ -706,7 +706,7 @@ namespace PurrNet
             for (int i = 0; i < _externalModulesView.Count; i++)
                 _externalModulesView[i].OnObserverRemoved(target);
         }
-
+        
         internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)
         {
             _pendingOwnershipRequest = playersLocalPlayerId;

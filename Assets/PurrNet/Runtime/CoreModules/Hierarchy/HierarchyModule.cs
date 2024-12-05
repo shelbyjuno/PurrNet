@@ -161,10 +161,10 @@ namespace PurrNet
                 return;
             }
             
+            var identity = gameObject.GetComponent<NetworkIdentity>();
+
             if (!_manager.isClient || !_players.localPlayerId.HasValue)
                 return;
-            
-            var identity = gameObject.GetComponent<NetworkIdentity>();
             
             if (identity && identity.isSpawned && identity.ShouldClientGiveOwnershipOnSpawn())
                 identity.SetPendingOwnershipRequest(_players.localPlayerId.Value);
