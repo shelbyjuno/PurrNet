@@ -378,7 +378,7 @@ namespace PurrNet.Codegen
             var identityType = module.GetTypeDefinition<NetworkIdentity>();
             var rpcReqRespType = module.GetTypeDefinition<RpcRequestResponseModule>();
             var rpcModule = originalMethod.DeclaringType.Module.GetTypeDefinition<RPCModule>();
-            var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
+            var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer").Import(module);
             var responder = rpcReqRespType.GetMethod("CompleteRequestWithResponse", true).Import(module);
             var responderUniTask = rpcReqRespType.GetMethod("CompleteRequestWithUniTask", true).Import(module);
             var responderWithoutResponse = rpcReqRespType.GetMethod("CompleteRequestWithEmptyResponse").Import(module);
@@ -657,7 +657,7 @@ namespace PurrNet.Codegen
                             }
                             else
                             {
-                                var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
+                                var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer").Import(module);
                                 code.Append(Instruction.Create(OpCodes.Call, getLocalPlayer));
                             }
 
@@ -1338,7 +1338,7 @@ namespace PurrNet.Codegen
                     else
                     {
                         var rpcModule = module.GetTypeDefinition<RPCModule>();
-                        var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer");
+                        var getLocalPlayer = rpcModule.GetMethod("GetLocalPlayer").Import(module);
                         code.Append(Instruction.Create(OpCodes.Call, getLocalPlayer));
                     }
                 }
