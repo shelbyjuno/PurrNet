@@ -808,6 +808,60 @@ namespace PurrNet
         }
 
         /// <summary>
+        /// Compares the scene with the scene ID.
+        /// Scene is a unity scene and SceneID is a network scene.
+        /// </summary>
+        /// <param name="scene">Unity scene to compare.</param>
+        /// <param name="sceneID">Network scene to compare.</param>
+        /// <returns>Whether the sceneID is linked to the unity scene.</returns>
+        public bool MatchesSceneID(Scene scene, SceneID sceneID)
+        {
+            if (sceneModule.TryGetSceneID(scene, out var id))
+                return id == sceneID;
+            return false;
+        }
+        
+        /// <summary>
+        /// Tries to get the scene ID of the given scene.
+        /// </summary>
+        /// <param name="scene">Unity scene to get the scene ID of.</param>
+        /// <param name="sceneID">The scene ID if found.</param>
+        /// <returns>Whether the scene ID was found.</returns>
+        public bool TryGetSceneID(Scene scene, out SceneID sceneID)
+        {
+            return sceneModule.TryGetSceneID(scene, out sceneID);
+        }
+        
+        /// <summary>
+        /// Tries to get the scene of the given scene ID.
+        /// </summary>
+        /// <param name="sceneID">The scene ID to get the scene of.</param>
+        /// <param name="scene">The scene if found.</param>
+        /// <returns>Whether the scene was found.</returns>
+        public bool TryGetScene(SceneID sceneID, out Scene scene)
+        {
+            if (sceneModule.TryGetSceneState(sceneID, out var state))
+            {
+                scene = state.scene;
+                return true;
+            }
+            
+            scene = default;
+            return false;
+        }
+        
+        /// <summary>
+        /// Tries to get the scene state of the given scene ID.
+        /// </summary>
+        /// <param name="sceneID">The scene ID to get the state of.</param>
+        /// <param name="state">The state if found.</param>
+        /// <returns>Whether the state was found.</returns>
+        public bool TryGetSceneState(SceneID sceneID, out SceneState state)
+        {
+            return sceneModule.TryGetSceneState(sceneID, out state);
+        }
+
+        /// <summary>
         /// Starts the server.
         /// This will start the transport server.
         /// </summary>
