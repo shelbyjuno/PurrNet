@@ -652,6 +652,8 @@ namespace PurrNet
         
         private int _spawnedCount;
         
+        public bool hasOwnerPended => _pendingOwnershipRequest.HasValue;
+
         internal void TriggerSpawnEvent(bool asServer)
         {
             InternalOnSpawn(asServer);
