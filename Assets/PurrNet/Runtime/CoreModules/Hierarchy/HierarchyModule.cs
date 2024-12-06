@@ -151,7 +151,7 @@ namespace PurrNet
                 return;
             }
 
-            PreAssignOwner(gameObject);
+            PreAssignOwner(_manager, gameObject);
             
             string name = gameObject.name;
 
@@ -164,14 +164,14 @@ namespace PurrNet
             }
         }
 
-        private void PreAssignOwner(GameObject gameObject)
+        private void PreAssignOwner(NetworkManager manager, GameObject gameObject)
         {
             var identity = gameObject.GetComponent<NetworkIdentity>();
 
             if (!_manager.isClient || !_players.localPlayerId.HasValue)
                 return;
             
-            if (identity && !identity.hasOwnerPended && identity.ShouldClientGiveOwnershipOnSpawn())
+            if (identity && !identity.hasOwnerPended && identity.ShouldClientGiveOwnershipOnSpawn(manager))
                 identity.SetPendingOwnershipRequest(_players.localPlayerId.Value);
         }
 
