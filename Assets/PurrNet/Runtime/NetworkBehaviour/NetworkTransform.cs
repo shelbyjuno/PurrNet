@@ -175,6 +175,12 @@ namespace PurrNet
         protected override void OnSpawned()
         {
             _isFirstTransform = true;
+            int ticksPerSec = networkManager.tickModule.tickRate;
+            int ticksPerBuffer = Mathf.CeilToInt(ticksPerSec * 0.15f) * 2;
+            
+            if (syncPosition)  _position.maxBufferSize = ticksPerBuffer;
+            if (syncRotation) _rotation.maxBufferSize = ticksPerBuffer;
+            if (syncScale) _scale.maxBufferSize = ticksPerBuffer;
         }
 
         protected override void OnObserverAdded(PlayerID player)
@@ -182,10 +188,8 @@ namespace PurrNet
             SendLatestTransform(player, GetCurrentTransformData());
         }
 
-        protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
+        protected override void OnOwnerReconnected(PlayerID ownerId)
         {
-            if (!asServer) return;
-            
             ReconcileTickId(ownerId, _id);
         }
 
@@ -245,8 +249,8 @@ namespace PurrNet
                     _ticksSinceLastSend = 0;
 
                     var data = GetCurrentTransformData();
-
-                    if (!data.Equals(_lastSentData, _tolerances))
+                    
+                    if (_wasLastDirty ? !data.Equals(_lastSentData) : !data.Equals(_lastSentData, _tolerances))
                     {
                         if (isServer)
                              SendToAll(data);

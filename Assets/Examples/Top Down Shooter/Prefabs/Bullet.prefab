@@ -71,9 +71,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  speed: 8
+  speed: 1
   damage: 25
-  lifeTime: 2
+  lifeTime: 20
   hitDetection: 0
 --- !u!114 &7176444390882670587
 MonoBehaviour:

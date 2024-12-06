@@ -1,10 +1,57 @@
 ﻿using PurrNet.Modules;
 using PurrNet.Packing;
+using UnityEngine;
 
 namespace PurrNet
 {
     public static class PackNetworkIdentity
     {
+        [UsedByIL]
+        public static void WriteIdentityConcrete(this BitPacker packer, NetworkIdentity identity)
+        {
+            WriteIdentity(packer, identity);
+        }
+        
+        [UsedByIL]
+        public static void ReadIdentityConcrete(this BitPacker packer, ref NetworkIdentity identity)
+        {
+            ReadIdentity(packer, ref identity);
+        }
+        
+        [UsedByIL]
+        public static void WriteGameObject(this BitPacker packer, GameObject go)
+        {
+            NetworkIdentity identity = null;
+            if (go) identity = go.GetComponent<NetworkIdentity>();
+            WriteIdentity(packer, identity);
+        }
+        
+        [UsedByIL]
+        public static void ReadGameObject(this BitPacker packer, ref GameObject go)
+        {
+            NetworkIdentity identity = null;
+            ReadIdentity(packer, ref identity);
+
+            go = identity ? identity.gameObject : null;
+        }
+        
+        [UsedByIL]
+        public static void WriteTrasform(this BitPacker packer, Transform trs)
+        {
+            NetworkIdentity identity = null;
+            if (trs) identity = trs.GetComponent<NetworkIdentity>();
+            WriteIdentity(packer, identity);
+        }
+        
+        [UsedByIL]
+        public static void ReadTrasform(this BitPacker packer, ref Transform trs)
+        {
+            NetworkIdentity identity = null;
+            ReadIdentity(packer, ref identity);
+
+            trs = identity ? identity.transform : null;
+        }
+        
         [UsedByIL]
         public static void RegisterIdentity<T>() where T : NetworkIdentity
         {

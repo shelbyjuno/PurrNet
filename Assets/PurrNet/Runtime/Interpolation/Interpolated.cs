@@ -23,6 +23,7 @@ namespace PurrNet
         {
             _lastValue = value;
             _buffer.Clear();
+            _timer = 0f;
         }
         
         public Interpolated(LerpFunction<T> lerp, float tickDelta, T initialValue = default, int maxBufferSize = 2)
@@ -45,7 +46,11 @@ namespace PurrNet
         {
             while (true)
             {
-                if (_buffer.Count <= 0) return _lastValue;
+                if (_buffer.Count <= 0)
+                {
+                    _timer = 0f;
+                    return _lastValue;
+                }
 
                 float lerp = Mathf.Clamp01(_timer / tickDelta);
 
