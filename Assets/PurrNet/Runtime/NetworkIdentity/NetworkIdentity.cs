@@ -528,16 +528,26 @@ namespace PurrNet
         {
             if (!networkManager)
             {
+                PurrLogger.LogError("Trying to give ownership to " + player + " but identity isn't spawned.", this);
                 SetPendingOwnershipRequest(player);
                 return;
             }
             
-            if (_pendingOwnershipRequest.HasValue)
-                _pendingOwnershipRequest = null;
-            
+            ClearPendingRequest();
             GiveOwnershipInternal(player, silent);
         }
-        
+
+        private void ClearPendingRequest()
+        {
+            var r = root;
+            if (r)
+            {
+                var pending = root._pendingOwnershipRequest;
+                if (pending.HasValue)
+                    root._pendingOwnershipRequest = null;
+            }
+        }
+
         /// <summary>
         /// Spawns the object over the network.
         /// The gameobject must contain a PrefabLink component in order to spawn.
@@ -571,10 +581,12 @@ namespace PurrNet
             
             if (!networkManager || (link && link._autoSpawnCalledFrame == Time.frameCount))
             {
-                _pendingOwnershipRequest = player;
+                var r = root;
+                if (r) r._pendingOwnershipRequest = player;
                 return;
             }
             
+            ClearPendingRequest();
             GiveOwnershipInternal(player.Value, silent);
         }
         
@@ -754,7 +766,8 @@ namespace PurrNet
         
         internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)
         {
-            _pendingOwnershipRequest = playersLocalPlayerId;
+            var r = root;
+            if (r) r._pendingOwnershipRequest = playersLocalPlayerId;
         }
 
         internal void SetIsSpawned(bool value, bool asServer)

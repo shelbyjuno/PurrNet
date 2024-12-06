@@ -1,5 +1,4 @@
 using PurrNet;
-using PurrNet.Logging;
 using UnityEngine;
 
 public class SomeBehaviour : NetworkIdentity
@@ -10,6 +9,18 @@ public class SomeBehaviour : NetworkIdentity
             return;
 
         FuckYou("Hello, World!");
+    }
+    
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.J))
+            ObsDoSomething();
+    }
+
+    [ObserversRpc(requireServer:false)]
+    private void ObsDoSomething(RPCInfo info = default)
+    {
+        Debug.Log($"Called by {info.sender}, I am {localPlayer}");
     }
     
     [ObserversRpc(runLocally:true)]
