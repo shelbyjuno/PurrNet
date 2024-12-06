@@ -300,34 +300,74 @@ namespace PurrNet
         [UsedImplicitly]
         public bool IsSpawned(bool asServer) => asServer ? _isSpawnedServer : _isSpawnedClient;
 
+        /// <summary>
+        /// Called when this object is spawned
+        /// This is only called once even if in host mode.
+        /// </summary>
         protected virtual void OnSpawned() { }
         
+        /// <summary>
+        /// Called when this object is de-spawned.
+        /// This is only called once even if in host mode.
+        /// </summary>
         protected virtual void OnDespawned() { }
         
+        /// <summary>
+        /// Called when this object is spawned.
+        /// This might be called twice times in host mode.
+        /// Once for the server and once for the client.
+        /// </summary>
+        /// <param name="asServer">Is this on the server</param>
         protected virtual void OnSpawned(bool asServer) { }
         
+        /// <summary>
+        /// Called before the NetworkModules are initialized.
+        /// You can use this to update their values before they are networked.
+        /// </summary>
         protected virtual void OnInitializeModules() { }
         
+        /// <summary>
+        /// Called when this object is de-spawned.
+        /// This might be called twice times in host mode.
+        /// Once for the server and once for the client.
+        /// </summary>
+        /// <param name="asServer">Is this on the server</param>
         protected virtual void OnDespawned(bool asServer) { }
 
+        /// <summary>
+        /// Called when the owner of this object changes.
+        /// </summary>
+        /// <param name="oldOwner">The old owner of this object</param>
+        /// <param name="newOwner">The new owner of this object</param>
+        /// <param name="asServer">Is this on the server</param>
         protected virtual void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) { }
 
-        protected virtual void OnOwnerDisconnected(PlayerID ownerId, bool asServer) { }
+        /// <summary>
+        /// Called when the owner of this object disconnects.
+        /// Server only.
+        /// </summary>
+        /// <param name="ownerId">The current owner id</param>
+        protected virtual void OnOwnerDisconnected(PlayerID ownerId) { }
 
-        protected virtual void OnOwnerConnected(PlayerID ownerId, bool asServer) { }
+        /// <summary>
+        /// Called when the owner of this object reconnects.
+        /// Server only.
+        /// </summary>
+        /// <param name="ownerId">The current owner id</param>
+        protected virtual void OnOwnerReconnected(PlayerID ownerId) { }
         
         /// <summary>
         /// Called when an observer is added.
         /// Server only.
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="player">The observer player id</param>
         protected virtual void OnObserverAdded(PlayerID player) { }
         
         /// <summary>
         /// Called when an observer is removed.
         /// Server only.
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="player">The observer player id</param>
         protected virtual void OnObserverRemoved(PlayerID player) { }
 
         public bool IsNotOwnerPredicate(PlayerID player)
@@ -675,20 +715,20 @@ namespace PurrNet
                 _externalModulesView[i].OnOwnerChanged(oldOwner, newOwner, asServer);
         }
 
-        internal void TriggerOnOwnerDisconnected(PlayerID ownerId, bool asServer)
+        internal void TriggerOnOwnerDisconnected(PlayerID ownerId)
         {
-            OnOwnerDisconnected(ownerId, asServer);
+            OnOwnerDisconnected(ownerId);
             
             for (int i = 0; i < _externalModulesView.Count; i++)
-                _externalModulesView[i].OnOwnerDisconnected(ownerId, asServer);
+                _externalModulesView[i].OnOwnerDisconnected(ownerId);
         }
 
         internal void TriggerOnOwnerReconnected(PlayerID ownerId, bool asServer)
         {
-            OnOwnerConnected(ownerId, asServer);
+            OnOwnerReconnected(ownerId);
             
             for (int i = 0; i < _externalModulesView.Count; i++)
-                _externalModulesView[i].OnOwnerConnected(ownerId, asServer);
+                _externalModulesView[i].OnOwnerReconnected(ownerId);
         }
 
         public void TriggerOnObserverAdded(PlayerID target)

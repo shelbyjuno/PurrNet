@@ -188,10 +188,8 @@ namespace PurrNet
             SendLatestTransform(player, GetCurrentTransformData());
         }
 
-        protected override void OnOwnerConnected(PlayerID ownerId, bool asServer)
+        protected override void OnOwnerReconnected(PlayerID ownerId)
         {
-            if (!asServer) return;
-            
             ReconcileTickId(ownerId, _id);
         }
 

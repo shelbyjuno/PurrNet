@@ -75,9 +75,9 @@ namespace PurrNet
         
         public virtual void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer) { }
 
-        public virtual void OnOwnerDisconnected(PlayerID ownerId, bool asServer) { }
+        public virtual void OnOwnerDisconnected(PlayerID ownerId) { }
 
-        public virtual void OnOwnerConnected(PlayerID ownerId, bool asServer) { }
+        public virtual void OnOwnerReconnected(PlayerID ownerId) { }
         
         public void SetComponentParent(NetworkIdentity p, byte i, string moduleName)
         {
