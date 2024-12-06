@@ -151,6 +151,8 @@ namespace PurrNet
                 return;
             }
 
+            PreAssignOwner(gameObject);
+            
             string name = gameObject.name;
 
             hierarchy.Spawn(ref gameObject);
@@ -160,7 +162,10 @@ namespace PurrNet
                 PurrLogger.LogError($"Failed to spawn '{name}'.");
                 return;
             }
-            
+        }
+
+        private void PreAssignOwner(GameObject gameObject)
+        {
             var identity = gameObject.GetComponent<NetworkIdentity>();
 
             if (!_manager.isClient || !_players.localPlayerId.HasValue)
