@@ -93,6 +93,9 @@ namespace PurrNet
         [ObserversRpc]
         private void ObserversRpc(int index, object value)
         {
+            if (IsController(_ownerAuth))
+                return;
+            
             if (index < 0 || index >= _reflectedValues.Length)
             {
                 PurrLogger.LogError($"Invalid index {index} on {name}", this);
