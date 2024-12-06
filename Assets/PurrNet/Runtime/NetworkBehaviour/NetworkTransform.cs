@@ -251,8 +251,8 @@ namespace PurrNet
                     _ticksSinceLastSend = 0;
 
                     var data = GetCurrentTransformData();
-
-                    if (!data.Equals(_lastSentData, _tolerances))
+                    
+                    if (_wasLastDirty ? !data.Equals(_lastSentData) : !data.Equals(_lastSentData, _tolerances))
                     {
                         if (isServer)
                              SendToAll(data);
