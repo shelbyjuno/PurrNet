@@ -13,9 +13,16 @@ namespace PurrNet.Modules
         public PurrSceneSettings settings;
     }
 
-    internal struct SceneState
+    public struct SceneState
     {
+        /// <summary>
+        /// The unity scene object this ID is associated with
+        /// </summary>
         public Scene scene;
+        
+        /// <summary>
+        /// The network settings for this scene
+        /// </summary>
         public PurrSceneSettings settings;
 
         public SceneState(Scene scene, PurrSceneSettings settings)
@@ -95,7 +102,7 @@ namespace PurrNet.Modules
             _scenePlayers = scenePlayersModule;
         }
         
-        internal bool TryGetSceneState(SceneID sceneID, out SceneState state)
+        public bool TryGetSceneState(SceneID sceneID, out SceneState state)
         {
             return _scenes.TryGetValue(sceneID, out state);
         }

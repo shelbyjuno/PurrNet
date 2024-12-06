@@ -52,7 +52,10 @@ namespace PurrNet
                         return;
                     }
 
-                    if (value.Equals(_value))
+                    bool bothNull = value == null && _value == null;
+                    bool bothEqual = value != null && value.Equals(_value);
+            
+                    if (bothNull || bothEqual)
                         return;
 
                     _value = value;
@@ -159,7 +162,10 @@ namespace PurrNet
 
             _id = packetId;
 
-            if (_value.Equals(newValue))
+            bool bothNull = _value == null && newValue == null;
+            bool bothEqual = _value != null && _value.Equals(newValue);
+            
+            if (bothNull || bothEqual)
                 return;
             
             _value = newValue;
@@ -224,10 +230,11 @@ namespace PurrNet
             
             _id = packetId;
 
-            if (_value.Equals(newValue))
-            {
+            bool bothNull = _value == null && newValue == null;
+            bool bothEqual = _value != null && _value.Equals(newValue);
+            
+            if (bothNull || bothEqual)
                 return;
-            }
             
             _value = newValue;
             onChanged?.Invoke(value);

@@ -151,22 +151,18 @@ namespace PurrNet
                 return;
             }
 
-            string name = gameObject.name;
-
+            PreAssignOwner(_manager, gameObject);
             hierarchy.Spawn(ref gameObject);
+        }
 
-            if (gameObject == null)
-            {
-                PurrLogger.LogError($"Failed to spawn '{name}'.");
-                return;
-            }
-            
+        private void PreAssignOwner(NetworkManager manager, GameObject gameObject)
+        {
             var identity = gameObject.GetComponent<NetworkIdentity>();
 
             if (!_manager.isClient || !_players.localPlayerId.HasValue)
                 return;
             
-            if (identity && identity.isSpawned && identity.ShouldClientGiveOwnershipOnSpawn())
+            if (identity && !identity.hasOwnerPended && identity.ShouldClientGiveOwnershipOnSpawn(manager))
                 identity.SetPendingOwnershipRequest(_players.localPlayerId.Value);
         }
 

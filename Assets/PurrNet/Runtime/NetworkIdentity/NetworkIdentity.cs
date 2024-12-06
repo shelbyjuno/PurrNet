@@ -532,6 +532,9 @@ namespace PurrNet
                 return;
             }
             
+            if (_pendingOwnershipRequest.HasValue)
+                _pendingOwnershipRequest = null;
+            
             GiveOwnershipInternal(player, silent);
         }
         
@@ -652,6 +655,8 @@ namespace PurrNet
         
         private int _spawnedCount;
         
+        public bool hasOwnerPended => _pendingOwnershipRequest.HasValue;
+
         internal void TriggerSpawnEvent(bool asServer)
         {
             InternalOnSpawn(asServer);

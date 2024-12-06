@@ -95,7 +95,7 @@ namespace PurrNet
                 newPlayer = Instantiate(playerPrefab);
             }
             
-            newPlayer.SetPendingOwnershipRequest(player);
+            newPlayer.GiveOwnership(player);
         }
     }
 }
