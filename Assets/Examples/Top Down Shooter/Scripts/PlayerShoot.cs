@@ -17,9 +17,7 @@ namespace PurrNet.Examples.TopDownShooter
                 return;
 
             var trs = transform;
-            var bullet = Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
-
-            bullet.GiveOwnership(owner);
+            Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
         }
     }
 }

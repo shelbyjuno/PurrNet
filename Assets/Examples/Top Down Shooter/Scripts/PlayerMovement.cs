@@ -27,16 +27,6 @@ namespace PurrNet.Examples.TopDownShooter
                 enabled = isOwner;
         }
 
-        protected override void OnOwnerReconnected(PlayerID ownerId)
-        {
-            PurrLogger.Log($"Player '{ownerId}' connected.", this);
-        }
-
-        protected override void OnOwnerDisconnected(PlayerID ownerId)
-        {
-            PurrLogger.Log($"Player '{ownerId}' disconnected.", this);
-        }
-
         private void Update()
         {
             if (!_controller)
