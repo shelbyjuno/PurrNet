@@ -532,6 +532,9 @@ namespace PurrNet
                 return;
             }
             
+            if (_pendingOwnershipRequest.HasValue)
+                _pendingOwnershipRequest = null;
+            
             GiveOwnershipInternal(player, silent);
         }
         

@@ -152,16 +152,7 @@ namespace PurrNet
             }
 
             PreAssignOwner(_manager, gameObject);
-            
-            string name = gameObject.name;
-
             hierarchy.Spawn(ref gameObject);
-
-            if (gameObject == null)
-            {
-                PurrLogger.LogError($"Failed to spawn '{name}'.");
-                return;
-            }
         }
 
         private void PreAssignOwner(NetworkManager manager, GameObject gameObject)
