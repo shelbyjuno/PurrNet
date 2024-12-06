@@ -166,7 +166,7 @@ namespace PurrNet
             if (!_manager.isClient || !_players.localPlayerId.HasValue)
                 return;
             
-            if (identity && identity.isSpawned && identity.ShouldClientGiveOwnershipOnSpawn())
+            if (identity && !identity.hasOwnerPended && identity.ShouldClientGiveOwnershipOnSpawn())
                 identity.SetPendingOwnershipRequest(_players.localPlayerId.Value);
         }
 
