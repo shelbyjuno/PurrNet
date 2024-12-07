@@ -703,7 +703,7 @@ namespace PurrNet.Modules
             
             var info = new RPCInfo
             {
-                sender = player,
+                sender = packet.senderId,
                 asServer = asServer
             };
 
