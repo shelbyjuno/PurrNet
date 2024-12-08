@@ -7,12 +7,14 @@ namespace PurrNet.StateMachine.InspectorEditor
     public class StateMachineEditor : UnityEditor.Editor
     {
         private StateMachine _stateMachine;
+        SerializedProperty _ownerAuthProperty;
         SerializedProperty _statesProperty;
 
         private void OnEnable()
         {
             _stateMachine = target as StateMachine;
             _statesProperty = serializedObject.FindProperty("_states");
+            _ownerAuthProperty = serializedObject.FindProperty("ownerAuth");
         }
 
         public override void OnInspectorGUI()
@@ -23,6 +25,7 @@ namespace PurrNet.StateMachine.InspectorEditor
             if (Application.isPlaying)
                 EditorGUI.BeginDisabledGroup(true);
 
+            EditorGUILayout.PropertyField(_ownerAuthProperty, new GUIContent("Owner Auth"));
             EditorGUILayout.PropertyField(_statesProperty, new GUIContent("States"), true);
 
             if (Application.isPlaying)

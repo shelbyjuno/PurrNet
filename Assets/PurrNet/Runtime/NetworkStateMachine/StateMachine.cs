@@ -9,7 +9,7 @@ namespace PurrNet.StateMachine
     [DefaultExecutionOrder(-1000)]
     public sealed class StateMachine : NetworkBehaviour
     {
-        public static StateMachine instance { get; private set; }
+        [SerializeField] private bool ownerAuth = false;
         
         [SerializeField] List<StateNode> _states;
         
@@ -32,16 +32,10 @@ namespace PurrNet.StateMachine
         public int previousStateId => _previousStateId;
         public StateNode currentStateNode => _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
                     null : _states[_currentState.stateId];
+        private bool _initialized;
 
         private void Awake()
         {
-            if (instance)
-            {
-                PurrLogger.LogError("There should only be one StateMachine in the scene");
-                return;
-            }
-            
-            instance = this;
             _currentState.stateId = -1;
             
             for (var i = 0; i < _states.Count; i++)
@@ -49,12 +43,6 @@ namespace PurrNet.StateMachine
                 var state = _states[i];
                 state.Setup(this);
             }
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            instance = null;
         }
 
         private void Update()
@@ -69,9 +57,14 @@ namespace PurrNet.StateMachine
         protected override void OnSpawned(bool asServer)
         {
             base.OnSpawned(asServer);
+
+            if (_initialized)
+                return;
             
-            if(asServer && _states.Count > 0)
+            if(IsController(ownerAuth) && _states.Count > 0)
                 SetState(_states[0]);
+            
+            _initialized = true;
         }
 
         public Type GetDataType(int stateId)
@@ -86,10 +79,16 @@ namespace PurrNet.StateMachine
             return generics.Length == 0 ? null : generics[0];
         }
 
+        [ServerRpc]
+        private void RpcStateChange_Server<T>(StateMachineState state, bool hasData, T data)
+        {
+            RpcStateChange<T>(state, hasData, data);
+        }
+
         [ObserversRpc(bufferLast:true)]
         private void RpcStateChange<T>(StateMachineState state, bool hasData, T data)
         {
-            if (isServer) return;
+            if (IsController(ownerAuth)) return;
     
             var activeState = _currentState.stateId < 0 || _currentState.stateId >= _states.Count ? 
                 null : _states[_currentState.stateId];
@@ -135,7 +134,7 @@ namespace PurrNet.StateMachine
             if (oldState)
             {
                 oldState.Exit(true);
-                if (!isServer)
+                if (!IsController(ownerAuth))
                     oldState.Exit(false);
             }
             
@@ -151,10 +150,10 @@ namespace PurrNet.StateMachine
         /// <typeparam name="T">Your data type</typeparam>
         public void SetState<T>(StateNode<T> state, T data)
         {
-            if (!isServer)
+            if (!IsController(ownerAuth))
             {
                 PurrLogger.LogError(
-                    $"Only the server can set state. Client tried to set state to {state.name}:{state.GetType().Name}"
+                    $"Only the controller can set state. Non-owner tried to set state to {state.name}:{state.GetType().Name} | OwnerAuth: {ownerAuth}"
                 );
                 return;
             }
@@ -162,14 +161,17 @@ namespace PurrNet.StateMachine
             UpdateStateId(state);
             _currentState.data = data;
     
-            RpcStateChange(_currentState, true, data);
+            if(isServer)
+                RpcStateChange(_currentState, true, data);
+            else
+                RpcStateChange_Server(_currentState, true, data);
 
             if (state)
             {
                 state.Enter(data, true);
                 //state.Enter(true);
 
-                if (!isServer)
+                if (!IsController(ownerAuth))
                 {
                     state.Enter(data, false);
                     //state.Enter(false);
@@ -185,10 +187,10 @@ namespace PurrNet.StateMachine
         /// <param name="state">Reference to the state you want to go to</param>
         public void SetState(StateNode state)
         {
-            if (!isServer)
+            if (!IsController(ownerAuth))
             {
                 PurrLogger.LogError(
-                    $"Only the server can set state. Client tried to set state to {state.name}:{state.GetType().Name}"
+                    $"Only the controller can set state. Non-owner tried to set state to {state.name}:{state.GetType().Name} | OwnerAuth: {ownerAuth}"
                 );
                 return;
             }
@@ -196,13 +198,16 @@ namespace PurrNet.StateMachine
             UpdateStateId(state);
             _currentState.data = null;
     
-            RpcStateChange<ushort>(_currentState, false, 0);
+            if(isServer)
+                RpcStateChange<ushort>(_currentState, false, 0);
+            else
+                RpcStateChange_Server<ushort>(_currentState, false, 0);
 
             if (state)
             {
                 state.Enter(true);
 
-                if (!isServer)
+                if (!IsController(ownerAuth))
                     state.Enter(false);
             }
             
