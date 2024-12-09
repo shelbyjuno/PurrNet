@@ -20,6 +20,11 @@ namespace PurrNet
         {
             bool isControlling = IsController(_ownerAuth);
             
+            bool shouldReconcile = (hasConnectedOwner && isOwner && !asServer) || (asServer && isControlling);
+
+            if (shouldReconcile)
+                Reconcile();
+            
             if (_wasController != isControlling)
             {
                 _wasController = isControlling;
