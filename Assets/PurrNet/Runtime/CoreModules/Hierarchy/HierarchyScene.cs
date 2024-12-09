@@ -174,8 +174,11 @@ namespace PurrNet.Modules
                 };
 
                 for (int j = 0; j < CACHE.Count; ++j)
+                {
                     SpawnIdentity(action, CACHE[j], (ushort)j, _asServer);
-
+                    _spawnedThisFrame.Add(CACHE[j]);
+                }
+                
                 if (_asServer)
                     _history.AddSpawnAction(action, default);
                 onIdentityRootSpawned?.Invoke(root);
@@ -1178,7 +1181,7 @@ namespace PurrNet.Modules
             }
         }
 
-        internal void TriggerSpawnEvents()
+        private void TriggerSpawnEvents()
         {
             var spawnedThisFrameCount = _spawnedThisFrame.Count;
 
