@@ -17,6 +17,7 @@ namespace PurrNet
     }
     
     public delegate void OnSubscribeDelegate(NetworkManager manager, bool asServer);
+    public delegate void OnSubscribeSimpleDelegate(NetworkManager manager);
 
     public sealed partial class NetworkManager
     {
@@ -26,17 +27,41 @@ namespace PurrNet
         /// <summary>
         /// Event called when the network is started.
         /// This should be used to subscribe to network events.
+        /// This is called twice, once for the server and once for the client.
         /// </summary>
         public event OnSubscribeDelegate onNetworkStarted;
         
         /// <summary>
         /// Event called when the network is shutdown.
         /// This should be used to unsubscribe from network events.
+        /// This is called twice, once for the server and once for the client.
         /// </summary>
         public event OnSubscribeDelegate onNetworkShutdown;
         
+        /// <summary>
+        /// Event called when the network is started.
+        /// This should be used to subscribe to network events.
+        /// This is called once even if the network is started as both server and client.
+        /// </summary>
+        public event OnSubscribeSimpleDelegate onNetworkStartedSimple;
+        
+        /// <summary>
+        /// Event called when the network is shutdown.
+        /// This should be used to unsubscribe from network events.
+        /// This is called once even if the network is started as both server and client.
+        /// </summary>
+        public event OnSubscribeSimpleDelegate onNetworkShutdownSimple;
+        
+        bool _isSubscribed;
+        
         private void TriggerSubscribeEvents(bool asServer)
         {
+            if (!_isSubscribed)
+            {
+                _isSubscribed = true;
+                onNetworkStartedSimple?.Invoke(this);
+            }
+            
             onNetworkStarted?.Invoke(this, asServer);
             
             for (var i = 0; i < _subscribeEvents.Count; i++)
@@ -54,6 +79,12 @@ namespace PurrNet
         
         private void TriggerUnsubscribeEvents(bool asServer)
         {
+            if (_isSubscribed)
+            {
+                _isSubscribed = false;
+                onNetworkShutdownSimple?.Invoke(this);
+            }
+            
             onNetworkShutdown?.Invoke(this, asServer);
             
             for (var i = 0; i < _unsubscribeEvents.Count; i++)
