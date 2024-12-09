@@ -15,14 +15,30 @@ namespace PurrNet
         
         void Unsubscribe(NetworkManager manager, bool asServer);
     }
+    
+    public delegate void OnSubscribeDelegate(NetworkManager manager, bool asServer);
 
     public sealed partial class NetworkManager
     {
         readonly List<RegisterEventsDelegate> _subscribeEvents = new ();
         readonly List<RegisterEventsDelegate> _unsubscribeEvents = new ();
         
+        /// <summary>
+        /// Event called when the network is started.
+        /// This should be used to subscribe to network events.
+        /// </summary>
+        public event OnSubscribeDelegate onNetworkStarted;
+        
+        /// <summary>
+        /// Event called when the network is shutdown.
+        /// This should be used to unsubscribe from network events.
+        /// </summary>
+        public event OnSubscribeDelegate onNetworkShutdown;
+        
         private void TriggerSubscribeEvents(bool asServer)
         {
+            onNetworkStarted?.Invoke(this, asServer);
+            
             for (var i = 0; i < _subscribeEvents.Count; i++)
             {
                 try
@@ -38,6 +54,8 @@ namespace PurrNet
         
         private void TriggerUnsubscribeEvents(bool asServer)
         {
+            onNetworkShutdown?.Invoke(this, asServer);
+            
             for (var i = 0; i < _unsubscribeEvents.Count; i++)
             {
                 try
