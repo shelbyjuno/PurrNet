@@ -1628,6 +1628,7 @@ GameObject:
   - component: {fileID: 1216416901}
   - component: {fileID: 1216416902}
   - component: {fileID: 1216416903}
+  - component: {fileID: 1216416904}
   m_Layer: 0
   m_Name: Network
   m_TagString: Untagged
@@ -1648,7 +1649,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _startServerFlags: 13
-  _startClientFlags: 6
+  _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
   _transport: {fileID: 1216416902}
@@ -1722,6 +1723,24 @@ MonoBehaviour:
   _certPath: 
   _certPassword: 
   _sslProtocols: 0
+--- !u!114 &1216416904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216416895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ced7bf28cdbee104e8cdc34ab761b039, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerPrefab: {fileID: 9029450125345654683, guid: 20ec334e1da5edf44ac0079941c62c2b, type: 3}
+  spawnPoints:
+  - {fileID: 296507700}
+  - {fileID: 667181804}
+  - {fileID: 171128654}
+  - {fileID: 148014638}
 --- !u!1001 &1312733901
 PrefabInstance:
   m_ObjectHideFlags: 0
