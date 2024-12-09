@@ -1,30 +1,35 @@
 using PurrNet;
+using PurrNet.Logging;
+using PurrNet.Transports;
 using UnityEngine;
 
-public class SomeBehaviour : NetworkIdentity
+public class SomeBehaviour : MonoBehaviour
 {
-    protected override void OnSpawned(bool asServer)
+    [SerializeField] string lobbySceneName = "Lobby";    
+    NetworkManager networkManager;
+
+    void Awake()
     {
-        if (asServer)
+        networkManager = InstanceHandler.NetworkManager;
+        InstanceHandler.NetworkManager.onClientConnectionState += OnClientConnectionState;
+    }
+
+    private void OnClientConnectionState(ConnectionState state)
+    {
+        if (state != ConnectionState.Connected || !networkManager.isServer)
             return;
 
-        FuckYou("Hello, World!");
-    }
-    
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.J))
-            ObsDoSomething();
+        PurrLogger.Log($"Client connected to server. Loading scene {lobbySceneName}");
+        networkManager.sceneModule.LoadSceneAsync(lobbySceneName);
     }
 
-    [ObserversRpc(requireServer:false)]
-    private void ObsDoSomething(RPCInfo info = default)
+    public void StartHost()
     {
-        Debug.Log($"Called by {info.sender}, I am {localPlayer}");
+        networkManager.StartServer();
+        networkManager.StartClient();
     }
-    
-    [ObserversRpc(runLocally:true)]
-    private void FuckYou(string itsMyStringNow) {
-        Debug.Log(itsMyStringNow);
+    public void StartClient()
+    {
+        networkManager.StartClient();
     }
 }
