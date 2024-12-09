@@ -109,6 +109,12 @@ namespace PurrNet.Modules
         
         private void AddScene(Scene scene, PurrSceneSettings settings, SceneID id)
         {
+            if (_scenes.TryGetValue(id, out var state))
+            {
+                PurrLogger.LogError($"Scene with ID {id} already exists under {state.scene.name}");
+                return;
+            }
+            
             _scenes.Add(id, new SceneState(scene, settings));
             _idToScene.Add(scene, id);
             _rawScenes.Add(id);
@@ -149,7 +155,7 @@ namespace PurrNet.Modules
         {
             if (!_idToScene.TryGetValue(scene, out var id))
                 return;
-            
+
             _scenes.Remove(id);
             _idToScene.Remove(scene);
             _rawScenes.Remove(id);
@@ -188,7 +194,7 @@ namespace PurrNet.Modules
             }
             else
             {
-                _players.onPlayerJoined += OnPlayerJoined;
+                _players.onPrePlayerJoined += OnPlayerJoined;
                 _scenePlayers.onPlayerJoinedScene += OnPlayerJoinedScene;
                 _scenePlayers.onPlayerLeftScene += OnPlayerLeftScene;
             }
@@ -204,7 +210,7 @@ namespace PurrNet.Modules
             }
             else
             {
-                _players.onPlayerJoined -= OnPlayerJoined;
+                _players.onPrePlayerJoined -= OnPlayerJoined;
                 _scenePlayers.onPlayerJoinedScene -= OnPlayerJoinedScene;
                 _scenePlayers.onPlayerLeftScene -= OnPlayerLeftScene;
             }
@@ -625,6 +631,7 @@ namespace PurrNet.Modules
                 {
                     SceneActionType.Load => action.loadSceneAction.sceneID,
                     SceneActionType.Unload => action.unloadSceneAction.sceneID,
+                    SceneActionType.SetActive => action.setActiveSceneAction.sceneID,
                     _ => default
                 };
 
@@ -683,9 +690,7 @@ namespace PurrNet.Modules
                 FilterActionsForPlayer(player, delta.actions, _playerFilteredActions);
 
                 if (_playerFilteredActions.Count > 0)
-                {
                     _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
-                }
             }
 
             _history.Flush();

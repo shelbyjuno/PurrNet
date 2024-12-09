@@ -67,7 +67,7 @@ namespace PurrNet.Modules
                 _scenes.onSceneLoaded += OnSceneLoaded;
                 _scenes.onSceneUnloaded += OnSceneUnloaded;
                 _scenes.onSceneVisibilityChanged += OnSceneVisibilityChanged;
-                _players.onPrePlayerJoined += OnPlayerJoined;
+                _players.onPlayerJoined += OnPlayerJoined;
                 _players.onPlayerLeft += OnPlayerLeft;
 
                 _players.Subscribe<ClientFinishedLoadingScene>(RemoteClientLoadedScene);
@@ -99,7 +99,7 @@ namespace PurrNet.Modules
                 _scenes.onSceneLoaded -= OnSceneLoaded;
                 _scenes.onSceneUnloaded -= OnSceneUnloaded;
                 _scenes.onSceneVisibilityChanged -= OnSceneVisibilityChanged;
-                _players.onPrePlayerJoined -= OnPlayerJoined;
+                _players.onPlayerJoined -= OnPlayerJoined;
                 _players.onPlayerLeft -= OnPlayerLeft;
                 
                 _players.Unsubscribe<ClientFinishedLoadingScene>(RemoteClientLoadedScene);
