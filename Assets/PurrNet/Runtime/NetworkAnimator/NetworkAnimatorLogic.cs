@@ -19,7 +19,7 @@ namespace PurrNet
 
         public void OnTick(float delta)
         {
-            if (!IsController(isController))
+            if (!IsController(_ownerAuth))
             {
                 if (_dirty.Count > 0)
                     _dirty.Clear();
@@ -37,7 +37,7 @@ namespace PurrNet
         /// </summary>
         public void Reconcile(bool isIk = false)
         {
-            if (!IsController(isController))
+            if (!IsController(_ownerAuth))
                 return;
             
             var data = NetAnimatorActionBatch.CreateReconcile(_animator, isIk);
@@ -61,7 +61,7 @@ namespace PurrNet
         /// <param name="isIk">Whether to reconcile the IK state or the regular state.</param>
         public void Reconcile(PlayerID target, bool isIk = false)
         {
-            if (!IsController(isController))
+            if (!IsController(_ownerAuth))
                 return;
             
             var data = NetAnimatorActionBatch.CreateReconcile(_animator, isIk);
@@ -100,7 +100,7 @@ namespace PurrNet
 
         private void OnAnimatorIK(int layerIndex)
         {
-            if (IsController(isController))
+            if (IsController(_ownerAuth))
             {
                 _ikActions.Clear();
                 
@@ -136,7 +136,11 @@ namespace PurrNet
         private void ForwardThroughServer(NetAnimatorActionBatch actions)
         {
             if (_ownerAuth)
+            {
+                if (!isClient)
+                    ExecuteBatch(actions);
                 ApplyActionsOnObservers(actions);
+            }
         }
         
         [ObserversRpc]
@@ -151,10 +155,7 @@ namespace PurrNet
         private void ExecuteBatch(NetAnimatorActionBatch actions)
         {
             if (!_animator)
-            {
-                PurrLogger.LogError($"Animator is null, can't apply actions, dismissing {actions.actions.Count} actions.");
                 return;
-            }
             
             if (actions.actions == null)
                 return;
