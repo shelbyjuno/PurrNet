@@ -1151,7 +1151,7 @@ namespace PurrNet.Modules
                 _identitiesToSpawn.Clear();
             }
             
-            // if (!_manager.pendingHost)
+            if (!_manager.pendingHost)
                 TriggerSpawnEvents();
         }
 
@@ -1178,7 +1178,7 @@ namespace PurrNet.Modules
             }
         }
 
-        private void TriggerSpawnEvents()
+        internal void TriggerSpawnEvents()
         {
             var spawnedThisFrameCount = _spawnedThisFrame.Count;
 
