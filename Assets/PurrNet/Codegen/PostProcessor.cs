@@ -267,11 +267,8 @@ namespace PurrNet.Codegen
                     continue;
                 
                 var voidType = module.TypeSystem.Void;
-                var newMethod = new MethodDefinition($"HandleRPCGenerated_{offset + i}", attributes, voidType)
-                {
-                    IsPublic = true
-                };
-
+                var newMethod = new MethodDefinition($"HandleRPCGenerated_{offset + i}", attributes, voidType);
+                
                 var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
                 var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
                 newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
