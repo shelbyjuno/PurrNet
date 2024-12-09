@@ -143,10 +143,21 @@ namespace PurrNet.Modules
 
         private void OnSceneLoaded(SceneID scene, bool asserver)
         {
+            if (_asServer)
+                return;
+            
             if (_sceneID != scene)
                 return;
             
             TriggerSpawnEvents();
+
+            if (_manager.isServer)
+            {
+                foreach (var id in identities.collection)
+                {
+                    id.TriggerSpawnEvent(false);
+                }
+            }
         }
 
         private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
