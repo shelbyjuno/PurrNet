@@ -99,7 +99,6 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverAdded += AddedObserverToIdentity;
             _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone += PostObserverEvents;
-            _scenes.onSceneLoaded += OnSceneLoaded;
             
             if (!_asServer)
                 _playersManager.onLocalPlayerReceivedID += OnLocalClientReady;
@@ -130,7 +129,6 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverRemoved -= RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone -= PostObserverEvents;
             _playersManager.onLocalPlayerReceivedID -= OnLocalClientReady;
-            _scenes.onSceneLoaded -= OnSceneLoaded;
 
             _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Unsubscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
@@ -139,25 +137,6 @@ namespace PurrNet.Modules
                 identity.TriggerDespawnEvent(false);
 
             identities.DestroyAllNonSceneObjects();
-        }
-
-        private void OnSceneLoaded(SceneID scene, bool asserver)
-        {
-            if (_asServer)
-                return;
-            
-            if (_sceneID != scene)
-                return;
-            
-            TriggerSpawnEvents();
-
-            if (_manager.isServer)
-            {
-                foreach (var id in identities.collection)
-                {
-                    id.TriggerSpawnEvent(false);
-                }
-            }
         }
 
         private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
@@ -1172,7 +1151,7 @@ namespace PurrNet.Modules
                 _identitiesToSpawn.Clear();
             }
             
-            if (!_manager.pendingHost)
+            // if (!_manager.pendingHost)
                 TriggerSpawnEvents();
         }
 

@@ -685,7 +685,7 @@ namespace PurrNet
 
             if (_spawnedCount == 0)
             {
-                while (_onSpawnedQueue != null && _onSpawnedQueue.Count > 0)
+                while (_onSpawnedQueue is { Count: > 0 })
                     _onSpawnedQueue.Dequeue().Invoke();
 
                 OnSpawned();

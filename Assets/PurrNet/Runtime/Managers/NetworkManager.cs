@@ -720,12 +720,10 @@ namespace PurrNet
             modules.AddModule(tickManager);
             modules.AddModule(connBroadcaster);
             modules.AddModule(networkCookies);
-            
-            modules.AddModule(hierarchyModule);
-
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayers);
             
+            modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
             modules.AddModule(ownershipModule);
             
