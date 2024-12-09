@@ -721,9 +721,10 @@ namespace PurrNet
             modules.AddModule(connBroadcaster);
             modules.AddModule(networkCookies);
             modules.AddModule(scenesModule);
+            modules.AddModule(hierarchyModule);
+
             modules.AddModule(scenePlayers);
             
-            modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
             modules.AddModule(ownershipModule);
             
