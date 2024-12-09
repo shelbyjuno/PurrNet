@@ -176,6 +176,12 @@ namespace PurrNet
         
         private readonly List<ITick> _tickables = new ();
         
+        [ContextMenu("PurrNet/TakeOwnership")]
+        private void TakeOwnership()
+        {
+            GiveOwnership(localPlayer);
+        }
+        
         private void InternalOnSpawn(bool asServer)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
