@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Pooling;
+using PurrNet.Transports;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -26,7 +27,7 @@ namespace PurrNet.Modules
         public bool isActive;
     }
     
-    internal class HierarchyScene : INetworkModule
+    internal class HierarchyScene : INetworkModule, IConnectionStateListener
     {
         private readonly NetworkManager _manager;
         private readonly IPrefabProvider _prefabs;
@@ -1421,6 +1422,16 @@ namespace PurrNet.Modules
         {
             _visibilityFactory = factory;
             _visibilityManager = vmanager;
+        }
+
+        public void OnConnectionState(ConnectionState state, bool asServer)
+        {
+            if (asServer) return;
+            
+            if (state != ConnectionState.Connected)
+                return;
+            
+            TriggerSpawnEvents();
         }
     }
 }
