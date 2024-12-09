@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
-using PurrNet.Logging;
 
 namespace PurrNet
 {
