@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Pooling;
-using PurrNet.Transports;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -27,7 +26,7 @@ namespace PurrNet.Modules
         public bool isActive;
     }
     
-    internal class HierarchyScene : INetworkModule, IConnectionStateListener
+    internal class HierarchyScene : INetworkModule
     {
         private readonly NetworkManager _manager;
         private readonly IPrefabProvider _prefabs;
@@ -100,6 +99,7 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverAdded += AddedObserverToIdentity;
             _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone += PostObserverEvents;
+            _scenes.onSceneLoaded += OnSceneLoaded;
             
             if (!_asServer)
                 _playersManager.onLocalPlayerReceivedID += OnLocalClientReady;
@@ -130,6 +130,7 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverRemoved -= RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone -= PostObserverEvents;
             _playersManager.onLocalPlayerReceivedID -= OnLocalClientReady;
+            _scenes.onSceneLoaded -= OnSceneLoaded;
 
             _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Unsubscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
@@ -139,7 +140,15 @@ namespace PurrNet.Modules
 
             identities.DestroyAllNonSceneObjects();
         }
-        
+
+        private void OnSceneLoaded(SceneID scene, bool asserver)
+        {
+            if (_sceneID != scene)
+                return;
+            
+            TriggerSpawnEvents();
+        }
+
         private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
         {
             if (data.sceneId != _sceneID)
@@ -1422,16 +1431,6 @@ namespace PurrNet.Modules
         {
             _visibilityFactory = factory;
             _visibilityManager = vmanager;
-        }
-
-        public void OnConnectionState(ConnectionState state, bool asServer)
-        {
-            if (asServer) return;
-            
-            if (state != ConnectionState.Connected)
-                return;
-            
-            TriggerSpawnEvents();
         }
     }
 }
