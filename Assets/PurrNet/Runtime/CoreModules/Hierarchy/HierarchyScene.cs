@@ -709,8 +709,8 @@ namespace PurrNet.Modules
             if (!_manager.networkRules.HasSpawnAuthority(_manager, _asServer))
             {
                 PurrLogger.LogError($"Failed to spawn '{instance.name}' due to lack of permissions.");
-                /*instance = null;
-                Object.Destroy(instance);*/
+                instance = null;
+                Object.Destroy(instance);
                 return;
             }
             
@@ -1150,6 +1150,9 @@ namespace PurrNet.Modules
                 _identitiesToSpawnHashset.Clear();
                 _identitiesToSpawn.Clear();
             }
+            
+            if (_manager.isServerOnly)
+                TriggerSpawnEvents();
         }
 
         private void SendOwnershipChanges()

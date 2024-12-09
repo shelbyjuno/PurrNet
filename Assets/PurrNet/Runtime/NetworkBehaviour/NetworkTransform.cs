@@ -178,7 +178,7 @@ namespace PurrNet
             int ticksPerSec = networkManager.tickModule.tickRate;
             int ticksPerBuffer = Mathf.CeilToInt(ticksPerSec * 0.15f) * 2;
             
-            if (syncPosition)  _position.maxBufferSize = ticksPerBuffer;
+            if (syncPosition) _position.maxBufferSize = ticksPerBuffer;
             if (syncRotation) _rotation.maxBufferSize = ticksPerBuffer;
             if (syncScale) _scale.maxBufferSize = ticksPerBuffer;
         }
