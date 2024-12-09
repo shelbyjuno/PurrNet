@@ -1151,7 +1151,7 @@ namespace PurrNet.Modules
                 _identitiesToSpawn.Clear();
             }
             
-            if (_manager.isServerOnly)
+            if (!_manager.pendingHost)
                 TriggerSpawnEvents();
         }
 

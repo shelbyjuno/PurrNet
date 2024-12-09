@@ -253,6 +253,8 @@ namespace PurrNet
         /// </summary>
         public bool isServerOnly => isServer && !isClient;
         
+        public bool pendingHost => clientState != ConnectionState.Disconnected && serverState != ConnectionState.Disconnected;
+        
         public bool isPlannedServerOnly => ShouldStart(_startServerFlags) && !ShouldStart(_startClientFlags);
         
         /// <summary>
