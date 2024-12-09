@@ -135,10 +135,7 @@ namespace PurrNet.Modules
         private void OnClientSceneLoaded(SceneID scene, bool asserver)
         {
             if (!_players.localPlayerId.HasValue)
-            {
-                PurrLogger.LogError("Local player ID not set; aborting OnClientSceneLoaded");
                 return;
-            }
             
             onPrePlayerloadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
             onPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
