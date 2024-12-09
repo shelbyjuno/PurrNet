@@ -21,7 +21,7 @@ namespace PurrNet
     {
         No,
         World,
-        Space
+        Local
     }
 
     [Serializable]
@@ -200,10 +200,12 @@ namespace PurrNet
             
             if (!_trs)
                 _trs = transform;
-
-            _position?.Teleport(_trs.position);
-            _rotation?.Teleport(_trs.rotation);
+            
+            _position?.Teleport(_syncPosition == SyncMode.World ? _trs.position : _trs.localPosition);
+            _rotation?.Teleport(_syncRotation == SyncMode.World ? _trs.rotation : _trs.localRotation);
             _scale?.Teleport(_trs.localScale);
+            
+            ApplyLerpedPosition();
         }
 
         private int _ticksSinceLastSend;
@@ -324,7 +326,9 @@ namespace PurrNet
         
         private NetworkTransformData GetCurrentTransformData()
         {
-            return new NetworkTransformData(_id++, _trs.position, _trs.rotation, _trs.localScale);
+            var pos = _syncPosition == SyncMode.World ? _trs.position : _trs.localPosition;
+            var rot = _syncRotation == SyncMode.World ? _trs.rotation : _trs.localRotation;
+            return new NetworkTransformData(_id++, pos, rot, _trs.localScale);
         }
         
         [ServerRpc(Channel.Unreliable, requireOwnership: true)]
@@ -466,7 +470,7 @@ namespace PurrNet
         internal void ResetToLastValidParent()
         {
             StartIgnoreParentChanged();
-            _trs.SetParent(_lastValidParent, true);
+            _trs.SetParent(_lastValidParent, _syncPosition == SyncMode.World);
             StopIgnoreParentChanged();
         }
 
