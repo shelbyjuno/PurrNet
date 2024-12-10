@@ -469,7 +469,10 @@ namespace PurrNet.Modules
             }
 
             if (!isScenePrefab && identities.TryGetIdentity(action.identityId, out _))
+            {
+                // PurrLogger.LogError($"Identity with id {action.identityId} is already spawned");
                 return;
+            }
 
             if (action.childOffset != 0)
             {
@@ -514,7 +517,7 @@ namespace PurrNet.Modules
             {
                 if (parent == null)
                 {
-                    go = Object.Instantiate(prefab.gameObject, trsInfo.localPos, trsInfo.localRot, parent);
+                    go = Object.Instantiate(prefab.gameObject, trsInfo.localPos, trsInfo.localRot);
                 }
                 else
                 {
@@ -538,6 +541,10 @@ namespace PurrNet.Modules
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
+                
+                if (child.IsSpawned(_asServer))
+                    continue;
+                
                 SpawnIdentity(action, child, (ushort)i, _asServer);
             }
             
@@ -594,6 +601,7 @@ namespace PurrNet.Modules
         }
         
         internal static readonly List<NetworkIdentity> CACHE = new ();
+        internal static readonly List<NetworkIdentity> CACHE2 = new ();
         
         private static GameObject GetChildPrefab(GameObject root, int child)
         {
@@ -740,8 +748,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            var roots = HashSetPool<NetworkIdentity>.Instantiate();
-
+            CACHE2.Clear();
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
@@ -749,7 +756,7 @@ namespace PurrNet.Modules
                 if (child.isSpawned)
                 {
                     PurrLogger.LogError($"Identity with id {child.id} is already spawned", child);
-                    return;
+                    continue;
                 }
                 
                 var nid = new NetworkID(identities.GetNextId(), actor);
@@ -772,21 +779,13 @@ namespace PurrNet.Modules
 
                 if (child is NetworkTransform transform)
                     transform.onParentChanged += OnIdentityParentChanged;
-            }
-            
-            for (int i = 0; i < CACHE.Count; i++)
-            {
-                var child = CACHE[i];
-                roots.Add(child.root);
                 
-                _triggerPostIdentityFunc.Add(child);
+                CACHE2.Add(child);
             }
-            
-            foreach (var root in roots)
-                onIdentityRootSpawned?.Invoke(root);
-            
-            HashSetPool<NetworkIdentity>.Destroy(roots);
 
+            for (int i = 0; i < CACHE2.Count; i++)
+                _triggerPostIdentityFunc.Add(CACHE2[i]);
+            
             var action = new SpawnAction
             {
                 prefabId = prefabId,

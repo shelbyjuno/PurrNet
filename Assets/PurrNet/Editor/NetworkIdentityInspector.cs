@@ -139,13 +139,8 @@ namespace PurrNet.Editor
                     GUI.enabled = old;
                 }
 
-                var clientId = identity.GetNetworkID(false);
-                var serverId = identity.GetNetworkID(true);
-                
-                string diff = clientId == serverId ? "" : $" (Server ID: {serverId}, Client ID: {clientId})";
-                
                 EditorGUILayout.BeginHorizontal("box");
-                EditorGUILayout.LabelField($"ID: {identity.id} {diff}", GUILayout.Width(80));
+                EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
                 EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
                 EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");
                 EditorGUILayout.EndHorizontal();

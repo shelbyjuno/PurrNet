@@ -10,8 +10,6 @@ namespace PurrNet.Examples.TopDownShooter
 
         protected override void OnSpawned(bool asServer)
         {
-            PurrLogger.Log($"Player body spawned as server: {asServer}", this);
-            
             if (!owner.HasValue)
             {
                 PurrLogger.LogError($"No owner for player {asServer}", this);
