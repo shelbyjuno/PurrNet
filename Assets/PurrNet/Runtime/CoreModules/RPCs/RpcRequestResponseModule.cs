@@ -61,7 +61,7 @@ namespace PurrNet.Modules
                     _requests.RemoveAt(i);
 
                     using var stream = RPCModule.AllocStream(true);
-                    stream.Write(data.data);
+                    stream.WriteBytes(data.data);
                     stream.ResetPosition();
                     
                     request.respond(stream);

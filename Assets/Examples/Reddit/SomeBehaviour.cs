@@ -1,35 +1,43 @@
 using PurrNet;
-using PurrNet.Logging;
-using PurrNet.Transports;
+using System.Threading.Tasks;
 using UnityEngine;
 
-public class SomeBehaviour : MonoBehaviour
+public class SomeBehaviour : NetworkBehaviour
 {
-    [SerializeField] string lobbySceneName = "Lobby";    
-    NetworkManager networkManager;
-
-    void Awake()
+    private async void Update()
     {
-        networkManager = InstanceHandler.NetworkManager;
-        InstanceHandler.NetworkManager.onClientConnectionState += OnClientConnectionState;
+        bool myResult = false;
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            myResult = await MyAwaitableRpc(1);
+            Debug.Log($"MyResult: {myResult}");
+        }
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            myResult = await MyAwaitableRpc(0);
+            Debug.Log($"MyResult: {myResult}");
+        }
     }
 
-    private void OnClientConnectionState(ConnectionState state)
+    [ServerRpc(requireOwnership:false)]
+    public static void MyStaticRpc(string message)
     {
-        if (state != ConnectionState.Connected || !networkManager.isServer)
-            return;
-
-        PurrLogger.Log($"Client connected to server. Loading scene {lobbySceneName}");
-        networkManager.sceneModule.LoadSceneAsync(lobbySceneName);
+        Debug.Log(message);
     }
 
-    public void StartHost()
+    [ServerRpc(requireOwnership:false)]
+    private void MyGenericRpc<T>(T data)
     {
-        networkManager.StartServer();
-        networkManager.StartClient();
+        Debug.Log($"Received generic data: {data} | Type: {typeof(T)}");
     }
-    public void StartClient()
+
+    [ServerRpc(requireOwnership:false)]
+    private async Task<bool> MyAwaitableRpc(int myInput)
     {
-        networkManager.StartClient();
+        await Task.Delay(1000);
+
+        return myInput > 0;
     }
 }
