@@ -254,6 +254,11 @@ namespace PurrNet.Modules
             if (!asserver)
                 return;
             
+            bool isSceneStillValid = _scenes.TryGetValue(scene, out var state) && state.scene.IsValid();
+            
+            if (!isSceneStillValid)
+                return;
+            
             _playerFilteredActions.Clear();
             _playerFilteredActions.Add(new SceneAction
             {
@@ -334,6 +339,16 @@ namespace PurrNet.Modules
                     }
                     
                     SceneManager.LoadSceneAsync(loadAction.buildIndex, loadAction.GetLoadSceneParameters());
+                    
+                    if (loadAction.parameters.mode == LoadSceneMode.Single)
+                    {
+                        for (int i = 0; i < _rawScenes.Count; i++)
+                        {
+                            bool isDontDestroyOnLoad = _scenes[_rawScenes[i]].scene.name == "DontDestroyOnLoad";
+                            if (!isDontDestroyOnLoad)
+                                RemoveScene(_scenes[_rawScenes[i]].scene);
+                        }
+                    }
 
                     _pendingOperations.Add(new PendingOperation
                     {
@@ -375,8 +390,14 @@ namespace PurrNet.Modules
 
         private void OnSceneActionsBatch(PlayerID player, SceneActionsBatch data, bool asserver)
         {
+            if (_networkManager.isServer || _asServer)
+                return;
+            
             for (var i = 0; i < data.actions.Count; i++)
+            {
+                PurrLogger.Log($"Received action {data.actions[i].type} from {player} {asserver}");
                 _actionsQueue.Enqueue(data.actions[i]);
+            }
             
             HandleNextSceneAction();
         }
@@ -517,6 +538,13 @@ namespace PurrNet.Modules
                                             " load a new scene with LoadSceneMode.Single");
                     }
                 }
+                
+                for (int i = 0; i < _rawScenes.Count; i++)
+                {
+                    bool isDontDestroyOnLoad = _scenes[_rawScenes[i]].scene.name == "DontDestroyOnLoad";
+                    if (!isDontDestroyOnLoad)
+                        RemoveScene(_scenes[_rawScenes[i]].scene);
+                }
             }
 
             _history.AddLoadAction(new LoadSceneAction
@@ -525,18 +553,6 @@ namespace PurrNet.Modules
                 sceneID = idToAssign, 
                 parameters = settings
             });
-
-            if (settings.mode == LoadSceneMode.Single)
-            {
-                // add unload action for every scene that is being loaded
-                for (int i = 0; i < _rawScenes.Count; i++)
-                {
-                    bool isDontDestroyOnLoad = _scenes[_rawScenes[i]].scene.name == "DontDestroyOnLoad";
-                    if (!isDontDestroyOnLoad)
-                        _history.AddUnloadAction(new UnloadSceneAction
-                            { sceneID = _rawScenes[i], options = UnloadSceneOptions.None });
-                }
-            }
 
             var op = SceneManager.LoadSceneAsync(sceneIndex, parameters);
             var operation = new PendingOperation
@@ -696,7 +712,9 @@ namespace PurrNet.Modules
                 FilterActionsForPlayer(player, delta.actions, _playerFilteredActions);
 
                 if (_playerFilteredActions.Count > 0)
+                {
                     _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
+                }
             }
 
             _history.Flush();
@@ -718,8 +736,13 @@ namespace PurrNet.Modules
                 
                 if (scene.settings.wasPresentFromStart)
                     continue;
+
+                var unityScene = scene.scene;
+
+                if (!unityScene.IsValid())
+                    continue;
                 
-                SceneManager.UnloadSceneAsync(scene.scene);
+                SceneManager.UnloadSceneAsync(unityScene);
             }
         }
 
