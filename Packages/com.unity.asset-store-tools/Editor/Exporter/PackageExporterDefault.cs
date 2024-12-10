@@ -317,10 +317,6 @@ namespace AssetStoreTools.Exporter
         protected override void PostExportCleanup()
         {
             base.PostExportCleanup();
-
-            var tempExportPath = GetTemporaryExportPath();
-            if (Directory.Exists(tempExportPath))
-                Directory.Delete(tempExportPath, true);
         }
     }
 }
