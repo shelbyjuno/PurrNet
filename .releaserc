@@ -42,8 +42,7 @@
     }],
     ["@semantic-release/github", {
       "assets": [
-        {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "PurrNet_${nextRelease.version}.unitypackage"},
-        {"path": "Assets/PurrNet/package.json", "label": "Assets/PurrNet/package.json"}
+        {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "PurrNet_${nextRelease.version}.unitypackage"}
       ]
     }]
   ]
