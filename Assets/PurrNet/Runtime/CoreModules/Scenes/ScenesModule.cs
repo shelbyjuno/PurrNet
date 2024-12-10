@@ -517,14 +517,6 @@ namespace PurrNet.Modules
                                             " load a new scene with LoadSceneMode.Single");
                     }
                 }
-                
-                // add unload action for every scene that is being loaded
-                for (int i = 0; i < _rawScenes.Count; i++)
-                {
-                    bool isDontDestroyOnLoad = _scenes[_rawScenes[i]].scene.name == "DontDestroyOnLoad";
-                    if (!isDontDestroyOnLoad)
-                        _history.AddUnloadAction(new UnloadSceneAction { sceneID = _rawScenes[i], options = UnloadSceneOptions.None });
-                }
             }
 
             _history.AddLoadAction(new LoadSceneAction
@@ -533,7 +525,19 @@ namespace PurrNet.Modules
                 sceneID = idToAssign, 
                 parameters = settings
             });
-            
+
+            if (settings.mode == LoadSceneMode.Single)
+            {
+                // add unload action for every scene that is being loaded
+                for (int i = 0; i < _rawScenes.Count; i++)
+                {
+                    bool isDontDestroyOnLoad = _scenes[_rawScenes[i]].scene.name == "DontDestroyOnLoad";
+                    if (!isDontDestroyOnLoad)
+                        _history.AddUnloadAction(new UnloadSceneAction
+                            { sceneID = _rawScenes[i], options = UnloadSceneOptions.None });
+                }
+            }
+
             var op = SceneManager.LoadSceneAsync(sceneIndex, parameters);
             var operation = new PendingOperation
             {
