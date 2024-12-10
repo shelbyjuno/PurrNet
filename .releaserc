@@ -12,7 +12,25 @@
   ],
   "plugins": [
     "@semantic-release/commit-analyzer", 
-    "@semantic-release/release-notes-generator", 
+    "@semantic-release/release-notes-generator",
+    ["semantic-release-replace-plugin", {
+        "replacements": [
+          {
+            "files": ["Assets/PurrNet/package.json"],
+            "from": "\"version\": \".*?\"",
+            "to": "\"version\": \"${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "Assets/PurrNet/package.json",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          }
+        ]
+    }],
     ["@iam1337/create-unitypackage", {
       "packageRoot": "Assets/PurrNet",
       "projectRoot": "./",
@@ -20,7 +38,8 @@
     }],
     ["@semantic-release/github", {
       "assets": [
-        {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "PurrNet v${nextRelease.version}"}
+        {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "PurrNet_${nextRelease.version}.unitypackage"},
+        {"path": "Assets/PurrNet/package.json", "label": "Assets/PurrNet/package.json"}
       ]
     }]
   ]
