@@ -20,6 +20,11 @@ namespace PurrNet
         {
             bool isControlling = IsController(_ownerAuth);
             
+            bool shouldReconcile = (hasConnectedOwner && isOwner && !asServer) || (asServer && isControlling);
+
+            if (shouldReconcile)
+                Reconcile();
+            
             if (_wasController != isControlling)
             {
                 _wasController = isControlling;
@@ -78,6 +83,8 @@ namespace PurrNet
                             nameHash = param.nameHash
                         };
                         
+                        _boolValues[param.nameHash] = setBool.value;
+                        
                         IfSameReplace(new NetAnimatorRPC(setBool), 
                             (a, b) => a._bool.nameHash == b._bool.nameHash);
                         break;
@@ -93,6 +100,8 @@ namespace PurrNet
                             nameHash = param.nameHash
                         };
                         
+                        _floatValues[param.nameHash] = setFloat.value;
+                        
                         IfSameReplace(new NetAnimatorRPC(setFloat), 
                             (a, b) => a._float.nameHash == b._float.nameHash);
                         break;
@@ -107,6 +116,8 @@ namespace PurrNet
                             value = _animator.GetInteger(param.name),
                             nameHash = param.nameHash
                         };
+                        
+                        _intValues[param.nameHash] = setInt.value;
                         
                         IfSameReplace(new NetAnimatorRPC(setInt), 
                             (a, b) => a._int.nameHash == b._int.nameHash);

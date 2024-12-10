@@ -105,7 +105,7 @@ namespace PurrNet.Editor
 
             // draw help box saying this is meant for dev use only
             EditorGUILayout.HelpBox("This is meant for development use only.\n" +
-                                    "Usage in production is strictly permitted.", MessageType.Info);
+                                    "Usage in production is strictly prohibited.", MessageType.Info);
             
             EditorGUILayout.Space();
             

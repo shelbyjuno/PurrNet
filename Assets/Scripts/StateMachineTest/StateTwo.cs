@@ -3,18 +3,11 @@ using UnityEngine;
 
 public class StateTwo : StateNode<int>
 {
-    public override void Enter(int data, bool asServer)
-    {
-        base.Enter(data, asServer);
-        
-        Debug.Log($"Entering state two | Data: {data}");
-    }
-
     public override void StateUpdate(bool asServer)
     {
         base.StateUpdate(asServer);
         
-        if(Input.GetKeyDown(KeyCode.X))
+        if(Input.GetKeyDown(KeyCode.X) && isController)
             machine.Next();
     }
 }

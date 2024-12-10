@@ -31,6 +31,8 @@ namespace PurrNet
         /// </summary>
         public NetworkID? id => idServer ?? idClient;
         
+        public NetworkID? GetNetworkID(bool asServer) => asServer ? idServer : idClient;
+        
         /// <summary>
         /// Unique ObjectId of this object
         /// </summary>
@@ -175,6 +177,12 @@ namespace PurrNet
         private ITick _ticker;
         
         private readonly List<ITick> _tickables = new ();
+        
+        [ContextMenu("PurrNet/TakeOwnership")]
+        private void TakeOwnership()
+        {
+            GiveOwnership(localPlayer);
+        }
         
         private void InternalOnSpawn(bool asServer)
         {
@@ -424,7 +432,6 @@ namespace PurrNet
         internal void PostSetIdentity()
         {
             if (!_pendingOwnershipRequest.HasValue) return;
-            
             GiveOwnershipInternal(_pendingOwnershipRequest.Value);
             _pendingOwnershipRequest = null;
         }
@@ -528,8 +535,8 @@ namespace PurrNet
         {
             if (!networkManager)
             {
-                PurrLogger.LogError("Trying to give ownership to " + player + " but identity isn't spawned.", this);
-                SetPendingOwnershipRequest(player);
+                var targetFirst = GetComponent<NetworkIdentity>();
+                targetFirst.SetPendingOwnershipRequest(player);
                 return;
             }
             
@@ -539,13 +546,8 @@ namespace PurrNet
 
         private void ClearPendingRequest()
         {
-            var r = root;
-            if (r)
-            {
-                var pending = root._pendingOwnershipRequest;
-                if (pending.HasValue)
-                    root._pendingOwnershipRequest = null;
-            }
+            var targetFirst = GetComponent<NetworkIdentity>();
+            targetFirst._pendingOwnershipRequest = null;
         }
 
         /// <summary>
@@ -581,8 +583,7 @@ namespace PurrNet
             
             if (!networkManager || (link && link._autoSpawnCalledFrame == Time.frameCount))
             {
-                var r = root;
-                if (r) r._pendingOwnershipRequest = player;
+                _pendingOwnershipRequest = player;
                 return;
             }
             
@@ -679,7 +680,7 @@ namespace PurrNet
 
             if (_spawnedCount == 0)
             {
-                while (_onSpawnedQueue != null && _onSpawnedQueue.Count > 0)
+                while (_onSpawnedQueue is { Count: > 0 })
                     _onSpawnedQueue.Dequeue().Invoke();
 
                 OnSpawned();
@@ -766,8 +767,7 @@ namespace PurrNet
         
         internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)
         {
-            var r = root;
-            if (r) r._pendingOwnershipRequest = playersLocalPlayerId;
+            _pendingOwnershipRequest = playersLocalPlayerId;
         }
 
         internal void SetIsSpawned(bool value, bool asServer)

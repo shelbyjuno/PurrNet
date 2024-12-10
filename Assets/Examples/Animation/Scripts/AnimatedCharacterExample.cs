@@ -8,8 +8,6 @@ namespace PurrNet.Examples
         
         void Update()
         {
-            if (!isController) return;
-            
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 _animator.SetTrigger("Jump");

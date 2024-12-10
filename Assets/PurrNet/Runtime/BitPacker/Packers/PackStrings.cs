@@ -7,6 +7,14 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void Write(this BitPacker packer, string value)
         {
+            if (value == null)
+            {
+                packer.Write(false);
+                return;
+            }
+            
+            packer.Write(true);
+            
             int strLen = value.Length;
             
             packer.Write(strLen);
@@ -18,6 +26,16 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void Read(this BitPacker packer, ref string value)
         {
+            bool hasValue = false;
+            
+            packer.Read(ref hasValue);
+            
+            if (!hasValue)
+            {
+                value = null;
+                return;
+            }
+            
             int strLen = 0;
             
             packer.Read(ref strLen);

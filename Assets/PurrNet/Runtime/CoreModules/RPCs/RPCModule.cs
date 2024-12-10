@@ -612,7 +612,7 @@ namespace PurrNet.Modules
                 return handler;
             
             string methodName = $"HandleRPCGenerated_{rpcId}";
-            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
+            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             var ptr = method != null ? method.MethodHandle.GetFunctionPointer() : IntPtr.Zero;
             
             if (ptr != IntPtr.Zero)
@@ -703,7 +703,7 @@ namespace PurrNet.Modules
             
             var info = new RPCInfo
             {
-                sender = player,
+                sender = packet.senderId,
                 asServer = asServer
             };
 
