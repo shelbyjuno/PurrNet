@@ -31,6 +31,8 @@ namespace PurrNet
         /// </summary>
         public NetworkID? id => idServer ?? idClient;
         
+        public NetworkID? GetNetworkID(bool asServer) => asServer ? idServer : idClient;
+        
         /// <summary>
         /// Unique ObjectId of this object
         /// </summary>
