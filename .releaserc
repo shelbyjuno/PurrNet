@@ -36,6 +36,10 @@
       "projectRoot": "./",
       "output": "PurrNet_${nextRelease.version}.unitypackage"
     }],
+    ["@semantic-release/git", {
+        "assets": ["Assets/PurrNet/package.json"],
+        "message": "ci(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+    }],
     ["@semantic-release/github", {
       "assets": [
         {"path": "PurrNet_${nextRelease.version}.unitypackage", "label": "PurrNet_${nextRelease.version}.unitypackage"},
