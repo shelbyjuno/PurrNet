@@ -10,6 +10,10 @@ namespace PurrNet
     public class StatisticsManager : MonoBehaviour
     {
         [Range(0.05f, 1f)] public float checkInterval = 0.33f;
+        [SerializeField] private StatisticsPlacement placement = StatisticsPlacement.None;
+        [SerializeField] private StatisticsDisplayType displayType = StatisticsDisplayType.All;
+        [SerializeField] private float fontSize = 13f;
+        [SerializeField] private Color textColor = Color.white;
         
         public int ping { get; private set; }
         public int jitter { get; private set; }
@@ -21,6 +25,9 @@ namespace PurrNet
         private PlayersBroadcaster _playersClientBroadcaster;
         private PlayersBroadcaster _playersServerBroadcaster;
         private TickManager _tickManager;
+        private GUIStyle _labelStyle;
+        private const int PADDING = 10;
+        private float LineHeight => fontSize * 1.25f;
         
         public bool connectedServer { get; private set; }
         
@@ -50,6 +57,18 @@ namespace PurrNet
             _networkManager.onClientConnectionState += OnClientConnectionState;
         }
 
+        private void Start()
+        {
+            _labelStyle = new GUIStyle
+            {
+                fontSize = Mathf.RoundToInt(fontSize),
+                normal = { textColor = textColor },
+                alignment = (placement == StatisticsPlacement.TopRight || placement == StatisticsPlacement.BottomRight) 
+                    ? TextAnchor.UpperRight 
+                    : TextAnchor.UpperLeft
+            };
+        }
+
         private void OnDestroy()
         {
             if (_networkManager)
@@ -72,6 +91,72 @@ namespace PurrNet
                 _playersClientBroadcaster.Unsubscribe<PingMessage>(ReceivePing);
                 _playersClientBroadcaster.Unsubscribe<PacketMessage>(ReceivePacket);
             }
+        }
+
+        private void OnGUI()
+        {
+            if (placement == StatisticsPlacement.None || !connectedClient)
+                return;
+
+            var position = GetPosition();
+            var currentY = position.y;
+            var labelWidth = 200;
+
+            if (displayType == StatisticsDisplayType.All || displayType == StatisticsDisplayType.Ping)
+            {
+                var pingRect = new Rect(position.x, currentY, labelWidth, LineHeight);
+                GUI.Label(pingRect, $"Ping: {ping}ms", _labelStyle);
+                currentY += LineHeight;
+        
+                var jitterRect = new Rect(position.x, currentY, labelWidth, LineHeight);
+                GUI.Label(jitterRect, $"Jitter: {jitter}ms", _labelStyle);
+                currentY += LineHeight;
+        
+                var packetRect = new Rect(position.x, currentY, labelWidth, LineHeight);
+                GUI.Label(packetRect, $"Packet Loss: {packetLoss}%", _labelStyle);
+                currentY += LineHeight;
+            }
+
+            if (displayType == StatisticsDisplayType.All || displayType == StatisticsDisplayType.Usage)
+            {
+                if (displayType == StatisticsDisplayType.All)
+                    currentY += LineHeight / 2;
+
+                var uploadRect = new Rect(position.x, currentY, labelWidth, LineHeight);
+                GUI.Label(uploadRect, $"Upload: {upload}KB/s", _labelStyle);
+                currentY += LineHeight;
+        
+                var downloadRect = new Rect(position.x, currentY, labelWidth, LineHeight);
+                GUI.Label(downloadRect, $"Download: {download}KB/s", _labelStyle);
+            }
+        }
+        
+        private Vector2 GetPosition()
+        {
+            var x = placement switch
+            {
+                StatisticsPlacement.TopLeft or StatisticsPlacement.BottomLeft => PADDING,
+                _ => Screen.width - 200 - PADDING
+            };
+
+            var y = placement switch
+            {
+                StatisticsPlacement.TopLeft or StatisticsPlacement.TopRight => PADDING,
+                _ => Screen.height - GetStatsHeight() - PADDING
+            };
+
+            return new Vector2(x, y);
+        }
+
+        private int GetStatsHeight()
+        {
+            return displayType switch
+            {
+                StatisticsDisplayType.Ping => (int)LineHeight * 3,
+                StatisticsDisplayType.Usage => (int)LineHeight * 2,
+                StatisticsDisplayType.All => (int)LineHeight * 6,
+                _ => 0
+            };
         }
 
         private void Update()
@@ -204,5 +289,21 @@ namespace PurrNet
         public struct PingMessage : Packing.IPackedAuto { }
  
         public struct PacketMessage : Packing.IPackedAuto { }
+        
+        public enum StatisticsPlacement
+        {
+            None,
+            TopLeft,
+            TopRight,
+            BottomLeft,
+            BottomRight
+        }
+
+        public enum StatisticsDisplayType
+        {
+            Ping,
+            Usage,
+            All
+        }
     }
 }

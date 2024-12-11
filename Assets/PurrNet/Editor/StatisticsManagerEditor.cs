@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,35 +8,72 @@ namespace PurrNet.Editor
     public class StatisticsManagerEditor : UnityEditor.Editor
     {
         private SerializedProperty _scriptProp;
+        private SerializedProperty _placementProp;
+        private SerializedProperty _displayTypeProp;
+        private SerializedProperty _fontSizeProp;
+        private SerializedProperty _textColorProp;
+        private bool _displaySettingsFoldout = true;
         
         private void OnEnable()
         {
             _scriptProp = serializedObject.FindProperty("m_Script");
+            _placementProp = serializedObject.FindProperty("placement");
+            _displayTypeProp = serializedObject.FindProperty("displayType");
+            _fontSizeProp = serializedObject.FindProperty("fontSize");
+            _textColorProp = serializedObject.FindProperty("textColor");
         }
-
+    
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
             var statisticsManager = (StatisticsManager)target;
-
-            /*GUILayout.Box("Statistics manager", HeaderStyle(), GUILayout.ExpandWidth(true));
-            GUILayout.Space(13);*/
-
+    
             GUI.enabled = false;
             EditorGUILayout.PropertyField(_scriptProp, true);
             GUI.enabled = true;
-
+            
             GUILayout.Space(10);
             EditorGUILayout.LabelField("Collection Settings", EditorStyles.boldLabel);
-
             statisticsManager.checkInterval = EditorGUILayout.Slider("Check Rate In Seconds", statisticsManager.checkInterval, 0.05f, 1f);
+    
+            GUILayout.Space(10);
+            _displaySettingsFoldout = EditorGUILayout.Foldout(_displaySettingsFoldout, "Display Settings", true);
+            if (_displaySettingsFoldout)
+            {
+                EditorGUI.indentLevel++;
+                
+                EditorGUI.BeginChangeCheck();
+                _placementProp.enumValueIndex = (int)(StatisticsManager.StatisticsPlacement)EditorGUILayout.EnumPopup("Placement", (StatisticsManager.StatisticsPlacement)_placementProp.enumValueIndex);
+                _displayTypeProp.enumValueIndex = (int)(StatisticsManager.StatisticsDisplayType)EditorGUILayout.EnumPopup("Display Type", (StatisticsManager.StatisticsDisplayType)_displayTypeProp.enumValueIndex);
+                
+                float newFontSize = EditorGUILayout.Slider("Font Size", _fontSizeProp.floatValue, 8f, 32f);
+                if (Math.Abs(newFontSize - _fontSizeProp.floatValue) > 0.01f)
+                {
+                    _fontSizeProp.floatValue = newFontSize;
+                }
+                
+                EditorGUILayout.PropertyField(_textColorProp, new GUIContent("Text Color"));
+                
+                if (EditorGUI.EndChangeCheck())
+                {
+                    serializedObject.ApplyModifiedProperties();
+                }
+                
+                EditorGUI.indentLevel--;
+            }
             
             GUILayout.Space(10);
             EditorGUILayout.LabelField("Statistics Preview", EditorStyles.boldLabel);
-
             RenderStatistics(statisticsManager);
             
             serializedObject.ApplyModifiedProperties();
+            if (GUI.changed)
+            {
+                EditorUtility.SetDirty(target);
+                
+                if(Application.isPlaying)
+                    statisticsManager.SendMessage("Start", SendMessageOptions.DontRequireReceiver);
+            }
             
             Repaint();
         }
