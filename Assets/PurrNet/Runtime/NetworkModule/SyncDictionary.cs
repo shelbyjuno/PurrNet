@@ -472,17 +472,39 @@ namespace PurrNet
     {
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
+        
+        [SerializeField] private List<string> stringKeys = new List<string>();
+        [SerializeField] private List<string> stringValues = new List<string>();
+        
+        private bool isKeySerializable;
+        private bool isValueSerializable;
+
+        public SerializableDictionary()
+        {
+            isKeySerializable = typeof(TKey).IsSerializable || typeof(UnityEngine.Object).IsAssignableFrom(typeof(TKey));
+            isValueSerializable = typeof(TValue).IsSerializable || typeof(UnityEngine.Object).IsAssignableFrom(typeof(TValue));
+        }
 
         public Dictionary<TKey, TValue> ToDictionary()
         {
             var dict = new Dictionary<TKey, TValue>();
-            int count = Mathf.Min(keys.Count, values.Count);
             
-            for (int i = 0; i < count; i++)
+            if (isKeySerializable && isValueSerializable)
             {
-                if (keys[i] != null && !dict.ContainsKey(keys[i]))
+                int count = Mathf.Min(keys.Count, values.Count);
+                for (int i = 0; i < count; i++)
                 {
-                    dict.Add(keys[i], values[i]);
+                    if (keys[i] != null && !dict.ContainsKey(keys[i]))
+                        dict.Add(keys[i], values[i]);
+                }
+            }
+            else
+            {
+                var count = Mathf.Min(stringKeys.Count, stringValues.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    if (stringKeys[i] != null)
+                        dict.Add(default(TKey), default(TValue)); // Runtime values handled separately
                 }
             }
             
@@ -493,12 +515,30 @@ namespace PurrNet
         {
             keys.Clear();
             values.Clear();
+            stringKeys.Clear();
+            stringValues.Clear();
 
             foreach (var kvp in dict)
             {
-                keys.Add(kvp.Key);
-                values.Add(kvp.Value);
+                if (isKeySerializable && isValueSerializable)
+                {
+                    keys.Add(kvp.Key);
+                    values.Add(kvp.Value);
+                }
+                else
+                {
+                    stringKeys.Add(kvp.Key?.ToString() ?? "null");
+                    stringValues.Add(kvp.Value?.ToString() ?? "null");
+                }
             }
         }
+        public bool IsSerializable => isKeySerializable && isValueSerializable;
+        public int Count => isKeySerializable ? keys.Count : stringKeys.Count;
+        public string GetDisplayKey(int index) => isKeySerializable ? 
+            (keys[index]?.ToString() ?? "null") : 
+            (stringKeys[index] ?? "null");
+        public string GetDisplayValue(int index) => isValueSerializable ? 
+            (values[index]?.ToString() ?? "null") : 
+            (stringValues[index] ?? "null");
     }
 }

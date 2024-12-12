@@ -16,13 +16,16 @@ namespace PurrNet.Editor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             var keysProp = property.FindPropertyRelative("keys");
+            var stringKeysProp = property.FindPropertyRelative("stringKeys");
+            var displayKeysProp = (keysProp != null && keysProp.arraySize > 0) ? keysProp : stringKeysProp;
+
             if (!_foldout) return HeaderHeight;
-            
+        
             float totalHeight = HeaderHeight + ColumnHeaderHeight;
-            int count = keysProp?.arraySize ?? 0;
+            int count = displayKeysProp?.arraySize ?? 0;
             totalHeight += (EditorGUIUtility.singleLineHeight + ElementPadding) * count;
             totalHeight += BottomPadding;
-            
+        
             return totalHeight;
         }
 
@@ -32,6 +35,12 @@ namespace PurrNet.Editor
 
             var keysProp = property.FindPropertyRelative("keys");
             var valuesProp = property.FindPropertyRelative("values");
+            var stringKeysProp = property.FindPropertyRelative("stringKeys");
+            var stringValuesProp = property.FindPropertyRelative("stringValues");
+
+            var useSerializableTypes = keysProp != null && keysProp.arraySize > 0;
+            var displayKeysProp = useSerializableTypes ? keysProp : stringKeysProp;
+            var displayValuesProp = useSerializableTypes ? valuesProp : stringValuesProp;
 
             Rect headerRect = new Rect(position.x, position.y, position.width, HeaderHeight);
             _foldout = EditorGUI.Foldout(headerRect, _foldout, label, true);
@@ -53,29 +62,29 @@ namespace PurrNet.Editor
                 
                 yOffset += ColumnHeaderHeight;
 
-                int count = keysProp?.arraySize ?? 0;
-                for (int i = 0; i < count; i++)
+                if (displayKeysProp != null && displayValuesProp != null)
                 {
-                    float elementHeight = EditorGUIUtility.singleLineHeight;
-                    Rect keyRect = new Rect(position.x, position.y + yOffset, position.width * 0.45f, elementHeight);
-                    Rect valueRect = new Rect(position.x + position.width * 0.5f, position.y + yOffset, position.width * 0.45f, elementHeight);
-
-                    if (i % 2 == 1)
+                    int count = displayKeysProp.arraySize;
+                    for (int i = 0; i < count; i++)
                     {
-                        Rect rowBgRect = new Rect(position.x, position.y + yOffset, position.width, elementHeight);
-                        EditorGUI.DrawRect(rowBgRect, new Color(0.7f, 0.7f, 0.7f, 0.05f));
-                    }
+                        float elementHeight = EditorGUIUtility.singleLineHeight;
+                        Rect keyRect = new Rect(position.x, position.y + yOffset, position.width * 0.45f, elementHeight);
+                        Rect valueRect = new Rect(position.x + position.width * 0.5f, position.y + yOffset, position.width * 0.45f, elementHeight);
 
-                    var keyProp = keysProp.GetArrayElementAtIndex(i);
-                    var valueProp = valuesProp.GetArrayElementAtIndex(i);
-                    
-                    using (new EditorGUI.DisabledScope(true))
-                    {
-                        EditorGUI.PropertyField(keyRect, keyProp, GUIContent.none);
-                        EditorGUI.PropertyField(valueRect, valueProp, GUIContent.none);
-                    }
+                        if (i % 2 == 1)
+                        {
+                            Rect rowBgRect = new Rect(position.x, position.y + yOffset, position.width, elementHeight);
+                            EditorGUI.DrawRect(rowBgRect, new Color(0.7f, 0.7f, 0.7f, 0.05f));
+                        }
 
-                    yOffset += elementHeight + ElementPadding;
+                        using (new EditorGUI.DisabledScope(true))
+                        {
+                            EditorGUI.PropertyField(keyRect, displayKeysProp.GetArrayElementAtIndex(i), GUIContent.none);
+                            EditorGUI.PropertyField(valueRect, displayValuesProp.GetArrayElementAtIndex(i), GUIContent.none);
+                        }
+
+                        yOffset += elementHeight + ElementPadding;
+                    }
                 }
 
                 EditorGUI.indentLevel--;
