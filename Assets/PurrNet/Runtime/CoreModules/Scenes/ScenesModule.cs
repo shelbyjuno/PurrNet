@@ -394,10 +394,7 @@ namespace PurrNet.Modules
                 return;
             
             for (var i = 0; i < data.actions.Count; i++)
-            {
-                PurrLogger.Log($"Received action {data.actions[i].type} from {player} {asserver}");
                 _actionsQueue.Enqueue(data.actions[i]);
-            }
             
             HandleNextSceneAction();
         }
