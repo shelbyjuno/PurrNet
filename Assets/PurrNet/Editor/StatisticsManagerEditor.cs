@@ -70,9 +70,6 @@ namespace PurrNet.Editor
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(target);
-                
-                if(Application.isPlaying)
-                    statisticsManager.SendMessage("Start", SendMessageOptions.DontRequireReceiver);
             }
             
             Repaint();
@@ -179,20 +176,6 @@ namespace PurrNet.Editor
             rect.height -= padding * 2;
             
             GUI.DrawTexture(rect, white, ScaleMode.StretchToFill, true, 1f, color, 0, 10f);
-        }
-        
-        private GUIStyle HeaderStyle()
-        {
-            GUIStyle headerStyle = new GUIStyle(GUI.skin.box)
-            {
-                fontSize = 30,
-                wordWrap = true,
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Color.white }
-            };
-
-            return headerStyle;
         }
 
         private enum Status

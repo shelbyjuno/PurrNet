@@ -1,12 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using UnityEngine;
 
 namespace PurrNet
 {
-    [RequireComponent(typeof(NetworkManager))]
     public class StatisticsManager : MonoBehaviour
     {
         [Range(0.05f, 1f)] public float checkInterval = 0.33f;
@@ -47,17 +48,31 @@ namespace PurrNet
         private float _totalDataReceived;
         private float _totalDataSent;
         private float _lastDataCheckTime;
-        
-        private void Awake()
+
+        private void Start()
         {
-            if (!TryGetComponent(out _networkManager))
+            _networkManager = NetworkManager.main;
+            if (!_networkManager)
+            {
+                PurrLogger.LogError($"StatisticsManager failed to find a NetworkManager in the scene. Disabling...");
+                enabled = false;
                 return;
+            }
             
             _networkManager.onServerConnectionState += OnServerConnectionState;
             _networkManager.onClientConnectionState += OnClientConnectionState;
+            
+            _labelStyle = new GUIStyle
+            {
+                fontSize = Mathf.RoundToInt(fontSize),
+                normal = { textColor = textColor },
+                alignment = (placement == StatisticsPlacement.TopRight || placement == StatisticsPlacement.BottomRight) 
+                    ? TextAnchor.UpperRight 
+                    : TextAnchor.UpperLeft
+            };
         }
 
-        private void Start()
+        private void OnValidate()
         {
             _labelStyle = new GUIStyle
             {
