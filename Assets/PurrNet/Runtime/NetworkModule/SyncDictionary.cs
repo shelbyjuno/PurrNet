@@ -42,7 +42,7 @@ namespace PurrNet
     }
 
     [Serializable]
-    public class SyncDictionary<TKey, TValue> : NetworkModule, IDictionary<TKey, TValue>
+    public class SyncDictionary<TKey, TValue> : NetworkModule, IDictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField] private bool _ownerAuth;
         [SerializeField] private SerializableDictionary<TKey, TValue> _serializedDict = new();
@@ -101,13 +101,20 @@ namespace PurrNet
             }
         }
         
-        protected virtual void OnValidate()
+        public void OnBeforeSerialize()
+        {
+            _serializedDict.FromDictionary(_dict);
+        }
+
+        public void OnAfterDeserialize()
         {
             _dict = _serializedDict.ToDictionary();
         }
 
         public override void OnSpawn()
         {
+            base.OnSpawn();
+            
             if (!IsController(_ownerAuth)) return;
             
             if (isServer)
@@ -115,13 +122,10 @@ namespace PurrNet
             else SendInitialStateToServer(_dict);
         }
 
-        protected virtual void OnBeforeSerialize()
-        {
-            _serializedDict.FromDictionary(_dict);
-        }
-
         public override void OnObserverAdded(PlayerID player)
         {
+            base.OnObserverAdded(player);
+            
             HandleInitialStateTarget(player, _serializedDict.ToDictionary());
         }
         
