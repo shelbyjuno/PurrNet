@@ -126,7 +126,7 @@ namespace PurrNet
         {
             base.OnObserverAdded(player);
             
-            HandleInitialStateTarget(player, _serializedDict.ToDictionary());
+            HandleInitialStateTarget(player, _dict);
         }
         
         [TargetRpc(Channel.ReliableOrdered)]
@@ -314,7 +314,7 @@ namespace PurrNet
         {
             if (!isServer || isHost)
             {
-                _dict.Add(key, value);
+                _dict[key] = value;
                 InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Added, key, value));
             }
         }
@@ -324,7 +324,7 @@ namespace PurrNet
         {
             if (!isHost)
             {
-                _dict.Add(key, value);
+                _dict[key] = value;
                 InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Added, key, value));
             }
         }
@@ -497,7 +497,7 @@ namespace PurrNet
         public Dictionary<TKey, TValue> ToDictionary()
         {
             var dict = new Dictionary<TKey, TValue>();
-            
+    
             if (isKeySerializable && isValueSerializable)
             {
                 int count = Mathf.Min(keys.Count, values.Count);
@@ -512,11 +512,11 @@ namespace PurrNet
                 var count = Mathf.Min(stringKeys.Count, stringValues.Count);
                 for (int i = 0; i < count; i++)
                 {
-                    if (stringKeys[i] != null)
-                        dict.Add(default(TKey), default(TValue)); // Runtime values handled separately
+                    if (stringKeys[i] != null && !dict.ContainsKey(default(TKey)))
+                        dict.Add(default(TKey), default(TValue));
                 }
             }
-            
+    
             return dict;
         }
 
