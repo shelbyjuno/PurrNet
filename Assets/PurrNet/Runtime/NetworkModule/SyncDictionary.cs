@@ -265,6 +265,15 @@ namespace PurrNet
                     SendClearToServer();
             }
         }
+        
+        /// <summary>
+        /// Creates a new Dictionary from the SyncDictionary
+        /// </summary>
+        /// <returns>A new Dictionary containing all key-value pairs from this SyncDictionary</returns>
+        public Dictionary<TKey, TValue> ToDictionary()
+        {
+            return new Dictionary<TKey, TValue>(_dict);
+        }
 
         public bool ContainsKey(TKey key) => _dict.ContainsKey(key);
         public bool TryGetValue(TKey key, out TValue value) => _dict.TryGetValue(key, out value);
