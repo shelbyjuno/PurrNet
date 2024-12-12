@@ -1,0 +1,76 @@
+using System.Collections.Generic;
+using PurrNet.Logging;
+
+namespace PurrNet.Modules
+{
+    public class HierarchyFactory : INetworkModule, IPreFixedUpdate, IFixedUpdate
+    {
+        readonly ScenesModule _scenes;
+        
+        readonly ScenePlayersModule _scenePlayersModule;
+        
+        readonly Dictionary<SceneID, HierarchyV2> _hierarchies = new ();
+        
+        readonly List<HierarchyV2> _rawScenes = new ();
+        
+        public HierarchyFactory(ScenesModule scenes, ScenePlayersModule scenePlayersModule)
+        {
+            _scenes = scenes;
+            _scenePlayersModule = scenePlayersModule;
+        }
+        
+        public void Enable(bool asServer)
+        {
+            _scenes.onPreSceneLoaded += OnPreSceneLoaded;
+            _scenes.onSceneUnloaded += OnSceneUnloaded;
+        }
+
+        public void Disable(bool asServer)
+        {
+            _scenes.onPreSceneLoaded -= OnPreSceneLoaded;
+            _scenes.onSceneUnloaded -= OnSceneUnloaded;
+        }
+
+        private void OnPreSceneLoaded(SceneID scene, bool asServer)
+        {
+            if (_hierarchies.ContainsKey(scene))
+            {
+                PurrLogger.LogError($"Hierarchy module for scene {scene} already exists; trying to create another one?");
+                return;
+            }
+            
+            var hierarchy = new HierarchyV2(scene, _scenePlayersModule, asServer);
+            hierarchy.Enable();
+            
+            _rawScenes.Add(hierarchy);
+            _hierarchies.Add(scene, hierarchy);
+        }
+        
+        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        {
+            if (!_hierarchies.TryGetValue(scene, out var hierarchy))
+            {
+                PurrLogger.LogError($"Hierarchy module for scene {scene} doesn't exist; trying to unload it?");
+                return;
+            }
+            
+            hierarchy.Disable();
+            
+            _rawScenes.Remove(hierarchy);
+            _hierarchies.Remove(scene);
+        }
+
+
+        public void PreFixedUpdate()
+        {
+            for (var i = 0; i < _rawScenes.Count; i++)
+                _rawScenes[i].PreNetworkMessages();
+        }
+
+        public void FixedUpdate()
+        {
+            for (var i = 0; i < _rawScenes.Count; i++)
+                _rawScenes[i].PostNetworkMessages();
+        }
+    }
+}

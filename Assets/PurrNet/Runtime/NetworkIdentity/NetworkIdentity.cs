@@ -25,6 +25,9 @@ namespace PurrNet
 
         [UsedImplicitly]
         public int siblingIndex { get; private set; } = -1;
+        
+        [UsedImplicitly]
+        public int depthIndex { get; private set; } = -1;
 
         /// <summary>
         /// Network id of this object. Holds more information than the ObjectId

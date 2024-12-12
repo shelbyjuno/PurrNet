@@ -720,8 +720,12 @@ namespace PurrNet
             modules.AddModule(tickManager);
             modules.AddModule(connBroadcaster);
             modules.AddModule(networkCookies);
+            
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayers);
+            
+            var hierarchyV2 = new HierarchyFactory(scenesModule, scenePlayers);
+            modules.AddModule(hierarchyV2);
             
             modules.AddModule(hierarchyModule);
             modules.AddModule(visibilityFactory);
