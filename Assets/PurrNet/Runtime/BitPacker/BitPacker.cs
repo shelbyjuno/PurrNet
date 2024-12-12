@@ -80,12 +80,13 @@ namespace PurrNet.Packing
         
         private void EnsureBitsExist(int bits)
         {
-            int targetPos = (positionInBits + bits + 7) / 8;
-
-            if (targetPos >= _buffer.Length)
+            int targetPos = positionInBits + bits;
+            var bufferBitSize = _buffer.Length * 8;
+            
+            if (targetPos >= bufferBitSize)
             {
                 if (_isReading)
-                    throw new IndexOutOfRangeException("Not enough bits in the buffer.");
+                    throw new IndexOutOfRangeException("Not enough bits in the buffer. | " + targetPos + " >= " + bufferBitSize);
                 Array.Resize(ref _buffer, _buffer.Length * 2);
             }
         }
