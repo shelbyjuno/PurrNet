@@ -856,13 +856,19 @@ namespace PurrNet.Modules
                     _gosToDeactivate.Add(child.gameObject);
                 }
             }
+            
+            var ownedCache = ListPool<GameObject>.Instantiate();
+            ownedCache.AddRange(_gosToDeactivate);
 
-            foreach (var go in _gosToDeactivate)
+            for (var i = 0; i < ownedCache.Count; i++)
             {
+                var go = ownedCache[i];
                 go.SetActive(true);
                 go.SetActive(false);
             }
             
+            ListPool<GameObject>.Destroy(ownedCache);
+
             for (int i = 0; i < _cache.Count; i++)
             {
                 var state = _cache[i];

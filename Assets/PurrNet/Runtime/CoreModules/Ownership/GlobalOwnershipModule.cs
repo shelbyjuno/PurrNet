@@ -281,12 +281,16 @@ namespace PurrNet.Modules
             OnOwnerDisconnect(player, scene, ownerships);
             
             var owned = ownerships.TryGetOwnedObjects(player);
+            var ownedCache = ListPool<NetworkID>.Instantiate();
+            ownedCache.AddRange(owned);
 
-            foreach (var id in owned)
+            for (var i = 0; i < ownedCache.Count; i++)
             {
+                var id = ownedCache[i];
                 if (_hierarchy.TryGetIdentity(scene, id, out var identity))
                     identity.TriggerOnOwnerDisconnected(player);
             }
+            ListPool<NetworkID>.Destroy(ownedCache);
         }
 
         private void OnOwnerDisconnect(PlayerID player, SceneID scene, SceneOwnership ownerships)
