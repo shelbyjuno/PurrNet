@@ -80,7 +80,7 @@ namespace PurrNet.Packing
         
         private void EnsureBitsExist(int bits)
         {
-            int targetPos = (positionInBits + bits) / 8;
+            int targetPos = (positionInBits + bits + 7) / 8;
 
             if (targetPos >= _buffer.Length)
             {
