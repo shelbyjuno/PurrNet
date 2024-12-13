@@ -24,6 +24,9 @@ namespace PurrNet.Modules
         
         public void Enable(bool asServer)
         {
+            foreach (var scene in _scenes.scenes)
+                OnPreSceneLoaded(scene, asServer);
+            
             _scenes.onPreSceneLoaded += OnPreSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
         }
@@ -80,6 +83,11 @@ namespace PurrNet.Modules
         {
             for (var i = 0; i < _rawScenes.Count; i++)
                 _rawScenes[i].PostNetworkMessages();
+        }
+
+        public bool TryGetHierarchy(SceneID sceneId, out HierarchyV2 o)
+        {
+            return _hierarchies.TryGetValue(sceneId, out o);
         }
     }
 }

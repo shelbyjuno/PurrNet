@@ -570,11 +570,10 @@ namespace PurrNet.Modules
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
         {
-            var siblingIdx = component.transform.parent ? component.transform.GetSiblingIndex() : 0;
-            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer);
+            SpawnIdentity(component, action.identityId, offset, asServer);
         }
         
-        void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer)
+        void SpawnIdentity(NetworkIdentity component, NetworkID nid, ushort offset, bool asServer)
         {
             var identityId = new NetworkID(nid, offset);
 
@@ -584,7 +583,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            component.SetIdentity(_manager, _sceneID, prefabId, siblingId, identityId, offset, asServer);
+            component.SetIdentity(_manager, _sceneID, identityId, asServer);
 
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
@@ -764,9 +763,7 @@ namespace PurrNet.Modules
                 while (identities.HasIdentity(nid))
                     nid = new NetworkID(identities.GetNextId(), actor);
                 
-                var siblingIdx = child.transform.parent ? child.transform.GetSiblingIndex() : 0;
-                
-                child.SetIdentity(_manager, _sceneID, prefabId, siblingIdx, nid, (ushort)i, _asServer);
+                child.SetIdentity(_manager, _sceneID, nid, _asServer);
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
                 
@@ -1200,10 +1197,10 @@ namespace PurrNet.Modules
                         
                         if (identity.id.HasValue && !identity.isSceneObject && _asServer && _manager.isHost)
                         {
-                            identity.SetIdentity(_manager, _sceneID, 
-                                identity.prefabId, 
-                                identity.siblingIndex,
-                                identity.id.Value, identity.prefabOffset, 
+                            identity.SetIdentity(
+                                _manager, 
+                                _sceneID, 
+                                identity.id.Value, 
                                 false
                             );
                             
@@ -1220,7 +1217,7 @@ namespace PurrNet.Modules
                     TriggerSpawnEvents();
             }
         }
-
+        
         private void SendDeltaToPlayers(HierarchyActionBatch delta)
         {
             // if client, no filtering is needed

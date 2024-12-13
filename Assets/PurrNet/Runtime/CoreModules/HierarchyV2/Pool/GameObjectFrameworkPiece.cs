@@ -28,7 +28,9 @@ namespace PurrNet.Modules
         {
             StringBuilder builder = new();
             builder.Append("GameObjectFrameworkPiece: { ");
-            builder.Append("Nid: ");
+            builder.Append("Pid: ");
+            builder.Append(pid);
+            builder.Append(", Nid: ");
             builder.Append(id);
             builder.Append(", childCount: ");
             builder.Append(childCount);

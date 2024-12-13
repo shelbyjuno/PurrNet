@@ -7,6 +7,12 @@ namespace PurrNet
     public sealed class PrefabLink : NetworkIdentity
     {
         [SerializeField, PurrReadOnly] private string _guid;
+        [SerializeField] private bool _usePooling;
+        [SerializeField] private int _poolWarmupCount = 1;
+        
+        public bool usePooling => _usePooling;
+        
+        public int poolWarmupCount => _poolWarmupCount;
 
         static bool _muteAutoSpawn;
         

@@ -6,6 +6,7 @@ namespace PurrNet.Modules
 {
     public struct GameObjectPrototype : IDisposable
     {
+        public bool isScenePrototype;
         public DisposableList<GameObjectFrameworkPiece> framework;
 
         public void Dispose()

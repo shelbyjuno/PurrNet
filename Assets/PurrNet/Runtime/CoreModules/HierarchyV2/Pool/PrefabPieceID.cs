@@ -15,6 +15,11 @@ namespace PurrNet.Modules
             siblingIndex = siblingId;
         }
 
+        public override string ToString()
+        {
+            return $"PrefabPieceID: {{ prefabId: {prefabId}, depthIndex: {depthIndex}, siblingIndex: {siblingIndex} }}";
+        }
+
         public bool Equals(PrefabPieceID other)
         {
             return prefabId == other.prefabId && depthIndex == other.depthIndex && siblingIndex == other.siblingIndex;

@@ -23,6 +23,8 @@ namespace PurrNet
         public bool networkOnly = true;
         public Object folder;
         public List<GameObject> prefabs = new();
+        
+        public override IReadOnlyList<GameObject> allPrefabs => prefabs;
 
 #if UNITY_EDITOR
         public int callbackOrder { get; }

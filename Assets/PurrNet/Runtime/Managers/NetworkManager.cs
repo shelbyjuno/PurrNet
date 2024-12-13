@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Pooling;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
@@ -296,7 +297,41 @@ namespace PurrNet
             }
 
             prefabProvider = provider;
+            SetupPrefabInfo();
         }
+        
+        private void SetupPrefabInfo()
+        {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            
+            for (var pid = 0; pid < prefabProvider.allPrefabs.Count; pid++)
+            {
+                var prefab = prefabProvider.allPrefabs[pid];
+                prefab.GetComponentsInChildren(true, children);
+
+                for (var i = 0; i < children.Count; i++)
+                {
+                    var child = children[i];
+                    var trs = child.transform;
+                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), GetTransformDepth(trs));
+                }
+            }
+
+            ListPool<NetworkIdentity>.Destroy(children);
+        }
+
+        static int GetTransformDepth(Transform transform)
+        {
+            int depth = 0;
+            while (transform.parent)
+            {
+                transform = transform.parent;
+                depth++;
+            }
+
+            return depth;
+        }
+
 
         private void Awake()
         {
@@ -333,7 +368,8 @@ namespace PurrNet
 
             if (_networkPrefabs)
             {
-                prefabProvider ??= _networkPrefabs;
+                if (prefabProvider == null)
+                    SetPrefabProvider(_networkPrefabs);
 
                 if (_networkPrefabs.autoGenerate)
                     _networkPrefabs.Generate();

@@ -18,16 +18,21 @@ namespace PurrNet
         /// The prefab id of this object;
         /// Is -1 if scene object.
         /// </summary>
-        public int prefabId { get; private set; } = -1;
+        [SerializeField, HideInInspector]
+        public int prefabId = int.MinValue;
 
-        [UsedImplicitly]
-        public ushort prefabOffset { get; private set; }
-
-        [UsedImplicitly]
-        public int siblingIndex { get; private set; } = -1;
+        [SerializeField, HideInInspector]
+        public int siblingIndex = int.MinValue;
         
-        [UsedImplicitly]
-        public int depthIndex { get; private set; } = -1;
+        [SerializeField, HideInInspector]
+        public int depthIndex = int.MinValue;
+        
+        public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex)
+        {
+            this.prefabId = prefabId;
+            this.siblingIndex = siblingIndex;
+            this.depthIndex = depthIndex;
+        }
 
         /// <summary>
         /// Network id of this object. Holds more information than the ObjectId
@@ -190,7 +195,19 @@ namespace PurrNet
         [ContextMenu("PurrNet/Print Prototype")]
         private void PrintPrototype()
         {
-            PurrLogger.Log(HierarchyPool.GetFramework(transform).ToString());
+            using var prototype = HierarchyPool.GetFramework(transform);
+            PurrLogger.Log(prototype.ToString());
+        }
+        
+        [ContextMenu("PurrNet/Duplicate Prototype")]
+        private void DuplicatePrototype()
+        {
+            using var prototype = HierarchyPool.GetFramework(transform);
+            if (networkManager.TryGetModule<HierarchyFactory>(false, out var factory) &&
+                factory.TryGetHierarchy(sceneId, out var hierarchy))
+            {
+                hierarchy.CreatePrototype(prototype);
+            }
         }
         
         private void InternalOnSpawn(bool asServer)
@@ -451,15 +468,12 @@ namespace PurrNet
         /// </summary>
         public int layer { get; private set; }
         
-        internal void SetIdentity(NetworkManager manager, SceneID scene, int pid, int siblingIdx, NetworkID identityId, ushort offset, bool asServer)
+        internal void SetIdentity(NetworkManager manager, SceneID scene, NetworkID identityId, bool asServer)
         {
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
-            prefabId = pid;
-            siblingIndex = siblingIdx;
-            prefabOffset = offset;
-
+            
             if (!localPlayer.HasValue && networkManager.TryGetModule<PlayersManager>(asServer, out var playersManager))
                 localPlayer = playersManager.localPlayerId;
 
