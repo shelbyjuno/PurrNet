@@ -24,8 +24,14 @@ namespace PurrNet.Modules
         
         public void Enable(bool asServer)
         {
-            foreach (var scene in _scenes.scenes)
-                OnPreSceneLoaded(scene, asServer);
+            var scenes = _scenes.sceneStates;
+
+            foreach (var (id, sceneState) in scenes)
+            {
+                if (sceneState.scene.isLoaded)
+                    OnPreSceneLoaded(id, asServer);
+            }
+
             
             _scenes.onPreSceneLoaded += OnPreSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
