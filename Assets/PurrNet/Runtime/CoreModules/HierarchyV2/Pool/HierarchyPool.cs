@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using PurrNet.Logging;
 using PurrNet.Pooling;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -133,6 +134,67 @@ namespace PurrNet.Modules
             
             QueuePool<GameObjectRuntimePair>.Destroy(queue);
             return new GameObjectPrototype { framework = framework };
+        }
+
+        public bool TryBuildPrototype(GameObjectPrototype prototype, out GameObject result)
+        {
+            if (prototype.framework.Count == 0)
+            {
+                result = null;
+                return false;
+            }
+            
+            return TryBuildPrototypeHelper(prototype, null, 0, 1, out result);
+        }
+        
+        private bool TryBuildPrototypeHelper(GameObjectPrototype prototype, Transform parent, int currentIdx, int childrenStartIdx, out GameObject result)
+        {
+            var framework = prototype.framework;
+            var current = framework[currentIdx];
+            int childCount = current.childCount;
+            
+            if (!TryGetFromPool(current.pid, _parent, out var instance))
+            {
+                PurrLogger.LogError($"Failed to get object from pool: {current.pid}");
+                result = null;
+                return false;
+            }
+
+            if (parent)
+            {
+                WalkThePath(parent, instance.transform, current.inversedRelativePath);
+
+                // todo: depends on the prefab, it might be disabled in there
+                instance.SetActive(true);
+            }
+            
+            for (var j = 0; j < childCount; j++)
+            {
+                var child = framework[childrenStartIdx + j];
+                TryBuildPrototypeHelper(prototype, instance.transform, childrenStartIdx + j, childrenStartIdx + child.childCount, out _);
+            }
+
+            result = instance;
+            return true;
+        }
+
+        private static void WalkThePath(Transform parent, Transform instance, DisposableList<int> inversedPath)
+        {
+            if (inversedPath.Count == 0)
+            {
+                instance.SetParent(parent, false);
+                return;
+            }
+
+            for (var i = inversedPath.Count - 1; i >= 1; i--)
+            {
+                var siblingIndex = inversedPath[i];
+                var sibling = parent.GetChild(siblingIndex);
+                parent = sibling;
+            }
+            
+            instance.SetParent(parent, false);
+            instance.SetSiblingIndex(inversedPath[0]);
         }
 
         private static GameObjectRuntimePair GetRuntimePair(Transform parent, Transform transform, NetworkIdentity rootId)
