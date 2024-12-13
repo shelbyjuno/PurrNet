@@ -9,14 +9,19 @@ namespace PurrNet.Modules
         public readonly PrefabPieceID pid;
         public readonly NetworkID id;
         public readonly int childCount;
+        public readonly bool isActive;
         public DisposableList<int> inversedRelativePath;
+        public DisposableList<bool> enabled;
         
-        public GameObjectFrameworkPiece(PrefabPieceID pid, NetworkID id, int childCount, DisposableList<int> path)
+        public GameObjectFrameworkPiece(PrefabPieceID pid, NetworkID id, int childCount, bool isActive,
+            DisposableList<int> path, DisposableList<bool> enabled)
         {
             this.pid = pid;
             this.id = id;
             this.childCount = childCount;
             this.inversedRelativePath = path;
+            this.enabled = enabled;
+            this.isActive = isActive;
         }
 
         public override string ToString()
@@ -41,6 +46,7 @@ namespace PurrNet.Modules
         public void Dispose()
         {
             inversedRelativePath.Dispose();
+            enabled.Dispose();
         }
     }
 }
