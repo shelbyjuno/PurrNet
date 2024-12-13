@@ -70,8 +70,13 @@ namespace PurrNet.Modules
         {
             _asServer = asServer;
             
-            for (int i = 0; i < _scenes.scenes.Count; i++)
-                OnSceneLoaded(_scenes.scenes[i], asServer);
+            var scenes = _scenes.sceneStates;
+
+            foreach (var (id, sceneState) in scenes)
+            {
+                if (sceneState.scene.isLoaded)
+                    OnSceneLoaded(id, asServer);
+            }
             
             _scenes.onPreSceneLoaded += OnSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;

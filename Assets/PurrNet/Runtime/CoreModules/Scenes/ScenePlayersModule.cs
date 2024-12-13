@@ -58,10 +58,12 @@ namespace PurrNet.Modules
             
             if (asServer)
             {
-                for (var i = 0; i < _scenes.scenes.Count; i++)
+                var scenes = _scenes.sceneStates;
+
+                foreach (var (id, sceneState) in scenes)
                 {
-                    var scene = _scenes.scenes[i];
-                    OnSceneLoaded(scene, _asServer);
+                    if (sceneState.scene.isLoaded)
+                        OnSceneLoaded(id, asServer);
                 }
                 
                 _scenes.onSceneLoaded += OnSceneLoaded;
@@ -84,9 +86,12 @@ namespace PurrNet.Modules
 
         private void OnLocalPlayerReady(PlayerID player)
         {
-            for (var i = 0; i < _scenes.scenes.Count; i++)
+            var scenes = _scenes.sceneStates;
+
+            foreach (var (id, sceneState) in scenes)
             {
-                OnClientSceneLoaded(_scenes.scenes[i], _asServer);
+                if (sceneState.scene.isLoaded)
+                    OnClientSceneLoaded(id, _asServer);
             }
             
             _players.onLocalPlayerReceivedID -= OnLocalPlayerReady;

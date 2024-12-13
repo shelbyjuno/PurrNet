@@ -87,6 +87,7 @@ namespace PurrNet.Modules
         private ScenePlayersModule _scenePlayers;
         
         public IReadOnlyList<SceneID> scenes => _rawScenes;
+        public IReadOnlyDictionary<SceneID, SceneState> sceneStates => _scenes;
         
         private SceneID GetNextID() => new(_nextSceneID++);
 
