@@ -883,6 +883,7 @@ namespace PurrNet
         public void InternalRegisterServerModules()
         {
             _serverModules.RegisterModules();
+            _isSubscribedServer = true;
             TriggerSubscribeEvents(true);
         }
         
@@ -893,19 +894,29 @@ namespace PurrNet
         public void InternalRegisterClientModules()
         {
             _clientModules.RegisterModules();
+            _isSubscribedClient = true;
             TriggerSubscribeEvents(false);
         }
         
+        bool _isSubscribedClient;
+        bool _isSubscribedServer;
+        
         public void InternalUnregisterServerModules()
         {
-            if (serverState != ConnectionState.Disconnected)
-                TriggerUnsubscribeEvents(true);
+            if (!_isSubscribedServer)
+                return;
+            
+            _isSubscribedServer = false;
+            TriggerUnsubscribeEvents(true);
         }
         
         public void InternalUnregisterClientModules()
         {
-            if (clientState != ConnectionState.Disconnected)
-                TriggerUnsubscribeEvents(false);
+            if (!_isSubscribedClient)
+                return;
+            
+            _isSubscribedClient = false;
+            TriggerUnsubscribeEvents(false);
         }
         
         /// <summary>
