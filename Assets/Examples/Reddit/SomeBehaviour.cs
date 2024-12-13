@@ -1,43 +1,15 @@
 using PurrNet;
-using System.Threading.Tasks;
-using UnityEngine;
+using PurrNet.Logging;
 
-public class SomeBehaviour : NetworkBehaviour
+public class SomeBehaviour : PurrMonoBehaviour
 {
-    private async void Update()
+    public override void Subscribe(NetworkManager manager, bool asServer)
     {
-        bool myResult = false;
-
-        if (Input.GetKeyDown(KeyCode.X))
-        {
-            myResult = await MyAwaitableRpc(1);
-            Debug.Log($"MyResult: {myResult}");
-        }
-
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            myResult = await MyAwaitableRpc(0);
-            Debug.Log($"MyResult: {myResult}");
-        }
+        PurrLogger.Log($"Subscribed to {manager} as {(asServer ? "server" : "client")}");
     }
 
-    [ServerRpc(requireOwnership:false)]
-    public static void MyStaticRpc(string message)
+    public override void Unsubscribe(NetworkManager manager, bool asServer)
     {
-        Debug.Log(message);
-    }
-
-    [ServerRpc(requireOwnership:false)]
-    private void MyGenericRpc<T>(T data)
-    {
-        Debug.Log($"Received generic data: {data} | Type: {typeof(T)}");
-    }
-
-    [ServerRpc(requireOwnership:false)]
-    private async Task<bool> MyAwaitableRpc(int myInput)
-    {
-        await Task.Delay(1000);
-
-        return myInput > 0;
+        PurrLogger.Log($"Unsubscribed from {manager} as {(asServer ? "server" : "client")}");
     }
 }

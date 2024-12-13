@@ -898,12 +898,14 @@ namespace PurrNet
         
         public void InternalUnregisterServerModules()
         {
-            TriggerUnsubscribeEvents(true);
+            if (serverState != ConnectionState.Disconnected)
+                TriggerUnsubscribeEvents(true);
         }
         
         public void InternalUnregisterClientModules()
         {
-            TriggerUnsubscribeEvents(false);
+            if (clientState != ConnectionState.Disconnected)
+                TriggerUnsubscribeEvents(false);
         }
         
         /// <summary>
