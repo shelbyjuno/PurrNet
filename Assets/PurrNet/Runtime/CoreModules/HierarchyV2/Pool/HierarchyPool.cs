@@ -118,7 +118,7 @@ namespace PurrNet.Modules
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];
-                enabled.Add(child.gameObject.activeSelf);
+                enabled.Add(child.enabled);
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
@@ -141,7 +141,7 @@ namespace PurrNet.Modules
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];
-                child.gameObject.SetActive(enabledStates[i]);
+                child.enabled = enabledStates[i];
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
@@ -221,10 +221,8 @@ namespace PurrNet.Modules
             shouldBeActive = current.isActive;
 
             if (parent)
-            {
                 WalkThePath(parent, trs, current.inversedRelativePath);
-                SetEnabledStates(instance, current.enabled);
-            }
+            SetEnabledStates(instance, current.enabled);
 
             var nextChildIdx = childrenStartIdx + childCount;
 

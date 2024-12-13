@@ -41,6 +41,13 @@ namespace PurrNet.Modules
                 if (i < inversedRelativePath.Count - 1)
                     builder.Append(" <- ");
             }
+            builder.Append(", Enabled: ");
+            for (int i = 0; i < enabled.Count; i++)
+            {
+                builder.Append(enabled[i]);
+                if (i < enabled.Count - 1)
+                    builder.Append(", ");
+            }
             builder.Append(" }");
             return builder.ToString();
         }
