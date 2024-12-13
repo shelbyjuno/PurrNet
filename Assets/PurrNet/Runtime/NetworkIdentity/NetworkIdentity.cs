@@ -476,6 +476,39 @@ namespace PurrNet
         /// </summary>
         public int layer { get; private set; }
         
+        internal void ResetIdentity()
+        {
+            TriggerDespawnEvent(true);
+            TriggerDespawnEvent(false);
+            
+            networkManager = null;
+            sceneId = default;
+            localPlayer = null;
+            _isSpawnedServer = false;
+            _isSpawnedClient = false;
+            idServer = null;
+            idClient = null;
+            internalOwnerServer = null;
+            internalOwnerClient = null;
+            _lastEnabledState = false;
+            _gameObject = null;
+            _events = null;
+            _moduleId = 0;
+            _modules.Clear();
+            _externalModulesView.Clear();
+            _tickables.Clear();
+            _visitiblityRules = null;
+            _ignoreNextDestroy = false;
+            _ignoreNextActivation = false;
+            _ignoreNextEnable = false;
+            _spawnedCount = 0;
+            _onSpawnedQueue?.Clear();
+            _serverSceneEvents = null;
+            _serverTickManager = null;
+            _clientTickManager = null;
+            _ticker = null;
+        }
+        
         internal void SetIdentity(NetworkManager manager, SceneID scene, NetworkID identityId, bool asServer)
         {
             layer = gameObject.layer;

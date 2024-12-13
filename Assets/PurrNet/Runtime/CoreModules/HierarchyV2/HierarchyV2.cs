@@ -15,6 +15,7 @@ namespace PurrNet.Modules
             _pools.Clear();
         }
         
+        private readonly NetworkManager _manager;
         private readonly bool _asServer;
         private readonly SceneID _sceneId;
         private readonly Scene _scene;
@@ -28,8 +29,9 @@ namespace PurrNet.Modules
         
         public bool areSceneObjectsReady { get; private set; }
         
-        public HierarchyV2(SceneID sceneId, Scene scene, ScenePlayersModule players, IPrefabProvider prefabs, bool asServer)
+        public HierarchyV2(NetworkManager manager, SceneID sceneId, Scene scene, ScenePlayersModule players, IPrefabProvider prefabs, bool asServer)
         {
+            _manager = manager;
             _sceneId = sceneId;
             _scene = scene;
             _players = players;
@@ -76,7 +78,7 @@ namespace PurrNet.Modules
                 root.GetComponentsInChildren(true, children);
                 
                 var cc = children.Count;
-                var pid = -i - 1;
+                var pid = -i - 2;
                 var rootDepth = root.transform.GetTransformDepth();
                 
                 for (int j = 0; j < cc; j++)
@@ -140,17 +142,38 @@ namespace PurrNet.Modules
             PurrLogger.Log($"Auto spawning {prefabLink.prefabGuid} in scene {_sceneId}");
         }
 
+        private ushort _sceneObjectSpawnCount;
+        
         private void SpawnSceneObject(List<NetworkIdentity> children)
         {
-            PurrLogger.Log($"Spawning {children.Count} in scene {_sceneId} _asServer: {_asServer}");
+            for (int i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                if (child.isSceneObject)
+                {
+                    var id = new NetworkID(default, _sceneObjectSpawnCount++);
+                    child.SetIdentity(_manager, _sceneId, id, _asServer);
+                }
+            }
         }
         
         public void Despawn(GameObject gameObject)
         {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            gameObject.GetComponentsInChildren(true, children);
+
+            for (var i = 0; i < children.Count; i++)
+                children[i].ResetIdentity();
+
+            ListPool<NetworkIdentity>.Destroy(children);
+            
             if (gameObject.TryGetComponent<NetworkIdentity>(out var id) && id.isSceneObject)
             {
-                
-                return;
+                _scenePool.PutBackInPool(gameObject);
+            }
+            else
+            {
+                _prefabPool.PutBackInPool(gameObject);
             }
         }
         

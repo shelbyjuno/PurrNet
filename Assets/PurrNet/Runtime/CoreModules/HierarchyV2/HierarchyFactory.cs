@@ -7,6 +7,8 @@ namespace PurrNet.Modules
     {
         readonly ScenesModule _scenes;
         
+        readonly NetworkManager _manager;
+
         readonly ScenePlayersModule _scenePlayersModule;
         
         readonly Dictionary<SceneID, HierarchyV2> _hierarchies = new ();
@@ -15,8 +17,9 @@ namespace PurrNet.Modules
         
         readonly IPrefabProvider _prefabs;
         
-        public HierarchyFactory(IPrefabProvider prefabs, ScenesModule scenes, ScenePlayersModule scenePlayersModule)
+        public HierarchyFactory(NetworkManager manager, IPrefabProvider prefabs, ScenesModule scenes, ScenePlayersModule scenePlayersModule)
         {
+            _manager = manager;
             _scenes = scenes;
             _scenePlayersModule = scenePlayersModule;
             _prefabs = prefabs;
@@ -56,7 +59,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            var hierarchy = new HierarchyV2(scene, sceneState.scene, _scenePlayersModule, _prefabs, asServer);
+            var hierarchy = new HierarchyV2(_manager, scene, sceneState.scene, _scenePlayersModule, _prefabs, asServer);
             hierarchy.Enable();
             
             _rawScenes.Add(hierarchy);
