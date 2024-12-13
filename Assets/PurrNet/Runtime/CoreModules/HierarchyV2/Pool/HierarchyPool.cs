@@ -220,9 +220,13 @@ namespace PurrNet.Modules
             var trs = instance.transform;
             shouldBeActive = current.isActive;
 
-            if (parent)
-                WalkThePath(parent, trs, current.inversedRelativePath);
             SetEnabledStates(instance, current.enabled);
+
+            if (parent)
+            {
+                WalkThePath(parent, trs, current.inversedRelativePath);
+                instance.SetActive(shouldBeActive);
+            }
 
             var nextChildIdx = childrenStartIdx + childCount;
 
