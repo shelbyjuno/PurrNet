@@ -46,9 +46,11 @@ namespace PurrNet
             
             var scenes = _scenes.scenes;
             var sceneCount = scenes.Count;
-            
+
             for (var i = 0; i < sceneCount; i++)
+            {
                 OnSceneLoaded(scenes[i], asServer);
+            }
             
             _scenes.onPreSceneLoaded += OnSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;

@@ -123,10 +123,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: -2147483648
-  prefabOffset: -2147483648
-  siblingIndex: -2147483648
-  depthIndex: -2147483648
+  prefabId: 3
+  siblingIndex: 1
+  depthIndex: 1
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -264,10 +263,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 0
-  prefabOffset: 0
+  prefabId: 3
   siblingIndex: 0
-  depthIndex: -1
+  depthIndex: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -293,15 +291,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 0
-  prefabOffset: 1
+  prefabId: 3
   siblingIndex: 0
-  depthIndex: -1
+  depthIndex: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _guid: e1d9cd280a782c84aa05e2757cc55298
   _usePooling: 1
-  _poolWarmupCount: 0
+  _poolWarmupCount: 5
 --- !u!1 &8928655971527653229
 GameObject:
   m_ObjectHideFlags: 0
@@ -425,10 +422,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 2
-  prefabOffset: 0
+  prefabId: 3
   siblingIndex: 0
-  depthIndex: 0
+  depthIndex: 1
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1

@@ -123,9 +123,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefabId: 0
-  prefabOffset: 0
   siblingIndex: 0
-  depthIndex: -1
+  depthIndex: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -152,11 +151,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefabId: 0
-  prefabOffset: 1
   siblingIndex: 0
-  depthIndex: -1
+  depthIndex: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _guid: df5ee5117fc76014797efbc3bceb0fa6
   _usePooling: 1
-  _poolWarmupCount: 0
+  _poolWarmupCount: 5
