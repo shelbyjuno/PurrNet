@@ -460,6 +460,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   checkInterval: 0.33
+  placement: 0
+  displayType: 2
+  fontSize: 13
+  textColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1326095568
 GameObject:
   m_ObjectHideFlags: 0
@@ -967,6 +971,7 @@ MonoBehaviour:
   _animator: {fileID: 5672926956231318123}
   _ownerAuth: 1
   _autoSyncParameters: 1
+  _dontSyncParameters: []
 --- !u!1 &1801178370455642223
 GameObject:
   m_ObjectHideFlags: 0
