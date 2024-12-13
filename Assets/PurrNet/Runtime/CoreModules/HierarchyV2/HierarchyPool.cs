@@ -38,24 +38,43 @@ namespace PurrNet.Modules
         }
     }
     
-    public readonly struct GameObjectFrameworkPiece
+    public struct GameObjectFrameworkPiece : IDisposable
     {
         public readonly PrefabPieceID pid;
+        public readonly NetworkID id;
         public readonly int childCount;
-        public readonly int relativeDepth;
-        public readonly int siblingIndex;
+        public DisposableList<int> inversedRelativePath;
         
-        public GameObjectFrameworkPiece(PrefabPieceID pid, int childCount, int relativeDepth, int siblingIndex)
+        public GameObjectFrameworkPiece(PrefabPieceID pid, NetworkID id, int childCount, DisposableList<int> path)
         {
             this.pid = pid;
+            this.id = id;
             this.childCount = childCount;
-            this.relativeDepth = relativeDepth;
-            this.siblingIndex = siblingIndex;
+            this.inversedRelativePath = path;
         }
 
         public override string ToString()
         {
-            return $"{{ PID: {pid.prefabId}, Depth: {relativeDepth}, Sibling: {siblingIndex} }}";
+            StringBuilder builder = new();
+            builder.Append("GameObjectFrameworkPiece: { ");
+            builder.Append("Nid: ");
+            builder.Append(id);
+            builder.Append(", childCount: ");
+            builder.Append(childCount);
+            builder.Append(", Path: ");
+            for (int i = 0; i < inversedRelativePath.Count; i++)
+            {
+                builder.Append(inversedRelativePath[i]);
+                if (i < inversedRelativePath.Count - 1)
+                    builder.Append(" <- ");
+            }
+            builder.Append(" }");
+            return builder.ToString();
+        }
+
+        public void Dispose()
+        {
+            inversedRelativePath.Dispose();
         }
     }
 
@@ -65,6 +84,12 @@ namespace PurrNet.Modules
 
         public void Dispose()
         {
+            for (var i = 0; i < framework.Count; i++)
+            {
+                var piece = framework[i];
+                piece.Dispose();
+            }
+
             framework.Dispose();
         }
 
@@ -118,20 +143,21 @@ namespace PurrNet.Modules
             HashSetPool<PrefabPieceID>.Destroy(pidSet);
         }
 
-        private static void GetSiblingDepth(Transform parent, Transform transform, out int depth, out int siblingIndex)
+        private static DisposableList<int> GetSiblingDepth(Transform parent, Transform transform)
         {
-            depth = 0;
-            siblingIndex = 0;
+            var depth = new DisposableList<int>(16);
+            var current = transform;
             
             if (parent == null)
-                return;
+                return depth;
             
-            while (transform != parent)
+            while (current != parent)
             {
-                depth++;
-                siblingIndex = transform.GetSiblingIndex();
-                transform = transform.parent;
+                depth.Add(current.GetSiblingIndex());
+                current = current.parent;
             }
+            
+            return depth;
         }
         
         public static GameObjectPrototype GetFramework(Transform transform)
@@ -151,8 +177,6 @@ namespace PurrNet.Modules
                 using var current = queue.Dequeue();
                 var children = current.children;
                 
-                GetSiblingDepth(current.parent, current.identity.transform, out var depth, out var siblingIndex);
-
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
@@ -161,8 +185,12 @@ namespace PurrNet.Modules
                 }
                 
                 var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex, current.identity.siblingIndex);
-                var piece = new GameObjectFrameworkPiece(pid, children.Count, depth, siblingIndex);
-                
+                var piece = new GameObjectFrameworkPiece(
+                    pid,
+                    current.identity.id ?? default,
+                    children.Count,
+                    GetSiblingDepth(current.parent, current.identity.transform)
+                );
                 framework.Add(piece);
             }
             
