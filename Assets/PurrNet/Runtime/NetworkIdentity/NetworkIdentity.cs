@@ -26,12 +26,16 @@ namespace PurrNet
         
         [SerializeField, HideInInspector]
         public int depthIndex = int.MinValue;
+
+        [SerializeField, HideInInspector] 
+        public bool shouldBePooled;
         
-        public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex)
+        public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled)
         {
             this.prefabId = prefabId;
             this.siblingIndex = siblingIndex;
             this.depthIndex = depthIndex;
+            this.shouldBePooled = shouldBePooled;
         }
 
         /// <summary>
@@ -55,8 +59,8 @@ namespace PurrNet
         /// Is spawned over the network.
         /// </summary>
         public bool isSpawned => _isSpawnedServer || _isSpawnedClient;
-        
-        public bool isSceneObject => prefabId <= -1;
+
+        public bool isSceneObject { get; private set; }
 
         public bool isServer => isSpawned && networkManager.isServer;
         
@@ -67,8 +71,6 @@ namespace PurrNet
         public bool isOwner => isSpawned && isClient && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
-        
-        protected int _autoSpawnCalledFrame;
         
         Queue<Action> _onSpawnedQueue;
 
@@ -158,6 +160,12 @@ namespace PurrNet
         /// </summary>
         public NetworkIdentity root { get; private set; }
         
+        internal void SetIsSceneObject(bool isSceneObj)
+        {
+            isSceneObject = isSceneObj;
+        }
+        
+        [UsedImplicitly]
         public void QueueOnSpawned(Action action)
         {
             _onSpawnedQueue ??= new Queue<Action>();
@@ -602,9 +610,7 @@ namespace PurrNet
                 return;
             }
 
-            var link = GetComponentInParent<PrefabLink>();
-            
-            if (!networkManager || (link && link._autoSpawnCalledFrame == Time.frameCount))
+            if (!networkManager)
             {
                 _pendingOwnershipRequest = player;
                 return;

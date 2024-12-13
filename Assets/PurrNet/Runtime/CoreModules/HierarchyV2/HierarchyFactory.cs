@@ -32,7 +32,6 @@ namespace PurrNet.Modules
                     OnPreSceneLoaded(id, asServer);
             }
 
-            
             _scenes.onPreSceneLoaded += OnPreSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
         }

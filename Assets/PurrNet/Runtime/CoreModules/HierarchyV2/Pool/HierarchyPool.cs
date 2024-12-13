@@ -23,7 +23,11 @@ namespace PurrNet.Modules
 
         public void Warmup(GameObject prefab)
         {
+            PrefabLink.StartIgnoreAutoSpawn();
             var copy = Object.Instantiate(prefab, _parent);
+            copy.MakeSureAwakeIsCalled();
+            PrefabLink.StopIgnoreAutoSpawn();
+            
             PutBackInPool(copy);
         }
         

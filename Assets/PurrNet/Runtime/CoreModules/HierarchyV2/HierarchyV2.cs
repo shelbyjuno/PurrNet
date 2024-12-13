@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
 using PurrNet.Logging;
+using PurrNet.Pooling;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -24,6 +26,8 @@ namespace PurrNet.Modules
 
         private static readonly Dictionary<IPrefabProvider, HierarchyPool> _pools = new();
         
+        public bool areSceneObjectsReady { get; private set; }
+        
         public HierarchyV2(SceneID sceneId, Scene scene, ScenePlayersModule players, IPrefabProvider prefabs, bool asServer)
         {
             _sceneId = sceneId;
@@ -45,6 +49,49 @@ namespace PurrNet.Modules
             _scenePool = new HierarchyPool(gameObject.transform, prefabs);
             
             SetupPrefabPool(prefabs);
+            SetupSceneObjects(scene);
+            
+            areSceneObjectsReady = true;
+        }
+
+        private void SetupSceneObjects(Scene scene)
+        {
+            var allSceneIdentities = ListPool<NetworkIdentity>.Instantiate();
+            SceneObjectsModule.GetSceneIdentities(scene, allSceneIdentities);
+            
+            var roots = HashSetPool<NetworkIdentity>.Instantiate();
+
+            var count = allSceneIdentities.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var identity = allSceneIdentities[i];
+                var root = identity.GetRootIdentity();
+                
+                identity.SetIsSceneObject(true);
+
+                if (!roots.Add(root))
+                    continue;
+                
+                var children = ListPool<NetworkIdentity>.Instantiate();
+                root.GetComponentsInChildren(true, children);
+                
+                var cc = children.Count;
+                var pid = -i - 1;
+                var rootDepth = root.transform.GetTransformDepth();
+                
+                for (int j = 0; j < cc; j++)
+                {
+                    var child = children[j];
+                    var trs = child.transform;
+                    int depth = trs.GetTransformDepth() - rootDepth;
+                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), depth, true);
+                }
+
+                SpawnSceneObject(children);
+                ListPool<NetworkIdentity>.Destroy(children);
+            }
+            
+            ListPool<NetworkIdentity>.Destroy(allSceneIdentities);
         }
 
         private void SetupPrefabPool(IPrefabProvider prefabs)
@@ -86,9 +133,25 @@ namespace PurrNet.Modules
         {
             _visibility.Disable();
         }
-
-        public void Spawn(GameObject gameObject)
+        
+        [UsedImplicitly]
+        public void Spawn(PrefabLink prefabLink)
         {
+            PurrLogger.Log($"Auto spawning {prefabLink.prefabGuid} in scene {_sceneId}");
+        }
+
+        private void SpawnSceneObject(List<NetworkIdentity> children)
+        {
+            PurrLogger.Log($"Spawning {children.Count} in scene {_sceneId} _asServer: {_asServer}");
+        }
+        
+        public void Despawn(GameObject gameObject)
+        {
+            if (gameObject.TryGetComponent<NetworkIdentity>(out var id) && id.isSceneObject)
+            {
+                
+                return;
+            }
         }
         
         public void PreNetworkMessages()

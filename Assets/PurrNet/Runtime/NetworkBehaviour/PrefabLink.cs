@@ -7,8 +7,8 @@ namespace PurrNet
     public sealed class PrefabLink : NetworkIdentity
     {
         [SerializeField, PurrReadOnly] private string _guid;
-        [SerializeField] private bool _usePooling;
-        [SerializeField] private int _poolWarmupCount = 1;
+        [SerializeField, PurrLock] private bool _usePooling;
+        [SerializeField, PurrLock] private int _poolWarmupCount = 1;
         
         public bool usePooling => _usePooling;
         
@@ -28,21 +28,11 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        private bool _autoSpawnCalled;
-
         void Awake()
         {
-            DoAutoSpawn();
-        }
-
-        private void Start()
-        {
-            if (!_autoSpawnCalled)
-                DoAutoSpawn();
-        }
-
-        private void DoAutoSpawn()
-        {
+            if (isSceneObject)
+                return;
+            
             if (_muteAutoSpawn)
                 return;
 
@@ -54,18 +44,16 @@ namespace PurrNet
             if (!manager)
                 return;
 
-            if (manager.TryGetModule<ScenesModule>(manager.isServer, out var scenesModule))
-            {
-                if (!scenesModule.TryGetSceneID(gameObject.scene, out _))
-                    return;
-            }
+            if (!manager.TryGetModule<ScenesModule>(manager.isServer, out var scenesModule))
+                return;
+            
+            if (!scenesModule.TryGetSceneID(gameObject.scene, out var currentSceneId))
+                return;
             
             bool anyConnected = manager.isClient || manager.isServer;
 
             if (!anyConnected)
-            {
                 return;
-            }
 
             var prefab = manager.prefabProvider.GetPrefabFromGuid(_guid);
 
@@ -75,12 +63,11 @@ namespace PurrNet
                 return;
             }
 
-            if (!manager.TryGetModule<HierarchyModule>(manager.isServer, out var spawnModule))
+            if (!manager.TryGetModule<HierarchyFactory>(manager.isServer, out var hierarchyFactory))
                 return;
-                    
-            spawnModule.AutoSpawn(gameObject);
-            _autoSpawnCalledFrame = Time.frameCount;
-            _autoSpawnCalled = true;
+
+            if (hierarchyFactory.TryGetHierarchy(currentSceneId, out var hierarchy) && hierarchy.areSceneObjectsReady)
+                hierarchy.Spawn(this);
         }
 
         internal bool SetGUID(string guid)

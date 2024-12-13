@@ -25,7 +25,7 @@ namespace PurrNet.Modules
         public NetworkIdentity identity;
         public bool isActive;
     }
-    
+
     internal class HierarchyScene : INetworkModule
     {
         private readonly NetworkManager _manager;
@@ -109,10 +109,10 @@ namespace PurrNet.Modules
             if (_scenes.TryGetSceneState(_sceneID, out var state))
                 _sceneObjects = SceneObjectsModule.GetSceneIdentities(state.scene);
 
-            if (_asServer)
+            /*if (_asServer)
                 SpawnSceneObjects(_sceneObjects);
             else if (_playersManager.localPlayerId.HasValue)
-                SpawnSceneObjects(_sceneObjects);
+                SpawnSceneObjects(_sceneObjects);*/
             
             if (asServer)
                 identities.SkipIds((ushort)_sceneObjects.Count);
@@ -120,7 +120,7 @@ namespace PurrNet.Modules
 
         private void OnLocalClientReady(PlayerID player)
         {
-            SpawnSceneObjects(_sceneObjects);
+            // SpawnSceneObjects(_sceneObjects);
         }
 
         public void Disable(bool asServer)
@@ -534,7 +534,7 @@ namespace PurrNet.Modules
                 if (oldActive) prefab.gameObject.SetActive(true);
             }
             
-            MakeSureAwakeIsCalled(go);
+            PurrNetGameObjectUtils.MakeSureAwakeIsCalled(go);
             
             go.GetComponentsInChildren(true, CACHE);
             
@@ -711,7 +711,7 @@ namespace PurrNet.Modules
         
         public void Spawn(ref GameObject instance)
         {
-            MakeSureAwakeIsCalled(instance);
+            PurrNetGameObjectUtils.MakeSureAwakeIsCalled(instance);
 
             if (!_manager.networkRules.HasSpawnAuthority(_manager, _asServer))
             {
@@ -812,63 +812,7 @@ namespace PurrNet.Modules
             player = default;
             return true;
         }
-
-        struct BehaviourState
-        {
-            public Behaviour component;
-            public bool enabled;
-        }
         
-        static readonly List<Behaviour> _components = new ();
-
-        /// <summary>
-        /// Awake is not called on disabled game objects, so we need to ensure it's called for all components.
-        /// </summary>
-        internal static void MakeSureAwakeIsCalled(GameObject root)
-        {
-            var cache = ListPool<BehaviourState>.Instantiate();
-            var gosToDeactivate = HashSetPool<GameObject>.Instantiate();
-            
-            // for components in disabled game objects, disabled them, activate game object, and reset their enabled state
-            root.GetComponentsInChildren(true, _components);
-            
-            for (int i = 0; i < _components.Count; i++)
-            {
-                var child = _components[i];
-                
-                if (!child)
-                    continue;
-                
-                if (!child.gameObject.activeSelf)
-                {
-                    cache.Add(new BehaviourState
-                    {
-                        component = child,
-                        enabled = child.enabled
-                    });
-                    
-                    child.enabled = false;
-                    
-                    gosToDeactivate.Add(child.gameObject);
-                }
-            }
-
-            foreach (var go in gosToDeactivate)
-            {
-                go.SetActive(true);
-                go.SetActive(false);
-            }
-            
-            for (int i = 0; i < cache.Count; i++)
-            {
-                var state = cache[i];
-                state.component.enabled = state.enabled;
-            }
-
-            HashSetPool<GameObject>.Destroy(gosToDeactivate);
-            ListPool<BehaviourState>.Destroy(cache);
-        }
-
         private void OnIdentityParentChanged(NetworkTransform trs)
         {
             if (!trs.id.HasValue)

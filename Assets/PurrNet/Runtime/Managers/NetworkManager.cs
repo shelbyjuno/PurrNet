@@ -307,31 +307,22 @@ namespace PurrNet
             for (var pid = 0; pid < prefabProvider.allPrefabs.Count; pid++)
             {
                 var prefab = prefabProvider.allPrefabs[pid];
+
                 prefab.GetComponentsInChildren(true, children);
 
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
                     var trs = child.transform;
-                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), GetTransformDepth(trs));
+
+                    bool shouldPool = prefab.TryGetComponent<PrefabLink>(out var link) && link.usePooling;
+                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), trs.GetTransformDepth(), shouldPool);
+                    child.SetIsSceneObject(false);
                 }
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
         }
-
-        static int GetTransformDepth(Transform transform)
-        {
-            int depth = 0;
-            while (transform.parent)
-            {
-                transform = transform.parent;
-                depth++;
-            }
-
-            return depth;
-        }
-
 
         private void Awake()
         {
