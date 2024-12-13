@@ -58,7 +58,7 @@ namespace PurrNet.Modules
             HashSetPool<PrefabPieceID>.Destroy(pidSet);
         }
 
-        public bool TryGetFromPool(PrefabPieceID pid, Transform parent, out GameObject instance)
+        private bool TryGetFromPool(PrefabPieceID pid, out GameObject instance)
         {
             if (!_pool.TryGetValue(pid, out var list))
             {
@@ -66,18 +66,13 @@ namespace PurrNet.Modules
                 return false;
             }
 
-            switch (list.Count)
+            if (list.Count == 0)
             {
-                case 0:
-                    instance = null;
-                    return false;
-                case 1:
-                    // make a copy of the object
-                    instance = Object.Instantiate(list.Peek(), parent);
-                    return true;
-                default:
-                    return list.TryDequeue(out instance);
+                instance = null;
+                return false;
             }
+
+            return list.TryDequeue(out instance);
         }
 
         private static DisposableList<int> GetInvPath(Transform parent, Transform transform)
@@ -197,7 +192,7 @@ namespace PurrNet.Modules
             var current = framework[currentIdx];
             var childCount = current.childCount;
 
-            if (!TryGetFromPool(current.pid, _parent, out var instance))
+            if (!TryGetFromPool(current.pid, out var instance))
             {
                 PurrLogger.LogError($"Failed to get object from pool: {current.pid}");
                 result = null;
@@ -245,12 +240,28 @@ namespace PurrNet.Modules
             for (var i = inversedPath.Count - 1; i >= 1; i--)
             {
                 var siblingIndex = inversedPath[i];
+                
+                if (parent.childCount <= siblingIndex)
+                {
+                    PurrLogger.LogError($"Parent {parent} doesn't have child with index {siblingIndex}");
+                    return;
+                }
+                
                 var sibling = parent.GetChild(siblingIndex);
                 parent = sibling;
             }
 
             instance.SetParent(parent, false);
-            instance.SetSiblingIndex(inversedPath[0]);
+            
+            var targetSiblingIndex = inversedPath[0];
+            
+            if (parent.childCount <= targetSiblingIndex)
+            {
+                PurrLogger.LogError($"Failed to set instance {instance} sibling index to {targetSiblingIndex}");
+                return;
+            }
+            
+            instance.SetSiblingIndex(targetSiblingIndex);
         }
 
         private static GameObjectRuntimePair GetRuntimePair(Transform parent, Transform transform,
