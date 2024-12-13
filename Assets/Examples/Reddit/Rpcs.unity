@@ -148,7 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 962d72201522faf47b5a6bcb1d1a5a54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lobbySceneName: Rpcs2
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
 --- !u!4 &38974907
 Transform:
   m_ObjectHideFlags: 0

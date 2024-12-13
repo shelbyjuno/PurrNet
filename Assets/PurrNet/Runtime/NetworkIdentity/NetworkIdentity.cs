@@ -187,6 +187,12 @@ namespace PurrNet
             GiveOwnership(localPlayer);
         }
         
+        [ContextMenu("PurrNet/Print Prototype")]
+        private void PrintPrototype()
+        {
+            PurrLogger.Log(HierarchyPool.GetFramework(transform).ToString());
+        }
+        
         private void InternalOnSpawn(bool asServer)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
