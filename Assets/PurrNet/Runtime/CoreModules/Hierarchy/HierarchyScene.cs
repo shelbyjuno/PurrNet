@@ -820,15 +820,14 @@ namespace PurrNet.Modules
         }
         
         static readonly List<Behaviour> _components = new ();
-        static readonly List<BehaviourState> _cache = new ();
-        static readonly HashSet<GameObject> _gosToDeactivate = new ();
 
         /// <summary>
         /// Awake is not called on disabled game objects, so we need to ensure it's called for all components.
         /// </summary>
         internal static void MakeSureAwakeIsCalled(GameObject root)
         {
-            _cache.Clear();
+            var cache = ListPool<BehaviourState>.Instantiate();
+            var gosToDeactivate = HashSetPool<GameObject>.Instantiate();
             
             // for components in disabled game objects, disabled them, activate game object, and reset their enabled state
             root.GetComponentsInChildren(true, _components);
@@ -842,7 +841,7 @@ namespace PurrNet.Modules
                 
                 if (!child.gameObject.activeSelf)
                 {
-                    _cache.Add(new BehaviourState
+                    cache.Add(new BehaviourState
                     {
                         component = child,
                         enabled = child.enabled
@@ -850,24 +849,24 @@ namespace PurrNet.Modules
                     
                     child.enabled = false;
                     
-                    _gosToDeactivate.Add(child.gameObject);
+                    gosToDeactivate.Add(child.gameObject);
                 }
             }
 
-            foreach (var go in _gosToDeactivate)
+            foreach (var go in gosToDeactivate)
             {
                 go.SetActive(true);
                 go.SetActive(false);
             }
             
-            for (int i = 0; i < _cache.Count; i++)
+            for (int i = 0; i < cache.Count; i++)
             {
-                var state = _cache[i];
+                var state = cache[i];
                 state.component.enabled = state.enabled;
             }
 
-            _cache.Clear();
-            _gosToDeactivate.Clear();
+            HashSetPool<GameObject>.Destroy(gosToDeactivate);
+            ListPool<BehaviourState>.Destroy(cache);
         }
 
         private void OnIdentityParentChanged(NetworkTransform trs)

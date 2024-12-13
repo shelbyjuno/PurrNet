@@ -44,12 +44,12 @@ namespace PurrNet
         {
             _asServer = asServer;
             
-            var scenes = _scenes.scenes;
-            var sceneCount = scenes.Count;
+            var scenes = _scenes.sceneStates;
 
-            for (var i = 0; i < sceneCount; i++)
+            foreach (var (id, sceneState) in scenes)
             {
-                OnSceneLoaded(scenes[i], asServer);
+                if (sceneState.scene.isLoaded)
+                    OnSceneLoaded(id, asServer);
             }
             
             _scenes.onPreSceneLoaded += OnSceneLoaded;

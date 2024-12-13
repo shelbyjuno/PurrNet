@@ -42,7 +42,7 @@ namespace PurrNet
     }
 
     [Serializable]
-    public class SyncDictionary<TKey, TValue> : NetworkModule, IDictionary<TKey, TValue>
+    public class SyncDictionary<TKey, TValue> : NetworkModule, IDictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField] private bool _ownerAuth;
         [SerializeField] private SerializableDictionary<TKey, TValue> _serializedDict = new();
@@ -101,13 +101,20 @@ namespace PurrNet
             }
         }
         
-        protected virtual void OnValidate()
+        public void OnBeforeSerialize()
+        {
+            _serializedDict.FromDictionary(_dict);
+        }
+
+        public void OnAfterDeserialize()
         {
             _dict = _serializedDict.ToDictionary();
         }
 
         public override void OnSpawn()
         {
+            base.OnSpawn();
+            
             if (!IsController(_ownerAuth)) return;
             
             if (isServer)
@@ -115,14 +122,11 @@ namespace PurrNet
             else SendInitialStateToServer(_dict);
         }
 
-        protected virtual void OnBeforeSerialize()
-        {
-            _serializedDict.FromDictionary(_dict);
-        }
-
         public override void OnObserverAdded(PlayerID player)
         {
-            HandleInitialStateTarget(player, _serializedDict.ToDictionary());
+            base.OnObserverAdded(player);
+            
+            HandleInitialStateTarget(player, _dict);
         }
         
         [TargetRpc(Channel.ReliableOrdered)]
@@ -261,6 +265,15 @@ namespace PurrNet
                     SendClearToServer();
             }
         }
+        
+        /// <summary>
+        /// Creates a new Dictionary from the SyncDictionary
+        /// </summary>
+        /// <returns>A new Dictionary containing all key-value pairs from this SyncDictionary</returns>
+        public Dictionary<TKey, TValue> ToDictionary()
+        {
+            return new Dictionary<TKey, TValue>(_dict);
+        }
 
         public bool ContainsKey(TKey key) => _dict.ContainsKey(key);
         public bool TryGetValue(TKey key, out TValue value) => _dict.TryGetValue(key, out value);
@@ -301,7 +314,7 @@ namespace PurrNet
         {
             if (!isServer || isHost)
             {
-                _dict.Add(key, value);
+                _dict[key] = value;
                 InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Added, key, value));
             }
         }
@@ -311,7 +324,7 @@ namespace PurrNet
         {
             if (!isHost)
             {
-                _dict.Add(key, value);
+                _dict[key] = value;
                 InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Added, key, value));
             }
         }
@@ -468,20 +481,42 @@ namespace PurrNet
     {
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
+        
+        [SerializeField] private List<string> stringKeys = new List<string>();
+        [SerializeField] private List<string> stringValues = new List<string>();
+        
+        private bool isKeySerializable;
+        private bool isValueSerializable;
+
+        public SerializableDictionary()
+        {
+            isKeySerializable = typeof(TKey).IsSerializable || typeof(UnityEngine.Object).IsAssignableFrom(typeof(TKey));
+            isValueSerializable = typeof(TValue).IsSerializable || typeof(UnityEngine.Object).IsAssignableFrom(typeof(TValue));
+        }
 
         public Dictionary<TKey, TValue> ToDictionary()
         {
             var dict = new Dictionary<TKey, TValue>();
-            int count = Mathf.Min(keys.Count, values.Count);
-            
-            for (int i = 0; i < count; i++)
+    
+            if (isKeySerializable && isValueSerializable)
             {
-                if (keys[i] != null && !dict.ContainsKey(keys[i]))
+                int count = Mathf.Min(keys.Count, values.Count);
+                for (int i = 0; i < count; i++)
                 {
-                    dict.Add(keys[i], values[i]);
+                    if (keys[i] != null && !dict.ContainsKey(keys[i]))
+                        dict.Add(keys[i], values[i]);
                 }
             }
-            
+            else
+            {
+                var count = Mathf.Min(stringKeys.Count, stringValues.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    if (stringKeys[i] != null && !dict.ContainsKey(default(TKey)))
+                        dict.Add(default(TKey), default(TValue));
+                }
+            }
+    
             return dict;
         }
 
@@ -489,12 +524,30 @@ namespace PurrNet
         {
             keys.Clear();
             values.Clear();
+            stringKeys.Clear();
+            stringValues.Clear();
 
             foreach (var kvp in dict)
             {
-                keys.Add(kvp.Key);
-                values.Add(kvp.Value);
+                if (isKeySerializable && isValueSerializable)
+                {
+                    keys.Add(kvp.Key);
+                    values.Add(kvp.Value);
+                }
+                else
+                {
+                    stringKeys.Add(kvp.Key?.ToString() ?? "null");
+                    stringValues.Add(kvp.Value?.ToString() ?? "null");
+                }
             }
         }
+        public bool IsSerializable => isKeySerializable && isValueSerializable;
+        public int Count => isKeySerializable ? keys.Count : stringKeys.Count;
+        public string GetDisplayKey(int index) => isKeySerializable ? 
+            (keys[index]?.ToString() ?? "null") : 
+            (stringKeys[index] ?? "null");
+        public string GetDisplayValue(int index) => isValueSerializable ? 
+            (values[index]?.ToString() ?? "null") : 
+            (stringValues[index] ?? "null");
     }
 }

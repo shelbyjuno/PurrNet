@@ -87,6 +87,7 @@ namespace PurrNet.Modules
         private ScenePlayersModule _scenePlayers;
         
         public IReadOnlyList<SceneID> scenes => _rawScenes;
+        public IReadOnlyDictionary<SceneID, SceneState> sceneStates => _scenes;
         
         private SceneID GetNextID() => new(_nextSceneID++);
 
@@ -394,7 +395,10 @@ namespace PurrNet.Modules
                 return;
             
             for (var i = 0; i < data.actions.Count; i++)
+            {
+                //PurrLogger.Log($"Received action {data.actions[i].type} from {player} {asserver}");
                 _actionsQueue.Enqueue(data.actions[i]);
+            }
             
             HandleNextSceneAction();
         }
