@@ -1,23 +1,40 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using JetBrains.Annotations;
 using PurrNet.Pooling;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
-    public class HierarchyPool
+    public class HierarchyPool : IDisposable
     {
-        private readonly Dictionary<PrefabPieceID, DisposableList<GameObject>> _pool = new ();
+        private readonly Dictionary<PrefabPieceID, Queue<GameObject>> _pool = new ();
+        
+        private readonly Transform _parent;
+        
+        [UsedImplicitly]
+        private readonly IPrefabProvider _prefabs;
+        
+        public HierarchyPool(Transform parent, IPrefabProvider prefabs)
+        {
+            _parent = parent;
+            _prefabs = prefabs;
+        }
         
         public void Warmup(GameObject prefab)
         {
-            var copy = Object.Instantiate(prefab);
-            
+            var copy = Object.Instantiate(prefab, _parent);
+
+            PutBackInPool(copy);
+        }
+
+        public void PutBackInPool(GameObject target)
+        {
             var children = ListPool<NetworkIdentity>.Instantiate();
             var pidSet = HashSetPool<PrefabPieceID>.Instantiate();
             
-            copy.SetActive(false);
-            copy.GetComponentsInChildren(true, children);
+            target.GetComponentsInChildren(true, children);
             
             for (var i = 0; i < children.Count; i++)
             {
@@ -26,18 +43,41 @@ namespace PurrNet.Modules
                 
                 if (!pidSet.Add(pid)) continue;
                 
-                if (!_pool.TryGetValue(pid, out var list))
+                if (!_pool.TryGetValue(pid, out var queue))
                 {
-                    list = new DisposableList<GameObject>(16);
-                    _pool.Add(pid, list);
+                    queue = QueuePool<GameObject>.Instantiate();
+                    _pool.Add(pid, queue);
                 }
                 
+                child.gameObject.SetActive(false);
                 child.transform.SetParent(null, false);
-                list.Add(child.gameObject);
+                queue.Enqueue(child.gameObject);
             }
             
             ListPool<NetworkIdentity>.Destroy(children);
             HashSetPool<PrefabPieceID>.Destroy(pidSet);
+        }
+        
+        public bool TryGetFromPool(PrefabPieceID pid, Transform parent, out GameObject instance)
+        {
+            if (!_pool.TryGetValue(pid, out var list))
+            {
+                instance = null;
+                return false;
+            }
+            
+            switch (list.Count)
+            {
+                case 0:
+                    instance = null;
+                    return false;
+                case 1:
+                    // make a copy of the object
+                    instance = Object.Instantiate(list.Peek(), parent);
+                    return true;
+                default:
+                    return list.TryDequeue(out instance);
+            }
         }
 
         private static DisposableList<int> GetSiblingDepth(Transform parent, Transform transform)
@@ -126,6 +166,12 @@ namespace PurrNet.Modules
                 var child = root.transform.GetChild(i);
                 GetDirectChildrenHelper(child, children);
             }
+        }
+
+        public void Dispose()
+        {
+            foreach (var (_, queue) in _pool)
+                QueuePool<GameObject>.Destroy(queue);
         }
     }
 }

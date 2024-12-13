@@ -13,10 +13,13 @@ namespace PurrNet.Modules
         
         readonly List<HierarchyV2> _rawScenes = new ();
         
-        public HierarchyFactory(ScenesModule scenes, ScenePlayersModule scenePlayersModule)
+        readonly IPrefabProvider _prefabs;
+        
+        public HierarchyFactory(IPrefabProvider prefabs, ScenesModule scenes, ScenePlayersModule scenePlayersModule)
         {
             _scenes = scenes;
             _scenePlayersModule = scenePlayersModule;
+            _prefabs = prefabs;
         }
         
         public void Enable(bool asServer)
@@ -39,7 +42,13 @@ namespace PurrNet.Modules
                 return;
             }
             
-            var hierarchy = new HierarchyV2(scene, _scenePlayersModule, asServer);
+            if (!_scenes.TryGetSceneState(scene, out var sceneState))
+            {
+                PurrLogger.LogError($"Scene {scene} doesn't exist; trying to create hierarchy module for it?");
+                return;
+            }
+            
+            var hierarchy = new HierarchyV2(scene, sceneState.scene, _scenePlayersModule, _prefabs, asServer);
             hierarchy.Enable();
             
             _rawScenes.Add(hierarchy);
