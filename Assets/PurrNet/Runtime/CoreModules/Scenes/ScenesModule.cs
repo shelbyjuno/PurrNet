@@ -729,7 +729,15 @@ namespace PurrNet.Modules
             
             if (isAnythingConnected) 
                 return;
-
+            
+            // if og scene isnt loaded load it in
+            if (!_networkManager.originalScene.isLoaded)
+            {
+                bool isDontDestroyOnLoad = _networkManager.originalScene.name == "DontDestroyOnLoad";
+                if (!isDontDestroyOnLoad)
+                    SceneManager.LoadScene(_networkManager.originalScene.buildIndex, LoadSceneMode.Additive);
+            }
+            
             foreach (var (id, scene) in _scenes)
             {
                 if (id == default) 
