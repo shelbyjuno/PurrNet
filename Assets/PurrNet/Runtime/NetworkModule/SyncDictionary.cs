@@ -168,6 +168,9 @@ namespace PurrNet
         {
             if (!isHost)
             {
+                if(initialState == null)
+                    return;
+                
                 _dict = initialState;
                 
                 InvokeChange(new SyncDictionaryChange<TKey, TValue>(SyncDictionaryOperation.Cleared));

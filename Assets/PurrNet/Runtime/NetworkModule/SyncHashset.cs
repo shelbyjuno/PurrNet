@@ -137,6 +137,9 @@ namespace PurrNet
         {
             if (!isHost)
             {
+                if (initialState == null)
+                    return;
+                
                 _set = initialState;
                 
                 InvokeChange(new SyncHashSetChange<T>(SyncHashSetOperation.Cleared));

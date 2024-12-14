@@ -128,11 +128,13 @@ namespace PurrNet
         {
             if (!isHost)
             {
+                if (items == null)
+                    return;
                 _list.Clear();
                 _list.AddRange(items);
                 
                 InvokeChange(new SyncListChange<T>(SyncListOperation.Cleared));
-
+                
                 for (int i = 0; i < items.Count; i++)
                     InvokeChange(new SyncListChange<T>(SyncListOperation.Added, items[i], i));
             }
