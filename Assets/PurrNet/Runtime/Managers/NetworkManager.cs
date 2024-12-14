@@ -133,6 +133,8 @@ namespace PurrNet
         /// </summary>
         public Scene originalScene { get; private set; }
         
+        public int originalSceneBuildIndex { get; private set; }
+        
         /// <summary>
         /// Occurs when the server connection state changes.
         /// </summary>
@@ -317,6 +319,7 @@ namespace PurrNet
                 throw new InvalidOperationException(PurrLogger.FormatMessage("NetworkRules is not set (null)."));
 
             originalScene = gameObject.scene;
+            originalSceneBuildIndex = originalScene.buildIndex;
 
             if (_visibilityRules)
             {
