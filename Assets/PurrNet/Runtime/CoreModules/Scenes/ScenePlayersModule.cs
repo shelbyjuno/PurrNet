@@ -63,7 +63,7 @@ namespace PurrNet.Modules
                 foreach (var (id, sceneState) in scenes)
                 {
                     if (sceneState.scene.isLoaded)
-                        OnSceneLoaded(id, asServer);
+                        OnSceneLoaded(id, true);
                 }
                 
                 _scenes.onSceneLoaded += OnSceneLoaded;

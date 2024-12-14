@@ -307,12 +307,11 @@ namespace PurrNet
                 if (main.isOffline)
                 {
                     Destroy(gameObject);
-                }
-                else
-                {
-                    Destroy(this);
                     return;
                 }
+                
+                Destroy(this);
+                return;
             }
             
             if (!networkRules)
@@ -1023,6 +1022,12 @@ namespace PurrNet
         public GameObject GetPrefabFromGuid(string guid)
         {
             return _networkPrefabs.GetPrefabFromGuid(guid);
+        }
+
+        public void ResetOriginalScene(Scene activeScene)
+        {
+            originalScene = activeScene;
+            originalSceneBuildIndex = activeScene.buildIndex;
         }
     }
 }

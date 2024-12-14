@@ -217,8 +217,6 @@ namespace PurrNet.Modules
             }
             
             SceneManager.sceneLoaded -= SceneManagerOnSceneLoaded;
-
-            DoCleanup();
         }
 
         private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
@@ -721,49 +719,53 @@ namespace PurrNet.Modules
             _history.Flush();
         }
 
-        private void DoCleanup()
-        {
-            if (ApplicationContext.isQuitting) return;
-            
-            bool isAnythingConnected = _networkManager.isServer || _networkManager.isClient;
-            
-            if (isAnythingConnected) 
-                return;
-            
-            // if og scene isnt loaded load it in
-            if (!_networkManager.originalScene.isLoaded)
-            {
-                if (_networkManager.originalSceneBuildIndex != -1)
-                    SceneManager.LoadScene(_networkManager.originalSceneBuildIndex, LoadSceneMode.Additive);
-            }
-            
-            foreach (var (id, scene) in _scenes)
-            {
-                if (id == default) 
-                    continue;
-                
-                if (scene.settings.wasPresentFromStart)
-                    continue;
-
-                var unityScene = scene.scene;
-
-                if (!unityScene.IsValid())
-                    continue;
-                
-                SceneManager.UnloadSceneAsync(unityScene);
-            }
-        }
-
         private readonly List<AsyncOperation> _pendingUnloads = new();
+        private AsyncOperation _ogSceneLoad;
+        private bool _isLoadingOriginalScene;
+        private bool _wasDoneLoadingOriginalScene;
 
         public bool Cleanup()
         {
+            if (ApplicationContext.isQuitting)
+                return true;
+
             if (!_networkManager.isOffline)
                 return true;
 
             if (_pendingOperations.Count > 0)
                 return false;
+            
+            // if og scene isnt loaded load it in
+            if (!_isLoadingOriginalScene && _ogSceneLoad == null && _networkManager.originalSceneBuildIndex != -1 &&
+                !_networkManager.originalScene.isLoaded)
+            {
+                _ogSceneLoad = SceneManager.LoadSceneAsync(_networkManager.originalSceneBuildIndex, LoadSceneMode.Additive);
+                
+                if (_ogSceneLoad != null)
+                    _ogSceneLoad.allowSceneActivation = true;
+                
+                // avoid loading the original scene twice
+                if (_networkManager.TryGetModule(!_asServer, out ScenesModule otherModule))
+                {
+                    otherModule._isLoadingOriginalScene = true;
+                    otherModule._scenes.Clear();
+                }
+                
+                _isLoadingOriginalScene = true;
+            }
+            
+            // finish loading the og scene before unloading the rest
+            if (_ogSceneLoad is { isDone: false })
+                return false;
+            
+            // delay by one frame to ensure the original scene is loaded
+            if (!_wasDoneLoadingOriginalScene)
+            {
+                _wasDoneLoadingOriginalScene = true;
+                return false;
+            }
 
+            // unload all scenes that aren't the network manager scene
             if (_scenes.Count > 0)
             {
                 _pendingUnloads.Clear();
@@ -772,11 +774,19 @@ namespace PurrNet.Modules
                 {
                     if (id == default)
                         continue;
+
+                    var unityScene = scene.scene;
+                    
+                    if (!unityScene.IsValid())
+                        continue;
+                    
+                    if (!unityScene.isLoaded)
+                        continue;
                     
                     if (scene.settings.wasPresentFromStart)
                         continue;
 
-                    _pendingUnloads.Add(SceneManager.UnloadSceneAsync(scene.scene));
+                    _pendingUnloads.Add(SceneManager.UnloadSceneAsync(unityScene));
                 }
 
                 _scenes.Clear();
@@ -789,7 +799,14 @@ namespace PurrNet.Modules
                     if (_pendingUnloads[i] != null && !_pendingUnloads[i].isDone)
                         return false;
                 }
-            } 
+            }
+            
+            // reset og scene
+            if (_ogSceneLoad != null)
+            {
+                var activeScene = SceneManager.GetActiveScene();
+                _networkManager.ResetOriginalScene(activeScene);
+            }
 
             return true;
         }
