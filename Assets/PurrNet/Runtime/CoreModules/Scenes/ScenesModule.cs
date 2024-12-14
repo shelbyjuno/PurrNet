@@ -720,10 +720,24 @@ namespace PurrNet.Modules
         }
 
         private readonly List<AsyncOperation> _pendingUnloads = new();
-        private AsyncOperation _ogSceneLoad;
-        private bool _isLoadingOriginalScene;
-        private bool _wasDoneLoadingOriginalScene;
+        private CleanupStage _cleanupStage;
 
+        enum CleanupStage
+        {
+            None,
+            Skip,
+            LoadEmptyScene,
+            WaitOneFrame,
+            UnloadScenes,
+            LoadOGScene,
+            UnloadEmptyScene,
+            ResetScene,
+            Done
+        }
+
+        private Scene? _emptyScene;
+        private AsyncOperation _ogSceneLoad;
+        
         public bool Cleanup()
         {
             if (ApplicationContext.isQuitting)
@@ -734,37 +748,89 @@ namespace PurrNet.Modules
 
             if (_pendingOperations.Count > 0)
                 return false;
-            
-            // if og scene isnt loaded load it in
-            if (!_isLoadingOriginalScene && _ogSceneLoad == null && _networkManager.originalSceneBuildIndex != -1 &&
-                !_networkManager.originalScene.isLoaded)
-            {
-                _ogSceneLoad = SceneManager.LoadSceneAsync(_networkManager.originalSceneBuildIndex, LoadSceneMode.Additive);
-                
-                if (_ogSceneLoad != null)
-                    _ogSceneLoad.allowSceneActivation = true;
-                
-                // avoid loading the original scene twice
-                if (_networkManager.TryGetModule(!_asServer, out ScenesModule otherModule))
-                {
-                    otherModule._isLoadingOriginalScene = true;
-                    otherModule._scenes.Clear();
-                }
-                
-                _isLoadingOriginalScene = true;
-            }
-            
-            // finish loading the og scene before unloading the rest
-            if (_ogSceneLoad is { isDone: false })
-                return false;
-            
-            // delay by one frame to ensure the original scene is loaded
-            if (!_wasDoneLoadingOriginalScene)
-            {
-                _wasDoneLoadingOriginalScene = true;
-                return false;
-            }
 
+            switch (_cleanupStage)
+            {
+                case CleanupStage.None:
+                {
+                    _cleanupStage = CleanupStage.LoadEmptyScene;
+                    
+                    if (_networkManager.TryGetModule(!_asServer, out ScenesModule module))
+                        module._cleanupStage = CleanupStage.Skip;
+                    
+                    return false;
+                }
+                case CleanupStage.Skip: return false;
+                case CleanupStage.Done: return true;
+                case CleanupStage.LoadEmptyScene:
+                {
+                    _cleanupStage = CleanupStage.WaitOneFrame;
+                    _emptyScene = SceneManager.CreateScene("EmptyScene");
+                    return false;
+                }
+                case CleanupStage.WaitOneFrame:
+                {
+                    _cleanupStage = CleanupStage.UnloadScenes;
+                    return false;
+                }
+                case CleanupStage.UnloadScenes:
+                {
+                    if (UnloadAllScenesCleanup())
+                        _cleanupStage = CleanupStage.LoadOGScene;
+                    return false;
+                }
+                case CleanupStage.LoadOGScene:
+                {
+                    if (_ogSceneLoad == null)
+                    {
+                        if (_networkManager.originalSceneBuildIndex != -1)
+                        {
+                            _ogSceneLoad = SceneManager.LoadSceneAsync(_networkManager.originalSceneBuildIndex,
+                                LoadSceneMode.Additive);
+
+                            if (_ogSceneLoad != null) 
+                                _ogSceneLoad.allowSceneActivation = true;
+                        }
+                        else
+                        {
+                            _cleanupStage = CleanupStage.UnloadEmptyScene;
+                        }
+                    }
+
+                    if (_ogSceneLoad is { isDone: true })
+                    {
+                        _cleanupStage = CleanupStage.ResetScene;
+                    }
+
+                    return false;
+                }
+                case CleanupStage.ResetScene:
+                {
+                    var activeScene = SceneManager.GetSceneByBuildIndex(_networkManager.originalSceneBuildIndex);
+                    _networkManager.ResetOriginalScene(activeScene);
+                    _cleanupStage = CleanupStage.UnloadEmptyScene;
+                    return false;
+                }
+                case CleanupStage.UnloadEmptyScene:
+                {
+                    if (_emptyScene != null)
+                    {
+                        SceneManager.UnloadSceneAsync(_emptyScene.Value);
+                        _emptyScene = null;
+                        return false;
+                    }
+
+                    if (_networkManager.TryGetModule(!_asServer, out ScenesModule module))
+                        module._cleanupStage = CleanupStage.Done;
+                    _cleanupStage = CleanupStage.Done;
+                    return false;
+                }
+                default: return true;
+            }
+        }
+
+        private bool UnloadAllScenesCleanup()
+        {
             // unload all scenes that aren't the network manager scene
             if (_scenes.Count > 0)
             {
@@ -783,9 +849,11 @@ namespace PurrNet.Modules
                     if (!unityScene.isLoaded)
                         continue;
                     
-                    if (scene.settings.wasPresentFromStart)
+                    bool isDontDestroyOnLoad = unityScene.name == "DontDestroyOnLoad";
+                    
+                    if (isDontDestroyOnLoad)
                         continue;
-
+                    
                     _pendingUnloads.Add(SceneManager.UnloadSceneAsync(unityScene));
                 }
 
@@ -799,13 +867,6 @@ namespace PurrNet.Modules
                     if (_pendingUnloads[i] != null && !_pendingUnloads[i].isDone)
                         return false;
                 }
-            }
-            
-            // reset og scene
-            if (_ogSceneLoad != null)
-            {
-                var activeScene = SceneManager.GetActiveScene();
-                _networkManager.ResetOriginalScene(activeScene);
             }
 
             return true;
