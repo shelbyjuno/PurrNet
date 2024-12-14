@@ -170,7 +170,8 @@ namespace PurrNet.Modules
                     identityId = new NetworkID((ushort)i),
                     childCount = (ushort)CACHE.Count,
                     childOffset = 0,
-                    transformInfo = new TransformInfo(CACHE[0].transform)
+                    transformInfo = new TransformInfo(CACHE[0].transform),
+                    owner = default
                 };
 
                 for (int j = 0; j < CACHE.Count; ++j)
@@ -541,19 +542,23 @@ namespace PurrNet.Modules
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
-                
+                child.SetLocalOwner(_asServer, action.owner);
+
                 if (child.IsSpawned(_asServer))
                     continue;
                 
                 SpawnIdentity(action, child, (ushort)i, _asServer);
             }
-            
+
+
+
             if (CACHE.Count > 0)
                 onIdentityRootSpawned?.Invoke(CACHE[0]);
 
             if (go.activeSelf != trsInfo.activeHierarchy)
             {
                 var identity = go.GetComponent<NetworkIdentity>();
+                
                 identity.IgnoreNextActivationCallback();
                 identity.IgnoreNextEnableCallback();
                 
@@ -562,7 +567,7 @@ namespace PurrNet.Modules
                 identity.ResetIgnoreNextActivation();
                 identity.ResetIgnoreNextEnable();
             }
-
+            
             if (_asServer) _history.AddSpawnAction(action, player);
             
             PrefabLink.StopIgnoreAutoSpawn();
@@ -782,9 +787,16 @@ namespace PurrNet.Modules
                 
                 CACHE2.Add(child);
             }
+            
+            PlayerID? pendingOwner = null;
 
             for (int i = 0; i < CACHE2.Count; i++)
+            {
                 _triggerPostIdentityFunc.Add(CACHE2[i]);
+                
+                if (!pendingOwner.HasValue && CACHE2[i].owner.HasValue)
+                    pendingOwner = CACHE2[i].owner;
+            }
             
             var action = new SpawnAction
             {
@@ -792,7 +804,8 @@ namespace PurrNet.Modules
                 childOffset = 0,
                 identityId = CACHE[0].id!.Value,
                 childCount = (ushort)CACHE.Count,
-                transformInfo = new TransformInfo(instance.transform)
+                transformInfo = new TransformInfo(instance.transform),
+                owner = pendingOwner
             };
 
             _history.AddSpawnAction(action, actor);

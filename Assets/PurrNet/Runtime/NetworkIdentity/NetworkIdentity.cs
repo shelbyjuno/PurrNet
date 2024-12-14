@@ -787,5 +787,12 @@ namespace PurrNet
         {
             onFlush?.Invoke(this);
         }
+
+        public void SetLocalOwner(bool asServer, PlayerID? actionOwner)
+        {
+            if (asServer)
+                internalOwnerServer = actionOwner;
+            else internalOwnerClient = actionOwner;
+        }
     }
 }
