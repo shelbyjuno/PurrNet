@@ -106,7 +106,7 @@ namespace PurrNet.Modules
                 if (child.isSceneObject)
                 {
                     var id = new NetworkID(default, _sceneObjectSpawnCount++);
-                    child.SetIdentity(_manager, _sceneId, id, _asServer);
+                    child.SetIdentity(_manager, this, _sceneId, id, _asServer);
                 }
             }
         }

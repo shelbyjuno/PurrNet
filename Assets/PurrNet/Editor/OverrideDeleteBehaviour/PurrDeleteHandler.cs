@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using PurrNet.Modules;
+using PurrNet.Pooling;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,42 +8,62 @@ namespace PurrNet.Editor
 {
     public static class PurrDeleteHandler
     {
-        static List<GameObject> GetAllNetworkedObjects(Object[] objectsToDelete)
+        static bool IsAnyNetworked(Object[] objectsToDelete)
         {
-            var networkedObjects = new List<GameObject>();
-            
             foreach (var obj in objectsToDelete)
             {
-                if (obj is GameObject go)
+                switch (obj)
                 {
-                    if (go.GetComponentInChildren<NetworkIdentity>())
-                        networkedObjects.Add(go);
+                    case GameObject go when go.GetComponentInChildren<NetworkIdentity>():
+                    case NetworkIdentity:
+                        return true;
                 }
             }
             
-            return networkedObjects;
+            return false;
         }
         
         public static bool CustomDeleteLogic(Object[] objectsToDelete)
         {
-            var networkedObjects = GetAllNetworkedObjects(objectsToDelete);
-
             // if nothing network related just do normal delete
-            if (networkedObjects.Count == 0)
+            if (!IsAnyNetworked(objectsToDelete))
                 return false;
             
-            // Example: Display a confirmation dialog
-            bool confirmDelete = EditorUtility.DisplayDialog(
-                "Delete Confirmation",
-                $"Are you sure you want to delete {objectsToDelete.Length} object(s)?",
-                "Yes", "No");
+            var objectsToDeleteList = new List<Object>(objectsToDelete);
 
-            if (confirmDelete)
+            for (int i = 0; i < objectsToDeleteList.Count; i++)
             {
-                // Perform custom deletion logic
-                foreach (var obj in objectsToDelete)
-                    Undo.DestroyObjectImmediate(obj);
+                var obj = objectsToDeleteList[i];
+
+                switch (obj)
+                {
+                    case GameObject go:
+                    {
+                        var identity = go.GetComponent<NetworkIdentity>();
+                        if (identity)
+                        {
+                            objectsToDeleteList.RemoveAt(i--);
+                            identity.Despawn();
+                        }
+                        else
+                        {
+                            using var children = new DisposableList<TransformIdentityPair>(16);
+                            HierarchyPool.GetDirectChildren(go.transform, children);
+                            foreach (var child in children)
+                                child.identity.Despawn();
+                        }
+                        break;
+                    }
+                    case NetworkIdentity identity:
+                        objectsToDeleteList.RemoveAt(i--);
+                        identity.Despawn();
+                        break;
+                }
             }
+
+            // Perform custom deletion logic
+            foreach (var obj in objectsToDeleteList)
+                Undo.DestroyObjectImmediate(obj);
 
             return true;
         }

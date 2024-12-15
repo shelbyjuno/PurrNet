@@ -116,6 +116,9 @@ namespace PurrNet
         
         public NetworkManager networkManager { get; private set; }
         
+        private HierarchyV2 _clientHierarchy;
+        private HierarchyV2 _serverHierarchy;
+        
         /// <summary>
         /// The cached value of the local player.
         /// </summary>
@@ -475,12 +478,22 @@ namespace PurrNet
         /// Only available when spawned.
         /// </summary>
         public int layer { get; private set; }
+
+        [ContextMenu("PurrNet/Despawn")]
+        public void Despawn()
+        {
+            if (isSpawned)
+            {
+                if (_serverHierarchy != null)
+                     _serverHierarchy.Despawn(gameObject);
+                else _clientHierarchy?.Despawn(gameObject);
+            }
+        }
         
         internal void ResetIdentity()
         {
             TriggerDespawnEvent(true);
             TriggerDespawnEvent(false);
-            
             networkManager = null;
             sceneId = default;
             localPlayer = null;
@@ -509,7 +522,7 @@ namespace PurrNet
             _ticker = null;
         }
         
-        internal void SetIdentity(NetworkManager manager, SceneID scene, NetworkID identityId, bool asServer)
+        internal void SetIdentity(NetworkManager manager, HierarchyV2 hierarchy, SceneID scene, NetworkID identityId, bool asServer)
         {
             layer = gameObject.layer;
             networkManager = manager;
@@ -524,11 +537,13 @@ namespace PurrNet
             {
                 _isSpawnedServer = true;
                 idServer = identityId;
+                _serverHierarchy = hierarchy;
             }
             else
             {
                 _isSpawnedClient = true;
                 idClient = identityId;
+                _clientHierarchy = hierarchy;
             }
 
             if (asServer)

@@ -155,7 +155,10 @@ namespace PurrNet.Modules
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
 
-            if (!transform.TryGetComponent<PrefabLink>(out var rootId))
+            /*if (!transform.TryGetComponent<PrefabLink>(out var rootId))
+                return new GameObjectPrototype { framework = framework, isScenePrototype = true };*/
+            
+            if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
                 return new GameObjectPrototype { framework = framework, isScenePrototype = true };
 
             var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
@@ -299,7 +302,7 @@ namespace PurrNet.Modules
             return pair;
         }
 
-        private static void GetDirectChildren(Transform root, DisposableList<TransformIdentityPair> children)
+        public static void GetDirectChildren(Transform root, DisposableList<TransformIdentityPair> children)
         {
             for (var i = 0; i < root.childCount; i++)
             {

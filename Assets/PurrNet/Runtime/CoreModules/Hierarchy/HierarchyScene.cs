@@ -585,7 +585,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            component.SetIdentity(_manager, _sceneID, identityId, asServer);
+            component.SetIdentity(_manager, null, _sceneID, identityId, asServer);
 
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
@@ -765,7 +765,7 @@ namespace PurrNet.Modules
                 while (identities.HasIdentity(nid))
                     nid = new NetworkID(identities.GetNextId(), actor);
                 
-                child.SetIdentity(_manager, _sceneID, nid, _asServer);
+                child.SetIdentity(_manager, null, _sceneID, nid, _asServer);
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
                 
@@ -1161,7 +1161,8 @@ namespace PurrNet.Modules
                         if (identity.id.HasValue && !identity.isSceneObject && _asServer && _manager.isHost)
                         {
                             identity.SetIdentity(
-                                _manager, 
+                                _manager,
+                                null,
                                 _sceneID, 
                                 identity.id.Value, 
                                 false
