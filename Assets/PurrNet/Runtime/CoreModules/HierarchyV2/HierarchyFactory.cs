@@ -13,7 +13,7 @@ namespace PurrNet.Modules
         
         readonly Dictionary<SceneID, HierarchyV2> _hierarchies = new ();
         
-        readonly List<HierarchyV2> _rawScenes = new ();
+        readonly List<HierarchyV2> _rawHierarchies = new ();
         
         readonly IPrefabProvider _prefabs;
         
@@ -41,6 +41,9 @@ namespace PurrNet.Modules
 
         public void Disable(bool asServer)
         {
+            for (var i = 0; i < _rawHierarchies.Count; i++)
+                _rawHierarchies[i].Disable();
+
             _scenes.onPreSceneLoaded -= OnPreSceneLoaded;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
         }
@@ -62,7 +65,7 @@ namespace PurrNet.Modules
             var hierarchy = new HierarchyV2(_manager, scene, sceneState.scene, _scenePlayersModule, _prefabs, asServer);
             hierarchy.Enable();
             
-            _rawScenes.Add(hierarchy);
+            _rawHierarchies.Add(hierarchy);
             _hierarchies.Add(scene, hierarchy);
         }
         
@@ -76,21 +79,21 @@ namespace PurrNet.Modules
             
             hierarchy.Disable();
             
-            _rawScenes.Remove(hierarchy);
+            _rawHierarchies.Remove(hierarchy);
             _hierarchies.Remove(scene);
         }
 
 
         public void PreFixedUpdate()
         {
-            for (var i = 0; i < _rawScenes.Count; i++)
-                _rawScenes[i].PreNetworkMessages();
+            for (var i = 0; i < _rawHierarchies.Count; i++)
+                _rawHierarchies[i].PreNetworkMessages();
         }
 
         public void FixedUpdate()
         {
-            for (var i = 0; i < _rawScenes.Count; i++)
-                _rawScenes[i].PostNetworkMessages();
+            for (var i = 0; i < _rawHierarchies.Count; i++)
+                _rawHierarchies[i].PostNetworkMessages();
         }
 
         public bool TryGetHierarchy(SceneID sceneId, out HierarchyV2 o)

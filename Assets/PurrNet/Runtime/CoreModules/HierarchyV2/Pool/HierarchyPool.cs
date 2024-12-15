@@ -15,7 +15,7 @@ namespace PurrNet.Modules
 
         [UsedImplicitly] private readonly IPrefabProvider _prefabs;
 
-        public HierarchyPool(Transform parent, IPrefabProvider prefabs)
+        public HierarchyPool(Transform parent, IPrefabProvider prefabs = null)
         {
             _parent = parent;
             _prefabs = prefabs;
@@ -89,7 +89,7 @@ namespace PurrNet.Modules
 
         private void Warmup(PrefabPieceID pid)
         {
-            if (pid.prefabId >= 0 && _prefabs.TryGetPrefab(pid.prefabId, out var prefab))
+            if (pid.prefabId >= 0 && _prefabs != null && _prefabs.TryGetPrefab(pid.prefabId, out var prefab))
             {
                 Warmup(prefab);
             }
@@ -327,6 +327,10 @@ namespace PurrNet.Modules
         {
             foreach (var (_, queue) in _pool)
                 QueuePool<GameObject>.Destroy(queue);
+            _pool.Clear();
+            
+            if (_parent)
+                Object.Destroy(_parent.gameObject);
         }
     }
 }

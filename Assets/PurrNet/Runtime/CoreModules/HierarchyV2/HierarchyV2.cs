@@ -9,12 +9,6 @@ namespace PurrNet.Modules
 {
     public class HierarchyV2
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ClearPools()
-        {
-            _pools.Clear();
-        }
-        
         private readonly NetworkManager _manager;
         private readonly bool _asServer;
         private readonly SceneID _sceneId;
@@ -22,10 +16,8 @@ namespace PurrNet.Modules
         private readonly ScenePlayersModule _players;
         private readonly VisilityV2 _visibility;
         
-        private HierarchyPool _prefabPool;
         private readonly HierarchyPool _scenePool;
-
-        private static readonly Dictionary<IPrefabProvider, HierarchyPool> _pools = new();
+        private readonly HierarchyPool _prefabsPool;
         
         public bool areSceneObjectsReady { get; private set; }
         
@@ -38,26 +30,17 @@ namespace PurrNet.Modules
             _visibility = new VisilityV2();
             _asServer = asServer;
             
-            var gameObject = new GameObject($"PurrNetPool-SceneObjects-{sceneId}")
-            {
-#if PURRNET_DEBUG_POOLING
-                hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor
-#else
-                hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor | HideFlags.HideInHierarchy | HideFlags.HideAndDontSave
-#endif
-            };
+            _scenePool = NetworkPoolManager.GetScenePool(sceneId);
+            _prefabsPool = NetworkPoolManager.GetPool(prefabs);
             
-            SceneManager.MoveGameObjectToScene(gameObject, scene);
-            _scenePool = new HierarchyPool(gameObject.transform, prefabs);
-            
-            SetupPrefabPool(prefabs);
             SetupSceneObjects(scene);
-            
-            areSceneObjectsReady = true;
         }
 
         private void SetupSceneObjects(Scene scene)
         {
+            if (areSceneObjectsReady)
+                return;
+            
             var allSceneIdentities = ListPool<NetworkIdentity>.Instantiate();
             SceneObjectsModule.GetSceneIdentities(scene, allSceneIdentities);
             
@@ -94,36 +77,7 @@ namespace PurrNet.Modules
             }
             
             ListPool<NetworkIdentity>.Destroy(allSceneIdentities);
-        }
-
-        private void SetupPrefabPool(IPrefabProvider prefabs)
-        {
-            if (_pools.TryGetValue(prefabs, out _prefabPool))
-                return;
-            
-            var poolParent = new GameObject($"PurrNetPool-{_pools.Count}")
-            {
-#if PURRNET_DEBUG_POOLING
-                hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor
-#else
-                hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor | HideFlags.HideInHierarchy | HideFlags.HideAndDontSave
-#endif
-            };
-            
-            Object.DontDestroyOnLoad(poolParent);
-            _prefabPool = new HierarchyPool(poolParent.transform, prefabs);
-            _pools.Add(prefabs, _prefabPool);
-            
-            for (int i = 0 ; i < prefabs.allPrefabs.Count; i++)
-            {
-                var prefab = prefabs.allPrefabs[i];
-
-                if (prefab.TryGetComponent<PrefabLink>(out var link) && link.usePooling)
-                {
-                    for (int j = 0; j < link.poolWarmupCount; j++)
-                        _prefabPool.Warmup(prefab);
-                }
-            }
+            areSceneObjectsReady = true;
         }
 
         public void Enable()
@@ -173,7 +127,7 @@ namespace PurrNet.Modules
             }
             else
             {
-                _prefabPool.PutBackInPool(gameObject);
+                _prefabsPool.PutBackInPool(gameObject);
             }
         }
         
@@ -190,7 +144,7 @@ namespace PurrNet.Modules
         public void CreatePrototype(GameObjectPrototype prototype)
         {
             PrefabLink.StartIgnoreAutoSpawn();
-            var pool = prototype.isScenePrototype ? _scenePool : _prefabPool;
+            var pool = prototype.isScenePrototype ? _scenePool : _prefabsPool;
 
             if (!pool.TryBuildPrototype(prototype, out var result, out var shouldActivate))
             {
