@@ -24,8 +24,8 @@ namespace PurrNet.Editor
 
                 if (selectedObjects.Length > 0)
                 {
-                    PurrDeleteHandler.CustomDeleteLogic(selectedObjects);
-                    currentEvent.Use();
+                    if (PurrDeleteHandler.CustomDeleteLogic(selectedObjects))
+                        currentEvent.Use();
                 }
             }
         }
