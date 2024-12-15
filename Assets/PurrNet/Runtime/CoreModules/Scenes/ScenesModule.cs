@@ -749,7 +749,7 @@ namespace PurrNet.Modules
 
             if (_pendingOperations.Count > 0)
                 return false;
-
+            
             switch (_cleanupStage)
             {
                 case CleanupStage.None:
@@ -785,7 +785,11 @@ namespace PurrNet.Modules
                 case CleanupStage.UnloadScenesOnly:
                 {
                     if (UnloadAllScenesCleanup(true))
+                    {
+                        if (_networkManager.TryGetModule(!_asServer, out ScenesModule module))
+                            module._cleanupStage = CleanupStage.Done;
                         _cleanupStage = CleanupStage.Done;
+                    }
                     return false;
                 }
                 case CleanupStage.LoadOGScene:
@@ -849,7 +853,7 @@ namespace PurrNet.Modules
                 {
                     var unityScene = scene.scene;
                     
-                    if (_networkManager.gameObject.scene.handle == unityScene.handle)
+                    if (keepNetworkManager && _networkManager.gameObject.scene.handle == unityScene.handle)
                         continue;
                     
                     if (!unityScene.IsValid())
