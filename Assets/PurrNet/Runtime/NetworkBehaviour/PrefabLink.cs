@@ -76,6 +76,11 @@ namespace PurrNet
             _autoSpawnCalledFrame = Time.frameCount;
             _autoSpawnCalled = true;
         }
+        
+        public void AutoSpawn()
+        {
+            DoAutoSpawn();
+        }
 
         internal bool SetGUID(string guid)
         {
