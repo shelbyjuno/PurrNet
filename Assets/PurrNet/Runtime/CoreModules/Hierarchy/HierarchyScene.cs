@@ -934,9 +934,11 @@ namespace PurrNet.Modules
                 identityId = trs.id.Value,
                 parentId = parentId
             };
-
+            
             _history.AddChangeParentAction(action, actor);
             trs.ValidateParent();
+            
+            _visibilityManager.ReEvaluateRoot(trs);
         }
         
         readonly List<ComponentGameObjectPair> _removedLastFrame = new ();
