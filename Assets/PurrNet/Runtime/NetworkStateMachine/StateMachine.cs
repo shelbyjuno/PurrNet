@@ -58,10 +58,13 @@ namespace PurrNet.StateMachine
         {
             base.OnSpawned(asServer);
 
+            if (!IsController(ownerAuth))
+                return;
+            
             if (_initialized)
                 return;
             
-            if(IsController(ownerAuth) && _states.Count > 0)
+            if(_states.Count > 0)
                 SetState(_states[0]);
             
             _initialized = true;

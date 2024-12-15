@@ -141,6 +141,21 @@ namespace PurrNet
             onTickChangesDone?.Invoke();
         }
         
+        public void ReEvaluateRoot(NetworkIdentity identity)
+        {
+            if (!identity.id.HasValue)
+            {
+                PurrLogger.LogError("Identity has no ID when being re-evaluated, won't keep track of observers.");
+                return;
+            }
+
+            if (!_players.TryGetPlayersInScene(_sceneId, out var players))
+                return;
+            
+            EvaluateVisibilityForAllPlayers(identity, players);
+            onTickChangesDone?.Invoke();
+        }
+        
         private void OnIdentityRootAdded(NetworkIdentity identity)
         {
             if (!identity.id.HasValue)
