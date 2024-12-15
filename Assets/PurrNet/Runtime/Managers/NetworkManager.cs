@@ -1029,5 +1029,13 @@ namespace PurrNet
             originalScene = activeScene;
             originalSceneBuildIndex = activeScene.buildIndex;
         }
+
+        public bool IsDontDestroyOnLoad()
+        {
+            var scene = gameObject.scene;
+            if (scene.name == "DontDestroyOnLoad")
+                return true;
+            return false;
+        }
     }
 }

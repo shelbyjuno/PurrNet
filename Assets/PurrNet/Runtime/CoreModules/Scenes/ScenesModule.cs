@@ -729,6 +729,7 @@ namespace PurrNet.Modules
             LoadEmptyScene,
             WaitOneFrame,
             UnloadScenes,
+            UnloadScenesOnly,
             LoadOGScene,
             UnloadEmptyScene,
             ResetScene,
@@ -753,7 +754,9 @@ namespace PurrNet.Modules
             {
                 case CleanupStage.None:
                 {
-                    _cleanupStage = CleanupStage.LoadEmptyScene;
+                    _cleanupStage = _networkManager.IsDontDestroyOnLoad() ? 
+                        CleanupStage.LoadEmptyScene :
+                        CleanupStage.UnloadScenesOnly;
                     
                     if (_networkManager.TryGetModule(!_asServer, out ScenesModule module))
                         module._cleanupStage = CleanupStage.Skip;
@@ -775,8 +778,14 @@ namespace PurrNet.Modules
                 }
                 case CleanupStage.UnloadScenes:
                 {
-                    if (UnloadAllScenesCleanup())
+                    if (UnloadAllScenesCleanup(false))
                         _cleanupStage = CleanupStage.LoadOGScene;
+                    return false;
+                }
+                case CleanupStage.UnloadScenesOnly:
+                {
+                    if (UnloadAllScenesCleanup(true))
+                        _cleanupStage = CleanupStage.Done;
                     return false;
                 }
                 case CleanupStage.LoadOGScene:
@@ -829,19 +838,19 @@ namespace PurrNet.Modules
             }
         }
 
-        private bool UnloadAllScenesCleanup()
+        private bool UnloadAllScenesCleanup(bool keepNetworkManager)
         {
             // unload all scenes that aren't the network manager scene
             if (_scenes.Count > 0)
             {
                 _pendingUnloads.Clear();
 
-                foreach (var (id, scene) in _scenes)
+                foreach (var (_, scene) in _scenes)
                 {
-                    if (id == default)
-                        continue;
-
                     var unityScene = scene.scene;
+                    
+                    if (_networkManager.gameObject.scene.handle == unityScene.handle)
+                        continue;
                     
                     if (!unityScene.IsValid())
                         continue;
