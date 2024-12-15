@@ -169,6 +169,7 @@ namespace PurrNet
                 current = current.parent;
             }
             
+            root = lastKnown;
             return lastKnown;
         }
 
