@@ -159,7 +159,6 @@ namespace PurrNet.Modules
         public NetworkID identityId { get; set; }
         public ushort childCount { get; set; }
         public TransformInfo transformInfo { get; set; }
-        public PlayerID? owner { get; set; }
 
         /// <summary>
         /// Spawn a child of the root identity.

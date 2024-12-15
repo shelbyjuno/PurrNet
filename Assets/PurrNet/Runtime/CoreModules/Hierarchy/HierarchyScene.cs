@@ -170,8 +170,7 @@ namespace PurrNet.Modules
                     identityId = new NetworkID((ushort)i),
                     childCount = (ushort)CACHE.Count,
                     childOffset = 0,
-                    transformInfo = new TransformInfo(CACHE[0].transform),
-                    owner = default
+                    transformInfo = new TransformInfo(CACHE[0].transform)
                 };
 
                 for (int j = 0; j < CACHE.Count; ++j)
@@ -542,8 +541,6 @@ namespace PurrNet.Modules
             for (int i = 0; i < CACHE.Count; i++)
             {
                 var child = CACHE[i];
-                child.SetLocalOwner(_asServer, action.owner);
-
                 if (child.IsSpawned(_asServer))
                     continue;
                 
@@ -787,15 +784,10 @@ namespace PurrNet.Modules
                 
                 CACHE2.Add(child);
             }
-            
-            PlayerID? pendingOwner = null;
 
             for (int i = 0; i < CACHE2.Count; i++)
             {
                 _triggerPostIdentityFunc.Add(CACHE2[i]);
-                
-                if (!pendingOwner.HasValue && CACHE2[i].owner.HasValue)
-                    pendingOwner = CACHE2[i].owner;
             }
             
             var action = new SpawnAction
@@ -804,8 +796,7 @@ namespace PurrNet.Modules
                 childOffset = 0,
                 identityId = CACHE[0].id!.Value,
                 childCount = (ushort)CACHE.Count,
-                transformInfo = new TransformInfo(instance.transform),
-                owner = pendingOwner
+                transformInfo = new TransformInfo(instance.transform)
             };
 
             _history.AddSpawnAction(action, actor);
@@ -1103,6 +1094,7 @@ namespace PurrNet.Modules
             {
                 SendDeltaToPlayers(_history.GetDelta());
                 SendOwnershipChanges();
+                TriggerSpawnEvents();
             }
         }
         
@@ -1149,6 +1141,7 @@ namespace PurrNet.Modules
             {
                 SendDeltaToPlayers(_history.GetDelta());
                 SendOwnershipChanges();
+                TriggerSpawnEvents();
             }
 
             if (_identitiesToSpawn.Count > 0)
@@ -1162,8 +1155,8 @@ namespace PurrNet.Modules
                 _identitiesToSpawn.Clear();
             }
             
-            if (!_manager.pendingHost)
-                TriggerSpawnEvents();
+            /*if (!_manager.pendingHost)
+                TriggerSpawnEvents();*/
         }
 
         private void SendOwnershipChanges()
@@ -1175,6 +1168,18 @@ namespace PurrNet.Modules
                     var child = _triggerPostIdentityFunc[i];
                     child.PostSetIdentity();
                 }
+
+                if (_asServer)
+                {
+                    _playersManager.SendToAll(new TriggerQueuedSpawnEvents
+                    {
+                        sceneId = _sceneID
+                    });
+                }
+                else _playersManager.SendToServer(new TriggerQueuedSpawnEvents
+                {
+                    sceneId = _sceneID
+                });
 
                 _triggerPostIdentityFunc.Clear();
             }
