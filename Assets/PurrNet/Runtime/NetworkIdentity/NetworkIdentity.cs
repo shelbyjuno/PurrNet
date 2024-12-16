@@ -188,6 +188,7 @@ namespace PurrNet
                 current = current.parent;
             }
             
+            root = lastKnown;
             return lastKnown;
         }
 
@@ -774,20 +775,7 @@ namespace PurrNet
             if (!IsSpawned(asServer)) return;
 
             InternalOnDespawn(asServer);
-            OnDespawned(asServer);
-
-            for (int i = 0; i < _externalModulesView.Count; i++)
-                _externalModulesView[i].OnDespawned(asServer);
-
-            if (asServer)
-            {
-                _isSpawnedServer = false;
-            }
-            else
-            {
-                _isSpawnedClient = false;
-            }
-
+            
             _spawnedCount--;
 
             if (_spawnedCount == 0)
@@ -796,7 +784,20 @@ namespace PurrNet
                 
                 for (int i = 0; i < _externalModulesView.Count; i++)
                     _externalModulesView[i].OnDespawned();
+            }
 
+            OnDespawned(asServer);
+            
+
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnDespawned(asServer);
+
+            if (asServer)
+                 _isSpawnedServer = false;
+            else _isSpawnedClient = false;
+
+            if (_spawnedCount == 0)
+            {
                 _externalModulesView.Clear();
                 _modules.Clear();
             }

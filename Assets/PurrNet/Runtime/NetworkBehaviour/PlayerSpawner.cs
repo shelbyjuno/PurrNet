@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet
 {
@@ -67,8 +68,10 @@ namespace PurrNet
         {
             if (!NetworkManager.main.TryGetModule(out ScenesModule scenes, true))
                 return;
+
+            var unityScene = gameObject.scene;
             
-            if (!scenes.TryGetSceneID(gameObject.scene, out var sceneID))
+            if (!scenes.TryGetSceneID(unityScene, out var sceneID))
                 return;
             
             if (sceneID != scene)
@@ -84,6 +87,8 @@ namespace PurrNet
             
             NetworkIdentity newPlayer;
             
+            PrefabLink.StartIgnoreAutoSpawn();
+
             if (spawnPoints.Count > 0)
             {
                 var spawnPoint = spawnPoints[_currentSpawnPoint];
@@ -95,7 +100,13 @@ namespace PurrNet
                 newPlayer = Instantiate(playerPrefab);
             }
             
+            PrefabLink.StopIgnoreAutoSpawn();
+            
+            SceneManager.MoveGameObjectToScene(newPlayer.gameObject, unityScene);
             newPlayer.GiveOwnership(player);
+            
+            if (playerPrefab.TryGetComponent<PrefabLink>(out var link))
+                link.AutoSpawn();
         }
     }
 }

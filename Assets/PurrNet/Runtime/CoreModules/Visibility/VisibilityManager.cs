@@ -152,7 +152,10 @@ namespace PurrNet
             if (!_players.TryGetPlayersInScene(_sceneId, out var players))
                 return;
             
-            EvaluateVisibilityForAllPlayers(identity, players);
+            var copy = HashSetPool<PlayerID>.Instantiate();
+            copy.UnionWith(players);
+            EvaluateVisibilityForAllPlayers(identity, copy);
+            HashSetPool<PlayerID>.Destroy(copy);
             onTickChangesDone?.Invoke();
         }
         
@@ -171,7 +174,6 @@ namespace PurrNet
             copy.UnionWith(players);
             EvaluateVisibilityForAllPlayers(identity, copy);
             HashSetPool<PlayerID>.Destroy(copy);
-            
             onTickChangesDone?.Invoke();
         }
 

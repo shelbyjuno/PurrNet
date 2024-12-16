@@ -1275,7 +1275,7 @@ namespace PurrNet.Modules
                 
                 for (var i = 0; i < all.Count; i++)
                 {
-                    var id = all[i].root;
+                    var id = all[i].GetRootIdentity();
 
                     if (!roots.Add(id))
                         continue;
