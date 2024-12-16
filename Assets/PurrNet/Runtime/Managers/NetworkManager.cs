@@ -133,6 +133,8 @@ namespace PurrNet
         /// </summary>
         public Scene originalScene { get; private set; }
         
+        public int originalSceneBuildIndex { get; private set; }
+        
         /// <summary>
         /// Occurs when the server connection state changes.
         /// </summary>
@@ -305,18 +307,18 @@ namespace PurrNet
                 if (main.isOffline)
                 {
                     Destroy(gameObject);
-                }
-                else
-                {
-                    Destroy(this);
                     return;
                 }
+                
+                Destroy(this);
+                return;
             }
             
             if (!networkRules)
                 throw new InvalidOperationException(PurrLogger.FormatMessage("NetworkRules is not set (null)."));
 
             originalScene = gameObject.scene;
+            originalSceneBuildIndex = originalScene.buildIndex;
 
             if (_visibilityRules)
             {
@@ -883,6 +885,7 @@ namespace PurrNet
         public void InternalRegisterServerModules()
         {
             _serverModules.RegisterModules();
+            _isSubscribedServer = true;
             TriggerSubscribeEvents(true);
         }
         
@@ -893,16 +896,28 @@ namespace PurrNet
         public void InternalRegisterClientModules()
         {
             _clientModules.RegisterModules();
+            _isSubscribedClient = true;
             TriggerSubscribeEvents(false);
         }
         
+        bool _isSubscribedClient;
+        bool _isSubscribedServer;
+        
         public void InternalUnregisterServerModules()
         {
+            if (!_isSubscribedServer)
+                return;
+            
+            _isSubscribedServer = false;
             TriggerUnsubscribeEvents(true);
         }
         
         public void InternalUnregisterClientModules()
         {
+            if (!_isSubscribedClient)
+                return;
+            
+            _isSubscribedClient = false;
             TriggerUnsubscribeEvents(false);
         }
         
@@ -918,9 +933,9 @@ namespace PurrNet
             _transport.StartClient(this);
         }
 
-        private void OnNewConnection(Connection conn, bool asserver)
+        private void OnNewConnection(Connection conn, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                 _serverModules.OnNewConnection(conn, true);
             else
             {
@@ -929,9 +944,9 @@ namespace PurrNet
             }
         }
 
-        private void OnLostConnection(Connection conn, DisconnectReason reason, bool asserver)
+        private void OnLostConnection(Connection conn, DisconnectReason reason, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                  _serverModules.OnLostConnection(conn, true);
             else
             {
@@ -940,22 +955,22 @@ namespace PurrNet
             }
         }
 
-        private void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        private void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                  _serverModules.OnDataReceived(conn, data, true);
             else _clientModules.OnDataReceived(conn, data, false);
         }
 
-        private void OnConnectionState(ConnectionState state, bool asserver)
+        private void OnConnectionState(ConnectionState state, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                  onServerConnectionState?.Invoke(state);
             else onClientConnectionState?.Invoke(state);
 
             if (state == ConnectionState.Disconnected)
             {
-                switch (asserver)
+                switch (asServer)
                 {
                     case false:
                         _isCleaningClient = true;
@@ -1007,6 +1022,20 @@ namespace PurrNet
         public GameObject GetPrefabFromGuid(string guid)
         {
             return _networkPrefabs.GetPrefabFromGuid(guid);
+        }
+
+        public void ResetOriginalScene(Scene activeScene)
+        {
+            originalScene = activeScene;
+            originalSceneBuildIndex = activeScene.buildIndex;
+        }
+
+        public bool IsDontDestroyOnLoad()
+        {
+            var scene = gameObject.scene;
+            if (scene.name == "DontDestroyOnLoad")
+                return true;
+            return false;
         }
     }
 }

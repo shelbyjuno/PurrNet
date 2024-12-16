@@ -15,6 +15,11 @@ namespace PurrNet
         [SerializeField, PurrLock] private bool _ownerAuth = true;
         [Tooltip("Automatically sync parameters when they are changed, if you are using NetworkAnimator directly you should set this to false")]
         [SerializeField, PurrLock] private bool _autoSyncParameters = true;
+        [SerializeField]
+        [Tooltip("Parameters names that should not be synced")]
+        private List<string> _dontSyncParameters = new();
+
+        readonly HashSet<int> _sontSyncHashes = new();
         
         /// <summary>
         /// If true the owner has authority over this animator, if no owner is set it is controlled by the server
@@ -30,6 +35,14 @@ namespace PurrNet
         /// The animator to sync
         /// </summary>
         public Animator animator => _animator;
+        
+        public List<string> dontSyncParameters => _dontSyncParameters;
+
+        private void Awake()
+        {
+            foreach (var param in _dontSyncParameters)
+                _sontSyncHashes.Add(Animator.StringToHash(param));
+        }
 
         public override void OnEnable()
         {

@@ -44,6 +44,9 @@ namespace PurrNet
             {
                 var param = _animator.parameters[i];
 
+                if (_sontSyncHashes.Contains(param.nameHash))
+                    continue;
+                
                 switch (param.type)
                 {
                     case AnimatorControllerParameterType.Bool:
@@ -69,6 +72,9 @@ namespace PurrNet
             for (var i = 0; i < paramCount; i++)
             {
                 var param = _animator.parameters[i];
+                
+                if (_sontSyncHashes.Contains(param.nameHash))
+                    continue;
 
                 switch (param.type)
                 {

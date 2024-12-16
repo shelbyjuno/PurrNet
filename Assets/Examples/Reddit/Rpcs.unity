@@ -148,7 +148,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 962d72201522faf47b5a6bcb1d1a5a54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lobbySceneName: Rpcs2
 --- !u!4 &38974907
 Transform:
   m_ObjectHideFlags: 0
@@ -211,7 +210,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _startServerFlags: 9
-  _startClientFlags: 7
+  _startClientFlags: 6
   _cookieScope: 1
   _dontDestroyOnLoad: 1
   _transport: {fileID: 1488283000}

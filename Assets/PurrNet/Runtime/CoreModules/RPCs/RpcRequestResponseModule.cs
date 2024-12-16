@@ -51,7 +51,7 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<RpcResponse>(OnRpcResponse);
         }
         
-        private void OnRpcResponse(PlayerID conn, RpcResponse data, bool asserver)
+        private void OnRpcResponse(PlayerID conn, RpcResponse data, bool asServer)
         {
             for (int i = 0; i < _requests.Count; i++)
             {

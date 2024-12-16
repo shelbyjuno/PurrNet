@@ -33,7 +33,7 @@ namespace PurrNet
 
         public void Disable(bool asServer) { }
         
-        public bool OnSceneLoaded(SceneID scene, bool asserver, out VisibilityManager manager)
+        public bool OnSceneLoaded(SceneID scene, bool asServer, out VisibilityManager manager)
         {
             if (!_hierarchy.TryGetHierarchy(scene, out var hierarchy))
             {
@@ -49,7 +49,7 @@ namespace PurrNet
                 _visibilityManagers.Add(visibility);
                 _sceneToVisibilityManager.Add(scene, visibility);
                 
-                visibility.Enable(asserver);
+                visibility.Enable(asServer);
 
                 manager = visibility;
                 return true;
@@ -59,11 +59,11 @@ namespace PurrNet
             return false;
         }
 
-        public void OnSceneUnloaded(SceneID scene, bool asserver)
+        public void OnSceneUnloaded(SceneID scene, bool asServer)
         {
             if (_sceneToVisibilityManager.TryGetValue(scene, out var visibility))
             {
-                visibility.Disable(asserver);
+                visibility.Disable(asServer);
                 
                 _visibilityManagers.Remove(visibility);
                 _sceneToVisibilityManager.Remove(scene);

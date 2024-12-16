@@ -70,8 +70,13 @@ namespace PurrNet.Modules
         {
             _asServer = asServer;
             
-            for (int i = 0; i < _scenes.scenes.Count; i++)
-                OnSceneLoaded(_scenes.scenes[i], asServer);
+            var scenes = _scenes.sceneStates;
+
+            foreach (var (id, sceneState) in scenes)
+            {
+                if (sceneState.scene.isLoaded)
+                    OnSceneLoaded(id, asServer);
+            }
             
             _scenes.onPreSceneLoaded += OnSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
@@ -255,7 +260,7 @@ namespace PurrNet.Modules
             }
         }
         
-        private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (!_sceneOwnerships.TryGetValue(scene, out var ownerships)) return;
 
@@ -264,17 +269,17 @@ namespace PurrNet.Modules
             foreach (var id in owned)
             {
                 if (_hierarchy.TryGetIdentity(scene, id, out var identity))
-                    identity.TriggerOnOwnerReconnected(player, asserver);
+                    identity.TriggerOnOwnerReconnected(player, asServer);
             }
         }
         
-        private void OnPlayerLeft(PlayerID player, bool asserver)
+        private void OnPlayerLeft(PlayerID player, bool asServer)
         {
             foreach (var (scene, ownerships) in _sceneOwnerships)
                 OnOwnerDisconnect(player, scene, ownerships);
         }
 
-        private void OnPlayerUnloadedScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerUnloadedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (!_sceneOwnerships.TryGetValue(scene, out var ownerships)) return;
 
@@ -315,12 +320,12 @@ namespace PurrNet.Modules
             HashSetPool<GameObject>.Destroy(toDestroy);
         }
 
-        private void OnOwnershipChange(PlayerID player, OwnershipChangeBatch data, bool asserver)
+        private void OnOwnershipChange(PlayerID player, OwnershipChangeBatch data, bool asServer)
         {
             HandleOwenshipBatch(data);
         }
 
-        private void OnOwnershipChange(PlayerID player, OwnershipChange change, bool asserver)
+        private void OnOwnershipChange(PlayerID player, OwnershipChange change, bool asServer)
         {
             var idCount = change.identities.Count;
                 
@@ -328,7 +333,7 @@ namespace PurrNet.Modules
                 HandleOwnershipChange(player, change, change.identities[j]);
         }
         
-        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        private void OnSceneUnloaded(SceneID scene, bool asServer)
         {
             _sceneOwnerships.Remove(scene);
         }

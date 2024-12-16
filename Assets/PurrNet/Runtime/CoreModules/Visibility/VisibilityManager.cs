@@ -78,7 +78,7 @@ namespace PurrNet
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
-        private void OnPlayerLeft(PlayerID player, bool asserver)
+        private void OnPlayerLeft(PlayerID player, bool asServer)
         {
             if (_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave()) return;
 
@@ -88,10 +88,10 @@ namespace PurrNet
             if (!players.Contains(player))
                 return;
             
-            OnPlayerLeftScene(player, _sceneId, asserver);
+            OnPlayerLeftScene(player, _sceneId, asServer);
         }
 
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene != _sceneId)
                 return;
@@ -110,7 +110,7 @@ namespace PurrNet
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
-        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene != _sceneId)
                 return;
@@ -141,6 +141,24 @@ namespace PurrNet
             onTickChangesDone?.Invoke();
         }
         
+        public void ReEvaluateRoot(NetworkIdentity identity)
+        {
+            if (!identity.id.HasValue)
+            {
+                PurrLogger.LogError("Identity has no ID when being re-evaluated, won't keep track of observers.");
+                return;
+            }
+
+            if (!_players.TryGetPlayersInScene(_sceneId, out var players))
+                return;
+            
+            var copy = HashSetPool<PlayerID>.Instantiate();
+            copy.UnionWith(players);
+            EvaluateVisibilityForAllPlayers(identity, copy);
+            HashSetPool<PlayerID>.Destroy(copy);
+            onTickChangesDone?.Invoke();
+        }
+        
         private void OnIdentityRootAdded(NetworkIdentity identity)
         {
             if (!identity.id.HasValue)
@@ -156,7 +174,6 @@ namespace PurrNet
             copy.UnionWith(players);
             EvaluateVisibilityForAllPlayers(identity, copy);
             HashSetPool<PlayerID>.Destroy(copy);
-            
             onTickChangesDone?.Invoke();
         }
 

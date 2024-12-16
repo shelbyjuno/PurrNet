@@ -86,7 +86,7 @@ namespace PurrNet.Modules
         }
 
         // Clean up buffered RPCs when a scene is unloaded
-        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        private void OnSceneUnloaded(SceneID scene, bool asServer)
         {
             for (int i = 0; i < _bufferedRpcsDatas.Count; i++)
             {
@@ -115,7 +115,7 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
+        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer)
         {
             SendAnyStaticRPCs(player);
         }
