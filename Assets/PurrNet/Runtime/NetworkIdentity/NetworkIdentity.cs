@@ -56,7 +56,7 @@ namespace PurrNet
         
         public bool isHost => isSpawned && networkManager.isHost;
         
-        public bool isOwner => isSpawned && isClient && localPlayer.HasValue && owner == localPlayer;
+        public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
         
