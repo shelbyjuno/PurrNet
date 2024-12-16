@@ -139,7 +139,7 @@ namespace PurrNet.Modules
             identities.DestroyAllNonSceneObjects();
         }
 
-        private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asserver)
+        private void OnTriggerSpawnEvents(PlayerID player, TriggerQueuedSpawnEvents data, bool asServer)
         {
             if (data.sceneId != _sceneID)
                 return;
@@ -233,9 +233,9 @@ namespace PurrNet.Modules
         
         private readonly HashSet<NetworkID> _instancesAboutToBeRemoved = new ();
         
-        private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asserver)
+        private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asServer)
         {
-            if (_manager.isHost && !asserver) return;
+            if (_manager.isHost && !asServer) return;
             
             if (_sceneID != data.sceneId)
                 return;

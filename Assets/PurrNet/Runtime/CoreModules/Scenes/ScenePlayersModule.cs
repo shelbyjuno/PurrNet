@@ -8,7 +8,7 @@ namespace PurrNet.Modules
         public SceneID scene;
     }
     
-    public delegate void OnPlayerSceneEvent(PlayerID player, SceneID scene, bool asserver);
+    public delegate void OnPlayerSceneEvent(PlayerID player, SceneID scene, bool asServer);
 
     public class ScenePlayersModule : INetworkModule
     {
@@ -116,7 +116,7 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnPlayerLeft(PlayerID player, bool asserver)
+        private void OnPlayerLeft(PlayerID player, bool asServer)
         {
             if (!_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave())
             {
@@ -137,19 +137,19 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnClientSceneLoaded(SceneID scene, bool asserver)
+        private void OnClientSceneLoaded(SceneID scene, bool asServer)
         {
             if (!_players.localPlayerId.HasValue)
                 return;
             
-            onPrePlayerloadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
-            onPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
-            onPostPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asserver);
+            onPrePlayerloadedScene?.Invoke(_players.localPlayerId.Value, scene, asServer);
+            onPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asServer);
+            onPostPlayerLoadedScene?.Invoke(_players.localPlayerId.Value, scene, asServer);
             
             _players.SendToServer(new ClientFinishedLoadingScene { scene = scene });
         }
         
-        private void RemoteClientLoadedScene(PlayerID player, ClientFinishedLoadingScene data, bool asserver)
+        private void RemoteClientLoadedScene(PlayerID player, ClientFinishedLoadingScene data, bool asServer)
         {
             if (!_scenePlayers.TryGetValue(data.scene, out var playersInScene))
                 return;
@@ -166,9 +166,9 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"SceneID '{data.scene}' not found in scene loaded players dictionary");
             }
             
-            onPrePlayerloadedScene?.Invoke(player, data.scene, asserver);
-            onPlayerLoadedScene?.Invoke(player, data.scene, asserver);
-            onPostPlayerLoadedScene?.Invoke(player, data.scene, asserver);
+            onPrePlayerloadedScene?.Invoke(player, data.scene, asServer);
+            onPlayerLoadedScene?.Invoke(player, data.scene, asServer);
+            onPostPlayerLoadedScene?.Invoke(player, data.scene, asServer);
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
+        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer)
         {
             if (isReconnect && !_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave())
             {

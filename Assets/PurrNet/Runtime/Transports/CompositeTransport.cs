@@ -40,19 +40,19 @@ namespace PurrNet.Transports
             _transport = null;
         }
 
-        private void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        private void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
-            onDataReceived?.Invoke(index, conn, data, asserver);
+            onDataReceived?.Invoke(index, conn, data, asServer);
         }
 
-        private void OnDisconnected(Connection conn, DisconnectReason reason, bool asserver)
+        private void OnDisconnected(Connection conn, DisconnectReason reason, bool asServer)
         {
-            onDisconnected?.Invoke(index, conn, asserver);
+            onDisconnected?.Invoke(index, conn, asServer);
         }
 
-        private void OnConnected(Connection conn, bool asserver)
+        private void OnConnected(Connection conn, bool asServer)
         {
-            onConnected?.Invoke(index, conn, asserver);
+            onConnected?.Invoke(index, conn, asServer);
         }
     }
     
@@ -237,9 +237,9 @@ namespace PurrNet.Transports
             _clientEvent.onDataReceived += OnTransportDataReceived;
         }
 
-        private void OnTransportDataReceived(int transportidx, Connection conn, ByteData data, bool asserver)
+        private void OnTransportDataReceived(int transportidx, Connection conn, ByteData data, bool asServer)
         {
-            switch (asserver)
+            switch (asServer)
             {
                 case false when transportidx != -1:
                 case true when transportidx == -1:
@@ -259,18 +259,18 @@ namespace PurrNet.Transports
             }
         }
 
-        private void OnTransportDisconnected(int transportidx, Connection conn, bool asserver)
+        private void OnTransportDisconnected(int transportidx, Connection conn, bool asServer)
         {
-            switch (asserver)
+            switch (asServer)
             {
                 case false when transportidx != -1:
                 case true when transportidx == -1:
                     return;
             }
             
-            TriggerConnectionStateEvent(asserver);
+            TriggerConnectionStateEvent(asServer);
 
-            if (asserver)
+            if (asServer)
             {
                 var pair = new ConnectionPair(transportidx, conn);
 
@@ -287,21 +287,21 @@ namespace PurrNet.Transports
             }
         }
 
-        private void OnTransportConnected(int transportidx, Connection conn, bool asserver)
+        private void OnTransportConnected(int transportidx, Connection conn, bool asServer)
         {
-            /*if (!asserver && transportidx != -1)
+            /*if (!asServer && transportidx != -1)
                 return;*/
             
-            switch (asserver)
+            switch (asServer)
             {
                 case false when transportidx != -1:
                 case true when transportidx == -1:
                     return;
             }
             
-            TriggerConnectionStateEvent(asserver);
+            TriggerConnectionStateEvent(asServer);
 
-            if (asserver)
+            if (asServer)
             {
                 var fakedConnection = GetNextConnection(transportidx, conn);
                 var realConnectionPair = new ConnectionPair(transportidx, conn);

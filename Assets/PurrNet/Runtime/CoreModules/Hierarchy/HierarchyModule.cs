@@ -65,26 +65,26 @@ namespace PurrNet
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
         }
 
-        private void OnSceneUnloaded(SceneID scene, bool asserver)
+        private void OnSceneUnloaded(SceneID scene, bool asServer)
         {
             if (_sceneToHierarchy.TryGetValue(scene, out var hierarchy))
             {
-                _visibilityFactory.OnSceneUnloaded(scene, asserver);
+                _visibilityFactory.OnSceneUnloaded(scene, asServer);
                 hierarchy.onIdentityAdded -= TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved -= TriggerOnEntityRemoved;
                 hierarchy.onBeforeSpawnTrigger -= TriggerOnBeforeSpawnTrigger;
-                hierarchy.Disable(asserver);
+                hierarchy.Disable(asServer);
                 
                 _hierarchies.Remove(hierarchy);
                 _sceneToHierarchy.Remove(scene);
             }
         }
 
-        private void OnSceneLoaded(SceneID scene, bool asserver)
+        private void OnSceneLoaded(SceneID scene, bool asServer)
         {
             if (!_sceneToHierarchy.ContainsKey(scene))
             {
-                var hierarchy = new HierarchyScene(asserver, scene, _scenes, _manager, _players, _scenePlayers, _prefabs);
+                var hierarchy = new HierarchyScene(asServer, scene, _scenes, _manager, _players, _scenePlayers, _prefabs);
                 
                 hierarchy.onIdentityAdded += TriggerOnEntityAdded;
                 hierarchy.onIdentityRemoved += TriggerOnEntityRemoved;
@@ -93,11 +93,11 @@ namespace PurrNet
                 _hierarchies.Add(hierarchy);
                 _sceneToHierarchy.Add(scene, hierarchy);
 
-                if (!_visibilityFactory.OnSceneLoaded(scene, asserver, out var vmanager))
+                if (!_visibilityFactory.OnSceneLoaded(scene, asServer, out var vmanager))
                      PurrLogger.LogError("Failed to create visibility manager for scene " + scene);
                 else hierarchy.SetVisibilityManager(_visibilityFactory, vmanager);
                 
-                hierarchy.Enable(asserver);
+                hierarchy.Enable(asServer);
             }
         }
 
