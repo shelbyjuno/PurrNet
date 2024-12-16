@@ -1,3 +1,11 @@
+#if !(UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX)
+#define DISABLESTEAMWORKS
+#endif
+
+#if STEAMWORKS_NET
+#define STEAMWORKS_NET_PACKAGE
+#endif
+
 using System.Collections.Generic;
 using PurrNet.Transports;
 using UnityEngine;
@@ -39,7 +47,7 @@ namespace PurrNet.Steam
         }
         
 #if STEAMWORKS_NET_PACKAGE && !DISABLESTEAMWORKS
-        public override bool isSupported => Application.platform != RuntimePlatform.WebGLPlayer;
+        public override bool isSupported => true;
 #else
         public override bool isSupported => false;
 #endif
