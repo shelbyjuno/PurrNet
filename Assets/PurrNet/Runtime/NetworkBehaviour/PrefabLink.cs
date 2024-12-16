@@ -69,10 +69,10 @@ namespace PurrNet
             if (hierarchyFactory.TryGetHierarchy(currentSceneId, out var hierarchy) && hierarchy.areSceneObjectsReady)
                 hierarchy.Spawn(this);
         }
-        
+
         public void AutoSpawn()
         {
-            DoAutoSpawn();
+            Awake();
         }
 
         internal bool SetGUID(string guid)
