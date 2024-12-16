@@ -699,6 +699,8 @@ namespace PurrNet
 
             InternalOnDespawn(asServer);
             
+            _spawnedCount--;
+
             if (_spawnedCount == 0)
             {
                 OnDespawned();
@@ -709,7 +711,6 @@ namespace PurrNet
 
             OnDespawned(asServer);
             
-            _spawnedCount--;
 
             for (int i = 0; i < _externalModulesView.Count; i++)
                 _externalModulesView[i].OnDespawned(asServer);
