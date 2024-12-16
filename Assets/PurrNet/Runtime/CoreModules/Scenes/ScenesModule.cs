@@ -178,7 +178,7 @@ namespace PurrNet.Modules
                 wasPresentFromStart = true
             }, GetNextID());
 
-            if (currentScene != originalScene)
+            if (currentScene != originalScene && originalScene.IsValid())
             {
                 AddScene(originalScene, new PurrSceneSettings
                 {
@@ -219,9 +219,9 @@ namespace PurrNet.Modules
             SceneManager.sceneLoaded -= SceneManagerOnSceneLoaded;
         }
 
-        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
+        private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer)
         {
-            if (!asserver)
+            if (!asServer)
                 return;
             
             var history = _history.GetFullHistory();
@@ -248,9 +248,9 @@ namespace PurrNet.Modules
                 _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
         }
 
-        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer)
         {
-            if (!asserver)
+            if (!asServer)
                 return;
             
             bool isSceneStillValid = _scenes.TryGetValue(scene, out var state) && state.scene.IsValid();
@@ -272,9 +272,9 @@ namespace PurrNet.Modules
             _players.Send(player, new SceneActionsBatch { actions = _playerFilteredActions });
         }
 
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asServer)
         {
-            if (!asserver)
+            if (!asServer)
                 return;
             
             var history = _history.GetFullHistory();
@@ -387,14 +387,14 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnSceneActionsBatch(PlayerID player, SceneActionsBatch data, bool asserver)
+        private void OnSceneActionsBatch(PlayerID player, SceneActionsBatch data, bool asServer)
         {
             if (_networkManager.isServer || _asServer)
                 return;
             
             for (var i = 0; i < data.actions.Count; i++)
             {
-                //PurrLogger.Log($"Received action {data.actions[i].type} from {player} {asserver}");
+                //PurrLogger.Log($"Received action {data.actions[i].type} from {player} {asServer}");
                 _actionsQueue.Enqueue(data.actions[i]);
             }
             

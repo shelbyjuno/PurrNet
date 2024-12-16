@@ -68,7 +68,7 @@ namespace PurrNet
         
         public bool isHost => isSpawned && networkManager.isHost;
         
-        public bool isOwner => isSpawned && isClient && localPlayer.HasValue && owner == localPlayer;
+        public bool isOwner => isSpawned && localPlayer.HasValue && owner == localPlayer;
         
         public bool hasOwner => owner.HasValue;
         
@@ -291,13 +291,13 @@ namespace PurrNet
             scenePlayers.onPlayerLeftScene -= OnServerLeftScene;
         }
         
-        void OnServerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        void OnServerJoinedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene == sceneId)
                 _serverSceneEvents?.OnPlayerJoinedScene(player);
         }
         
-        void OnServerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        void OnServerLeftScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene == sceneId)
                 _serverSceneEvents?.OnPlayerLeftScene(player);

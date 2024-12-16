@@ -78,7 +78,7 @@ namespace PurrNet
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
-        private void OnPlayerLeft(PlayerID player, bool asserver)
+        private void OnPlayerLeft(PlayerID player, bool asServer)
         {
             if (_manager.networkRules.ShouldRemovePlayerFromSceneOnLeave()) return;
 
@@ -88,10 +88,10 @@ namespace PurrNet
             if (!players.Contains(player))
                 return;
             
-            OnPlayerLeftScene(player, _sceneId, asserver);
+            OnPlayerLeftScene(player, _sceneId, asServer);
         }
 
-        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene != _sceneId)
                 return;
@@ -110,7 +110,7 @@ namespace PurrNet
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
-        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        private void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene != _sceneId)
                 return;

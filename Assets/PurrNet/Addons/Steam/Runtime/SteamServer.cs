@@ -2,6 +2,10 @@
 #define DISABLESTEAMWORKS
 #endif
 
+#if STEAMWORKS_NET
+#define STEAMWORKS_NET_PACKAGE
+#endif
+
 using System;
 using PurrNet.Transports;
 #if STEAMWORKS_NET_PACKAGE && !DISABLESTEAMWORKS

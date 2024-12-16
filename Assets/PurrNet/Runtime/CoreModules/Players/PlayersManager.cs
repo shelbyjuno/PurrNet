@@ -149,12 +149,12 @@ namespace PurrNet.Modules
         public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
             => _playerBroadcaster.Subscribe(callback);
 
-        public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaste)
+        public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaster)
         {
             _manager = nm;
             _transport = nm.transport.transport;
             _cookiesModule = cookiesModule;
-            _broadcastModule = broadcaste;
+            _broadcastModule = broadcaster;
         }
         
         /// <summary>
@@ -260,18 +260,18 @@ namespace PurrNet.Modules
             }
         }
 
-        private void OnPlayerJoinedEvent(Connection conn, PlayerJoinedEvent data, bool asserver)
+        private void OnPlayerJoinedEvent(Connection conn, PlayerJoinedEvent data, bool asServer)
         {
             if (RegisterPlayer(data.connection, data.playerId, out var isReconnect))
                 TriggerOnJoinedEvent(data.playerId, isReconnect);
         }
 
-        private void OnPlayerLeftEvent(Connection conn, PlayerLeftEvent data, bool asserver)
+        private void OnPlayerLeftEvent(Connection conn, PlayerLeftEvent data, bool asServer)
         {
             UnregisterPlayer(data.playerId);
         }
 
-        private void OnPlayerSnapshotEvent(Connection conn, PlayerSnapshotEvent data, bool asserver)
+        private void OnPlayerSnapshotEvent(Connection conn, PlayerSnapshotEvent data, bool asServer)
         {
             foreach (var (key, pid) in data.connectionToPlayerId)
             {
@@ -286,7 +286,7 @@ namespace PurrNet.Modules
             onLocalPlayerReceivedID?.Invoke(data.playerId);
         }
 
-        private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asserver)
+        private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asServer)
         {
             if (!_cookieToPlayerId.TryGetValue(data.join, out var playerId))
             {
