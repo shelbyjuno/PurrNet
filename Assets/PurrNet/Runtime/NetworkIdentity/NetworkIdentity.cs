@@ -254,13 +254,13 @@ namespace PurrNet
             scenePlayers.onPlayerLeftScene -= OnServerLeftScene;
         }
         
-        void OnServerJoinedScene(PlayerID player, SceneID scene, bool asserver)
+        void OnServerJoinedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene == sceneId)
                 _serverSceneEvents?.OnPlayerJoinedScene(player);
         }
         
-        void OnServerLeftScene(PlayerID player, SceneID scene, bool asserver)
+        void OnServerLeftScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene == sceneId)
                 _serverSceneEvents?.OnPlayerLeftScene(player);

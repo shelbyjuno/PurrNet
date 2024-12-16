@@ -47,7 +47,7 @@ namespace PurrNet.Editor
                 generic.transport.onConnectionState -= OnDirty;
         }
 
-        private void OnDirty(ConnectionState state, bool asserver)
+        private void OnDirty(ConnectionState state, bool asServer)
         {
             Repaint();
         }

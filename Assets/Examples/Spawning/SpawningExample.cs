@@ -35,7 +35,7 @@ public class SpawningExample : MonoBehaviour
         }
     }
 
-    private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asserver)
+    private void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer)
     {
         var randomPosition = new Vector3(
             Random.Range(_minSpawnPosition.x, _maxSpawnPosition.x),

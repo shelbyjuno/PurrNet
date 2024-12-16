@@ -81,22 +81,22 @@ namespace PurrNet
             }
         }
         
-        public void OnNewConnection(Connection conn, bool asserver)
+        public void OnNewConnection(Connection conn, bool asServer)
         {
             for (int i = 0; i < _connectionListeners.Count; i++)
-                _connectionListeners[i].OnConnected(conn, asserver);
+                _connectionListeners[i].OnConnected(conn, asServer);
         }
 
-        public void OnLostConnection(Connection conn, bool asserver)
+        public void OnLostConnection(Connection conn, bool asServer)
         {
             for (int i = 0; i < _connectionListeners.Count; i++)
-                _connectionListeners[i].OnDisconnected(conn, asserver);
+                _connectionListeners[i].OnDisconnected(conn, asServer);
         }
 
-        public void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        public void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
             for (int i = 0; i < _dataListeners.Count; i++)
-                _dataListeners[i].OnDataReceived(conn, data, asserver);
+                _dataListeners[i].OnDataReceived(conn, data, asServer);
         }
 
         public void TriggerOnUpdate()

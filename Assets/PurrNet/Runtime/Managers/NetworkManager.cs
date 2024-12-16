@@ -933,9 +933,9 @@ namespace PurrNet
             _transport.StartClient(this);
         }
 
-        private void OnNewConnection(Connection conn, bool asserver)
+        private void OnNewConnection(Connection conn, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                 _serverModules.OnNewConnection(conn, true);
             else
             {
@@ -944,9 +944,9 @@ namespace PurrNet
             }
         }
 
-        private void OnLostConnection(Connection conn, DisconnectReason reason, bool asserver)
+        private void OnLostConnection(Connection conn, DisconnectReason reason, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                  _serverModules.OnLostConnection(conn, true);
             else
             {
@@ -955,22 +955,22 @@ namespace PurrNet
             }
         }
 
-        private void OnDataReceived(Connection conn, ByteData data, bool asserver)
+        private void OnDataReceived(Connection conn, ByteData data, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                  _serverModules.OnDataReceived(conn, data, true);
             else _clientModules.OnDataReceived(conn, data, false);
         }
 
-        private void OnConnectionState(ConnectionState state, bool asserver)
+        private void OnConnectionState(ConnectionState state, bool asServer)
         {
-            if (asserver)
+            if (asServer)
                  onServerConnectionState?.Invoke(state);
             else onClientConnectionState?.Invoke(state);
 
             if (state == ConnectionState.Disconnected)
             {
-                switch (asserver)
+                switch (asServer)
                 {
                     case false:
                         _isCleaningClient = true;
