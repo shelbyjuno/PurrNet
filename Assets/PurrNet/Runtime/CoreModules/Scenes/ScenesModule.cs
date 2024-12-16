@@ -178,7 +178,7 @@ namespace PurrNet.Modules
                 wasPresentFromStart = true
             }, GetNextID());
 
-            if (currentScene != originalScene)
+            if (currentScene != originalScene && originalScene.IsValid())
             {
                 AddScene(originalScene, new PurrSceneSettings
                 {
