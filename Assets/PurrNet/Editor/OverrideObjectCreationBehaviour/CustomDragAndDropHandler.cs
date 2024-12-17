@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using UnityEditor;
 using UnityEngine;
@@ -26,9 +25,6 @@ public class CustomDragAndDropHandler
     
     static CustomDragAndDropHandler()
     {
-        PurrLogger.Log("CustomDragAndDropHandler initialized");
-        
-        // Subscribe to the Scene View and Hierarchy Window callbacks
         SceneView.duringSceneGui += OnSceneGUI;
         EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyItemGUI;
     } 
@@ -66,20 +62,9 @@ public class CustomDragAndDropHandler
             
         if (!isPlaying)
             return;
-        
-        switch (Event.current.type)
-        {
-            case EventType.DragPerform:
-            {
-                TakeSnapShotOfHierarchy(_beforeObjects);
-                break;
-            }
-            case EventType.DragExited:
-            {
-                CheckNewInstantiations();
-                break;
-            }
-        }
+
+        if (Event.current.type == EventType.DragExited && Selection.activeGameObject)
+            PurrNetGameObjectUtils.NotifyGameObjectCreated(Selection.activeGameObject);
     }
     
     private static void CheckNewInstantiations()

@@ -13,7 +13,6 @@ namespace PurrNet.Modules
         
         public static void NotifyGameObjectCreated(GameObject go)
         {
-            PurrLogger.Log($"GameObject created: {go.name} ==========", go);
             onGameObjectCreated?.Invoke(go);
         }
         
