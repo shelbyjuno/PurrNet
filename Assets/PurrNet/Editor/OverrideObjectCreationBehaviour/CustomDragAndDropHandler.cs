@@ -63,8 +63,11 @@ public class CustomDragAndDropHandler
         if (!isPlaying)
             return;
 
-        if (Event.current.type == EventType.DragExited && Selection.activeGameObject)
-            PurrNetGameObjectUtils.NotifyGameObjectCreated(Selection.activeGameObject);
+        if (Event.current.type == EventType.DragExited)
+        {
+            foreach (var gos in Selection.gameObjects)
+                PurrNetGameObjectUtils.NotifyGameObjectCreated(gos);
+        }
     }
     
     private static void CheckNewInstantiations()
