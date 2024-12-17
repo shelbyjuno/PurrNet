@@ -40,6 +40,9 @@ public class CustomDragAndDropHandler
         {
             case EventType.DragPerform:
             {
+                if (!IsDraggingPrefabs())
+                    break;
+                
                 if (_lastDragDropEventFrame != Time.frameCount)
                 {
                     TakeSnapShotOfHierarchy(_beforeObjects);
@@ -50,10 +53,27 @@ public class CustomDragAndDropHandler
             }
             case EventType.DragExited:
             {
+                if (!IsDraggingPrefabs())
+                    break;
+                
                 CheckNewInstantiations();
                 break;
             }
         }
+    }
+
+    static bool IsDraggingPrefabs()
+    {
+        if (DragAndDrop.objectReferences.Length == 0)
+            return false;
+
+        foreach (var obj in DragAndDrop.objectReferences)
+        {
+            if (PrefabUtility.IsPartOfPrefabAsset(obj))
+                return true;
+        }
+        
+        return false;
     }
     
     private static void OnSceneGUI(SceneView sceneView)
@@ -63,7 +83,7 @@ public class CustomDragAndDropHandler
         if (!isPlaying)
             return;
 
-        if (Event.current.type == EventType.DragExited)
+        if (Event.current.type == EventType.DragExited && IsDraggingPrefabs())
         {
             foreach (var gos in Selection.gameObjects)
                 PurrNetGameObjectUtils.NotifyGameObjectCreated(gos);
