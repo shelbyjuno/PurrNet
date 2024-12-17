@@ -2,7 +2,6 @@
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Pooling;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,25 +13,30 @@ namespace PurrNet.Modules
         private readonly bool _asServer;
         private readonly SceneID _sceneId;
         private readonly Scene _scene;
-        private readonly ScenePlayersModule _players;
+        private readonly ScenePlayersModule _scenePlayers;
+        private readonly PlayersManager _playersManager;
         private readonly VisilityV2 _visibility;
         
         private readonly HierarchyPool _scenePool;
         private readonly HierarchyPool _prefabsPool;
         
+        private int _nextId;
+
         public bool areSceneObjectsReady { get; private set; }
         
-        public HierarchyV2(NetworkManager manager, SceneID sceneId, Scene scene, ScenePlayersModule players, IPrefabProvider prefabs, bool asServer)
+        public HierarchyV2(NetworkManager manager, SceneID sceneId, Scene scene, 
+            ScenePlayersModule players, PlayersManager playersManager, bool asServer)
         {
             _manager = manager;
             _sceneId = sceneId;
             _scene = scene;
-            _players = players;
+            _scenePlayers = players;
             _visibility = new VisilityV2();
             _asServer = asServer;
+            _playersManager = playersManager;
             
             _scenePool = NetworkPoolManager.GetScenePool(sceneId);
-            _prefabsPool = NetworkPoolManager.GetPool(prefabs);
+            _prefabsPool = NetworkPoolManager.GetPool(manager.prefabProvider);
             
             SetupSceneObjects(scene);
         }
@@ -114,7 +118,7 @@ namespace PurrNet.Modules
             if (!root)
                 return;
             
-            PurrLogger.Log($"OnGameObjectCreated: {root.prefabId}", obj);
+            Spawn(obj);
         }
 
         [UsedImplicitly]
@@ -125,12 +129,50 @@ namespace PurrNet.Modules
                 PurrLogger.LogError($"Failed to spawn object '{gameObject.name}'. No NetworkIdentity found.", gameObject);
                 return;
             }
+
+            if (id.isSpawned)
+                return;
             
+            if (!id.HasSpawnAuthority(_manager, !_asServer))
+            {
+                PurrLogger.LogError($"Spawn failed from for '{gameObject.name}' due to lack of permissions.", gameObject);
+                return;
+            }
+
+            PlayerID scope = default;
             
+            if (!_asServer)
+            {
+                if (!_playersManager.localPlayerId.HasValue)
+                {
+                    PurrLogger.LogError($"Failed to spawn object '{gameObject.name}'. No local player id found.", gameObject);
+                    return;
+                }
+                
+                scope = _playersManager.localPlayerId.Value;
+            }
+            
+            var baseNid = new NetworkID(_nextId++, scope);
+            SetupIdsLocally(gameObject, baseNid);
+
+            var framework = HierarchyPool.GetFramework(gameObject.transform);
+            PurrLogger.Log(framework.ToString());
         }
 
-        private ushort _sceneObjectSpawnCount;
-        
+        private void SetupIdsLocally(GameObject gameObject, NetworkID baseNid)
+        {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            gameObject.GetComponentsInChildren(true, children);
+            
+            for (var i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                child.SetIdentity(_manager, this, _sceneId, baseNid, _asServer);
+            }
+            
+            ListPool<NetworkIdentity>.Destroy(children);
+        }
+
         private void SpawnSceneObject(List<NetworkIdentity> children)
         {
             for (int i = 0; i < children.Count; i++)
@@ -138,7 +180,7 @@ namespace PurrNet.Modules
                 var child = children[i];
                 if (child.isSceneObject)
                 {
-                    var id = new NetworkID(default, _sceneObjectSpawnCount++);
+                    var id = new NetworkID(default, _nextId++);
                     child.SetIdentity(_manager, this, _sceneId, id, _asServer);
                 }
             }

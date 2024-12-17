@@ -7,6 +7,7 @@ using PurrNet.Modules;
 using PurrNet.Pooling;
 using PurrNet.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -20,29 +21,40 @@ namespace PurrNet
         /// Is -1 if scene object.
         /// </summary>
         [SerializeField, HideInInspector]
-        public int prefabId = int.MinValue;
+        private int _prefabId = int.MinValue;
 
         [SerializeField, HideInInspector]
-        public int siblingIndex = int.MinValue;
+        private int _siblingIndex = int.MinValue;
         
         [SerializeField, HideInInspector]
-        public int depthIndex = int.MinValue;
+        private int _depthIndex = int.MinValue;
 
         [SerializeField, HideInInspector] 
-        public bool shouldBePooled;
+        private bool _shouldBePooled;
 
-        [SerializeField]
-        public List<NetworkIdentity> directChildren = new ();
+        [SerializeField, HideInInspector]
+        private List<NetworkIdentity> _directChildren = new ();
+        
+        public int prefabId => _prefabId;
+        
+        public int siblingIndex => _siblingIndex;
+        
+        public int depthIndex => _depthIndex;
+        
+        public bool shouldBePooled => _shouldBePooled;
+        
+        public IReadOnlyList<NetworkIdentity> directChildren => _directChildren;
         
         public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled, bool isSceneObject)
         {
-            this.prefabId = prefabId;
-            this.siblingIndex = siblingIndex;
-            this.depthIndex = depthIndex;
-            this.shouldBePooled = shouldBePooled;
             this.isSceneObject = isSceneObject;
-            this.directChildren.Clear();
-            
+
+            this._prefabId = prefabId;
+            this._siblingIndex = siblingIndex;
+            this._depthIndex = depthIndex;
+            this._shouldBePooled = shouldBePooled;
+            this._directChildren.Clear();
+
             using var children = new DisposableList<TransformIdentityPair>(16);
             HierarchyPool.GetDirectChildren(transform, children);
             
@@ -50,7 +62,7 @@ namespace PurrNet
             {
                 var pair = children[i];
                 if (pair.identity)
-                    this.directChildren.Add(pair.identity);
+                    this._directChildren.Add(pair.identity);
             }
         }
 
@@ -64,7 +76,7 @@ namespace PurrNet
         /// <summary>
         /// Unique ObjectId of this object
         /// </summary>
-        public int ObjectId => id?.id ?? -1;
+        public int objectId => id?.id ?? 0;
         
         /// <summary>
         /// Scene id of this object.

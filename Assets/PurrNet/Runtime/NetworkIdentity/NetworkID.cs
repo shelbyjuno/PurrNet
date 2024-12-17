@@ -6,19 +6,19 @@ namespace PurrNet
     public struct NetworkID : Packing.IPackedAuto, IEquatable<NetworkID>
     {
         [UsedImplicitly] private PlayerID _scope;
-        [UsedImplicitly] private ushort _id;
+        [UsedImplicitly] private int _id;
         
-        public ushort id => _id;
+        public int id => _id;
 
         public PlayerID scope => _scope;
         
-        public NetworkID(NetworkID baseId, ushort offset)
+        public NetworkID(NetworkID baseId, int offset)
         {
-            _id = (ushort)(baseId._id + offset);
+            _id = baseId._id + offset;
             _scope = baseId._scope;
         }
         
-        public NetworkID(ushort id, PlayerID scope = default)
+        public NetworkID(int id, PlayerID scope = default)
         {
             _id = id;
             _scope = scope;

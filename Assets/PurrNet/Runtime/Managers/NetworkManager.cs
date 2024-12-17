@@ -758,7 +758,7 @@ namespace PurrNet
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayers);
             
-            var hierarchyV2 = new HierarchyFactory(this, prefabProvider, scenesModule, scenePlayers);
+            var hierarchyV2 = new HierarchyFactory(this, scenesModule, scenePlayers, playersManager);
             modules.AddModule(hierarchyV2);
             
             modules.AddModule(hierarchyModule);

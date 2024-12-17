@@ -148,11 +148,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: -2147483648
-  siblingIndex: -2147483648
-  depthIndex: -2147483648
-  shouldBePooled: 0
-  directChildren: []
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -254,7 +254,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1488282996}
   - component: {fileID: 1488282998}
-  - component: {fileID: 1488282999}
   - component: {fileID: 1488283000}
   m_Layer: 0
   m_Name: PurrNet
@@ -298,22 +297,7 @@ MonoBehaviour:
   _networkPrefabs: {fileID: 11400000, guid: 2c44813f7cd52a94b9d62d27b62e46e1, type: 2}
   _networkRules: {fileID: 11400000, guid: d8799083b96579a42b8b2d03e4ceae98, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}
-  _tickRate: 20
---- !u!114 &1488282999
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488282995}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 332e746c3c3253246aacad4d5559f1fb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _roomName: purrnet
-  _region: eu-central
-  _host: eu1.purrlay.riten.dev
+  _tickRate: 32
 --- !u!114 &1488283000
 MonoBehaviour:
   m_ObjectHideFlags: 0
