@@ -1,4 +1,3 @@
-using PurrNet.Modules;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -28,7 +27,7 @@ namespace PurrNet
             _muteAutoSpawn = false;
         }
 
-        void Awake()
+        /*void Awake()
         {
             if (isSceneObject)
                 return;
@@ -67,12 +66,12 @@ namespace PurrNet
                 return;
 
             if (hierarchyFactory.TryGetHierarchy(currentSceneId, out var hierarchy) && hierarchy.areSceneObjectsReady)
-                hierarchy.Spawn(this);
-        }
+                hierarchy.Spawn(gameObject);
+        }*/
 
         public void AutoSpawn()
         {
-            Awake();
+            // Awake();
         }
 
         internal bool SetGUID(string guid)

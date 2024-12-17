@@ -4,6 +4,7 @@ using System.Reflection;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Pooling;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -29,13 +30,28 @@ namespace PurrNet
 
         [SerializeField, HideInInspector] 
         public bool shouldBePooled;
+
+        [SerializeField]
+        public List<NetworkIdentity> directChildren = new ();
         
-        public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled)
+        public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled, bool isSceneObject)
         {
             this.prefabId = prefabId;
             this.siblingIndex = siblingIndex;
             this.depthIndex = depthIndex;
             this.shouldBePooled = shouldBePooled;
+            this.isSceneObject = isSceneObject;
+            this.directChildren.Clear();
+            
+            using var children = new DisposableList<TransformIdentityPair>(16);
+            HierarchyPool.GetDirectChildren(transform, children);
+            
+            for (int i = 0; i < children.Count; i++)
+            {
+                var pair = children[i];
+                if (pair.identity)
+                    this.directChildren.Add(pair.identity);
+            }
         }
 
         /// <summary>
@@ -162,11 +178,6 @@ namespace PurrNet
         /// The root identity is the topmost parent that has a NetworkIdentity.
         /// </summary>
         public NetworkIdentity root { get; private set; }
-        
-        internal void SetIsSceneObject(bool isSceneObj)
-        {
-            isSceneObject = isSceneObj;
-        }
         
         [UsedImplicitly]
         public void QueueOnSpawned(Action action)

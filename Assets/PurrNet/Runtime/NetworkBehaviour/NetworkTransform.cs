@@ -280,6 +280,9 @@ namespace PurrNet
         
         private void Update()
         {
+            if (!isSpawned)
+                return;
+            
             if (!isController)
             {
                 ApplyLerpedPosition();

@@ -1,10 +1,22 @@
-﻿using PurrNet.Pooling;
+﻿using PurrNet.Logging;
+using PurrNet.Pooling;
 using UnityEngine;
 
 namespace PurrNet.Modules
 {
     public static class PurrNetGameObjectUtils
     {
+        /// <summary>
+        /// This is called in editor only when a GameObject is created in the scene by drag and drop.
+        /// </summary>
+        public static event System.Action<GameObject> onGameObjectCreated;
+        
+        public static void NotifyGameObjectCreated(GameObject go)
+        {
+            PurrLogger.Log($"GameObject created: {go.name} ==========", go);
+            onGameObjectCreated?.Invoke(go);
+        }
+        
         struct BehaviourState
         {
             public Behaviour component;

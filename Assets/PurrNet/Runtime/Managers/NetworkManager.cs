@@ -318,8 +318,13 @@ namespace PurrNet
                     var trs = child.transform;
 
                     bool shouldPool = prefab.TryGetComponent<PrefabLink>(out var link) && link.usePooling;
-                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), trs.GetTransformDepth(), shouldPool);
-                    child.SetIsSceneObject(false);
+                    child.PreparePrefabInfo(
+                        pid,
+                        trs.GetSiblingIndex(),
+                        trs.GetTransformDepth(), 
+                        shouldPool, 
+                        false
+                    );
                 }
             }
 
@@ -841,6 +846,12 @@ namespace PurrNet
             {
                 StopClient();
                 StopServer();
+                
+                if (clientState != ConnectionState.Disconnected)
+                    _clientModules.UnregisterModules();
+                
+                if (serverState != ConnectionState.Disconnected)
+                    _serverModules.UnregisterModules();
             }
         }
 

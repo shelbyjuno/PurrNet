@@ -13,6 +13,11 @@ namespace PurrNet.Editor
         
         private static void OnSceneGUI(SceneView sceneView)
         {
+            bool isPlaying = Application.isPlaying;
+            
+            if (!isPlaying)
+                return;
+            
             var currentEvent = Event.current;
 
             // Check if Delete or Backspace is pressed

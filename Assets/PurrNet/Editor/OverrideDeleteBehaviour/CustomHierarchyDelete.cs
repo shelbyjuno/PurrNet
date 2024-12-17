@@ -14,6 +14,11 @@ namespace PurrNet.Editor
 
         private static void OnHierarchyGUI(int instanceid, Rect selectionrect)
         {
+            bool isPlaying = Application.isPlaying;
+            
+            if (!isPlaying)
+                return;
+            
             var currentEvent = Event.current;
 
             // Check if Delete or Backspace is pressed

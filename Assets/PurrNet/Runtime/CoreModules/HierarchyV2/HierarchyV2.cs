@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Pooling;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -38,6 +39,16 @@ namespace PurrNet.Modules
 
         private void SetupSceneObjects(Scene scene)
         {
+            if (_manager.TryGetModule<HierarchyFactory>(!_asServer, out var factory) &&
+                factory.TryGetHierarchy(_sceneId, out var other))
+            {
+                if (other.areSceneObjectsReady)
+                {
+                    areSceneObjectsReady = true;
+                    return;
+                }
+            }
+            
             if (areSceneObjectsReady)
                 return;
             
@@ -52,8 +63,6 @@ namespace PurrNet.Modules
                 var identity = allSceneIdentities[i];
                 var root = identity.GetRootIdentity();
                 
-                identity.SetIsSceneObject(true);
-
                 if (!roots.Add(root))
                     continue;
                 
@@ -69,7 +78,7 @@ namespace PurrNet.Modules
                     var child = children[j];
                     var trs = child.transform;
                     int depth = trs.GetTransformDepth() - rootDepth;
-                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), depth, true);
+                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), depth, true, true);
                 }
 
                 SpawnSceneObject(children);
@@ -82,18 +91,42 @@ namespace PurrNet.Modules
 
         public void Enable()
         {
+            PurrNetGameObjectUtils.onGameObjectCreated += OnGameObjectCreated;
             _visibility.Enable();
         }
 
         public void Disable()
         {
+            PurrNetGameObjectUtils.onGameObjectCreated -= OnGameObjectCreated;
             _visibility.Disable();
         }
-        
-        [UsedImplicitly]
-        public void Spawn(PrefabLink prefabLink)
+
+        private void OnGameObjectCreated(GameObject obj)
         {
-            PurrLogger.Log($"Auto spawning {prefabLink.prefabGuid} in scene {_sceneId}");
+            if (!_asServer && _manager.isServer)
+                return;
+            
+            if (obj.scene.handle != _scene.handle)
+                return;
+
+            var root = obj.GetComponentInChildren<NetworkIdentity>();
+            
+            if (!root)
+                return;
+            
+            PurrLogger.Log($"OnGameObjectCreated: {root.prefabId}", obj);
+        }
+
+        [UsedImplicitly]
+        public void Spawn(GameObject gameObject)
+        {
+            if (!gameObject.TryGetComponent<NetworkIdentity>(out var id))
+            {
+                PurrLogger.LogError($"Failed to spawn object '{gameObject.name}'. No NetworkIdentity found.", gameObject);
+                return;
+            }
+            
+            
         }
 
         private ushort _sceneObjectSpawnCount;
