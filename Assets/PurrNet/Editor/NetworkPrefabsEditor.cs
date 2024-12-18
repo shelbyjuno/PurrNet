@@ -14,6 +14,7 @@ namespace PurrNet
         private ReorderableList reorderableList;
         
         private const float POOL_TOGGLE_WIDTH = 45f;
+        const float WARMUP_COUNT_WIDTH = 60f;
         private const float SPACING = 8f;
         private const float REORDERABLE_LIST_BUTTON_WIDTH = 25f;
         
@@ -32,63 +33,33 @@ namespace PurrNet
         private void SetupReorderableList()
         {
             reorderableList = new ReorderableList(serializedObject, prefabs, true, true, true, true);
+            reorderableList.elementHeight = EditorGUIUtility.singleLineHeight;
             
             reorderableList.drawHeaderCallback = (Rect rect) =>
             {
-                rect.width -= REORDERABLE_LIST_BUTTON_WIDTH;
-                
-                EditorGUI.LabelField(
-                    new Rect(rect.x, rect.y, rect.width - POOL_TOGGLE_WIDTH - SPACING, rect.height),
-                    "Prefabs",
-                    EditorStyles.boldLabel
-                );
-                
-                EditorGUI.BeginChangeCheck();
-                EditorGUI.showMixedValue = !allPoolingState.HasValue;
-                
-                bool newAllPooling = EditorGUI.ToggleLeft(
-                    new Rect(rect.x + rect.width - POOL_TOGGLE_WIDTH, rect.y, POOL_TOGGLE_WIDTH, rect.height),
-                    "Pool",
-                    allPoolingState ?? false
-                );
-                
-                if (EditorGUI.EndChangeCheck())
-                {
-                    for (int i = 0; i < prefabs.arraySize; i++)
-                    {
-                        prefabs.GetArrayElementAtIndex(i).FindPropertyRelative("pool").boolValue = newAllPooling;
-                    }
-                    allPoolingState = newAllPooling;
-                    serializedObject.ApplyModifiedProperties();
-                }
-                EditorGUI.showMixedValue = false;
-            };
+                float fullWidth = rect.width - REORDERABLE_LIST_BUTTON_WIDTH;
+                CalculateWidths(fullWidth, out float prefabWidth, out float poolWidth, out float warmupWidth);
 
-            reorderableList.elementHeight = EditorGUIUtility.singleLineHeight;
+                EditorGUI.LabelField(new Rect(rect.x, rect.y, prefabWidth, rect.height), "Prefab");
+                EditorGUI.LabelField(new Rect(rect.x + prefabWidth + SPACING, rect.y, poolWidth + warmupWidth, rect.height), "Pool");
+            };
 
             reorderableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
                 SerializedProperty element = prefabs.GetArrayElementAtIndex(index);
                 SerializedProperty prefabProp = element.FindPropertyRelative("prefab");
                 SerializedProperty poolProp = element.FindPropertyRelative("pool");
+                SerializedProperty warmupCountProp = element.FindPropertyRelative("warmupCount");
 
-                rect.width -= REORDERABLE_LIST_BUTTON_WIDTH;
-                
-                EditorGUI.PropertyField(
-                    new Rect(rect.x, rect.y, rect.width - POOL_TOGGLE_WIDTH - SPACING, rect.height),
-                    prefabProp,
-                    GUIContent.none
-                );
-                
-                EditorGUI.BeginChangeCheck();
-                poolProp.boolValue = EditorGUI.Toggle(
-                    new Rect(rect.x + rect.width - POOL_TOGGLE_WIDTH, rect.y, POOL_TOGGLE_WIDTH, rect.height),
-                    poolProp.boolValue
-                );
-                if (EditorGUI.EndChangeCheck())
+                float fullWidth = rect.width - REORDERABLE_LIST_BUTTON_WIDTH;
+                CalculateWidths(fullWidth, out float prefabWidth, out float poolWidth, out float warmupWidth);
+
+                EditorGUI.PropertyField(new Rect(rect.x, rect.y, prefabWidth, rect.height), prefabProp, GUIContent.none);
+                poolProp.boolValue = EditorGUI.Toggle(new Rect(rect.x + prefabWidth + SPACING, rect.y, poolWidth, rect.height), poolProp.boolValue);
+
+                if (poolProp.boolValue)
                 {
-                    UpdateAllPoolingState();
-                    serializedObject.ApplyModifiedProperties();
+                    EditorGUI.PropertyField(new Rect(rect.x + prefabWidth + poolWidth + (SPACING * 2), rect.y, warmupWidth, rect.height), warmupCountProp, GUIContent.none);
                 }
             };
 
@@ -102,6 +73,7 @@ namespace PurrNet
                     var element = list.serializedProperty.GetArrayElementAtIndex(index);
                     element.FindPropertyRelative("prefab").objectReferenceValue = null;
                     element.FindPropertyRelative("pool").boolValue = networkPrefabs.defaultPooling;
+                    element.FindPropertyRelative("warmupCount").intValue = 5;
                     serializedObject.ApplyModifiedProperties();
                     UpdateAllPoolingState();
                 });
@@ -119,6 +91,7 @@ namespace PurrNet
                             var element = list.serializedProperty.GetArrayElementAtIndex(index);
                             element.FindPropertyRelative("prefab").objectReferenceValue = obj;
                             element.FindPropertyRelative("pool").boolValue = networkPrefabs.defaultPooling;
+                            element.FindPropertyRelative("warmupCount").intValue = 5;
                         }
                     }
                     if (addedAny)
@@ -130,6 +103,14 @@ namespace PurrNet
                 
                 menu.ShowAsContext();
             };
+        }
+        
+        private void CalculateWidths(float fullWidth, out float prefabWidth, out float poolWidth, out float warmupWidth)
+        {
+            float spacing = SPACING;
+            poolWidth = 20f;
+            warmupWidth = 60f;
+            prefabWidth = fullWidth - poolWidth - warmupWidth - (spacing * 2);
         }
 
         private void UpdateAllPoolingState()

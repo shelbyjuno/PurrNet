@@ -30,6 +30,7 @@ namespace PurrNet
         {
             public GameObject prefab;
             public bool pool;
+            public int warmupCount;
         }
 
 #if UNITY_EDITOR
@@ -233,7 +234,7 @@ namespace PurrNet
                     var foundPath = AssetDatabase.GetAssetPath(foundPrefab);
                     if (!existingPaths.Contains(foundPath))
                     {
-                        prefabs.Add(new PrefabData { prefab = foundPrefab, pool = defaultPooling });
+                        prefabs.Add(new PrefabData { prefab = foundPrefab, pool = defaultPooling, warmupCount = 5});
                         added++;
                     }
                 }
