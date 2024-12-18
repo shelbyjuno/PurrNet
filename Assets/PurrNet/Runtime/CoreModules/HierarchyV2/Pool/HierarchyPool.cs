@@ -33,6 +33,7 @@ namespace PurrNet.Modules
         
         public void PutBackInPool(GameObject target)
         {
+            var toDestroy = ListPool<GameObject>.Instantiate();
             var children = ListPool<NetworkIdentity>.Instantiate();
             var pidSet = HashSetPool<PrefabPieceID>.Instantiate();
 
@@ -41,21 +42,44 @@ namespace PurrNet.Modules
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];
+
+                if (!child)
+                    continue;
+                
+                child.ResetIdentity();
+                
                 var pid = new PrefabPieceID(child.prefabId, child.depthIndex, child.siblingIndex);
 
                 if (!pidSet.Add(pid)) continue;
                 
+                // check if we should pool this object or not
+                if (!child.shouldBePooled)
+                {
+                    toDestroy.Add(child.gameObject);
+                    continue;
+                }
+                
+                // get or create the queue
                 if (!_pool.TryGetValue(pid, out var queue))
                 {
                     queue = QueuePool<GameObject>.Instantiate();
                     _pool.Add(pid, queue);
                 }
 
+                // put the object in the queue
                 child.gameObject.SetActive(false);
                 child.transform.SetParent(_parent, false);
                 queue.Enqueue(child.gameObject);
             }
 
+            // destroy the objects that shouldn't be pooled
+            for (var i = 0; i < toDestroy.Count; i++)
+            {
+                var id = toDestroy[i];
+                if (id) Object.Destroy(id);
+            }
+
+            ListPool<GameObject>.Destroy(toDestroy);
             ListPool<NetworkIdentity>.Destroy(children);
             HashSetPool<PrefabPieceID>.Destroy(pidSet);
         }

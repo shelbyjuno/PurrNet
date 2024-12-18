@@ -63,10 +63,10 @@ namespace PurrNet.Modules
             {
                 var prefab = prefabs.allPrefabs[i];
 
-                if (prefab.TryGetComponent<PrefabLink>(out var link) && link.usePooling)
+                if (prefab.pool)
                 {
-                    for (int j = 0; j < link.poolWarmupCount; j++)
-                        pool.Warmup(prefab);
+                    for (int j = 0; j < 5; j++) // TODO: Make this configurable
+                        pool.Warmup(prefab.prefab);
                 }
             }
             

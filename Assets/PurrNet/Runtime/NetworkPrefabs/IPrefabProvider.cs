@@ -5,7 +5,7 @@ namespace PurrNet
 {
     public interface IPrefabProvider
     {
-        IReadOnlyList<GameObject> allPrefabs { get; }
+        IReadOnlyList<NetworkPrefabs.PrefabData> allPrefabs { get; }
         
         GameObject GetPrefabFromGuid(string guid);
 
@@ -18,7 +18,7 @@ namespace PurrNet
 
     public abstract class PrefabProviderScriptable : ScriptableObject, IPrefabProvider
     {
-        public abstract IReadOnlyList<GameObject> allPrefabs { get; }
+        public abstract IReadOnlyList<NetworkPrefabs.PrefabData> allPrefabs { get; }
 
         public abstract GameObject GetPrefabFromGuid(string guid);
 

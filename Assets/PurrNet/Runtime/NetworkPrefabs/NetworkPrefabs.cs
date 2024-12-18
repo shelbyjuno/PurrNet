@@ -41,23 +41,7 @@ namespace PurrNet
         }
 #endif
 
-        private List<GameObject> _allPrefabs;
-        public override IReadOnlyList<GameObject> allPrefabs
-        {
-            get
-            {
-                if (_allPrefabs == null)
-                {
-                    _allPrefabs = new List<GameObject>(prefabs.Count);
-                    for (int i = 0; i < prefabs.Count; i++)
-                    {
-                        _allPrefabs.Add(prefabs[i].prefab);
-                    }
-                }
-                
-                return _allPrefabs;
-            }
-        }
+        public override IReadOnlyList<PrefabData> allPrefabs => prefabs;
 
         public override GameObject GetPrefabFromGuid(string guid)
         {

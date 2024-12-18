@@ -1,30 +1,18 @@
-using PurrNet.Utils;
-using UnityEngine;
-
 namespace PurrNet
 {
     public sealed class PrefabLink : NetworkIdentity
     {
-        [SerializeField, PurrReadOnly] private string _guid;
-        [SerializeField, PurrLock] private bool _usePooling;
-        [SerializeField, PurrLock] private int _poolWarmupCount = 1;
         
-        public bool usePooling => _usePooling;
-        
-        public int poolWarmupCount => _poolWarmupCount;
+        public int poolWarmupCount => 0;
 
-        static bool _muteAutoSpawn;
-        
-        public string prefabGuid => _guid;
+        public string prefabGuid => null;
 
         internal static void StartIgnoreAutoSpawn()
         {
-            _muteAutoSpawn = true;
         }
         
         internal static void StopIgnoreAutoSpawn()
         {
-            _muteAutoSpawn = false;
         }
 
         /*void Awake()
@@ -76,15 +64,12 @@ namespace PurrNet
 
         internal bool SetGUID(string guid)
         {
-            if (guid == _guid)
-                return false;
-            _guid = guid;
-            return true;
+            return false;
         }
 
         public bool MatchesGUID(string guid)
         {
-            return guid == _guid;
+            return false;
         }
     }
 }

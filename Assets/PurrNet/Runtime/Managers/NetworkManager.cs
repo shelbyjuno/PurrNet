@@ -308,21 +308,20 @@ namespace PurrNet
             
             for (var pid = 0; pid < prefabProvider.allPrefabs.Count; pid++)
             {
-                var prefab = prefabProvider.allPrefabs[pid];
+                var prefabData = prefabProvider.allPrefabs[pid];
 
-                prefab.GetComponentsInChildren(true, children);
+                prefabData.prefab.GetComponentsInChildren(true, children);
 
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
                     var trs = child.transform;
 
-                    bool shouldPool = prefab.TryGetComponent<PrefabLink>(out var link) && link.usePooling;
                     child.PreparePrefabInfo(
                         pid,
                         trs.GetSiblingIndex(),
                         trs.GetTransformDepth(), 
-                        shouldPool, 
+                        prefabData.pool, 
                         false
                     );
                 }
