@@ -512,6 +512,7 @@ namespace PurrNet
                      _serverHierarchy.Despawn(gameObject);
                 else _clientHierarchy?.Despawn(gameObject);
             }
+            else Destroy(gameObject);
         }
         
         internal void ResetIdentity()

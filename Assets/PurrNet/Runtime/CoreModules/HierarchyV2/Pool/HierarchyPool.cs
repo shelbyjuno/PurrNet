@@ -24,10 +24,7 @@ namespace PurrNet.Modules
         public void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
         {
             var copy = Object.Instantiate(prefabData.prefab, _parent);
-            copy.name += $"-Warmup";
-            
             NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false, -1);
-            
             PutBackInPool(copy, true);
         }
         
@@ -57,9 +54,11 @@ namespace PurrNet.Modules
                     continue;
                 }
                 
+#if PURRNET_DEBUG_POOLING
                 // set the tag
                 if (tagName)
                     child.gameObject.name += "-Warmup";
+#endif
                 
                 // get or create the queue
                 if (!_pool.TryGetValue(pid, out var queue))
