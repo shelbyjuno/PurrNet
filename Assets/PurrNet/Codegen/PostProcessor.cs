@@ -80,10 +80,7 @@ namespace PurrNet.Codegen
         {
             try
             {
-                if (type == null)
-                    return false;
-                
-                if (type.BaseType == null)
+                if (type?.BaseType == null)
                     return false;
 
                 if (type.BaseType.FullName == baseTypeName)
@@ -1417,7 +1414,7 @@ namespace PurrNet.Codegen
                         if (instruction.Operand is MethodReference methodReference &&
                             methodReference.GetElementMethod() == old)
                         {
-                            var newRef = GenerateNewRef(@new, methodReference);
+                            var newRef = GenerateNewRef(module, @new, methodReference);
                             processor.Replace(instruction, Instruction.Create(instruction.OpCode, newRef));
                         }
                     }
@@ -1433,13 +1430,10 @@ namespace PurrNet.Codegen
             return true;
         }
         
-        private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
+        public static MethodReference GenerateNewRef(ModuleDefinition module, string name, TypeReference returnType, TypeReference declaringType , MethodReference methodReference)
         {
-            // Check if methodReference is a MethodDefinition for a deeper copy if possible
-            var methodDefinition = methodReference.Resolve();
-
             // Start with a MethodReference pointing to the new definition, copying name and return type
-            var newRef = new MethodReference(@new.Name, @new.ReturnType, @new.DeclaringType)
+            var newRef = new MethodReference(name, returnType, declaringType)
             {
                 HasThis = methodReference.HasThis,
                 ExplicitThis = methodReference.ExplicitThis,
@@ -1447,20 +1441,23 @@ namespace PurrNet.Codegen
             };
 
             // Clone parameters with exact types and attributes
-            foreach (var parameter in methodDefinition.Parameters)
+            foreach (var parameter in methodReference.Parameters)
             {
-                var newParameterType = parameter.ParameterType;
+                var newParameterType = parameter.ParameterType.Import(module);
                 if (newParameterType is GenericParameter && newRef.GenericParameters.Count > 0)
                 {
                     // Ensure matching GenericParameter
-                    var matchedParameter = newRef.GenericParameters.FirstOrDefault(p => p.Name == newParameterType.Name);
+                    var matchedParameter =
+                        newRef.GenericParameters.FirstOrDefault(p => p.Name == newParameterType.Name);
                     if (matchedParameter != null) newParameterType = matchedParameter;
                 }
-                newRef.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, newParameterType));
+                newRef.Parameters.Add(
+                    new ParameterDefinition(parameter.Name, parameter.Attributes, newParameterType)
+                );
             }
 
             // Handle generic parameters exactly as defined in the MethodDefinition
-            foreach (var genericParameter in methodDefinition.GenericParameters)
+            foreach (var genericParameter in methodReference.GenericParameters)
             {
                 var newGenericParameter = new GenericParameter(genericParameter.Name, newRef);
                 newRef.GenericParameters.Add(newGenericParameter);
@@ -1473,13 +1470,18 @@ namespace PurrNet.Codegen
 
                 // Match each generic argument exactly
                 foreach (var argument in ogGenericMethodRef.GenericArguments)
-                    newGenericInstanceMethod.GenericArguments.Add(argument);
+                    newGenericInstanceMethod.GenericArguments.Add(argument.Import(module));
 
                 // Assign the generic instance method back to newRef
                 newRef = newGenericInstanceMethod;
             }
 
-            return newRef;
+            return newRef.Import(module);
+        }
+        
+        private static MethodReference GenerateNewRef(ModuleDefinition module, MethodReference @new, MethodReference methodReference)
+        {
+            return GenerateNewRef(module, @new.Name, @new.ReturnType, @new.DeclaringType, methodReference);
         }
 
         public static List<TypeDefinition> GetAllTypes(ModuleDefinition module)
@@ -1527,8 +1529,9 @@ namespace PurrNet.Codegen
 
                     for (var t = 0; t < types.Count; t++)
                     {
+                        UnityProxyProcessor.Process(types[t], messages);
                         RegisterSerializersProcessor.HandleType(module, types[t], messages);
-                        
+
                         var type = types[t];
                         
                         if (GenerateSerializersProcessor.HasInterface(type, typeof(IPackedAuto)))
@@ -1673,7 +1676,7 @@ namespace PurrNet.Codegen
                 
                 foreach (var typeRef in typesToPrepareHasher)
                     GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, visitedTypes, messages);
-
+                
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();
 
