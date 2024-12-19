@@ -22,7 +22,7 @@ namespace PurrNet.Codegen
                 var module = type.Module;
                 
                 string objectClassFullName = typeof(UnityEngine.Object).FullName;
-                var unityProxyType = module.GetTypeReference<UnityProxy>().Import(module);
+                var unityProxyType = module.GetTypeReference<UnityProxy>().Import(module).Resolve();
 
                 foreach (var method in type.Methods)
                 {
@@ -43,7 +43,7 @@ namespace PurrNet.Codegen
                         if (methodReference.Name != "Instantiate")
                             continue;
 
-                        var targetMethod = GetInstantiateDefinition(module, methodReference.Name, methodReference, unityProxyType.Resolve());
+                        var targetMethod = GetInstantiateDefinition(methodReference, unityProxyType);
                         var targerRef = module.ImportReference(targetMethod);
                         
                         if (methodReference is GenericInstanceMethod genericInstanceMethod)
@@ -58,11 +58,11 @@ namespace PurrNet.Codegen
                             
                             targerRef = module.ImportReference(genRef);
                             
-                            messages.Add(new DiagnosticMessage
+                            /*messages.Add(new DiagnosticMessage
                             {
                                 MessageData = $"Generic method: {methodReference.FullName}, {targerRef.FullName}",
                                 DiagnosticType = DiagnosticType.Error
-                            });
+                            });*/
                         }
                         processor.Replace(instruction, processor.Create(OpCodes.Call, targerRef));
                     }
@@ -79,52 +79,27 @@ namespace PurrNet.Codegen
         }
         
         static MethodDefinition GetInstantiateDefinition(
-            ModuleDefinition module,
-            string name,
             MethodReference originalMethod,
             TypeDefinition declaringType)
         {
-            // Match the method name and parameter count
-            var proxyMethod = declaringType.Methods.FirstOrDefault(m =>
-                m.Name == name &&
-                m.Parameters.Count == originalMethod.Parameters.Count &&
-                m.HasGenericParameters == originalMethod.HasGenericParameters);
-
-            if (proxyMethod == null)
+            foreach (var method in declaringType.Methods)
             {
-                throw new InvalidOperationException($"Could not find method '{name}' in '{declaringType.FullName}'.");
+                if (method.Name != originalMethod.Name)
+                    continue;
+
+                if (method.Parameters.Count != originalMethod.Parameters.Count)
+                    continue;
+                
+                if (originalMethod.HasGenericParameters != method.HasGenericParameters)
+                    continue;
+                
+                if (originalMethod.GenericParameters.Count != method.GenericParameters.Count)
+                    continue;
+                
+                return method;
             }
 
-            // For generic methods, ensure generic parameter matching
-            if (proxyMethod.HasGenericParameters && originalMethod is GenericInstanceMethod genericInstanceMethod)
-            {
-                // Check that the generic arguments align
-                var proxyGenericParams = proxyMethod.GenericParameters;
-                if (proxyGenericParams.Count != genericInstanceMethod.GenericArguments.Count)
-                {
-                    throw new InvalidOperationException(
-                        $"Generic parameter mismatch: {proxyGenericParams.Count} expected, {genericInstanceMethod.GenericArguments.Count} provided.");
-                }
-
-                // Verify that constraints (if any) match the generic arguments
-                for (int i = 0; i < proxyGenericParams.Count; i++)
-                {
-                    var proxyParam = proxyGenericParams[i];
-                    var originalArg = genericInstanceMethod.GenericArguments[i].Import(module);
-
-                    // Verify the constraints for the generic parameter
-                    foreach (var constraint in proxyParam.Constraints)
-                    {
-                        if (!constraint.IsAssignableFrom(originalArg))
-                        {
-                            throw new InvalidOperationException(
-                                $"Generic argument '{originalArg.FullName}' does not satisfy the constraint '{constraint.FullName}'.");
-                        }
-                    }
-                }
-            }
-
-            return proxyMethod;
+            return null;
         }
 
     }
