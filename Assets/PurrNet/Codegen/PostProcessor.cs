@@ -2132,6 +2132,12 @@ namespace PurrNet.Codegen
             if (IsGeneric(typeReference, typeof(List<>)))
                 return true;
             
+            if (IsGeneric(typeReference, typeof(Queue<>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(Stack<>)))
+                return true;
+            
             if (IsGeneric(typeReference, typeof(Nullable<>)))
                 return true;
 
