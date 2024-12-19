@@ -20,7 +20,9 @@ namespace PurrNet.Codegen
             Array,
             HashSet,
             Dictionary,
-            Nullable
+            Nullable,
+            Queue,
+            Stack
         }
 
         static bool ValideType(TypeReference type)
@@ -285,6 +287,22 @@ namespace PurrNet.Codegen
                     genericRegisterHashSetMethod.GenericArguments.Add(hashSetType.GenericArguments[0]);
                     
                     il.Emit(OpCodes.Call, genericRegisterHashSetMethod);
+                    break;
+                case HandledGenericTypes.Queue when importedType is GenericInstanceType queueType:
+                    
+                    var registerQueueMethod = packCollectionsType.GetMethod("RegisterQueue", true).Import(module);
+                    var genericregisterQueueMethod = new GenericInstanceMethod(registerQueueMethod);
+                    genericregisterQueueMethod.GenericArguments.Add(queueType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericregisterQueueMethod);
+                    break;
+                case HandledGenericTypes.Stack when importedType is GenericInstanceType stackType:
+                    
+                    var registerStackMethod = packCollectionsType.GetMethod("RegisterStack", true).Import(module);
+                    var genericRegisterStackMethod = new GenericInstanceMethod(registerStackMethod);
+                    genericRegisterStackMethod.GenericArguments.Add(stackType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericRegisterStackMethod);
                     break;
                 case HandledGenericTypes.Dictionary when importedType is GenericInstanceType dictionaryType:
                     
@@ -713,6 +731,18 @@ namespace PurrNet.Codegen
             if (IsGeneric(typeDef, typeof(List<>)))
             {
                 type = HandledGenericTypes.List;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(Queue<>)))
+            {
+                type = HandledGenericTypes.Queue;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(Stack<>)))
+            {
+                type = HandledGenericTypes.Stack;
                 return true;
             }
             
