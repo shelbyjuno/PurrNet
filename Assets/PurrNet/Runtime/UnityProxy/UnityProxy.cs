@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 namespace PurrNet
 {
     [UsedByIL]
-    public class UnityProxy
+    public static class UnityProxy
     {
         [UsedByIL]
         public static Object Instantiate(Object original)
@@ -80,6 +80,30 @@ namespace PurrNet
         public static T Instantiate<T>(T original, Transform parent, bool worldPositionStays) where T : Object
         {
             return Object.Instantiate(original, parent, worldPositionStays);
+        }
+        
+        [UsedByIL]
+        public static void Destroy(Object obj)
+        {
+            Object.Destroy(obj);
+        }
+
+        [UsedByIL]
+        public static void Destroy(Object obj, float t)
+        {
+            Object.Destroy(obj, t);
+        }
+        
+        [UsedByIL]
+        public static void DestroyImmediate(Object obj)
+        {
+            Object.DestroyImmediate(obj);
+        }
+        
+        [UsedByIL]
+        public static void DestroyImmediate(Object obj, bool allowDestroyingAssets)
+        {
+            Object.DestroyImmediate(obj, allowDestroyingAssets);
         }
     }
 }

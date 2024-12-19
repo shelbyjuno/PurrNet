@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using JetBrains.Annotations;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -22,7 +21,7 @@ namespace PurrNet.Codegen
                 var module = type.Module;
                 
                 string objectClassFullName = typeof(UnityEngine.Object).FullName;
-                var unityProxyType = module.GetTypeReference<UnityProxy>().Import(module).Resolve();
+                var unityProxyType = module.GetTypeReference(typeof(UnityProxy)).Import(module).Resolve();
 
                 foreach (var method in type.Methods)
                 {
@@ -40,10 +39,10 @@ namespace PurrNet.Codegen
                         if (methodReference.DeclaringType.FullName != objectClassFullName)
                             continue;
 
-                        if (methodReference.Name != "Instantiate")
+                        if (methodReference.Name != "Instantiate" && methodReference.Name != "Destroy")
                             continue;
 
-                        var targetMethod = GetInstantiateDefinition(methodReference, unityProxyType);
+                        var targetMethod = GetInstantiateDefinition(methodReference.Resolve(), unityProxyType);
                         var targerRef = module.ImportReference(targetMethod);
                         
                         if (methodReference is GenericInstanceMethod genericInstanceMethod)
@@ -57,12 +56,6 @@ namespace PurrNet.Codegen
                                 genRef.GenericParameters.Add(genRef.GenericParameters[j]);
                             
                             targerRef = module.ImportReference(genRef);
-                            
-                            /*messages.Add(new DiagnosticMessage
-                            {
-                                MessageData = $"Generic method: {methodReference.FullName}, {targerRef.FullName}",
-                                DiagnosticType = DiagnosticType.Error
-                            });*/
                         }
                         processor.Replace(instruction, processor.Create(OpCodes.Call, targerRef));
                     }
@@ -89,17 +82,80 @@ namespace PurrNet.Codegen
 
                 if (method.Parameters.Count != originalMethod.Parameters.Count)
                     continue;
-                
-                if (originalMethod.HasGenericParameters != method.HasGenericParameters)
+
+                // Check for matching generic parameters
+                if (method.HasGenericParameters != originalMethod.HasGenericParameters)
                     continue;
-                
-                if (originalMethod.GenericParameters.Count != method.GenericParameters.Count)
-                    continue;
-                
-                return method;
+
+                if (method.HasGenericParameters)
+                {
+                    if (method.GenericParameters.Count != originalMethod.GenericParameters.Count)
+                        continue;
+
+                    for (int i = 0; i < method.GenericParameters.Count; i++)
+                    {
+                        var originalParam = originalMethod.GenericParameters[i];
+                        var candidateParam = method.GenericParameters[i];
+
+                        // Compare names and constraints
+                        if (originalParam.Name != candidateParam.Name)
+                            goto NextMethod;
+
+                        if (originalParam.Constraints.Count != candidateParam.Constraints.Count)
+                            goto NextMethod;
+
+                        for (int j = 0; j < originalParam.Constraints.Count; j++)
+                        {
+                            if (!TypesMatch(originalParam.Constraints[j].ConstraintType, candidateParam.Constraints[j].ConstraintType))
+                                goto NextMethod;
+                        }
+                    }
+                }
+
+                // Check parameters
+                bool match = true;
+                for (int i = 0; i < method.Parameters.Count; i++)
+                {
+                    var originalParamType = originalMethod.Parameters[i].ParameterType;
+                    var candidateParamType = method.Parameters[i].ParameterType;
+
+                    if (!TypesMatch(originalParamType, candidateParamType))
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                    return method;
+
+                NextMethod:
+                // ReSharper disable once RedundantJumpStatement
+                continue;
             }
 
             return null;
+        }
+
+        static bool TypesMatch(TypeReference original, TypeReference candidate)
+        {
+            if (original.FullName != candidate.FullName)
+                return false;
+
+            // If either type is generic, check their arguments
+            if (original is GenericInstanceType originalGeneric && candidate is GenericInstanceType candidateGeneric)
+            {
+                if (originalGeneric.GenericArguments.Count != candidateGeneric.GenericArguments.Count)
+                    return false;
+
+                for (int i = 0; i < originalGeneric.GenericArguments.Count; i++)
+                {
+                    if (!TypesMatch(originalGeneric.GenericArguments[i], candidateGeneric.GenericArguments[i]))
+                        return false;
+                }
+            }
+
+            return true;
         }
 
     }
