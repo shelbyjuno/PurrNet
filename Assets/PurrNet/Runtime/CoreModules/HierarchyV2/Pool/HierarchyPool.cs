@@ -12,15 +12,13 @@ namespace PurrNet.Modules
         private readonly Dictionary<PrefabPieceID, Queue<GameObject>> _pool = new();
 
         private readonly Transform _parent;
-        private readonly NetworkManager _manager;
 
         [UsedImplicitly] private readonly IPrefabProvider _prefabs;
 
-        public HierarchyPool(NetworkManager manager, Transform parent, IPrefabProvider prefabs = null)
+        public HierarchyPool(Transform parent, IPrefabProvider prefabs = null)
         {
             _parent = parent;
             _prefabs = prefabs;
-            _manager = manager;
         }
 
         public void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
@@ -28,12 +26,12 @@ namespace PurrNet.Modules
             var copy = Object.Instantiate(prefabData.prefab, _parent);
             copy.name += $"-Warmup";
             
-            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false);
+            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false, -1);
             
-            PutBackInPool(copy);
+            PutBackInPool(copy, true);
         }
         
-        public void PutBackInPool(GameObject target)
+        public void PutBackInPool(GameObject target, bool tagName = false)
         {
             var toDestroy = ListPool<GameObject>.Instantiate();
             var children = ListPool<NetworkIdentity>.Instantiate();
@@ -58,6 +56,10 @@ namespace PurrNet.Modules
                     toDestroy.Add(child.gameObject);
                     continue;
                 }
+                
+                // set the tag
+                if (tagName)
+                    child.gameObject.name += "-Warmup";
                 
                 // get or create the queue
                 if (!_pool.TryGetValue(pid, out var queue))
@@ -86,29 +88,34 @@ namespace PurrNet.Modules
 
         private bool TryGetFromPool(PrefabPieceID pid, out GameObject instance)
         {
-            if (!_pool.TryGetValue(pid, out var list))
+            if (!_pool.TryGetValue(pid, out var queue))
             {
                 Warmup(pid);
 
-                if (!_pool.TryGetValue(pid, out list))
+                if (!_pool.TryGetValue(pid, out queue))
                 {
+                    foreach (var VARIABLE in _pool)
+                    {
+                        PurrLogger.Log($"Key: {VARIABLE.Key}, Value: {VARIABLE.Value.Count}");
+                    }
+
                     instance = null;
                     return false;
                 }
             }
 
-            if (list.Count == 0)
+            if (queue.Count == 0)
             {
                 Warmup(pid);
                 
-                if (list.Count == 0)
+                if (queue.Count == 0)
                 {
                     instance = null;
                     return false;
                 }
             }
 
-            return list.TryDequeue(out instance);
+            return queue.TryDequeue(out instance);
         }
 
         private void Warmup(PrefabPieceID pid)
@@ -177,9 +184,6 @@ namespace PurrNet.Modules
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
 
-            /*if (!transform.TryGetComponent<PrefabLink>(out var rootId))
-                return new GameObjectPrototype { framework = framework, isScenePrototype = true };*/
-            
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
                 return new GameObjectPrototype { framework = framework, isScenePrototype = true };
 
@@ -240,7 +244,7 @@ namespace PurrNet.Modules
 
             if (!TryGetFromPool(current.pid, out var instance))
             {
-                PurrLogger.LogError($"Failed to get object from pool: {current.pid}");
+                PurrLogger.LogError($"Failed to get object from pool: {current.pid} {prototype.isScenePrototype}");
                 result = null;
                 shouldBeActive = false;
                 return false;

@@ -19,11 +19,16 @@ MonoBehaviour:
   prefabs:
   - prefab: {fileID: 7115715800027318574, guid: df5ee5117fc76014797efbc3bceb0fa6, type: 3}
     pool: 1
+    warmupCount: 5
   - prefab: {fileID: 4226869799477898536, guid: 93c78053e9d67c34599db3cb8b24882d, type: 3}
     pool: 1
+    warmupCount: 5
   - prefab: {fileID: 4503696787648059610, guid: 1ee8535dc030aeb46bc8d217a0dd7059, type: 3}
     pool: 1
+    warmupCount: 5
   - prefab: {fileID: 7115715800027318574, guid: e1d9cd280a782c84aa05e2757cc55298, type: 3}
     pool: 1
+    warmupCount: 5
   - prefab: {fileID: 3370118771926816354, guid: d890283443de393468b8ca5948a89792, type: 3}
     pool: 1
+    warmupCount: 5

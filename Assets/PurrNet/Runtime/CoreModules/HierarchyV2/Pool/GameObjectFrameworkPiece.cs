@@ -46,7 +46,7 @@ namespace PurrNet.Modules
             {
                 builder.Append(enabled[i]);
                 if (i < enabled.Count - 1)
-                    builder.Append(", ");
+                    builder.Append(":");
             }
             builder.Append(" }");
             return builder.ToString();

@@ -299,19 +299,9 @@ namespace PurrNet
             }
 
             prefabProvider = provider;
-            // SetupPrefabInfo();
         }
-        
-        /*private void SetupPrefabInfo()
-        {
-            for (var pid = 0; pid < prefabProvider.allPrefabs.Count; pid++)
-            {
-                var prefabData = prefabProvider.allPrefabs[pid];
-                SetupPrefabInfo(prefabData.prefab, pid, prefabData.pool, false);
-            }
-        }*/
 
-        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject)
+        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject, int depthOffset)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             
@@ -324,12 +314,14 @@ namespace PurrNet
             {
                 var child = children[i];
                 var trs = child.transform;
+                
+                bool isRoot = trs == instance.transform;
 
                 child.PreparePrefabInfo(
                     pid,
-                    trs.GetSiblingIndex(),
-                    trs.GetTransformDepth(), 
-                    shouldBePooled, 
+                    isRoot ? 0 : trs.GetSiblingIndex(),
+                    trs.GetTransformDepth() + depthOffset, 
+                    shouldBePooled,
                     isSceneObject
                 );
             }

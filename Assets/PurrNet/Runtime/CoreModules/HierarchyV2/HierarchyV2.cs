@@ -38,7 +38,7 @@ namespace PurrNet.Modules
             _asServer = asServer;
             _playersManager = playersManager;
             
-            _scenePool = NetworkPoolManager.GetScenePool(manager, sceneId);
+            _scenePool = NetworkPoolManager.GetScenePool(sceneId);
             _prefabsPool = NetworkPoolManager.GetPool(manager);
             
             SetupSceneObjects(scene);
@@ -85,7 +85,7 @@ namespace PurrNet.Modules
                     var child = children[j];
                     var trs = child.transform;
                     int depth = trs.GetTransformDepth() - rootDepth;
-                    child.PreparePrefabInfo(pid, trs.GetSiblingIndex(), depth, true, true);
+                    child.PreparePrefabInfo(pid, trs.parent ? trs.GetSiblingIndex() : 0, depth, true, true);
                 }
 
                 SpawnSceneObject(children);
@@ -118,8 +118,10 @@ namespace PurrNet.Modules
 
             if (!_manager.TryGetPrefabData(prefab, out var data, out var idx))
                 return;
+            
+            var rootOffset = obj.transform.GetTransformDepth();
 
-            NetworkManager.SetupPrefabInfo(obj, idx, data.pool, false);
+            NetworkManager.SetupPrefabInfo(obj, idx, data.pool, false, -rootOffset);
 
             Spawn(obj);
         }

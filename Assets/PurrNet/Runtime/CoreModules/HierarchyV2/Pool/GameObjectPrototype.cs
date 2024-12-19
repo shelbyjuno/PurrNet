@@ -23,7 +23,7 @@ namespace PurrNet.Modules
         public override string ToString()
         {
             StringBuilder builder = new();
-            builder.Append("GameObjectPrototype: {\n    ");
+            builder.Append($"GameObjectPrototype(isScenePrototype:{isScenePrototype}): {{\n    ");
             for (int i = 0; i < framework.Count; i++)
             {
                 builder.Append(framework[i]);

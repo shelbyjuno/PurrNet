@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Modules
@@ -22,7 +21,7 @@ namespace PurrNet.Modules
         private static readonly Dictionary<IPrefabProvider, HierarchyPool> _pools = new();
         private static readonly Dictionary<SceneID, HierarchyPool> _scenePools = new();
 
-        public static HierarchyPool GetScenePool(NetworkManager manager, SceneID scene)
+        public static HierarchyPool GetScenePool(SceneID scene)
         {
             if (_scenePools.TryGetValue(scene, out var pool))
                 return pool;
@@ -36,7 +35,7 @@ namespace PurrNet.Modules
 #endif
             };
             
-            pool = new HierarchyPool(manager, poolParent.transform);
+            pool = new HierarchyPool(poolParent.transform);
             _scenePools.Add(scene, pool);
             return pool;
         }
@@ -58,7 +57,7 @@ namespace PurrNet.Modules
             };
             
             Object.DontDestroyOnLoad(poolParent);
-            pool = new HierarchyPool(manager, poolParent.transform, prefabs);
+            pool = new HierarchyPool(poolParent.transform, prefabs);
             _pools.Add(prefabs, pool);
             
             for (int i = 0 ; i < prefabs.allPrefabs.Count; i++)
@@ -67,7 +66,7 @@ namespace PurrNet.Modules
 
                 if (prefab.pool)
                 {
-                    for (int j = 0; j < 5; j++) // TODO: Make this configurable
+                    for (int j = 0; j < prefab.warmupCount; j++)
                         pool.Warmup(prefab, i);
                 }
             }
