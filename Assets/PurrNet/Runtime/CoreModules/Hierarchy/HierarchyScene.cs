@@ -729,11 +729,11 @@ namespace PurrNet.Modules
                 return;
             }
 
-            if (!_prefabs.TryGetPrefabID(link.prefabGuid, out var prefabId))
+            /*if (!_prefabs.TryGetPrefabID(link.prefabGuid, out var prefabId))
             {
                 PurrLogger.LogError($"Failed to find prefab with guid {link.prefabGuid}");
                 return;
-            }
+            }*/
             
             if (!TryGetActor(out var actor))
             {
@@ -789,7 +789,7 @@ namespace PurrNet.Modules
             
             var action = new SpawnAction
             {
-                prefabId = prefabId,
+                prefabId = 69,
                 childOffset = 0,
                 identityId = CACHE[0].id!.Value,
                 childCount = (ushort)CACHE.Count,

@@ -6,14 +6,15 @@ namespace PurrNet.Modules
 {
     public static class PurrNetGameObjectUtils
     {
+        public delegate void GameObjectCreated(GameObject go, GameObject prefab);
         /// <summary>
         /// This is called in editor only when a GameObject is created in the scene by drag and drop.
         /// </summary>
-        public static event System.Action<GameObject> onGameObjectCreated;
+        public static event GameObjectCreated onGameObjectCreated;
         
-        public static void NotifyGameObjectCreated(GameObject go)
+        public static void NotifyGameObjectCreated(GameObject go, GameObject prefab)
         {
-            onGameObjectCreated?.Invoke(go);
+            onGameObjectCreated?.Invoke(go, prefab);
         }
         
         struct BehaviourState

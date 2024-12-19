@@ -299,35 +299,61 @@ namespace PurrNet
             }
 
             prefabProvider = provider;
-            SetupPrefabInfo();
+            // SetupPrefabInfo();
         }
         
-        private void SetupPrefabInfo()
+        /*private void SetupPrefabInfo()
         {
-            var children = ListPool<NetworkIdentity>.Instantiate();
-            
             for (var pid = 0; pid < prefabProvider.allPrefabs.Count; pid++)
             {
                 var prefabData = prefabProvider.allPrefabs[pid];
+                SetupPrefabInfo(prefabData.prefab, pid, prefabData.pool, false);
+            }
+        }*/
 
-                prefabData.prefab.GetComponentsInChildren(true, children);
+        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject)
+        {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            
+            if (!instance.GetComponent<NetworkIdentity>())
+                instance.AddComponent<NetworkIdentity>();
+            
+            instance.GetComponentsInChildren(true, children);
 
-                for (var i = 0; i < children.Count; i++)
-                {
-                    var child = children[i];
-                    var trs = child.transform;
+            for (var i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                var trs = child.transform;
 
-                    child.PreparePrefabInfo(
-                        pid,
-                        trs.GetSiblingIndex(),
-                        trs.GetTransformDepth(), 
-                        prefabData.pool, 
-                        false
-                    );
-                }
+                child.PreparePrefabInfo(
+                    pid,
+                    trs.GetSiblingIndex(),
+                    trs.GetTransformDepth(), 
+                    shouldBePooled, 
+                    isSceneObject
+                );
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
+        }
+        
+        public bool TryGetPrefabData(GameObject prefab, out NetworkPrefabs.PrefabData o, out int pid)
+        {
+            var prefabs = _networkPrefabs.prefabs;
+            for (var i = 0; i < prefabs.Count; i++)
+            {
+                var data = prefabs[i];
+                if (data.prefab == prefab)
+                {
+                    o = data;
+                    pid = i;
+                    return true;
+                }
+            }
+            
+            o = default;
+            pid = -1;
+            return false;
         }
 
         private void Awake()
@@ -370,7 +396,6 @@ namespace PurrNet
 
                 if (_networkPrefabs.autoGenerate)
                     _networkPrefabs.Generate();
-                _networkPrefabs.PostProcess();
             }
 
             if (!_subscribed)
@@ -1053,16 +1078,6 @@ namespace PurrNet
         public void StopClient()
         {
             _transport.StopClient(this);
-        }
-
-        /// <summary>
-        /// Gets the prefab from the given guid.
-        /// </summary>
-        /// <param name="guid">The guid of the prefab to get.</param>
-        /// <returns>The prefab with the given guid.</returns>
-        public GameObject GetPrefabFromGuid(string guid)
-        {
-            return _networkPrefabs.GetPrefabFromGuid(guid);
         }
 
         public void ResetOriginalScene(Scene activeScene)

@@ -20,6 +20,9 @@ namespace PurrNet.Modules
         private readonly HierarchyPool _scenePool;
         private readonly HierarchyPool _prefabsPool;
         
+        private readonly List<NetworkIdentity> _spawnedIdentities = new();
+        private readonly Dictionary<NetworkID, NetworkIdentity> _spawnedIdentitiesMap = new();
+        
         private int _nextId;
 
         public bool areSceneObjectsReady { get; private set; }
@@ -35,8 +38,8 @@ namespace PurrNet.Modules
             _asServer = asServer;
             _playersManager = playersManager;
             
-            _scenePool = NetworkPoolManager.GetScenePool(sceneId);
-            _prefabsPool = NetworkPoolManager.GetPool(manager.prefabProvider);
+            _scenePool = NetworkPoolManager.GetScenePool(manager, sceneId);
+            _prefabsPool = NetworkPoolManager.GetPool(manager);
             
             SetupSceneObjects(scene);
         }
@@ -105,19 +108,19 @@ namespace PurrNet.Modules
             _visibility.Disable();
         }
 
-        private void OnGameObjectCreated(GameObject obj)
+        private void OnGameObjectCreated(GameObject obj, GameObject prefab)
         {
             if (!_asServer && _manager.isServer)
                 return;
-            
+
             if (obj.scene.handle != _scene.handle)
                 return;
 
-            var root = obj.GetComponentInChildren<NetworkIdentity>();
-            
-            if (!root)
+            if (!_manager.TryGetPrefabData(prefab, out var data, out var idx))
                 return;
-            
+
+            NetworkManager.SetupPrefabInfo(obj, idx, data.pool, false);
+
             Spawn(obj);
         }
 
@@ -167,8 +170,11 @@ namespace PurrNet.Modules
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];
-                child.SetIdentity(_manager, this, _sceneId, baseNid, _asServer);
+                child.SetIdentity(_manager, this, _sceneId, new NetworkID(baseNid, i), _asServer);
+                RegisterIdentity(child);
             }
+            
+            _nextId += children.Count;
             
             ListPool<NetworkIdentity>.Destroy(children);
         }
@@ -192,7 +198,14 @@ namespace PurrNet.Modules
             gameObject.GetComponentsInChildren(true, children);
 
             for (var i = 0; i < children.Count; i++)
-                children[i].ResetIdentity();
+            {
+                var child = children[i];
+                
+                UnregisterIdentity(child);
+                
+                if (child.shouldBePooled)
+                    child.ResetIdentity();
+            }
 
             ListPool<NetworkIdentity>.Destroy(children);
             
@@ -235,6 +248,25 @@ namespace PurrNet.Modules
             if (shouldActivate)
                 result.SetActive(true);
             PrefabLink.StopIgnoreAutoSpawn();
+        }
+        
+            
+        private void RegisterIdentity(NetworkIdentity identity)
+        {
+            if (identity.id.HasValue)
+            {
+                _spawnedIdentities.Add(identity);
+                _spawnedIdentitiesMap.Add(identity.id.Value, identity);
+            }
+        }
+        
+        private void UnregisterIdentity(NetworkIdentity identity)
+        {
+            if (identity.id.HasValue)
+            {
+                _spawnedIdentities.Remove(identity);
+                _spawnedIdentitiesMap.Remove(identity.id.Value);
+            }
         }
     }
 }

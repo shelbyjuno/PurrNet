@@ -2,7 +2,6 @@ namespace PurrNet
 {
     public sealed class PrefabLink : NetworkIdentity
     {
-        
         public int poolWarmupCount => 0;
 
         public string prefabGuid => null;

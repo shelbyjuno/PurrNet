@@ -12,21 +12,23 @@ namespace PurrNet.Modules
         private readonly Dictionary<PrefabPieceID, Queue<GameObject>> _pool = new();
 
         private readonly Transform _parent;
+        private readonly NetworkManager _manager;
 
         [UsedImplicitly] private readonly IPrefabProvider _prefabs;
 
-        public HierarchyPool(Transform parent, IPrefabProvider prefabs = null)
+        public HierarchyPool(NetworkManager manager, Transform parent, IPrefabProvider prefabs = null)
         {
             _parent = parent;
             _prefabs = prefabs;
+            _manager = manager;
         }
 
-        public void Warmup(GameObject prefab)
+        public void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
         {
-            PrefabLink.StartIgnoreAutoSpawn();
-            var copy = Object.Instantiate(prefab, _parent);
-            copy.MakeSureAwakeIsCalled();
-            PrefabLink.StopIgnoreAutoSpawn();
+            var copy = Object.Instantiate(prefabData.prefab, _parent);
+            copy.name += $"-Warmup";
+            
+            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false);
             
             PutBackInPool(copy);
         }
@@ -45,8 +47,6 @@ namespace PurrNet.Modules
 
                 if (!child)
                     continue;
-                
-                child.ResetIdentity();
                 
                 var pid = new PrefabPieceID(child.prefabId, child.depthIndex, child.siblingIndex);
 
@@ -113,10 +113,8 @@ namespace PurrNet.Modules
 
         private void Warmup(PrefabPieceID pid)
         {
-            if (pid.prefabId >= 0 && _prefabs != null && _prefabs.TryGetPrefab(pid.prefabId, out var prefab))
-            {
-                Warmup(prefab);
-            }
+            if (pid.prefabId >= 0 && _prefabs != null && _prefabs.TryGetPrefabData(pid.prefabId, out var prefab))
+                Warmup(prefab, pid.prefabId);
         }
 
         private static DisposableList<int> GetInvPath(Transform parent, Transform transform)

@@ -12,11 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66869b09091574e4c972f42f5ae2268e, type: 3}
   m_Name: NetworkPrefabs
   m_EditorClassIdentifier: 
-  autoGenerate: 1
-  networkOnly: 1
+  autoGenerate: 0
+  networkOnly: 0
+  defaultPooling: 1
   folder: {fileID: 102900000, guid: 5030a7bd3a72a464da6463a41075b2db, type: 3}
   prefabs:
-  - {fileID: 7115715800027318574, guid: df5ee5117fc76014797efbc3bceb0fa6, type: 3}
-  - {fileID: 4226869799477898536, guid: 93c78053e9d67c34599db3cb8b24882d, type: 3}
-  - {fileID: 4503696787648059610, guid: 1ee8535dc030aeb46bc8d217a0dd7059, type: 3}
-  - {fileID: 7115715800027318574, guid: e1d9cd280a782c84aa05e2757cc55298, type: 3}
+  - prefab: {fileID: 7115715800027318574, guid: df5ee5117fc76014797efbc3bceb0fa6, type: 3}
+    pool: 1
+  - prefab: {fileID: 4226869799477898536, guid: 93c78053e9d67c34599db3cb8b24882d, type: 3}
+    pool: 1
+  - prefab: {fileID: 4503696787648059610, guid: 1ee8535dc030aeb46bc8d217a0dd7059, type: 3}
+    pool: 1
+  - prefab: {fileID: 7115715800027318574, guid: e1d9cd280a782c84aa05e2757cc55298, type: 3}
+    pool: 1
+  - prefab: {fileID: 3370118771926816354, guid: d890283443de393468b8ca5948a89792, type: 3}
+    pool: 1

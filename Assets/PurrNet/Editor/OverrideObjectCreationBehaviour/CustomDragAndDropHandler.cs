@@ -85,10 +85,19 @@ public class CustomDragAndDropHandler
 
         if (Event.current.type == EventType.DragExited && IsDraggingPrefabs())
         {
-            foreach (var gos in Selection.gameObjects)
-                PurrNetGameObjectUtils.NotifyGameObjectCreated(gos);
+            _dragDropReferences.Clear();
+            FillPrefabListWithDrapDropReferences(_dragDropReferences);
+            var gameObjects = Selection.gameObjects;
+            for (var i = 0; i < gameObjects.Length; i++)
+            {
+                var gos = gameObjects[i];
+                PurrNetGameObjectUtils.NotifyGameObjectCreated(gos,
+                    _dragDropReferences.Count > i ? _dragDropReferences[i] : null);
+            }
         }
     }
+    
+    static readonly List<GameObject> _dragDropReferences = new ();
     
     private static void CheckNewInstantiations()
     {
@@ -103,6 +112,10 @@ public class CustomDragAndDropHandler
 
         if (_newObjects.Count > 0)
         {
+            _dragDropReferences.Clear();
+            FillPrefabListWithDrapDropReferences(_dragDropReferences);
+            
+            int idx = 0;
             foreach (var id in _newObjects)
             {
                 var go = EditorUtility.InstanceIDToObject(id) as GameObject;
@@ -122,14 +135,29 @@ public class CustomDragAndDropHandler
                         
                         trs = trs.parent;
                     }
-                    
+
                     if (!isAnyParentInNewObjects)
-                        PurrNetGameObjectUtils.NotifyGameObjectCreated(go);
+                    {
+                        PurrNetGameObjectUtils.NotifyGameObjectCreated(go,
+                            idx < _dragDropReferences.Count ? _dragDropReferences[idx] : null);
+                        idx++;
+                    }
                 }
             }
         }
                 
         _beforeObjects.Clear();
         _beforeObjects.UnionWith(_afterObjects);
+    }
+    
+    static void FillPrefabListWithDrapDropReferences(List<GameObject> list)
+    {
+        var references = DragAndDrop.objectReferences;
+        
+        for (var i = 0; i < references.Length; i++)
+        {
+            if (references[i] is GameObject go)
+                list.Add(go);
+        }
     }
 }
