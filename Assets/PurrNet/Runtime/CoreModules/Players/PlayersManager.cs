@@ -200,6 +200,14 @@ namespace PurrNet.Modules
         {
             return localPlayerId == playerId;
         }
+        
+        /// <summary>
+        /// Check if a playerId is the local player.
+        /// </summary>
+        public bool IsLocalPlayer(PlayerID? playerId)
+        {
+            return localPlayerId == playerId;
+        }
 
         /// <summary>
         /// Check if a playerId is a valid player.
@@ -208,6 +216,17 @@ namespace PurrNet.Modules
         public bool IsValidPlayer(PlayerID playerId)
         {
             return players.Contains(playerId);
+        }
+        
+        /// <summary>
+        /// Check if a playerId is a valid player.
+        /// A valid player is a player that is connected to the server.
+        /// </summary>
+        public bool IsValidPlayer(PlayerID? playerId)
+        {
+            if (!playerId.HasValue)
+                return false;
+            return players.Contains(playerId.Value);
         }
         
         /// <summary>

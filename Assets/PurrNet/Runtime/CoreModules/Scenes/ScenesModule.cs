@@ -83,7 +83,7 @@ namespace PurrNet.Modules
         /// </summary>
         public event OnSceneVisibilityEvent onSceneVisibilityChanged;
 
-        private ushort _nextSceneID;
+        private ushort _nextSceneID = 1;
         private ScenePlayersModule _scenePlayers;
         
         public IReadOnlyList<SceneID> scenes => _rawScenes;

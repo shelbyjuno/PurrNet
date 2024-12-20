@@ -221,7 +221,7 @@ namespace PurrNet
         
         private readonly List<ITick> _tickables = new ();
         
-        [ContextMenu("PurrNet/TakeOwnership")]
+        [ContextMenu("PurrNet/Take Ownership")]
         private void TakeOwnership()
         {
             GiveOwnership(localPlayer);
@@ -243,6 +243,12 @@ namespace PurrNet
             {
                 hierarchy.CreatePrototype(prototype);
             }
+        }
+                
+        [ContextMenu("PurrNet/Delete GameObject")]
+        private void DeleteGameObject()
+        {
+            Destroy(gameObject);
         }
         
         private void InternalOnSpawn(bool asServer)
@@ -512,7 +518,7 @@ namespace PurrNet
                      _serverHierarchy.Despawn(gameObject);
                 else _clientHierarchy?.Despawn(gameObject);
             }
-            else Destroy(gameObject);
+            else UnityProxy.DestroyDirectly(gameObject);
         }
         
         internal void ResetIdentity()
@@ -552,7 +558,7 @@ namespace PurrNet
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
-            
+
             if (!localPlayer.HasValue && networkManager.TryGetModule<PlayersManager>(asServer, out var playersManager))
                 localPlayer = playersManager.localPlayerId;
 

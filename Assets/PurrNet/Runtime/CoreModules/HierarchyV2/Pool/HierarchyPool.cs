@@ -3,7 +3,6 @@ using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Pooling;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace PurrNet.Modules
 {
@@ -14,6 +13,8 @@ namespace PurrNet.Modules
         private readonly Transform _parent;
 
         [UsedImplicitly] private readonly IPrefabProvider _prefabs;
+        
+        private static readonly Dictionary<GameObject, GameObjectPrototype> _prefabPrototypes = new();
 
         public HierarchyPool(Transform parent, IPrefabProvider prefabs = null)
         {
@@ -23,8 +24,15 @@ namespace PurrNet.Modules
 
         public void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
         {
-            var copy = Object.Instantiate(prefabData.prefab, _parent);
+            var copy = UnityProxy.InstantiateDirectly(prefabData.prefab, _parent);
             NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false, -1);
+            
+            if (!_prefabPrototypes.ContainsKey(prefabData.prefab))
+            {
+                var prototype = GetFramework(copy.transform);
+                _prefabPrototypes.Add(prefabData.prefab, prototype);
+            }
+            
             PutBackInPool(copy, true);
         }
         
@@ -77,7 +85,7 @@ namespace PurrNet.Modules
             for (var i = 0; i < toDestroy.Count; i++)
             {
                 var id = toDestroy[i];
-                if (id) Object.Destroy(id);
+                if (id) UnityProxy.DestroyDirectly(id);
             }
 
             ListPool<GameObject>.Destroy(toDestroy);
@@ -177,6 +185,11 @@ namespace PurrNet.Modules
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
+        }
+        
+        public static bool TryGetPrefabPrototype(GameObject prefab, out GameObjectPrototype prototype)
+        {
+            return _prefabPrototypes.TryGetValue(prefab, out prototype);
         }
 
         public static GameObjectPrototype GetFramework(Transform transform)
@@ -358,7 +371,7 @@ namespace PurrNet.Modules
             _pool.Clear();
             
             if (_parent)
-                Object.Destroy(_parent.gameObject);
+                UnityProxy.DestroyDirectly(_parent.gameObject);
         }
     }
 }

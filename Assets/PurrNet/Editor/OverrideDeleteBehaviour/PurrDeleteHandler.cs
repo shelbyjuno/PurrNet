@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using PurrNet.Modules;
 using PurrNet.Pooling;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet.Editor
 {
@@ -65,6 +67,9 @@ namespace PurrNet.Editor
             foreach (var obj in objectsToDeleteList)
                 Undo.DestroyObjectImmediate(obj);
 
+            // deselect all objects
+            Selection.objects = Array.Empty<Object>();
+            
             return true;
         }
     }

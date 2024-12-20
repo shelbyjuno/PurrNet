@@ -14,7 +14,7 @@ namespace PurrNet.Codegen
             try
             {
                 bool isProxyItself = type.FullName == typeof(UnityProxy).FullName;
-                
+
                 if (isProxyItself)
                     return;
                 
@@ -42,7 +42,16 @@ namespace PurrNet.Codegen
                         if (methodReference.Name != "Instantiate" && methodReference.Name != "Destroy")
                             continue;
 
-                        var targetMethod = GetInstantiateDefinition(methodReference.Resolve(), unityProxyType);
+                        var resolved = methodReference.Resolve();
+                        
+                        if (resolved == null)
+                            continue;
+                        
+                        var targetMethod = GetInstantiateDefinition(resolved, unityProxyType);
+                        
+                        if (targetMethod == null)
+                            continue;
+                        
                         var targerRef = module.ImportReference(targetMethod);
                         
                         if (methodReference is GenericInstanceMethod genericInstanceMethod)

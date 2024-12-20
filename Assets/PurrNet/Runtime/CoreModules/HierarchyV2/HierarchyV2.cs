@@ -226,16 +226,14 @@ namespace PurrNet.Modules
             
         }
 
-        public void CreatePrototype(GameObjectPrototype prototype)
+        public GameObject CreatePrototype(GameObjectPrototype prototype)
         {
-            PrefabLink.StartIgnoreAutoSpawn();
             var pool = prototype.isScenePrototype ? _scenePool : _prefabsPool;
 
             if (!pool.TryBuildPrototype(prototype, out var result, out var shouldActivate))
             {
                 PurrLogger.LogError("Failed to create prototype");
-                PrefabLink.StopIgnoreAutoSpawn();
-                return;
+                return null;
             }
             
             result.transform.SetParent(null, false);
@@ -244,7 +242,8 @@ namespace PurrNet.Modules
             
             if (shouldActivate)
                 result.SetActive(true);
-            PrefabLink.StopIgnoreAutoSpawn();
+
+            return result;
         }
 
         private void RegisterIdentity(NetworkIdentity identity)

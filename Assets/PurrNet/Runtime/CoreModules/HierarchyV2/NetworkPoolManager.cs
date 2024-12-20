@@ -67,7 +67,9 @@ namespace PurrNet.Modules
                 if (prefab.pool)
                 {
                     for (int j = 0; j < prefab.warmupCount; j++)
+                    {
                         pool.Warmup(prefab, i);
+                    }
                 }
             }
             

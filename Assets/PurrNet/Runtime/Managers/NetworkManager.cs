@@ -329,6 +329,11 @@ namespace PurrNet
             ListPool<NetworkIdentity>.Destroy(children);
         }
         
+        public bool IsPrefabRegistered(GameObject prefab)
+        {
+            return _networkPrefabs.prefabs.Exists(data => data.prefab == prefab);
+        }
+        
         public bool TryGetPrefabData(GameObject prefab, out NetworkPrefabs.PrefabData o, out int pid)
         {
             var prefabs = _networkPrefabs.prefabs;

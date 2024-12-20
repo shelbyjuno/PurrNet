@@ -8,7 +8,7 @@ namespace PurrNet
 {
     public class PlayerSpawner : PurrMonoBehaviour
     {
-        [SerializeField] private NetworkIdentity playerPrefab;
+        [SerializeField] private GameObject playerPrefab;
 
         [SerializeField] private List<Transform> spawnPoints = new();
         private int _currentSpawnPoint;
@@ -24,12 +24,6 @@ namespace PurrNet
                     i--;
                 }
             }
-        }
-
-        private void OnValidate()
-        {
-            if (playerPrefab != null && playerPrefab is not PrefabLink)
-                playerPrefab = playerPrefab.GetComponent<PrefabLink>();
         }
 
         public override void Subscribe(NetworkManager manager, bool asServer)
@@ -66,7 +60,9 @@ namespace PurrNet
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer)
         {
-            if (!NetworkManager.main.TryGetModule(out ScenesModule scenes, true))
+            var main = NetworkManager.main;
+            
+            if (!main || !main.TryGetModule(out ScenesModule scenes, true))
                 return;
 
             var unityScene = gameObject.scene;
@@ -80,33 +76,28 @@ namespace PurrNet
             if (!asServer)
                 return;
 
-            bool isDestroyOnDisconnectEnabled = NetworkManager.main.networkRules.ShouldDespawnOnOwnerDisconnect();
-            if (!isDestroyOnDisconnectEnabled && NetworkManager.main.TryGetModule(out GlobalOwnershipModule ownership, true) && 
+            bool isDestroyOnDisconnectEnabled = main.networkRules.ShouldDespawnOnOwnerDisconnect();
+            if (!isDestroyOnDisconnectEnabled && main.TryGetModule(out GlobalOwnershipModule ownership, true) && 
                 ownership.PlayerOwnsSomething(player))
                 return;
             
-            NetworkIdentity newPlayer;
+            GameObject newPlayer;
             
-            PrefabLink.StartIgnoreAutoSpawn();
-
             if (spawnPoints.Count > 0)
             {
                 var spawnPoint = spawnPoints[_currentSpawnPoint];
                 _currentSpawnPoint = (_currentSpawnPoint + 1) % spawnPoints.Count;
                 newPlayer = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+                SceneManager.MoveGameObjectToScene(newPlayer.gameObject, unityScene);
             }
             else
             {
-                newPlayer = Instantiate(playerPrefab);
+                var instance = Instantiate(playerPrefab, unityScene);
+                newPlayer = (GameObject)instance;
             }
             
-            PrefabLink.StopIgnoreAutoSpawn();
-            
-            SceneManager.MoveGameObjectToScene(newPlayer.gameObject, unityScene);
-            newPlayer.GiveOwnership(player);
-            
-            if (playerPrefab.TryGetComponent<PrefabLink>(out var link))
-                link.AutoSpawn();
+            if (newPlayer.TryGetComponent(out NetworkIdentity identity))
+                identity.GiveOwnership(player);
         }
     }
 }
