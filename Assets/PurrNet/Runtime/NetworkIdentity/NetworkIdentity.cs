@@ -7,7 +7,6 @@ using PurrNet.Modules;
 using PurrNet.Pooling;
 using PurrNet.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -147,10 +146,27 @@ namespace PurrNet
         private HierarchyV2 _clientHierarchy;
         private HierarchyV2 _serverHierarchy;
         
+        private PlayerID? _localPlayer;
+
         /// <summary>
         /// The cached value of the local player.
         /// </summary>
-        public PlayerID? localPlayer { get; private set; }
+        public PlayerID? localPlayer
+        {
+            get
+            {
+                if (_localPlayer.HasValue)
+                    return _localPlayer;
+
+                if (networkManager.TryGetModule<PlayersManager>(false, out var players))
+                {
+                    _localPlayer = players.localPlayerId;
+                    return _localPlayer;
+                }
+                
+                return null;
+            }
+        }
         
         /// <summary>
         /// Returns the local player if it exists.
@@ -527,7 +543,7 @@ namespace PurrNet
             TriggerDespawnEvent(false);
             networkManager = null;
             sceneId = default;
-            localPlayer = null;
+            _localPlayer = null;
             _isSpawnedServer = false;
             _isSpawnedClient = false;
             idServer = null;
@@ -558,9 +574,6 @@ namespace PurrNet
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
-
-            if (!localPlayer.HasValue && networkManager.TryGetModule<PlayersManager>(asServer, out var playersManager))
-                localPlayer = playersManager.localPlayerId;
 
             bool wasAlreadySpawned = isSpawned;
 

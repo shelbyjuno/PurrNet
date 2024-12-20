@@ -139,10 +139,12 @@ namespace PurrNet.Editor
                     GUI.enabled = old;
                 }
 
-                EditorGUILayout.BeginHorizontal("box");
-                EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
-                EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
-                EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");
+                EditorGUILayout.BeginHorizontal("box", GUILayout.ExpandWidth(false));
+                GUILayout.Label($"ID: {identity.id}", GUILayout.ExpandWidth(false));
+                GUILayout.FlexibleSpace();
+                GUILayout.Label($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}", GUILayout.ExpandWidth(false));
+                GUILayout.FlexibleSpace();
+                GUILayout.Label($"Local Player: {(identity.localPlayer.HasValue ? identity.localPlayer.Value.ToString() : "None")}", GUILayout.ExpandWidth(false));
                 EditorGUILayout.EndHorizontal();
             }
             else if (Application.isPlaying)
