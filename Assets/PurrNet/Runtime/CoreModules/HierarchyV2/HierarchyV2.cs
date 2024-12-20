@@ -127,6 +127,9 @@ namespace PurrNet.Modules
 
         public void Spawn(GameObject gameObject)
         {
+            if (!gameObject)
+                return;
+            
             if (!gameObject.TryGetComponent<NetworkIdentity>(out var id))
             {
                 PurrLogger.LogError($"Failed to spawn object '{gameObject.name}'. No NetworkIdentity found.", gameObject);

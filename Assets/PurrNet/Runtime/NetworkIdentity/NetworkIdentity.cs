@@ -254,14 +254,14 @@ namespace PurrNet
         private void DuplicatePrototype()
         {
             using var prototype = HierarchyPool.GetFramework(transform);
-            if (networkManager.TryGetModule<HierarchyFactory>(false, out var factory) &&
+            if (networkManager.TryGetModule<HierarchyFactory>(isServer, out var factory) &&
                 factory.TryGetHierarchy(sceneId, out var hierarchy))
             {
-                hierarchy.CreatePrototype(prototype);
+                hierarchy.Spawn(hierarchy.CreatePrototype(prototype));
             }
         }
                 
-        [ContextMenu("PurrNet/Delete GameObject")]
+        [ContextMenu("PurrNet/Destroy GameObject")]
         private void DeleteGameObject()
         {
             Destroy(gameObject);
@@ -683,11 +683,13 @@ namespace PurrNet
         {
             if (isSpawned)
                 return;
+
+            var manager = NetworkManager.main;
             
-            if (!networkManager)
+            if (!manager)
                 return;
             
-            if (networkManager.TryGetModule(networkManager.isServer, out HierarchyModule module))
+            if (manager.TryGetModule(manager.isServer, out HierarchyModule module))
             {
                 module.Spawn(gameObject);
             }
