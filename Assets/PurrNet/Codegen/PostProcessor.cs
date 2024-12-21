@@ -1356,7 +1356,7 @@ namespace PurrNet.Codegen
 
         private static bool UpdateMethodReferences(ModuleDefinition module, MethodReference old, MethodReference @new, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
-            List<TypeDefinition> types = new();
+            List<TypeDefinition> types = new List<TypeDefinition>();
             
             var startLocalExecutionFlag = module.GetTypeDefinition(typeof(PurrCompilerFlags)).GetMethod("EnterLocalExecution").FullName;
             var exitLocalExecutionFlag = module.GetTypeDefinition(typeof(PurrCompilerFlags)).GetMethod("ExitLocalExecution").FullName;
@@ -1484,7 +1484,7 @@ namespace PurrNet.Codegen
 
         public static List<TypeDefinition> GetAllTypes(ModuleDefinition module)
         {
-            List<TypeDefinition> types = new();
+            List<TypeDefinition> types = new List<TypeDefinition> ();
             
             types.AddRange(module.Types);
             foreach (var type in module.Types)
@@ -1500,9 +1500,9 @@ namespace PurrNet.Codegen
                 if (!WillProcess(compiledAssembly))
                     return default!;
                 
-                HashSet<string> visitedTypes = new();
-                HashSet<TypeReference> typesToGenerateSerializer = new();
-                HashSet<TypeReference> typesToPrepareHasher = new();
+                HashSet<string> visitedTypes = new HashSet<string>();
+                HashSet<TypeReference> typesToGenerateSerializer = new HashSet<TypeReference>();
+                HashSet<TypeReference> typesToPrepareHasher = new HashSet<TypeReference>();
                 
                 var messages = new List<DiagnosticMessage>();
 
@@ -1545,13 +1545,13 @@ namespace PurrNet.Codegen
                         bool inheritsFromNetworkIdentity = type.FullName == idFullName || InheritsFrom(type, idFullName);
                         bool inheritsFromNetworkClass = type.FullName == classFullName || InheritsFrom(type, classFullName);
 
-                        List<RPCMethod> _rpcMethods = new();
+                        List<RPCMethod> _rpcMethods = new List<RPCMethod>();
 
                         int idOffset = GetIDOffset(type, messages);
 
                         if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                         {
-                            List<FieldDefinition> _networkFields = new();
+                            List<FieldDefinition> _networkFields = new List<FieldDefinition>();
                             
                             IncludeAnyConcreteGenericParameters(type, typesToGenerateSerializer);
                             FindNetworkModules(type, classFullName, _networkFields);
@@ -1601,7 +1601,7 @@ namespace PurrNet.Codegen
                         if (inheritsFromNetworkIdentity)
                             typesToGenerateSerializer.Add(type);
                         
-                        HashSet<TypeReference> usedTypes = new();
+                        HashSet<TypeReference> usedTypes = new HashSet<TypeReference>();
 
                         for (var index = 0; index < _rpcMethods.Count; index++)
                         {
@@ -1751,8 +1751,8 @@ namespace PurrNet.Codegen
 
         private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle)
         {
-            HashSet<TypeReference> visited = new();
-            HashSet<TypeReference> visited2 = new();
+            HashSet<TypeReference> visited = new HashSet<TypeReference>();
+            HashSet<TypeReference> visited2 = new HashSet<TypeReference>();
             var copy = typesToHandle.ToArray();
 
             for (var i = 0; i < copy.Length; i++)
@@ -1838,7 +1838,7 @@ namespace PurrNet.Codegen
 
         static List<TypeReference> GetConcreteFields(TypeReference typeReference)
         {
-            List<TypeReference> concreteFields = new();
+            List<TypeReference> concreteFields = new List<TypeReference>();
 
             if (typeReference is GenericInstanceType genericInstance)
             {
@@ -1850,7 +1850,7 @@ namespace PurrNet.Codegen
                 }
 
                 // Map generic parameters to concrete arguments
-                Dictionary<string, TypeReference> genericMapping = new();
+                Dictionary<string, TypeReference> genericMapping = new Dictionary<string, TypeReference>();
                 for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
                 {
                     string paramName = typeDef.GenericParameters[i].Name;

@@ -43,8 +43,8 @@ namespace PurrNet
     public class SyncHashSet<T> : NetworkModule, ISet<T>
     {
         [SerializeField] private bool _ownerAuth;
-        [SerializeField] private List<T> _serializedSet = new();
-        private HashSet<T> _set = new();
+        [SerializeField] private List<T> _serializedSet = new List<T>();
+        private HashSet<T> _set = new HashSet<T>();
         
         public delegate void SyncHashSetChanged<Key>(SyncHashSetChange<Key> change);
         

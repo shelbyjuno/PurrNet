@@ -10,7 +10,7 @@ namespace PurrNet
     {
         [SerializeField] private NetworkIdentity playerPrefab;
 
-        [SerializeField] private List<Transform> spawnPoints = new();
+        [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
         private int _currentSpawnPoint;
         
         private void Awake()

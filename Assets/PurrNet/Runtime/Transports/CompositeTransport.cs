@@ -114,9 +114,9 @@ namespace PurrNet.Transports
 
         public IReadOnlyList<Connection> connections => _connections;
 
-        readonly Dictionary<ConnectionPair, Connection> _router = new ();
+        readonly Dictionary<ConnectionPair, Connection> _router = new Dictionary<ConnectionPair, Connection>();
         
-        readonly List<RoutedConnection> _rawConnections = new ();
+        readonly List<RoutedConnection> _rawConnections = new List<RoutedConnection>();
         
         private bool _internalIsListening;
 
@@ -159,11 +159,11 @@ namespace PurrNet.Transports
 
         public override ITransport transport => this;
         
-        private readonly List<Connection> _connections = new ();
+        private readonly List<Connection> _connections = new List<Connection>();
         
-        private readonly List<CompositeTransportEvents> _events = new ();
+        private readonly List<CompositeTransportEvents> _events = new List<CompositeTransportEvents>();
 
-        private readonly CompositeTransportEvents _clientEvent = new();
+        private readonly CompositeTransportEvents _clientEvent = new CompositeTransportEvents();
         
         public override bool isSupported => true;
         

@@ -7,7 +7,7 @@ namespace PurrNet.Pooling
     [UsedImplicitly]
     public class GenericPool<T>
     {
-        private readonly Stack<T> _pool = new();
+        private readonly Stack<T> _pool = new Stack<T>();
         private readonly Func<T> _factory;
         private readonly Action<T> _reset;
         

@@ -21,7 +21,7 @@ namespace PurrNet.Editor
             _ownerAuth = serializedObject.FindProperty("_ownerAuth");
         }
         
-        static readonly List<ReflectionData> _validNames = new ();
+        static readonly List<ReflectionData> _validNames = new List<ReflectionData>();
 
         void GetAllValidNames(List<ReflectionData> validNames)
         {

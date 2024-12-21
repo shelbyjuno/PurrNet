@@ -84,7 +84,7 @@ namespace PurrNet
     [CreateAssetMenu(fileName = "NetworkRules", menuName = "PurrNet/Network Rules", order = -201)]
     public class NetworkRules : ScriptableObject
     {
-        [SerializeField] private SpawnRules _defaultSpawnRules = new()
+        [SerializeField] private SpawnRules _defaultSpawnRules = new SpawnRules()
         {
             despawnAuth = ActionAuth.Server | ActionAuth.Owner,
             spawnAuth = ConnectionAuth.Server,
@@ -93,31 +93,31 @@ namespace PurrNet
             despawnIfOwnerDisconnects = true
         };
         
-        [SerializeField] private RpcRules _defaultRpcRules = new()
+        [SerializeField] private RpcRules _defaultRpcRules = new RpcRules()
         {
             ignoreRequireServerAttribute = false,
             ignoreRequireOwnerAttribute = false
         };
         
         [PurrReadOnly]
-        [SerializeField] private VisibilityRules _defaultVisibilityRules = new()
+        [SerializeField] private VisibilityRules _defaultVisibilityRules = new VisibilityRules()
         {
             visibilityMode = VisibilityMode.SpawnDespawn
         };
         
-        [SerializeField] private OwnershipRules _defaultOwnershipRules = new()
+        [SerializeField] private OwnershipRules _defaultOwnershipRules = new OwnershipRules()
         {
             assignAuth = ConnectionAuth.Server,
             transferAuth = ActionAuth.Owner | ActionAuth.Server,
             overrideWhenPropagating = true
         };
         
-        [SerializeField] private NetworkSceneRules _defaultSceneRules = new()
+        [SerializeField] private NetworkSceneRules _defaultSceneRules = new NetworkSceneRules()
         {
             removePlayerFromSceneOnDisconnect = false
         };
         
-        [SerializeField] private NetworkIdentityRules _defaultIdentityRules = new()
+        [SerializeField] private NetworkIdentityRules _defaultIdentityRules = new NetworkIdentityRules()
         {
             syncComponentActive = true,
             syncComponentAuth = ActionAuth.Server | ActionAuth.Owner,
@@ -126,7 +126,7 @@ namespace PurrNet
             receiveRpcsWhenDisabled = true
         };
         
-        [SerializeField] private NetworkTransformRules _defaultTransformRules = new()
+        [SerializeField] private NetworkTransformRules _defaultTransformRules = new NetworkTransformRules()
         {
             changeParentAuth = ActionAuth.Server | ActionAuth.Owner,
             syncParent = true

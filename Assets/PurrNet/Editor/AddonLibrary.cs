@@ -11,12 +11,12 @@ namespace PurrNet.Editor
 {
     public class AddonLibrary : EditorWindow
     {
-        private static readonly List<Addon> _addons = new();
-        private static readonly List<Addon> _exampleAddons = new();
-        private static readonly List<Addon> _transportAddons = new();
-        private static readonly List<Addon> _toolAddons = new();
-        private static readonly List<Addon> _systemAddons = new();
-        private static readonly List<UnityWebRequest> _imageRequests = new();
+        private static readonly List<Addon> _addons = new List<Addon>();
+        private static readonly List<Addon> _exampleAddons = new List<Addon>();
+        private static readonly List<Addon> _transportAddons = new List<Addon>();
+        private static readonly List<Addon> _toolAddons = new List<Addon>();
+        private static readonly List<Addon> _systemAddons = new List<Addon>();
+        private static readonly List<UnityWebRequest> _imageRequests = new List<UnityWebRequest>();
 
         private static bool _fetchedAddons;
         private UnityWebRequest _request;

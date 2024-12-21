@@ -45,8 +45,8 @@ namespace PurrNet
     public class SyncDictionary<TKey, TValue> : NetworkModule, IDictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField] private bool _ownerAuth;
-        [SerializeField] private SerializableDictionary<TKey, TValue> _serializedDict = new();
-        private Dictionary<TKey, TValue> _dict = new ();
+        [SerializeField] private SerializableDictionary<TKey, TValue> _serializedDict = new SerializableDictionary<TKey, TValue>();
+        private Dictionary<TKey, TValue> _dict = new Dictionary<TKey, TValue>();
         
         public delegate void SyncDictionaryChanged<Key, Value>(SyncDictionaryChange<Key, Value> change);
         

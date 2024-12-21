@@ -63,7 +63,7 @@ namespace PurrNet
         [Tooltip("Will enforce the character controller getting enabled and disabled when attempting to sync the transform - CAUTION - Physics events can/will be called multiple times")] 
         [SerializeField] private bool _characterControllerPatch;
 
-        [SerializeField] private Tolerances _tolerances = new()
+        [SerializeField] private Tolerances _tolerances = new Tolerances()
         {
             rotationAngleTolerance = 1,
             positionTolerance = 0.1f,

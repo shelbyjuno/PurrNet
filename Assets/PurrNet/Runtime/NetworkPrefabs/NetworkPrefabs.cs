@@ -23,7 +23,7 @@ namespace PurrNet
         public bool networkOnly = true;
         public bool defaultPooling = true;
         public Object folder;
-        public List<PrefabData> prefabs = new();
+        public List<PrefabData> prefabs = new List<PrefabData>();
         
         [System.Serializable]
         public struct PrefabData
@@ -106,10 +106,10 @@ namespace PurrNet
             return false;
         }
 
-        static readonly List<NetworkIdentity> _identities = new();
+        static readonly List<NetworkIdentity> _identities = new List<NetworkIdentity>();
 #if UNITY_EDITOR
         private bool _generating;
-        static readonly List<PrefabLink> _links = new();
+        static readonly List<PrefabLink> _links = new List<PrefabLink>();
 #endif
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace PurrNet
 
                 EditorUtility.DisplayProgressBar("Getting Network Prefabs", "Finding paths...", 0.1f);
 
-                List<GameObject> foundPrefabs = new();
+                List<GameObject> foundPrefabs = new List<GameObject>();
                 string[] guids = AssetDatabase.FindAssets("t:prefab", new[] { folderPath });
                 for (var i = 0; i < guids.Length; i++)
                 {

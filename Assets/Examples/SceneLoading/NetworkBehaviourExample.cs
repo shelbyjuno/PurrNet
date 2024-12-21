@@ -29,7 +29,7 @@ public class NetworkBehaviourExample : NetworkBehaviour
 
     [SerializeField] private bool _keepChanging;
 
-    // private ReturnableRpcsInModules _returnableRpcsInModules = new();
+    // private ReturnableRpcsInModules _returnableRpcsInModules = new ReturnableRpcsInModules();
     
     protected override void OnSpawned(bool asServer)
     {

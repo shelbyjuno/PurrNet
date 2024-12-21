@@ -184,9 +184,9 @@ namespace PurrNet.Modules
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
         
-        readonly Dictionary<PlayerID, DisposableHashSet<NetworkID>> _identitiesToSpawnHashset = new ();
-        readonly Dictionary<PlayerID, DisposableList<NetworkIdentity>> _identitiesToSpawn = new ();
-        readonly Dictionary<PlayerID, NetworkNodes> _identitiesToDespawn = new ();
+        readonly Dictionary<PlayerID, DisposableHashSet<NetworkID>> _identitiesToSpawnHashset = new Dictionary<PlayerID, DisposableHashSet<NetworkID>>();
+        readonly Dictionary<PlayerID, DisposableList<NetworkIdentity>> _identitiesToSpawn = new Dictionary<PlayerID, DisposableList<NetworkIdentity>>();
+        readonly Dictionary<PlayerID, NetworkNodes> _identitiesToDespawn = new Dictionary<PlayerID, NetworkNodes>();
         
         private void AddedObserverToIdentity(PlayerID player, NetworkIdentity identity)
         {
@@ -231,7 +231,7 @@ namespace PurrNet.Modules
             }
         }
         
-        private readonly HashSet<NetworkID> _instancesAboutToBeRemoved = new ();
+        private readonly HashSet<NetworkID> _instancesAboutToBeRemoved = new HashSet<NetworkID>();
         
         private void OnHierarchyActionBatch(PlayerID player, HierarchyActionBatch data, bool asServer)
         {
@@ -281,7 +281,7 @@ namespace PurrNet.Modules
             }
         }
         
-        readonly Queue<ActionSignature> _ignoreActions = new ();
+        readonly Queue<ActionSignature> _ignoreActions = new Queue<ActionSignature>();
         
         private void OnHierarchyAction(PlayerID player, ref HierarchyAction data)
         {
@@ -602,8 +602,8 @@ namespace PurrNet.Modules
             _spawnedThisFrame.Add(component);
         }
         
-        internal static readonly List<NetworkIdentity> CACHE = new ();
-        internal static readonly List<NetworkIdentity> CACHE2 = new ();
+        internal static readonly List<NetworkIdentity> CACHE = new List<NetworkIdentity>();
+        internal static readonly List<NetworkIdentity> CACHE2 = new List<NetworkIdentity>();
         
         private static GameObject GetChildPrefab(GameObject root, int child)
         {
@@ -707,10 +707,10 @@ namespace PurrNet.Modules
             PostObserverEvents();
         }
 
-        List<NetworkIdentity> _spawnedThisFrame = new ();
-        List<NetworkIdentity> _spawnedThisFrameBuffer = new ();
+        List<NetworkIdentity> _spawnedThisFrame = new List<NetworkIdentity>();
+        List<NetworkIdentity> _spawnedThisFrameBuffer = new List<NetworkIdentity>();
         
-        readonly List<NetworkIdentity> _triggerPostIdentityFunc = new ();
+        readonly List<NetworkIdentity> _triggerPostIdentityFunc = new List<NetworkIdentity>();
         
         public void Spawn(ref GameObject instance)
         {
@@ -826,7 +826,7 @@ namespace PurrNet.Modules
             public bool enabled;
         }
         
-        static readonly List<Behaviour> _components = new ();
+        static readonly List<Behaviour> _components = new List<Behaviour>();
 
         /// <summary>
         /// Awake is not called on disabled game objects, so we need to ensure it's called for all components.
@@ -941,9 +941,9 @@ namespace PurrNet.Modules
             _visibilityManager.ReEvaluateRoot(trs);
         }
         
-        readonly List<ComponentGameObjectPair> _removedLastFrame = new ();
-        readonly List<NetworkIdentity> _toggledLastFrame = new ();
-        readonly List<GameObjectActive> _activatedLastFrame = new ();
+        readonly List<ComponentGameObjectPair> _removedLastFrame = new List<ComponentGameObjectPair>();
+        readonly List<NetworkIdentity> _toggledLastFrame = new List<NetworkIdentity>();
+        readonly List<GameObjectActive> _activatedLastFrame = new List<GameObjectActive>();
         
         private void OnIdentityEnabledChanged(NetworkIdentity identity, bool enabled)
         {
@@ -1378,7 +1378,7 @@ namespace PurrNet.Modules
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
 
-        private static readonly List<HierarchyAction> _actionsCache = new ();
+        private static readonly List<HierarchyAction> _actionsCache = new List<HierarchyAction>();
         
         private void HandleIdentitiesThatNeedToBeDespawned(Dictionary<PlayerID, NetworkNodes> identitiesToDespawn)
         {

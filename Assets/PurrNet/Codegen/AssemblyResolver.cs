@@ -12,7 +12,7 @@ namespace PurrNet.Codegen
     internal class AssemblyResolver : IAssemblyResolver
     {
         private readonly string[] m_AssemblyReferences;
-        private readonly Dictionary<string, AssemblyDefinition> m_AssemblyCache = new ();
+        private readonly Dictionary<string, AssemblyDefinition> m_AssemblyCache = new Dictionary<string, AssemblyDefinition>();
         private readonly ICompiledAssembly m_CompiledAssembly;
         private AssemblyDefinition m_SelfAssembly;
 

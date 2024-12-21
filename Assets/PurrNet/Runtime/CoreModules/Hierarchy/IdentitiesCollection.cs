@@ -8,7 +8,7 @@ namespace PurrNet
     {
         readonly bool _asServer;
 
-        readonly Dictionary<NetworkID, NetworkIdentity> _identities = new ();
+        readonly Dictionary<NetworkID, NetworkIdentity> _identities = new Dictionary<NetworkID, NetworkIdentity>();
         
         private ushort _nextId;
         

@@ -11,8 +11,8 @@ namespace PurrNet
     public class SyncQueue<T> : NetworkModule, IReadOnlyCollection<T>
     {
         [SerializeField] private bool _ownerAuth;
-        [SerializeField] private SerializableQueue<T> _serializedQueue = new();
-        private Queue<T> _queue = new();
+        [SerializeField] private SerializableQueue<T> _serializedQueue = new SerializableQueue<T>();
+        private Queue<T> _queue = new Queue<T>();
         
         public delegate void SyncQueueChanged<TYPE>(SyncQueueChange<TYPE> change);
         public event SyncQueueChanged<T> onChanged;
@@ -356,8 +356,8 @@ namespace PurrNet
     [Serializable]
     public class SerializableQueue<T>
     {
-        [SerializeField] private List<T> _values = new();
-        [SerializeField] private List<string> _stringValues = new();
+        [SerializeField] private List<T> _values = new List<T>();
+        [SerializeField] private List<string> _stringValues = new List<string>();
         
         private bool _isValueSerializable;
 

@@ -5,7 +5,7 @@ namespace PurrNet.Modules
 {
     public static class SceneObjectsModule
     {
-        private static readonly List<NetworkIdentity> _sceneIdentities = new();
+        private static readonly List<NetworkIdentity> _sceneIdentities = new List<NetworkIdentity>();
         
         public static List<NetworkIdentity> GetSceneIdentities(Scene scene)
         {

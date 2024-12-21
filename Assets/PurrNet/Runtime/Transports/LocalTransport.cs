@@ -12,8 +12,8 @@ namespace PurrNet.Transports
         public event OnDataSent onDataSent;
         public event OnConnectionState onConnectionState;
 
-        static readonly List<Connection> connectedList = new() { new Connection(1) };
-        static readonly List<Connection> disconnectedList = new();
+        static readonly List<Connection> connectedList = new List<Connection>() { new Connection(1) };
+        static readonly List<Connection> disconnectedList = new List<Connection>();
         
         public IReadOnlyList<Connection> connections => clientState == ConnectionState.Connected ? connectedList : disconnectedList;
         
@@ -47,8 +47,8 @@ namespace PurrNet.Transports
             Listen(default);
         }
         
-        readonly Queue<BitPacker> _serverQueue = new();
-        readonly Queue<BitPacker> _clientQueue = new();
+        readonly Queue<BitPacker> _serverQueue = new Queue<BitPacker>();
+        readonly Queue<BitPacker> _clientQueue = new Queue<BitPacker>();
 
         private void QueuePacket(ByteData data, bool asServer)
         {

@@ -10,7 +10,7 @@ namespace PurrNet
         
         internal event Action<bool> onActivatedChanged;
         
-        readonly List<NetworkIdentity> _siblings = new ();
+        readonly List<NetworkIdentity> _siblings = new List<NetworkIdentity>();
         
         public void Register(NetworkIdentity identity)
         {
@@ -27,7 +27,7 @@ namespace PurrNet
             _lastActive = gameObject.activeSelf;
         }
         
-        static readonly List<GameObjectEvents> _children = new ();
+        static readonly List<GameObjectEvents> _children = new List<GameObjectEvents>();
 
         private void UpdateEnabled(bool updateChildren = true)
         {

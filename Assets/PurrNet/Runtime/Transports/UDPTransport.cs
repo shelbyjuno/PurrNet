@@ -40,7 +40,7 @@ namespace PurrNet.Transports
         
         public ConnectionState listenerState { get; private set; } = ConnectionState.Disconnected;
 
-        readonly List<Connection> _connections = new ();
+        readonly List<Connection> _connections = new List<Connection>();
 
         public override bool isSupported => Application.platform != RuntimePlatform.WebGLPlayer;
         

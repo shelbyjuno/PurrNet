@@ -8,8 +8,8 @@ namespace PurrNet
     {
         public IReadOnlyList<NetworkModule> modules => _externalModulesView;
         
-        private readonly List<NetworkModule> _externalModulesView = new ();
-        private readonly List<NetworkModule> _modules = new ();
+        private readonly List<NetworkModule> _externalModulesView = new List<NetworkModule>();
+        private readonly List<NetworkModule> _modules = new List<NetworkModule>();
         
         private byte _moduleId;
 

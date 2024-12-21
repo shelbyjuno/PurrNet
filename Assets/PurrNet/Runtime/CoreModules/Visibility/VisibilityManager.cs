@@ -23,7 +23,7 @@ namespace PurrNet
         
         public event System.Action onTickChangesDone;
         
-        private readonly Dictionary<NetworkID, HashSet<PlayerID>> _observers = new();
+        private readonly Dictionary<NetworkID, HashSet<PlayerID>> _observers = new Dictionary<NetworkID, HashSet<PlayerID>>();
         
         internal VisibilityManager(NetworkManager manager, PlayersManager playersManager, HierarchyScene hierarchy, ScenePlayersModule players, SceneID sceneId)
         {
