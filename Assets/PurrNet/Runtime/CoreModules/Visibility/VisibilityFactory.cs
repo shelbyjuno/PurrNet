@@ -11,8 +11,8 @@ namespace PurrNet
         private readonly ScenePlayersModule _players;
         private readonly PlayersManager _playersManager;
 
-        private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisibilityManager = new ();
-        private readonly List<VisibilityManager> _visibilityManagers = new ();
+        private readonly Dictionary<SceneID, VisibilityManager> _sceneToVisibilityManager = new Dictionary<SceneID, VisibilityManager>();
+        private readonly List<VisibilityManager> _visibilityManagers = new List<VisibilityManager>();
         
         public event VisibilityChanged onLateObserverAdded;
         public event VisibilityChanged onLateObserverRemoved;
@@ -76,7 +76,7 @@ namespace PurrNet
                 _visibilityManagers[i].FixedUpdate();
         }
 
-        internal static readonly HashSet<PlayerID> EMPTY_OBSERVERS = new();
+        internal static readonly HashSet<PlayerID> EMPTY_OBSERVERS = new HashSet<PlayerID>();
 
         public HashSet<PlayerID> GetObservers(SceneID sceneId, NetworkID id)
         {

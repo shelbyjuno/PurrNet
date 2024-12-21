@@ -45,7 +45,7 @@ namespace PurrNet
     [Serializable]
     public class SyncEvent : SyncEventBase
     {
-        [SerializeField] private UnityEvent _unityEvent = new();
+        [SerializeField] private UnityEvent _unityEvent = new UnityEvent();
 
         public SyncEvent(bool ownerAuth = false) : base(ownerAuth) { }
 
@@ -139,7 +139,7 @@ namespace PurrNet
     [Serializable]
     public class SyncEvent<T> : SyncEventBase
     {
-        [SerializeField] private SerializableSyncUnityEvent<T> unityEvent = new();
+        [SerializeField] private SerializableSyncUnityEvent<T> unityEvent = new SerializableSyncUnityEvent<T>();
         private T _lastArg;
 
         public SyncEvent(bool ownerAuth = false) : base(ownerAuth) { }
@@ -231,7 +231,7 @@ namespace PurrNet
     [Serializable]
     public class SyncEvent<T1, T2> : SyncEventBase
     {
-        [SerializeField] private SerializableSyncUnityEvent<T1, T2> unityEvent = new();
+        [SerializeField] private SerializableSyncUnityEvent<T1, T2> unityEvent = new SerializableSyncUnityEvent<T1, T2>();
         private T1 _lastArg1;
         private T2 _lastArg2;
 

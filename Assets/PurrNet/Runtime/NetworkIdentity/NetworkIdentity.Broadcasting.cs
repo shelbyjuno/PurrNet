@@ -47,7 +47,7 @@ namespace PurrNet
             }
         }
         
-        internal static readonly Dictionary<InstanceGenericKey, MethodInfo> genericMethods = new ();
+        internal static readonly Dictionary<InstanceGenericKey, MethodInfo> genericMethods = new Dictionary<InstanceGenericKey, MethodInfo>();
         
         [UsedByIL]
         public static void ReadGenericHeader(BitPacker stream, RPCInfo info, int genericCount, int paramCount, out GenericRPCHeader rpcHeader)
@@ -362,7 +362,7 @@ namespace PurrNet
             }
         }
         
-        static readonly List<PlayerID> _players = new ();
+        static readonly List<PlayerID> _players = new List<PlayerID>();
 
         public void SendToObservers(ByteData packet, [CanBeNull] Func<PlayerID, bool> predicate,
             Channel method = Channel.ReliableOrdered)

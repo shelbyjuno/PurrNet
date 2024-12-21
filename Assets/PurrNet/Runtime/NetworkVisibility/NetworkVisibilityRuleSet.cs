@@ -10,7 +10,7 @@ namespace PurrNet
     {
         [SerializeField] private NetworkVisibilityRule[] _rules;
         
-        private readonly List<INetworkVisibilityRule> _raw_rules = new ();
+        private readonly List<INetworkVisibilityRule> _raw_rules = new List<INetworkVisibilityRule>();
 
         public bool isInitialized { get; private set; }
 

@@ -7,7 +7,7 @@ namespace PurrNet
 {
     public class InstanceHandler
     {
-        private static Dictionary<Type, object> _instances = new();
+        private static Dictionary<Type, object> _instances = new Dictionary<Type, object>();
         
         /// <summary>
         /// Returns the NetworkManager instance. It will dynamically find it if it's null.

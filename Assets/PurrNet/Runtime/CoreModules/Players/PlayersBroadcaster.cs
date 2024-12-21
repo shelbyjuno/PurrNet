@@ -41,8 +41,8 @@ namespace PurrNet
         private readonly BroadcastModule _broadcastModule;
         private readonly PlayersManager _playersManager;
         
-        private readonly Dictionary<uint, List<IPlayerBroadcastCallback>> _actions = new();
-        private readonly List<Connection> _connections = new();
+        private readonly Dictionary<uint, List<IPlayerBroadcastCallback>> _actions = new Dictionary<uint, List<IPlayerBroadcastCallback>>();
+        private readonly List<Connection> _connections = new List<Connection>();
         
         private bool _asServer;
         

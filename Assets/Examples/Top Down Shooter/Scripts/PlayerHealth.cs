@@ -7,7 +7,7 @@ namespace PurrNet.Examples.TopDownShooter
     {
         [SerializeField] private int maxHealth = 100;
         [SerializeField] private TextMesh healthText;
-        private readonly SyncVar<int> _health = new();
+        private readonly SyncVar<int> _health = new SyncVar<int>();
 
         protected override void OnSpawned(bool asServer)
         {

@@ -54,7 +54,7 @@ namespace PurrNet.Steam
 
         public override ITransport transport => this;
         
-        private readonly List<Connection> _connections = new ();
+        private readonly List<Connection> _connections = new List<Connection>();
         
         public IReadOnlyList<Connection> connections => _connections;
         

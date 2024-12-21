@@ -5,10 +5,10 @@ namespace PurrNet
 {
     public sealed partial class NetworkAnimator : ITick
     {
-        readonly List<NetAnimatorRPC> _dirty = new ();
-        readonly List<NetAnimatorRPC> _ikActions = new ();
+        readonly List<NetAnimatorRPC> _dirty = new List<NetAnimatorRPC>();
+        readonly List<NetAnimatorRPC> _ikActions = new List<NetAnimatorRPC>();
         
-        readonly List<PlayerID> _reconcilePlayers = new ();
+        readonly List<PlayerID> _reconcilePlayers = new List<PlayerID>();
 
         protected override void OnObserverAdded(PlayerID player)
         {

@@ -32,7 +32,7 @@ namespace PurrNet.Modules
     public class RpcRequestResponseModule : INetworkModule, IFixedUpdate
     {
         private readonly PlayersManager _playersManager;
-        private readonly List<RpcRequest> _requests = new();
+        private readonly List<RpcRequest> _requests = new List<RpcRequest>();
         
         private uint _nextId;
         

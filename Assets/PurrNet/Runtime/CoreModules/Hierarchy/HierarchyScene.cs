@@ -25,7 +25,7 @@ namespace PurrNet.Modules
         public NetworkIdentity identity;
         public bool isActive;
     }
-
+    
     internal class HierarchyScene : INetworkModule
     {
         private readonly NetworkManager _manager;
@@ -109,10 +109,10 @@ namespace PurrNet.Modules
             if (_scenes.TryGetSceneState(_sceneID, out var state))
                 _sceneObjects = SceneObjectsModule.GetSceneIdentities(state.scene);
 
-            /*if (_asServer)
+            if (_asServer)
                 SpawnSceneObjects(_sceneObjects);
             else if (_playersManager.localPlayerId.HasValue)
-                SpawnSceneObjects(_sceneObjects);*/
+                SpawnSceneObjects(_sceneObjects);
             
             if (asServer)
                 identities.SkipIds((ushort)_sceneObjects.Count);
@@ -120,7 +120,7 @@ namespace PurrNet.Modules
 
         private void OnLocalClientReady(PlayerID player)
         {
-            // SpawnSceneObjects(_sceneObjects);
+            SpawnSceneObjects(_sceneObjects);
         }
 
         public void Disable(bool asServer)
@@ -534,7 +534,7 @@ namespace PurrNet.Modules
                 if (oldActive) prefab.gameObject.SetActive(true);
             }
             
-            PurrNetGameObjectUtils.MakeSureAwakeIsCalled(go);
+            MakeSureAwakeIsCalled(go);
             
             go.GetComponentsInChildren(true, CACHE);
             
@@ -572,10 +572,11 @@ namespace PurrNet.Modules
         
         private void SpawnIdentity(SpawnAction action, NetworkIdentity component, ushort offset, bool asServer)
         {
-            SpawnIdentity(component, action.identityId, offset, asServer);
+            var siblingIdx = component.transform.parent ? component.transform.GetSiblingIndex() : 0;
+            SpawnIdentity(component, action.prefabId, siblingIdx, action.identityId, offset, asServer);
         }
         
-        void SpawnIdentity(NetworkIdentity component, NetworkID nid, ushort offset, bool asServer)
+        void SpawnIdentity(NetworkIdentity component, int prefabId, int siblingId, NetworkID nid, ushort offset, bool asServer)
         {
             var identityId = new NetworkID(nid, offset);
 
@@ -585,7 +586,6 @@ namespace PurrNet.Modules
                 return;
             }
             
-            component.SetIdentity(_manager, null, _sceneID, identityId, asServer);
 
             identities.TryRegisterIdentity(component);
             onIdentityAdded?.Invoke(component);
@@ -713,7 +713,7 @@ namespace PurrNet.Modules
         
         public void Spawn(ref GameObject instance)
         {
-            PurrNetGameObjectUtils.MakeSureAwakeIsCalled(instance);
+            MakeSureAwakeIsCalled(instance);
 
             if (!_manager.networkRules.HasSpawnAuthority(_manager, _asServer))
             {
@@ -729,12 +729,6 @@ namespace PurrNet.Modules
                 return;
             }
 
-            /*if (!_prefabs.TryGetPrefabID(link.prefabGuid, out var prefabId))
-            {
-                PurrLogger.LogError($"Failed to find prefab with guid {link.prefabGuid}");
-                return;
-            }*/
-            
             if (!TryGetActor(out var actor))
             {
                 PurrLogger.LogError($"Client is trying to spawn '{instance.name}' before having been assigned a local player id.");
@@ -765,7 +759,8 @@ namespace PurrNet.Modules
                 while (identities.HasIdentity(nid))
                     nid = new NetworkID(identities.GetNextId(), actor);
                 
-                child.SetIdentity(_manager, null, _sceneID, nid, _asServer);
+                var siblingIdx = child.transform.parent ? child.transform.GetSiblingIndex() : 0;
+                
                 _spawnedThisFrame.Add(child);
                 identities.RegisterIdentity(child);
                 
@@ -789,7 +784,6 @@ namespace PurrNet.Modules
             
             var action = new SpawnAction
             {
-                prefabId = 69,
                 childOffset = 0,
                 identityId = CACHE[0].id!.Value,
                 childCount = (ushort)CACHE.Count,
@@ -816,7 +810,63 @@ namespace PurrNet.Modules
             player = default;
             return true;
         }
+
+        struct BehaviourState
+        {
+            public Behaviour component;
+            public bool enabled;
+        }
         
+        static readonly List<Behaviour> _components = new ();
+
+        /// <summary>
+        /// Awake is not called on disabled game objects, so we need to ensure it's called for all components.
+        /// </summary>
+        internal static void MakeSureAwakeIsCalled(GameObject root)
+        {
+            var cache = ListPool<BehaviourState>.Instantiate();
+            var gosToDeactivate = HashSetPool<GameObject>.Instantiate();
+            
+            // for components in disabled game objects, disabled them, activate game object, and reset their enabled state
+            root.GetComponentsInChildren(true, _components);
+            
+            for (int i = 0; i < _components.Count; i++)
+            {
+                var child = _components[i];
+                
+                if (!child)
+                    continue;
+                
+                if (!child.gameObject.activeSelf)
+                {
+                    cache.Add(new BehaviourState
+                    {
+                        component = child,
+                        enabled = child.enabled
+                    });
+                    
+                    child.enabled = false;
+                    
+                    gosToDeactivate.Add(child.gameObject);
+                }
+            }
+
+            foreach (var go in gosToDeactivate)
+            {
+                go.SetActive(true);
+                go.SetActive(false);
+            }
+            
+            for (int i = 0; i < cache.Count; i++)
+            {
+                var state = cache[i];
+                state.component.enabled = state.enabled;
+            }
+
+            HashSetPool<GameObject>.Destroy(gosToDeactivate);
+            ListPool<BehaviourState>.Destroy(cache);
+        }
+
         private void OnIdentityParentChanged(NetworkTransform trs)
         {
             if (!trs.id.HasValue)
@@ -1160,14 +1210,6 @@ namespace PurrNet.Modules
                         
                         if (identity.id.HasValue && !identity.isSceneObject && _asServer && _manager.isHost)
                         {
-                            identity.SetIdentity(
-                                _manager,
-                                null,
-                                _sceneID, 
-                                identity.id.Value, 
-                                false
-                            );
-                            
                             identity.TriggerSpawnEvent(false);
                         }
                     }
@@ -1181,7 +1223,7 @@ namespace PurrNet.Modules
                     TriggerSpawnEvents();
             }
         }
-        
+
         private void SendDeltaToPlayers(HierarchyActionBatch delta)
         {
             // if client, no filtering is needed

@@ -7,7 +7,7 @@ namespace PurrNet
 {
     public class NetworkNodes
     {
-        public readonly Dictionary<NetworkID, HashSet<NetworkID>> children = new();
+        public readonly Dictionary<NetworkID, HashSet<NetworkID>> children = new Dictionary<NetworkID, HashSet<NetworkID>>();
         
         public void Add(NetworkIdentity node)
         {

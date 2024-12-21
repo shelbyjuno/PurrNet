@@ -103,15 +103,15 @@ namespace PurrNet.Transports
         }
         
         public IReadOnlyList<Connection> connections => _connections;
-        private readonly List<Connection> _connections = new ();
+        private readonly List<Connection> _connections = new List<Connection>();
 
         private void Reset()
         {
             _roomName = Guid.NewGuid().ToString().Replace("-", "");
         }
 
-        readonly List<CancellationTokenSource> _cancellationTokenSourcesServer = new ();
-        readonly List<CancellationTokenSource> _cancellationTokenSourcesClient = new ();
+        readonly List<CancellationTokenSource> _cancellationTokenSourcesServer = new List<CancellationTokenSource>();
+        readonly List<CancellationTokenSource> _cancellationTokenSourcesClient = new List<CancellationTokenSource>();
         
         private void CancelAll(bool asServer)
         {
@@ -240,7 +240,7 @@ namespace PurrNet.Transports
 
         private void OnHostConnected()
         {
-            ClientAuthenticate authenticate = new ()
+            ClientAuthenticate authenticate = new ClientAuthenticate()
             {
                 roomName = _roomName,
                 clientSecret = _hostJoinInfo.secret
@@ -254,7 +254,7 @@ namespace PurrNet.Transports
         
         private void OnClientConnected()
         {
-            ClientAuthenticate authenticate = new ()
+            ClientAuthenticate authenticate = new ClientAuthenticate()
             {
                 roomName = _roomName,
                 clientSecret = _clientJoinInfo.secret
@@ -433,7 +433,7 @@ namespace PurrNet.Transports
             onDataSent?.Invoke(conn, data, asServer);
         }
         
-        static readonly BitPacker _packer = new ();
+        static readonly BitPacker _packer = new BitPacker();
         
         public void SendServerKeepAlive()
         {

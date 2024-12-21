@@ -52,7 +52,7 @@ namespace PurrNet.Modules
         readonly VisibilityFactory _visibilityFactory;
         
         readonly ScenesModule _scenes;
-        readonly Dictionary<SceneID, SceneOwnership> _sceneOwnerships = new ();
+        readonly Dictionary<SceneID, SceneOwnership> _sceneOwnerships = new Dictionary<SceneID, SceneOwnership>();
         
         private bool _asServer;
         
@@ -126,7 +126,7 @@ namespace PurrNet.Modules
         /// </summary>
         public List<NetworkIdentity> GetAllPlayerOwnedIds(PlayerID player)
         {
-            List<NetworkIdentity> ids = new ();
+            List<NetworkIdentity> ids = new List<NetworkIdentity>();
 
             foreach (var (scene, owned) in _sceneOwnerships)
             {
@@ -221,7 +221,7 @@ namespace PurrNet.Modules
             }
         }
 
-        readonly Dictionary<PlayerSceneID, DisposableList<OwnershipInfo>> _pendingOwnershipChanges = new ();
+        readonly Dictionary<PlayerSceneID, DisposableList<OwnershipInfo>> _pendingOwnershipChanges = new Dictionary<PlayerSceneID, DisposableList<OwnershipInfo>>();
 
         private void OnPlayerObserverAdded(PlayerID player, NetworkIdentity target)
         {
@@ -338,7 +338,7 @@ namespace PurrNet.Modules
             _sceneOwnerships.Remove(scene);
         }
 
-        private static readonly List<NetworkID> _idsCache = new ();
+        private static readonly List<NetworkID> _idsCache = new List<NetworkID>();
 
         public void GiveOwnership(NetworkIdentity nid, PlayerID player, bool? propagateToChildren = null, bool? overrideExistingOwners = null, bool silent = false)
         {
@@ -726,11 +726,11 @@ namespace PurrNet.Modules
 
     internal class SceneOwnership
     {
-        static readonly List<OwnershipInfo> _cache = new ();
+        static readonly List<OwnershipInfo> _cache = new List<OwnershipInfo>();
         
-        readonly Dictionary<NetworkID, PlayerID> _owners = new ();
+        readonly Dictionary<NetworkID, PlayerID> _owners = new Dictionary<NetworkID, PlayerID>();
 
-        readonly Dictionary<PlayerID, HashSet<NetworkID>> _playerOwnedIds = new ();
+        readonly Dictionary<PlayerID, HashSet<NetworkID>> _playerOwnedIds = new Dictionary<PlayerID, HashSet<NetworkID>>();
 
         private readonly bool _asServer;
         

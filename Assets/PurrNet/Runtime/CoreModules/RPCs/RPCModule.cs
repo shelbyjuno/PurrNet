@@ -197,7 +197,7 @@ namespace PurrNet.Modules
             }
         }
         
-        static readonly List<PlayerID> _observers = new();
+        static readonly List<PlayerID> _observers = new List<PlayerID>();
 
         static IEnumerable<PlayerID> GetImmediateExcept(PlayersManager players, PlayerID except)
         {
@@ -294,7 +294,7 @@ namespace PurrNet.Modules
             }
         }
         
-        static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new();
+        static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new Dictionary<StaticGenericKey, MethodInfo>();
         
         [UsedByIL]
         public static object CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
@@ -449,13 +449,13 @@ namespace PurrNet.Modules
             stream.Dispose();
         }
         
-        readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new();
-        readonly Dictionary<RPC_ID, STATIC_RPC_DATA> _bufferedStaticRpcsKeys = new();
-        readonly Dictionary<RPC_ID, CHILD_RPC_DATA> _bufferedChildRpcsKeys = new();
+        readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new Dictionary<RPC_ID, RPC_DATA>();
+        readonly Dictionary<RPC_ID, STATIC_RPC_DATA> _bufferedStaticRpcsKeys = new Dictionary<RPC_ID, STATIC_RPC_DATA>();
+        readonly Dictionary<RPC_ID, CHILD_RPC_DATA> _bufferedChildRpcsKeys = new Dictionary<RPC_ID, CHILD_RPC_DATA>();
 
-        readonly List<RPC_DATA> _bufferedRpcsDatas = new();
-        readonly List<STATIC_RPC_DATA> _bufferedStaticRpcsDatas = new();
-        readonly List<CHILD_RPC_DATA> _bufferedChildRpcsDatas = new();
+        readonly List<RPC_DATA> _bufferedRpcsDatas = new List<RPC_DATA>();
+        readonly List<STATIC_RPC_DATA> _bufferedStaticRpcsDatas = new List<STATIC_RPC_DATA>();
+        readonly List<CHILD_RPC_DATA> _bufferedChildRpcsDatas = new List<CHILD_RPC_DATA>();
 
         private void AppendToBufferedRPCs(StaticRPCPacket packet, RPCSignature signature)
         {
@@ -602,7 +602,7 @@ namespace PurrNet.Modules
             }
         }
         
-        static readonly Dictionary<RPCKey, IntPtr> _rpcHandlers = new();
+        static readonly Dictionary<RPCKey, IntPtr> _rpcHandlers = new Dictionary<RPCKey, IntPtr>();
 
         static IntPtr GetRPCHandler(IReflect type, byte rpcId)
         {

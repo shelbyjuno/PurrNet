@@ -15,8 +15,8 @@ namespace PurrNet
         private readonly ScenePlayersModule _scenePlayers;
         private VisibilityFactory _visibilityFactory;
         
-        private readonly List<HierarchyScene> _hierarchies = new ();
-        private readonly Dictionary<SceneID, HierarchyScene> _sceneToHierarchy = new ();
+        private readonly List<HierarchyScene> _hierarchies = new List<HierarchyScene>();
+        private readonly Dictionary<SceneID, HierarchyScene> _sceneToHierarchy = new Dictionary<SceneID, HierarchyScene>();
 
         internal event Action<SceneID> onBeforeSpawnTrigger;
         public event Action<NetworkIdentity> onIdentityRemoved;

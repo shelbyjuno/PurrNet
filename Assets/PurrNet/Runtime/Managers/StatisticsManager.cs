@@ -35,13 +35,13 @@ namespace PurrNet
         public bool connectedClient { get; private set; }
         
         // Ping stuff
-        private readonly Queue<float> _pingHistory = new();
-        private readonly Queue<int> _pingStats = new();
+        private readonly Queue<float> _pingHistory = new Queue<float>();
+        private readonly Queue<int> _pingStats = new Queue<int>();
         private uint _lastPingSendTick;
         
         // Packet loss stuff
         private int _packetsToSendPerSec = 10;
-        private readonly List<float> _receivedPacketTimes = new();
+        private readonly List<float> _receivedPacketTimes = new List<float>();
         private uint _lastPacketSendTick;
         
         // Download stuff

@@ -218,7 +218,7 @@ namespace PurrNet
         private int onTickCount;
         private ITick _ticker;
         
-        private readonly List<ITick> _tickables = new ();
+        private readonly List<ITick> _tickables = new List<ITick>();
         
         [ContextMenu("PurrNet/Take Ownership")]
         private void TakeOwnership()

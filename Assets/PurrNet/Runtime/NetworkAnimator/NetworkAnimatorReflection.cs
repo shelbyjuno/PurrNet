@@ -5,9 +5,9 @@ namespace PurrNet
 {
     public sealed partial class NetworkAnimator
     {
-        readonly Dictionary<int, int> _intValues = new ();
-        readonly Dictionary<int, float> _floatValues = new ();
-        readonly Dictionary<int, bool> _boolValues = new ();
+        readonly Dictionary<int, int> _intValues = new Dictionary<int, int>();
+        readonly Dictionary<int, float> _floatValues = new Dictionary<int, float>();
+        readonly Dictionary<int, bool> _boolValues = new Dictionary<int, bool>();
 
         private bool _wasController;
 

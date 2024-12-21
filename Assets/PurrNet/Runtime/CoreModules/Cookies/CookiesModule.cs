@@ -37,7 +37,7 @@ namespace PurrNet.Modules
     {
         private const string SAVE_KEY = "rabsi_cookies";
 
-        readonly List<CookiePair> _cookies = new ();
+        readonly List<CookiePair> _cookies = new List<CookiePair>();
         readonly CookieScope _scope;
         
         public CookiesModule(CookieScope scope)

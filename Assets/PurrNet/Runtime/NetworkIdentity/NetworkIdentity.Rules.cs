@@ -14,13 +14,13 @@ namespace PurrNet
         /// This doesn't block visibility for others but rather enforces visibility for these players.
         /// </summary>
         [UsedImplicitly]
-        public readonly HashSet<PlayerID> whitelist = new();
+        public readonly HashSet<PlayerID> whitelist = new HashSet<PlayerID>();
         
         /// <summary>
         /// Blacklist of players that can't interact with this identity.
         /// </summary>
         [UsedImplicitly]
-        public readonly HashSet<PlayerID> blacklist = new();
+        public readonly HashSet<PlayerID> blacklist = new HashSet<PlayerID>();
 
         private NetworkRules networkRules => _networkRules ? _networkRules : networkManager.networkRules;
         

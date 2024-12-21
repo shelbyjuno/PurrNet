@@ -12,8 +12,8 @@ namespace PurrNet.Modules
 
     public class ScenePlayersModule : INetworkModule
     {
-        private readonly Dictionary<SceneID, HashSet<PlayerID>> _scenePlayers = new();
-        private readonly Dictionary<SceneID, HashSet<PlayerID>> _sceneLoadedPlayers = new();
+        private readonly Dictionary<SceneID, HashSet<PlayerID>> _scenePlayers = new Dictionary<SceneID, HashSet<PlayerID>>();
+        private readonly Dictionary<SceneID, HashSet<PlayerID>> _sceneLoadedPlayers = new Dictionary<SceneID, HashSet<PlayerID>>();
         
         readonly ScenesModule _scenes;
         readonly PlayersManager _players;

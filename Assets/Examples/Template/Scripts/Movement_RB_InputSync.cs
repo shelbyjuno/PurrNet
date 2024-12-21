@@ -22,7 +22,7 @@ namespace PurrNet.Examples.Template
         
         //Client variable
         private Vector2 _lastInput;
-        private readonly SyncVar<Quaternion> _targetRotation = new();
+        private readonly SyncVar<Quaternion> _targetRotation = new SyncVar<Quaternion>();
         
         //Server variable
         private Vector2 _serverInput;

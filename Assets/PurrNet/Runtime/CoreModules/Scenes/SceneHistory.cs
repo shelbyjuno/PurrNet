@@ -75,8 +75,8 @@ namespace PurrNet.Modules
     
     internal class SceneHistory
     {
-        readonly List<SceneAction> _actions = new ();
-        readonly List<SceneAction> _pending = new ();
+        readonly List<SceneAction> _actions = new List<SceneAction>();
+        readonly List<SceneAction> _pending = new List<SceneAction>();
         
         public bool hasUnflushedActions { get; private set; }
         
@@ -104,7 +104,7 @@ namespace PurrNet.Modules
             OptimizeHistory();
         }
 
-        private readonly List<SceneID> _sceneIds = new();
+        private readonly List<SceneID> _sceneIds = new List<SceneID>();
 
         private void OptimizeHistory()
         {

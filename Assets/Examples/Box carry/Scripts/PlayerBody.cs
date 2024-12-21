@@ -5,7 +5,7 @@ namespace PurrNet.Examples.BoxCarry
 {
     public class PlayerBody : NetworkIdentity
     {
-        [SerializeField] private List<GameObject> bodies = new();
+        [SerializeField] private List<GameObject> bodies = new List<GameObject>();
 
         protected override void OnSpawned(bool asServer)
         {

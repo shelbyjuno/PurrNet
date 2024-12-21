@@ -152,7 +152,6 @@ MonoBehaviour:
   _siblingIndex: -2147483648
   _depthIndex: -2147483648
   _shouldBePooled: 0
-  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1

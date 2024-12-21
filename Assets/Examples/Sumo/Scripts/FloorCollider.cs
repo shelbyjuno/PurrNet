@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class FloorCollider : MonoBehaviour
 {
-    [SerializeField] private List<Transform> spawnPoints = new();
+    [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
 
     private void OnTriggerEnter(Collider other)
     {

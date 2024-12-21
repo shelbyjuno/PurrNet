@@ -7,13 +7,13 @@ namespace PurrNet.Modules
 {
     public class HierarchyHistory
     {
-        readonly List<HierarchyAction> _actions = new ();
-        readonly List<HierarchyAction> _pending = new ();
+        readonly List<HierarchyAction> _actions = new List<HierarchyAction>();
+        readonly List<HierarchyAction> _pending = new List<HierarchyAction>();
         
         readonly SceneID _sceneId;
         
-        static readonly List<Prefab> _prefabs = new();
-        static readonly List<int> _toRemove = new();
+        static readonly List<Prefab> _prefabs = new List<Prefab>();
+        static readonly List<int> _toRemove = new List<int>();
         
         public bool hasUnflushedActions { get; private set; }
 

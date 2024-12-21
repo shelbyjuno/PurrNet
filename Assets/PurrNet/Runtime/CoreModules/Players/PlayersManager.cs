@@ -70,14 +70,14 @@ namespace PurrNet.Modules
         private readonly BroadcastModule _broadcastModule;
         private readonly ITransport _transport;
 
-        private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new();
+        private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new Dictionary<string, PlayerID>();
         private ushort _playerIdCounter;
         
-        private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new();
-        private readonly Dictionary<PlayerID, Connection> _playerToConnection = new();
+        private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new Dictionary<Connection, PlayerID>();
+        private readonly Dictionary<PlayerID, Connection> _playerToConnection = new Dictionary<PlayerID, Connection>();
 
-        public List<PlayerID> players { get; } = new();
-        private readonly HashSet<PlayerID> _allSeenPlayers = new();
+        public List<PlayerID> players { get; } = new List<PlayerID>();
+        private readonly HashSet<PlayerID> _allSeenPlayers = new HashSet<PlayerID>();
 
         public PlayerID? localPlayerId { get; private set; }
 

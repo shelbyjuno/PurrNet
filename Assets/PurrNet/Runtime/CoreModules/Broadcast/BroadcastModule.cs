@@ -43,7 +43,7 @@ namespace PurrNet.Modules
         
         private readonly bool _asServer;
 
-        private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new();
+        private readonly Dictionary<uint, List<IBroadcastCallback>> _actions = new Dictionary<uint, List<IBroadcastCallback>>();
         
         internal event Action<Connection, uint, object> onRawDataReceived;
         
