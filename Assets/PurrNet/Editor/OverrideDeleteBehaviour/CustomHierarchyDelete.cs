@@ -20,18 +20,29 @@ namespace PurrNet.Editor
                 return;
             
             var currentEvent = Event.current;
-
-            // Check if Delete or Backspace is pressed
-            if (currentEvent.type == EventType.KeyDown &&
-                currentEvent.keyCode is KeyCode.Delete or KeyCode.Backspace)
+            
+            switch (currentEvent.type)
             {
-                // Get the selected objects in the hierarchy
-                var selectedObjects = Selection.objects;
-
-                if (selectedObjects.Length > 0)
+                case EventType.ExecuteCommand when currentEvent.commandName == "Duplicate":
                 {
-                    if (PurrDeleteHandler.CustomDeleteLogic(selectedObjects))
+                    if (PurrDeleteHandler.CustomDuplicateLogic(Selection.objects))
                         currentEvent.Use();
+                    break;
+                }
+                // Check if Delete or Backspace is pressed
+                case EventType.KeyDown when
+                    currentEvent.keyCode is KeyCode.Delete or KeyCode.Backspace:
+                {
+                    // Get the selected objects in the hierarchy
+                    var selectedObjects = Selection.objects;
+
+                    if (selectedObjects.Length > 0)
+                    {
+                        if (PurrDeleteHandler.CustomDeleteLogic(selectedObjects))
+                            currentEvent.Use();
+                    }
+
+                    break;
                 }
             }
         }

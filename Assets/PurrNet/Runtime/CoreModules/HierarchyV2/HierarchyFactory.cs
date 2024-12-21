@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using PurrNet.Logging;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
@@ -102,6 +103,14 @@ namespace PurrNet.Modules
         public bool TryGetHierarchy(SceneID sceneId, out HierarchyV2 o)
         {
             return _hierarchies.TryGetValue(sceneId, out o);
+        }
+        
+        public bool TryGetHierarchy(Scene scene, out HierarchyV2 o)
+        {
+            if (_scenes.TryGetSceneID(scene, out var sceneId))
+                return _hierarchies.TryGetValue(sceneId, out o);
+            o = null;
+            return false;
         }
     }
 }

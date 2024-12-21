@@ -4,7 +4,6 @@ using System.Reflection;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
-using PurrNet.Pooling;
 using PurrNet.Utils;
 using UnityEngine;
 
@@ -31,9 +30,6 @@ namespace PurrNet
         [SerializeField, HideInInspector] 
         private bool _shouldBePooled;
 
-        [SerializeField, HideInInspector]
-        private List<NetworkIdentity> _directChildren = new ();
-        
         public int prefabId => _prefabId;
         
         public int siblingIndex => _siblingIndex;
@@ -41,8 +37,6 @@ namespace PurrNet
         public int depthIndex => _depthIndex;
         
         public bool shouldBePooled => _shouldBePooled;
-        
-        public IReadOnlyList<NetworkIdentity> directChildren => _directChildren;
         
         public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled, bool isSceneObject)
         {
@@ -52,17 +46,6 @@ namespace PurrNet
             this._siblingIndex = siblingIndex;
             this._depthIndex = depthIndex;
             this._shouldBePooled = shouldBePooled;
-            this._directChildren.Clear();
-
-            using var children = new DisposableList<TransformIdentityPair>(16);
-            HierarchyPool.GetDirectChildren(transform, children);
-            
-            for (int i = 0; i < children.Count; i++)
-            {
-                var pair = children[i];
-                if (pair.identity)
-                    this._directChildren.Add(pair.identity);
-            }
         }
 
         /// <summary>
@@ -253,12 +236,24 @@ namespace PurrNet
         [ContextMenu("PurrNet/Duplicate Prototype")]
         private void DuplicatePrototype()
         {
+            Duplicate();
+        }
+
+        /// <summary>
+        /// Duplicates the object.
+        /// </summary>
+        public GameObject Duplicate()
+        {
             using var prototype = HierarchyPool.GetFramework(transform);
             if (networkManager.TryGetModule<HierarchyFactory>(isServer, out var factory) &&
                 factory.TryGetHierarchy(sceneId, out var hierarchy))
             {
-                hierarchy.Spawn(hierarchy.CreatePrototype(prototype));
+                var go = hierarchy.CreatePrototype(prototype);
+                hierarchy.Spawn(go);
+                return go;
             }
+            
+            return null;
         }
                 
         [ContextMenu("PurrNet/Destroy GameObject")]

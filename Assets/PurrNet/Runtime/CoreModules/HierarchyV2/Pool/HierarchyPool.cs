@@ -74,10 +74,11 @@ namespace PurrNet.Modules
                     queue = QueuePool<GameObject>.Instantiate();
                     _pool.Add(pid, queue);
                 }
-
+                
                 // put the object in the queue
                 child.gameObject.SetActive(false);
                 child.transform.SetParent(_parent, false);
+                
                 queue.Enqueue(child.gameObject);
             }
 
