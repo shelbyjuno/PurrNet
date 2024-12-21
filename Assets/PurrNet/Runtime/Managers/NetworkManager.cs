@@ -71,6 +71,8 @@ namespace PurrNet
         [Tooltip("Whether the network manager should not be destroyed on load. " +
                  "If true, the network manager will be moved to the DontDestroyOnLoad scene.")]
         [SerializeField] private bool _dontDestroyOnLoad = true;
+        [Tooltip("Send and receive data immediately, not bound by tick rate.")]
+        [SerializeField] private bool _cheetahData;
         [PurrDocs("systems-and-modules/network-manager/transports")]
         [SerializeField] private GenericTransport _transport;
         [PurrDocs("systems-and-modules/network-manager/network-prefabs")]
@@ -769,6 +771,9 @@ namespace PurrNet
         {
             _serverModules.TriggerOnUpdate();
             _clientModules.TriggerOnUpdate();
+            
+            if (_cheetahData && _transport) 
+                _transport.transport.UpdateEvents(Time.deltaTime);
         }
 
         private void FixedUpdate()
@@ -782,7 +787,7 @@ namespace PurrNet
             if (clientConnected)
                 _clientModules.TriggerOnPreFixedUpdate();
             
-            if (_transport)
+            if (!_cheetahData && _transport) 
                 _transport.transport.UpdateEvents(Time.fixedDeltaTime);
             
             if (serverConnected)
