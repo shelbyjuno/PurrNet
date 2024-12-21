@@ -15,6 +15,7 @@ namespace PurrNet.Editor
         private SerializedProperty _cookieScope;
 
         private SerializedProperty _dontDestroyOnLoad;
+        private SerializedProperty _cheetahData;
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _networkRules;
         private SerializedProperty _transport;
@@ -31,6 +32,7 @@ namespace PurrNet.Editor
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
             _dontDestroyOnLoad = serializedObject.FindProperty("_dontDestroyOnLoad");
+            _cheetahData = serializedObject.FindProperty("_cheetahData");
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _networkRules = serializedObject.FindProperty("_networkRules");
             _transport = serializedObject.FindProperty("_transport");
@@ -84,6 +86,7 @@ namespace PurrNet.Editor
                 GUI.enabled = false;
             
             EditorGUILayout.PropertyField(_dontDestroyOnLoad);
+            EditorGUILayout.PropertyField(_cheetahData);
             EditorGUILayout.PropertyField(_transport);
             DrawNetworkPrefabs();
             EditorGUILayout.PropertyField(_networkRules);

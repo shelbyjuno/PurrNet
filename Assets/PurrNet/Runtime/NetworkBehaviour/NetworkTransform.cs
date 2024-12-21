@@ -60,6 +60,9 @@ namespace PurrNet
         [Tooltip("The interval in ticks to send the transform data. 0 means send every tick.")]
         [SerializeField, Min(0)] private int _sendIntervalInTicks;
 
+        [Tooltip("Will enforce the character controller getting enabled and disabled when attempting to sync the transform - CAUTION - Physics events can/will be called multiple times")] 
+        [SerializeField] private bool _characterControllerPatch;
+
         [SerializeField] private Tolerances _tolerances = new()
         {
             rotationAngleTolerance = 1,
@@ -301,7 +304,7 @@ namespace PurrNet
         {
             bool disableController = _controller && _controller.enabled;
             
-            if (disableController)
+            if (disableController && _characterControllerPatch)
                 _controller.enabled = false;
 
             if (syncPosition)
@@ -320,8 +323,7 @@ namespace PurrNet
             
             if (syncScale)
                 _trs.localScale = _scale.Advance(Time.deltaTime);
-            
-            if (disableController)
+            if (disableController && _characterControllerPatch)
                 _controller.enabled = true;
         }
 
