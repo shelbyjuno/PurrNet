@@ -8,7 +8,7 @@ namespace PurrNet.Pooling
 
         static HashSetPool() => _instance = new HashSetPool<T>();
 
-        static HashSet<T> Factory() => new();
+        static HashSet<T> Factory() => new HashSet<T>();
 
         static void Reset(HashSet<T> list) => list.Clear();
 
