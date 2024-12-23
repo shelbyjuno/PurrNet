@@ -81,8 +81,11 @@ namespace PurrNet
         int complexity { get; }
         
         /// <summary>
-        /// Who can see the identity?
+        /// Check if a player can see a target.
         /// </summary>
-        void GetObservers(List<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity);
+        /// <param name="player">PlayerID to check</param>
+        /// <param name="target">Which identity we talking about</param>
+        /// <returns></returns>
+        bool CanSee(PlayerID player, NetworkIdentity target);
     }
 }

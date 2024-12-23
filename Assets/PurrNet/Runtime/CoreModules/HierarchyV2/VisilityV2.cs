@@ -1,39 +1,101 @@
-﻿using JetBrains.Annotations;
+﻿using System.Collections.Generic;
+using PurrNet.Pooling;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
     internal class VisilityV2
     {
-        public delegate void VisibilityDelegate(NetworkIdentity identity, PlayerID player);
-        public delegate void VisibilityChangedDelegate(NetworkIdentity identity, PlayerID player, bool visible);
+        readonly NetworkVisibilityRuleSet _defaultRuleSet;
         
-        [UsedImplicitly]
-        public event VisibilityDelegate onRootVisibilityAdded;
+        public VisilityV2(NetworkManager manager)
+        {
+            _defaultRuleSet = manager.visibilityRules;
+        }
         
-        [UsedImplicitly]
-        public event VisibilityDelegate onRootVisibilityRemoved;
+        public void RefreshVisibilityForGameObject(PlayerID player, Transform transform)
+        {
+            if (!transform)
+                return;
+            
+            RefreshVisibilityForGameObject(player, transform, _defaultRuleSet, true);
+        }
         
-        [UsedImplicitly]
-        public event VisibilityChangedDelegate onVisibilityChanged;
+        private static void RefreshVisibilityForGameObject(PlayerID player, Transform transform, NetworkVisibilityRuleSet rules, bool isParentVisible)
+        {
+            using var identities = new DisposableList<NetworkIdentity>(16);
+            using var directChildren = new DisposableList<TransformIdentityPair>(16);
 
-        public void Enable()
-        {
+            transform.GetComponents(identities.list);
             
+            var isVisible = Evaluate(player, identities.list, ref rules, isParentVisible);
+            HierarchyPool.GetDirectChildren(transform.transform, directChildren);
+            
+            for (var i = 0; i < directChildren.list.Count; i++)
+            {
+                var pair = directChildren.list[i];
+                RefreshVisibilityForGameObject(player, pair.transform, rules, isVisible);
+            }
         }
-        
-        public void Disable()
+
+        /// <summary>
+        /// Evaluate visibility of the object.
+        /// Also adds/removes observers based on the visibility.
+        /// </summary>
+        private static bool Evaluate(PlayerID player, List<NetworkIdentity> identities, ref NetworkVisibilityRuleSet rules, bool isParentVisible)
         {
+            bool isVisible = isParentVisible;
+
+            if (!isVisible)
+            {
+                for (var i = 0; i < identities.Count; i++)
+                    identities[i].TryRemoveObserver(player);
+                return false;
+            }
             
-        }
-        
-        public void EvaluateRoot(NetworkIdentity root)
-        {
-            
-        }
-        
-        public void EvaluateAll()
-        {
-            
+            bool canSee = true;
+
+            for (var i = 0; i < identities.Count; i++)
+            {
+                var identity = identities[i];
+                rules = identity.GetOverrideOrDefault(rules);
+
+                if (rules == null)
+                    continue;
+
+                if (identity.owner == player)
+                    continue;
+
+                if (identity.whitelist.Contains(player))
+                    continue;
+
+                if (identity.blacklist.Contains(player))
+                {
+                    canSee = false;
+                    break;
+                }
+
+                if (!rules.CanSee(player, identity))
+                {
+                    canSee = false;
+                    break;
+                }
+            }
+
+            if (!canSee)
+            {
+                isVisible = false;
+
+                for (var i = 0; i < identities.Count; i++)
+                    identities[i].TryRemoveObserver(player);
+            }
+            else
+            {
+                for (var i = 0; i < identities.Count; i++)
+                    identities[i].TryAddObserver(player);
+            }
+
+            return isVisible;
         }
     }
 }

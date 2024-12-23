@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace PurrNet
 {
@@ -18,12 +17,6 @@ namespace PurrNet
         /// </summary>
         public abstract int complexity { get; }
         
-        /// <summary>
-        /// Who can see the identity?
-        /// </summary>
-        /// <param name="result">The list of players that can see the, it should always be a subset of players</param>
-        /// <param name="players">The set of all players to check visibility for</param>
-        /// <param name="networkIdentity">The identity to check</param>
-        public abstract void GetObservers(List<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity);
+        public abstract bool CanSee(PlayerID player, NetworkIdentity target);
     }
 }

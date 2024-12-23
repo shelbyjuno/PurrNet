@@ -132,7 +132,7 @@ namespace PurrNet.Modules
                 Warmup(prefab, pid.prefabId);
         }
 
-        private static DisposableList<int> GetInvPath(Transform parent, Transform transform)
+        public static DisposableList<int> GetInvPath(Transform parent, Transform transform)
         {
             var depth = new DisposableList<int>(16);
             var current = transform;

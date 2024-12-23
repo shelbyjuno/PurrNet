@@ -33,7 +33,7 @@ namespace PurrNet.Modules
             _sceneId = sceneId;
             _scene = scene;
             _scenePlayers = players;
-            _visibility = new VisilityV2();
+            _visibility = new VisilityV2(_manager);
             _asServer = asServer;
             _playersManager = playersManager;
             
@@ -98,13 +98,11 @@ namespace PurrNet.Modules
         public void Enable()
         {
             PurrNetGameObjectUtils.onGameObjectCreated += OnGameObjectCreated;
-            _visibility.Enable();
         }
 
         public void Disable()
         {
             PurrNetGameObjectUtils.onGameObjectCreated -= OnGameObjectCreated;
-            _visibility.Disable();
         }
 
         private void OnGameObjectCreated(GameObject obj, GameObject prefab)
@@ -221,7 +219,6 @@ namespace PurrNet.Modules
         
         public void PreNetworkMessages()
         {
-            _visibility.EvaluateAll();
         }
 
         public void PostNetworkMessages()

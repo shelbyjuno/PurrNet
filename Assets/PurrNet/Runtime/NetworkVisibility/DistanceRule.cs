@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace PurrNet
 {
@@ -11,41 +10,37 @@ namespace PurrNet
         [SerializeField, Min(0)] private float _deadZone = 5f;
 
         public override int complexity => 100;
-        
-        public override void GetObservers(List<PlayerID> result, ISet<PlayerID> players, NetworkIdentity networkIdentity)
+
+        public override bool CanSee(PlayerID player, NetworkIdentity networkIdentity)
         {
             var myPos = networkIdentity.transform.position;
-
-            foreach(var player in players)
-            {
-                bool wasPreviouslyVisible = networkIdentity.observers.Contains(player);
+            bool wasPreviouslyVisible = networkIdentity.observers.Contains(player);
                 
-                foreach (var playerIdentity in manager.EnumerateAllPlayerOwnedIds(player, true))
+            foreach (var playerIdentity in manager.EnumerateAllPlayerOwnedIds(player, true))
+            {
+                var layer = playerIdentity.layer;
+                    
+                if ((_layerMask & (1 << layer)) == 0)
+                    continue;
+                    
+                if (!playerIdentity.isActiveAndEnabled)
+                    continue;
+                    
+                var playerPos = playerIdentity.transform.position;
+                var distance = Vector3.Distance(myPos, playerPos);
+
+                if (wasPreviouslyVisible)
                 {
-                    var layer = playerIdentity.layer;
-                    
-                    if ((_layerMask & (1 << layer)) == 0)
+                    if (!(distance <= _distance + _deadZone)) 
                         continue;
-                    
-                    if (!playerIdentity.isActiveAndEnabled)
-                        continue;
-                    
-                    var playerPos = playerIdentity.transform.position;
-                    var distance = Vector3.Distance(myPos, playerPos);
-
-                    if (wasPreviouslyVisible)
-                    {
-                        if (!(distance <= _distance + _deadZone)) 
-                            continue;
-                    }
-                    else if (!(distance <= _distance))
-                        continue;
-
-                    result.Add(player);
-
-                    break;
                 }
+                else if (!(distance <= _distance))
+                    continue;
+
+                return true;
             }
+            
+            return false;
         }
     }
 }

@@ -4,8 +4,10 @@ using System.Reflection;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Pooling;
 using PurrNet.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -30,6 +32,26 @@ namespace PurrNet
         [SerializeField, HideInInspector] 
         private bool _shouldBePooled;
 
+        [SerializeField, HideInInspector] 
+        private NetworkIdentity _parent;
+        
+        [SerializeField, HideInInspector] 
+        private int[] _invertedPathToNearestParent;
+        
+        [SerializeField, HideInInspector] 
+        private NetworkIdentity[] _directChildren;
+        
+        public int[] invertedPathToNearestParent => _invertedPathToNearestParent;
+        
+        public NetworkIdentity[] directChildren => _directChildren;
+        
+        /// <summary>
+        /// The nearest network parent of this object.
+        /// This can differ from transform.parent.
+        /// Especially if syncing the parent is disabled.
+        /// </summary>
+        public NetworkIdentity parent => _parent;
+        
         public int prefabId => _prefabId;
         
         public int siblingIndex => _siblingIndex;
@@ -46,6 +68,52 @@ namespace PurrNet
             this._siblingIndex = siblingIndex;
             this._depthIndex = depthIndex;
             this._shouldBePooled = shouldBePooled;
+            
+            _parent = GetNearestParent();
+
+            if (_parent)
+            {
+                using var invPath = HierarchyPool.GetInvPath(_parent.transform, transform);
+
+                if (_invertedPathToNearestParent == null || _invertedPathToNearestParent.Length != invPath.Count)
+                {
+                    _invertedPathToNearestParent = new int[invPath.Count];
+                    for (int i = 0; i < invPath.Count; i++)
+                        _invertedPathToNearestParent[i] = invPath[i];
+                }
+            }
+            else
+            {
+                _invertedPathToNearestParent = Array.Empty<int>();
+            }
+            
+            var directChildren = new DisposableList<TransformIdentityPair>(16);
+            HierarchyPool.GetDirectChildren(transform, directChildren);
+
+            if (_directChildren == null || _directChildren.Length != directChildren.Count)
+            {
+                _directChildren = new NetworkIdentity[directChildren.Count];
+                for (int i = 0; i < directChildren.Count; i++)
+                    _directChildren[i] = directChildren[i].identity;
+            }
+        }
+        
+        /// <summary>
+        /// Navigates the hierarchy to find the nearest parent with a NetworkIdentity.
+        /// </summary>
+        /// <returns>Nearest parent with a NetworkIdentity</returns>
+        public NetworkIdentity GetNearestParent()
+        {
+            var current = transform.parent;
+            while (current)
+            {
+                if (current.TryGetComponent(out NetworkIdentity identity))
+                    return identity;
+                
+                current = current.parent;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -167,23 +235,8 @@ namespace PurrNet
         private bool _lastEnabledState;
         private GameObjectEvents _events;
         private GameObject _gameObject;
-        
-        public ISet<PlayerID> observers
-        {
-            get
-            {
-                if (!root || !root.isSpawned || !root.id.HasValue)
-                    return VisibilityFactory.EMPTY_OBSERVERS;
-                
-                if (!networkManager.TryGetModule<VisibilityFactory>(true, out var factory))
-                    return VisibilityFactory.EMPTY_OBSERVERS;
-                
-                if (factory.TryGetObservers(sceneId, root.id.Value, out var result))
-                    return result;
-                
-                return VisibilityFactory.EMPTY_OBSERVERS;
-            }
-        }
+
+        public HashSet<PlayerID> observers { get; } = new HashSet<PlayerID>();
 
         /// <summary>
         /// The root identity is the topmost parent that has a NetworkIdentity.

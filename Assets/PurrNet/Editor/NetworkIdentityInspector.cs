@@ -153,6 +153,44 @@ namespace PurrNet.Editor
                 EditorGUILayout.LabelField("Not Spawned");
                 EditorGUILayout.EndHorizontal();
             }
+            
+#if PURRNET_DEBUG_NETWORK_IDENTITY
+            var old2 = GUI.enabled;
+            GUI.enabled = false;
+
+            EditorGUILayout.BeginVertical("box", GUILayout.ExpandWidth(false));
+            
+            EditorGUILayout.LabelField($"prefabId: {identity.prefabId}");
+            EditorGUILayout.LabelField($"siblingIndex: {identity.siblingIndex}");
+            EditorGUILayout.LabelField($"depthIndex: {identity.depthIndex}");
+            EditorGUILayout.LabelField($"shouldBePooled: {identity.shouldBePooled}");
+            EditorGUILayout.ObjectField("parent", identity.parent, typeof(NetworkIdentity), true);
+            
+            string path = "";
+
+            for (var index = 0; index < identity.invertedPathToNearestParent.Length; index++)
+            {
+                var parent = identity.invertedPathToNearestParent[index];
+                bool isLast = index == identity.invertedPathToNearestParent.Length - 1;
+                path += parent + (isLast ? ";" : " -> ");
+            }
+            
+            EditorGUILayout.LabelField($"pathToNearestParent: {path}");
+            EditorGUILayout.LabelField($"Direct Children ({identity.directChildren?.Length ?? 0}):");
+            
+            if (identity.directChildren != null)
+            {
+                EditorGUI.indentLevel++;
+                foreach (var child in identity.directChildren)
+                {
+                    EditorGUILayout.ObjectField(child, typeof(NetworkIdentity), true);
+                }
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.EndVertical();
+            GUI.enabled = old2;
+#endif
         }
 
         private void PrintObserversDropdown(NetworkIdentity identity)

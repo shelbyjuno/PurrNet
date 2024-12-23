@@ -163,5 +163,17 @@ namespace PurrNet
             var rules = networkRules;
             return rules && rules.HasRemoveOwnershipAuthority(this, player, asServer);
         }
+
+        public void TryAddObserver(PlayerID player)
+        {
+            if (observers.Add(player))
+                OnObserverAdded(player);
+        }
+        
+        public void TryRemoveObserver(PlayerID player)
+        {
+            if (observers.Remove(player))
+                OnObserverRemoved(player);
+        }
     }
 }

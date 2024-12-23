@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace PurrNet
 {
@@ -8,10 +7,9 @@ namespace PurrNet
     {
         public override int complexity => 0;
 
-        public override void GetObservers(List<PlayerID> result, ISet<PlayerID> players,
-            NetworkIdentity networkIdentity)
+        public override bool CanSee(PlayerID player, NetworkIdentity target)
         {
-            result.AddRange(players);
+            return true;
         }
     }
 }

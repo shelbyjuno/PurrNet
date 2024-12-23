@@ -51,22 +51,16 @@ namespace PurrNet
         {
             _raw_rules.Remove(rule);
         }
-
-        public void GetObservers(List<PlayerID> result, HashSet<PlayerID> players,
-            NetworkIdentity networkIdentity)
+        
+        public bool CanSee(PlayerID player, NetworkIdentity target)
         {
-            using var tmpPool = new DisposableHashSet<PlayerID>(players.Count);
-            tmpPool.UnionWith(players);
-            
             for (int i = 0; i < _raw_rules.Count; i++)
             {
-                var rule = _raw_rules[i];
-                rule.GetObservers(result, tmpPool, networkIdentity);
-                tmpPool.ExceptWith(result);
-                
-                if (tmpPool.Count == 0)
-                    break;
+                if (_raw_rules[i].CanSee(player, target))
+                    return true;
             }
+
+            return false;
         }
     }
 }

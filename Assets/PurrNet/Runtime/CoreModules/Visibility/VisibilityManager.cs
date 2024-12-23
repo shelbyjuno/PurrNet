@@ -199,7 +199,7 @@ namespace PurrNet
                     break;
                 }
                     
-                rules.GetObservers(result, players, child);
+                //rules.GetObservers(result, players, child);
                 players.ExceptWith(result);
                     
                 if (players.Count == 0)
@@ -236,7 +236,7 @@ namespace PurrNet
                     break;
                 }
                     
-                rules.GetObservers(result, players, child);
+                // rules.GetObservers(result, players, child);
                 players.ExceptWith(result);
 
                 if (players.Count == 0)
