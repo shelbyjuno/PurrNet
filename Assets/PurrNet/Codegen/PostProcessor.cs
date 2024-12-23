@@ -914,6 +914,9 @@ namespace PurrNet.Codegen
             
             if (methodRpc.Signature.isStatic)
                 attributes |= MethodAttributes.Static;
+            
+            if (method.IsVirtual)
+                attributes |= MethodAttributes.Virtual;
 
             var newMethod = new MethodDefinition(ogName, attributes, method.ReturnType);
             
@@ -1498,11 +1501,11 @@ namespace PurrNet.Codegen
             try
             {
                 if (!WillProcess(compiledAssembly))
-                    return default!;
+                    return null!;
                 
-                HashSet<string> visitedTypes = new HashSet<string>();
-                HashSet<TypeReference> typesToGenerateSerializer = new HashSet<TypeReference>();
-                HashSet<TypeReference> typesToPrepareHasher = new HashSet<TypeReference>();
+                var visitedTypes = new HashSet<string>();
+                var typesToGenerateSerializer = new HashSet<TypeReference>();
+                var typesToPrepareHasher = new HashSet<TypeReference>();
                 
                 var messages = new List<DiagnosticMessage>();
 
@@ -1545,13 +1548,13 @@ namespace PurrNet.Codegen
                         bool inheritsFromNetworkIdentity = type.FullName == idFullName || InheritsFrom(type, idFullName);
                         bool inheritsFromNetworkClass = type.FullName == classFullName || InheritsFrom(type, classFullName);
 
-                        List<RPCMethod> _rpcMethods = new List<RPCMethod>();
+                        var _rpcMethods = new List<RPCMethod>();
 
                         int idOffset = GetIDOffset(type, messages);
 
                         if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                         {
-                            List<FieldDefinition> _networkFields = new List<FieldDefinition>();
+                            var _networkFields = new List<FieldDefinition>();
                             
                             IncludeAnyConcreteGenericParameters(type, typesToGenerateSerializer);
                             FindNetworkModules(type, classFullName, _networkFields);
@@ -1574,7 +1577,8 @@ namespace PurrNet.Codegen
                                 
                                 if (!rpcType.Value.isStatic && !inheritsFromNetworkIdentity && !inheritsFromNetworkClass)
                                 {
-                                    Error(messages, "RPC must be static if not inheriting from NetworkIdentity or NetworkClass", method);
+                                    string inheritsFrom = type.BaseType?.FullName ?? "null";
+                                    Error(messages, $"RPC must be static if not inheriting from NetworkIdentity or NetworkClass | {inheritsFrom}", method);
                                     continue;
                                 }
                                 
