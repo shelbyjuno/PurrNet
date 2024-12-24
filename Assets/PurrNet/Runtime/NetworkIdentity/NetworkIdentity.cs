@@ -7,7 +7,6 @@ using PurrNet.Modules;
 using PurrNet.Pooling;
 using PurrNet.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace PurrNet
 {
@@ -298,6 +297,13 @@ namespace PurrNet
         private void DuplicatePrototype()
         {
             Duplicate();
+        }
+        
+        [ContextMenu("PurrNet/Spawn")]
+        private void SpawnMenu()
+        {
+            if (isServer) Spawn(true);
+            if (isClient) Spawn(false);
         }
 
         /// <summary>
@@ -745,7 +751,7 @@ namespace PurrNet
             if (!manager)
                 return;
             
-            if (manager.TryGetModule(manager.isServer, out HierarchyModule module))
+            if (manager.TryGetModule(asServer, out HierarchyModule module))
             {
                 module.Spawn(gameObject);
             }

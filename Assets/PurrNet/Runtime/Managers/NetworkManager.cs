@@ -303,7 +303,16 @@ namespace PurrNet
             prefabProvider = provider;
         }
 
-        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject, int depthOffset)
+        /// <summary>
+        /// Prepares the prefab info for the given instance.
+        /// This needs to be ready before the object is spawned.
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="pid">The prefab index in the network prefabs list.</param>
+        /// <param name="shouldBePooled">Whether the object should be pooled.</param>
+        /// <param name="isSceneObject">Scene objects are not part of the prefab list and come from the scene itself.</param>
+        /// <param name="depthOffset">The depth offset to apply to the transform depth. If it's a root object, the offset should be zero.</param>
+        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject, int depthOffset = 0)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             
@@ -329,11 +338,6 @@ namespace PurrNet
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
-        }
-        
-        public bool IsPrefabRegistered(GameObject prefab)
-        {
-            return _networkPrefabs.prefabs.Exists(data => data.prefab == prefab);
         }
         
         public bool TryGetPrefabData(GameObject prefab, out NetworkPrefabs.PrefabData o, out int pid)
