@@ -102,11 +102,6 @@ namespace PurrNet.Modules
 
                 if (!_pool.TryGetValue(pid, out queue))
                 {
-                    foreach (var VARIABLE in _pool)
-                    {
-                        PurrLogger.Log($"Key: {VARIABLE.Key}, Value: {VARIABLE.Value.Count}");
-                    }
-
                     instance = null;
                     return false;
                 }
@@ -257,7 +252,6 @@ namespace PurrNet.Modules
 
             if (!TryGetFromPool(current.pid, out var instance))
             {
-                PurrLogger.LogError($"Failed to get object from pool: {current.pid} {prototype.isScenePrototype}");
                 result = null;
                 shouldBeActive = false;
                 return false;

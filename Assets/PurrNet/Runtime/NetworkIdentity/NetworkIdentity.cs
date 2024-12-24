@@ -10,8 +10,6 @@ using UnityEngine;
 
 namespace PurrNet
 {
-    public delegate void OnRootChanged(NetworkIdentity identity, NetworkIdentity oldRoot, NetworkIdentity newRoot);
-
     [DefaultExecutionOrder(-1000)]
     public partial class NetworkIdentity : MonoBehaviour
     {
@@ -233,7 +231,6 @@ namespace PurrNet
         [UsedByIL]
         public PlayerID localPlayerForced => localPlayer ?? default;
         
-        public event OnRootChanged onRootChanged;
         public event Action<NetworkIdentity> onFlush;
         public event Action<NetworkIdentity> onRemoved;
         public event Action<NetworkIdentity, bool> onEnabledChanged;
@@ -302,8 +299,7 @@ namespace PurrNet
         [ContextMenu("PurrNet/Spawn")]
         private void SpawnMenu()
         {
-            if (isServer) Spawn(true);
-            if (isClient) Spawn(false);
+            Spawn();
         }
 
         /// <summary>
@@ -335,15 +331,18 @@ namespace PurrNet
             if (_ticker == null && this is ITick ticker)
                 _ticker = ticker;
             
-            if (asServer)
+            if (_ticker != null || _tickables.Count > 0)
             {
-                _serverTickManager = networkManager.GetModule<TickManager>(true);
-                _serverTickManager.onTick += ServerTick;
-            }
-            else if (_ticker != null || _tickables.Count > 0)
-            {
-                _clientTickManager = networkManager.GetModule<TickManager>(false);
-                _clientTickManager.onTick += ClientTick;
+                if (asServer)
+                {
+                    _serverTickManager = networkManager.GetModule<TickManager>(true);
+                    _serverTickManager.onTick += ServerTick;
+                }
+                else
+                {
+                    _clientTickManager = networkManager.GetModule<TickManager>(false);
+                    _clientTickManager.onTick += ClientTick;
+                }
             }
             
             if (networkManager.TryGetModule<PlayersManager>(asServer, out var players))
@@ -409,18 +408,6 @@ namespace PurrNet
             if (scene == sceneId)
                 _serverSceneEvents?.OnPlayerLeftScene(player);
         }
-
-        private void InternalOnServerTick()
-        {
-            var rootId = GetRootIdentity();
-
-            if (rootId != root)
-            {
-                var oldRoot = root;
-                root = rootId;
-                onRootChanged?.Invoke(this, oldRoot, rootId);
-            }
-        }
         
         private void ClientTick()
         {
@@ -435,8 +422,6 @@ namespace PurrNet
 
         private void ServerTick()
         {
-            InternalOnServerTick();
-
             if (!isClient)
             {
                 _ticker?.OnTick(_serverTickManager.tickDelta);
@@ -644,21 +629,13 @@ namespace PurrNet
                 _isSpawnedServer = true;
                 idServer = identityId;
                 _serverHierarchy = hierarchy;
+                internalOwnerServer = null;
             }
             else
             {
                 _isSpawnedClient = true;
                 idClient = identityId;
                 _clientHierarchy = hierarchy;
-            }
-
-            if (asServer)
-            {
-                internalOwnerServer = null;
-                InternalOnServerTick();
-            }
-            else
-            {
                 internalOwnerClient = null;
             }
             
@@ -740,22 +717,54 @@ namespace PurrNet
         /// The gameobject must contain a PrefabLink component in order to spawn.
         /// Errors will be logged if something goes wrong.
         /// </summary>
-        /// <param name="asServer">Weather to spawn from the prespective of the server or the client</param>
-        public void Spawn(bool asServer)
+        /// <param name="manager">Optional NetworkManager to use, will use NetworkManager.main if not provided</param>
+        public void Spawn(NetworkManager manager = null)
         {
             if (isSpawned)
                 return;
 
-            var manager = NetworkManager.main;
-            
             if (!manager)
-                return;
-            
-            if (manager.TryGetModule(asServer, out HierarchyModule module))
             {
-                module.Spawn(gameObject);
+                manager = NetworkManager.main;
+                
+                if (!manager)
+                {
+                    PurrLogger.LogError("Failed to spawn object. No NetworkManager found.", this);
+                    return;
+                }
             }
-            else PurrLogger.LogError("Failed to get spawn module.", this);
+            
+            if (manager.TryGetModule(manager.isServer, out HierarchyFactory module) && 
+                module.TryGetHierarchy(gameObject.scene, out var hierarchy))
+            {
+                hierarchy.Spawn(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Spawn any child objects of this object.
+        /// </summary>
+        /// <param name="go">GameObject to spawn</param>
+        /// <param name="manager">Optional NetworkManager to use, will use NetworkManager.main if not provided</param>
+        public static void Spawn(GameObject go, NetworkManager manager = null)
+        {
+            if (!go)
+                return;
+
+            if (go.TryGetComponent(out NetworkIdentity identity))
+            {
+                identity.Spawn(manager);
+                return;
+            }
+            
+            using var identities = new DisposableList<TransformIdentityPair>(16);
+            HierarchyPool.GetDirectChildren(go.transform, identities);
+            
+            for (var i = 0; i < identities.Count; i++)
+            {
+                var pair = identities[i];
+                pair.identity.Spawn(manager);
+            }
         }
         
         public void GiveOwnership(PlayerID? player, bool silent = false)

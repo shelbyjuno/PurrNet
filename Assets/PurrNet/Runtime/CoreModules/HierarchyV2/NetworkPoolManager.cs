@@ -44,6 +44,9 @@ namespace PurrNet.Modules
         {
             var prefabs = manager.prefabProvider;
             
+            if (prefabs == null)
+                return null;
+            
             if (_pools.TryGetValue(prefabs, out var pool))
                 return pool;
             

@@ -27,7 +27,8 @@ namespace PurrNet
         public bool ownerAuth => _ownerAuth;
         
         /// <summary>
-        /// Automatically sync parameters when they are changed, if you are using NetworkAnimator directly you should set this to false
+        /// Automatically sync parameters when they are changed,
+        /// if you are using NetworkAnimator directly you should set this to false
         /// </summary>
         public bool autoSyncParameters => _autoSyncParameters;
         

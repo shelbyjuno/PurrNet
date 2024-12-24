@@ -22,10 +22,14 @@ namespace PurrNet.Editor
             
             switch (currentEvent.type)
             {
+                case EventType.ExecuteCommand when currentEvent.commandName == "Paste":
                 case EventType.ExecuteCommand when currentEvent.commandName == "Duplicate":
                 {
-                    if (PurrDeleteHandler.CustomDuplicateLogic(Selection.objects))
-                        currentEvent.Use();
+                    EditorApplication.delayCall += () =>
+                    {
+                        foreach (var go in Selection.gameObjects)
+                            NetworkIdentity.Spawn(go);
+                    };
                     break;
                 }
                 // Check if Delete or Backspace is pressed
