@@ -15,11 +15,34 @@ namespace PurrNet.Modules
         [UsedImplicitly] private readonly IPrefabProvider _prefabs;
         
         private static readonly Dictionary<GameObject, GameObjectPrototype> _prefabPrototypes = new();
+        
+        readonly HashSet<GameObject> _alreadyWarmedUp = new HashSet<GameObject>();
 
         public HierarchyPool(Transform parent, IPrefabProvider prefabs = null)
         {
             _parent = parent;
             _prefabs = prefabs;
+        }
+
+        /// <summary>
+        /// Warmup all the prefabs that are marked as poolable.
+        /// If a prefab was already warmed up, it will be skipped.
+        /// </summary>
+        public void Warmup()
+        {
+            if (_prefabs == null)
+                return;
+            
+            for (int i = 0 ; i < _prefabs.allPrefabs.Count; i++)
+            {
+                var prefab = _prefabs.allPrefabs[i];
+
+                if (prefab.pool && _alreadyWarmedUp.Add(prefab.prefab))
+                {
+                    for (int j = 0; j < prefab.warmupCount; j++)
+                        Warmup(prefab, i);
+                }
+            }
         }
 
         public void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)

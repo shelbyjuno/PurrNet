@@ -62,23 +62,10 @@ namespace PurrNet.Modules
             Object.DontDestroyOnLoad(poolParent);
             pool = new HierarchyPool(poolParent.transform, prefabs);
             _pools.Add(prefabs, pool);
-            
-            for (int i = 0 ; i < prefabs.allPrefabs.Count; i++)
-            {
-                var prefab = prefabs.allPrefabs[i];
-
-                if (prefab.pool)
-                {
-                    for (int j = 0; j < prefab.warmupCount; j++)
-                    {
-                        pool.Warmup(prefab, i);
-                    }
-                }
-            }
-            
+            pool.Warmup();
             return pool;
         }
-        
+
         public static void RemovePool(IPrefabProvider prefabs)
         {
             if (_pools.Remove(prefabs, out var pool))
