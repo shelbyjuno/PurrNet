@@ -45,7 +45,7 @@ namespace PurrNet.Modules
             }
         }
 
-        public void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
+        private void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
         {
             var copy = UnityProxy.InstantiateDirectly(prefabData.prefab, _parent);
             NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false, -1);
@@ -219,7 +219,7 @@ namespace PurrNet.Modules
                 return new GameObjectPrototype { framework = framework, isScenePrototype = true };
 
             var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
-            var pair = GetRuntimePair(null, transform, rootId);
+            var pair = GetRuntimePair(null, rootId);
 
             queue.Enqueue(pair);
 
@@ -231,7 +231,7 @@ namespace PurrNet.Modules
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
-                    var childPair = GetRuntimePair(current.identity.transform, child.transform, child.identity);
+                    var childPair = GetRuntimePair(current.identity.transform, child.identity);
                     queue.Enqueue(childPair);
                 }
 
@@ -348,8 +348,7 @@ namespace PurrNet.Modules
             instance.SetSiblingIndex(targetSiblingIndex);
         }
 
-        private static GameObjectRuntimePair GetRuntimePair(Transform parent, Transform transform,
-            NetworkIdentity rootId)
+        private static GameObjectRuntimePair GetRuntimePair(Transform parent, NetworkIdentity rootId)
         {
             var children = new DisposableList<TransformIdentityPair>(rootId.directChildren.Length);
             var pair = new GameObjectRuntimePair(parent, rootId, children);
