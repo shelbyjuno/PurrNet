@@ -29,7 +29,7 @@ namespace PurrNet.Modules
             
             if (!_prefabPrototypes.ContainsKey(prefabData.prefab))
             {
-                var prototype = GetFramework(copy.transform);
+                var prototype = GetPrototype(copy.transform);
                 _prefabPrototypes.Add(prefabData.prefab, prototype);
             }
             
@@ -193,7 +193,7 @@ namespace PurrNet.Modules
             return _prefabPrototypes.TryGetValue(prefab, out prototype);
         }
 
-        public static GameObjectPrototype GetFramework(Transform transform)
+        public static GameObjectPrototype GetPrototype(Transform transform)
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
 
@@ -334,10 +334,11 @@ namespace PurrNet.Modules
         private static GameObjectRuntimePair GetRuntimePair(Transform parent, Transform transform,
             NetworkIdentity rootId)
         {
-            var children = new DisposableList<TransformIdentityPair>(16);
+            var children = new DisposableList<TransformIdentityPair>(rootId.directChildren.Length);
             var pair = new GameObjectRuntimePair(parent, rootId, children);
 
-            GetDirectChildren(transform, children);
+            foreach (var c in rootId.directChildren)
+                children.Add(new TransformIdentityPair(c.transform, c));
             return pair;
         }
 

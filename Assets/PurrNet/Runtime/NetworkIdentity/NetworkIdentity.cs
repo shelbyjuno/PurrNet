@@ -87,14 +87,22 @@ namespace PurrNet
                 _invertedPathToNearestParent = Array.Empty<int>();
             }
             
-            var directChildren = new DisposableList<TransformIdentityPair>(16);
-            HierarchyPool.GetDirectChildren(transform, directChildren);
+            var firstIdentity = GetComponent<NetworkIdentity>();
 
-            if (_directChildren == null || _directChildren.Length != directChildren.Count)
+            if (firstIdentity != this)
             {
-                _directChildren = new NetworkIdentity[directChildren.Count];
-                for (int i = 0; i < directChildren.Count; i++)
-                    _directChildren[i] = directChildren[i].identity;
+                _directChildren = Array.Empty<NetworkIdentity>();
+                return;
+            }
+
+            using var dChildren = new DisposableList<TransformIdentityPair>(16);
+            HierarchyPool.GetDirectChildren(transform, dChildren);
+
+            if (_directChildren == null || _directChildren.Length != dChildren.Count)
+            {
+                _directChildren = new NetworkIdentity[dChildren.Count];
+                for (int i = 0; i < dChildren.Count; i++)
+                    _directChildren[i] = dChildren[i].identity;
             }
         }
         
@@ -282,7 +290,7 @@ namespace PurrNet
         [ContextMenu("PurrNet/Print Prototype")]
         private void PrintPrototype()
         {
-            using var prototype = HierarchyPool.GetFramework(transform);
+            using var prototype = HierarchyPool.GetPrototype(transform);
             PurrLogger.Log(prototype.ToString());
         }
         
@@ -297,7 +305,7 @@ namespace PurrNet
         /// </summary>
         public GameObject Duplicate()
         {
-            using var prototype = HierarchyPool.GetFramework(transform);
+            using var prototype = HierarchyPool.GetPrototype(transform);
             if (networkManager.TryGetModule<HierarchyFactory>(isServer, out var factory) &&
                 factory.TryGetHierarchy(sceneId, out var hierarchy))
             {

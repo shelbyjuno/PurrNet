@@ -157,7 +157,7 @@ namespace PurrNet.Modules
             }
             
             var baseNid = new NetworkID(_nextId++, scope);
-            SetupIdsLocally(gameObject, baseNid);
+            SetupIdsLocally(id, ref baseNid);
         }
         
         public void Despawn(GameObject gameObject)
@@ -187,21 +187,31 @@ namespace PurrNet.Modules
             }
         }
 
-        private void SetupIdsLocally(GameObject gameObject, NetworkID baseNid)
+        private void SetupIdsLocally(NetworkIdentity root, ref NetworkID baseNid)
         {
-            var children = ListPool<NetworkIdentity>.Instantiate();
-            gameObject.GetComponentsInChildren(true, children);
+            using var siblings = new DisposableList<NetworkIdentity>(16);
+            root.GetComponents(siblings.list);
             
-            for (var i = 0; i < children.Count; i++)
+            // handle root
+            for (var i = 0; i < siblings.Count; i++)
             {
-                var child = children[i];
-                child.SetIdentity(_manager, this, _sceneId, new NetworkID(baseNid, i), _asServer);
-                RegisterIdentity(child);
+                var sibling = siblings[i];
+                sibling.SetIdentity(_manager, this, _sceneId, new NetworkID(baseNid, i), _asServer);
+                RegisterIdentity(sibling);
             }
+
+            // update next id
+            _nextId += siblings.list.Count;
+            baseNid = new NetworkID(_nextId, baseNid.scope);
             
-            _nextId += children.Count;
+            // handle children
+            if (root.directChildren == null)
+                return;
             
-            ListPool<NetworkIdentity>.Destroy(children);
+            for (var i = 0; i < root.directChildren.Length; i++)
+            {
+                SetupIdsLocally(root.directChildren[i], ref baseNid);
+            }
         }
 
         private void SpawnSceneObject(List<NetworkIdentity> children)
