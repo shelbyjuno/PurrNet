@@ -8,7 +8,11 @@ namespace PurrNet
     [CreateAssetMenu(menuName = "PurrNet/NetworkVisibility/Rule Set", fileName = "New Rule Set")]
     public class NetworkVisibilityRuleSet : ScriptableObject
     {
+        [Tooltip("If true, children will inherit this rule set unless they have their own overrides")]
+        [SerializeField] private bool _childrenInherit = true;
         [SerializeField] private NetworkVisibilityRule[] _rules;
+        
+        public bool childrenInherit => _childrenInherit;
         
         private readonly List<INetworkVisibilityRule> _raw_rules = new List<INetworkVisibilityRule>();
 

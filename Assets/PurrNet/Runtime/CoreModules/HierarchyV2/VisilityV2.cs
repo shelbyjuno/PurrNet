@@ -44,58 +44,55 @@ namespace PurrNet.Modules
         /// </summary>
         private static bool Evaluate(PlayerID player, List<NetworkIdentity> identities, ref NetworkVisibilityRuleSet rules, bool isParentVisible)
         {
-            bool isVisible = isParentVisible;
-
-            if (!isVisible)
+            if (!isParentVisible)
             {
                 for (var i = 0; i < identities.Count; i++)
                     identities[i].TryRemoveObserver(player);
                 return false;
             }
             
-            bool canSee = true;
+            bool isAnyVisible = false;
 
             for (var i = 0; i < identities.Count; i++)
             {
                 var identity = identities[i];
-                rules = identity.GetOverrideOrDefault(rules);
+                var r = identity.GetOverrideOrDefault(rules);
 
-                if (rules == null)
+                if (r.childrenInherit)
+                    rules = r;
+
+                if (r == null)
+                {
+                    isAnyVisible = true;
+                    identity.TryAddObserver(player);
                     continue;
+                }
 
                 if (identity.owner == player)
+                {
+                    isAnyVisible = true;
+                    identity.TryAddObserver(player);
                     continue;
+                }
 
                 if (identity.whitelist.Contains(player))
+                {
+                    isAnyVisible = true;
+                    identity.TryAddObserver(player);
                     continue;
+                }
 
                 if (identity.blacklist.Contains(player))
                 {
-                    canSee = false;
-                    break;
+                    identity.TryRemoveObserver(player);
+                    continue;
                 }
 
-                if (!rules.CanSee(player, identity))
-                {
-                    canSee = false;
-                    break;
-                }
+                if (!r.CanSee(player, identity))
+                    identity.TryRemoveObserver(player);
             }
-
-            if (!canSee)
-            {
-                isVisible = false;
-
-                for (var i = 0; i < identities.Count; i++)
-                    identities[i].TryRemoveObserver(player);
-            }
-            else
-            {
-                for (var i = 0; i < identities.Count; i++)
-                    identities[i].TryAddObserver(player);
-            }
-
-            return isVisible;
+            
+            return isAnyVisible;
         }
     }
 }

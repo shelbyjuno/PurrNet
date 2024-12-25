@@ -16,7 +16,7 @@ namespace PurrNet
         /// We will prioritize rules with lower complexity first.
         /// </summary>
         public abstract int complexity { get; }
-        
+
         public abstract bool CanSee(PlayerID player, NetworkIdentity target);
     }
 }
