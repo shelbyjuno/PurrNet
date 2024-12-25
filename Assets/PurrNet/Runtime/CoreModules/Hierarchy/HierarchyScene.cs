@@ -149,6 +149,8 @@ namespace PurrNet.Modules
 
         private void SpawnSceneObjects(IReadOnlyList<NetworkIdentity> sceneObjects)
         {
+            return;
+            
             var roots = HashSetPool<NetworkIdentity>.Instantiate();
 
             for (int i = 0; i < sceneObjects.Count; i++)

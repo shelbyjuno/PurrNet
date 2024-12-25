@@ -87,8 +87,7 @@ namespace PurrNet
             {
                 var spawnPoint = spawnPoints[_currentSpawnPoint];
                 _currentSpawnPoint = (_currentSpawnPoint + 1) % spawnPoints.Count;
-                newPlayer = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
-                SceneManager.MoveGameObjectToScene(newPlayer.gameObject, unityScene);
+                newPlayer = UnityProxy.Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation, unityScene);
             }
             else
             {

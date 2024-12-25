@@ -9,6 +9,7 @@ namespace PurrNet
         Default,
         Parent,
         PositionRotation,
+        PositionRotationScene,
         PositionRotationParent,
         Scene,
         SceneParent
@@ -54,6 +55,17 @@ namespace PurrNet
             this.rotation = rotation;
             parent = null;
             scene = default;
+            instantiateInWorldSpace = false;
+        }
+        
+        public InstantiateData(T original, Vector3 position, Quaternion rotation, Scene scene)
+        {
+            type = InstantiateType.PositionRotationScene;
+            this.original = original;
+            this.position = position;
+            this.rotation = rotation;
+            parent = null;
+            this.scene = scene;
             instantiateInWorldSpace = false;
         }
         
@@ -138,6 +150,7 @@ namespace PurrNet
                 InstantiateType.PositionRotationParent => UnityProxy.InstantiateDirectly(original, position, rotation, parent),
                 InstantiateType.Scene => UnityProxy.InstantiateDirectly(original, scene),
                 InstantiateType.SceneParent => UnityProxy.InstantiateDirectly(original, parent),
+                InstantiateType.PositionRotationScene => UnityProxy.InstantiateDirectly(original, position, rotation, scene),
                 _ => default
             };
         }

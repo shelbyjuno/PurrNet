@@ -52,7 +52,7 @@ namespace PurrNet.Modules
             
             if (!_prefabPrototypes.ContainsKey(prefabData.prefab))
             {
-                var prototype = GetPrototype(copy.transform);
+                var prototype = GetFullPrototype(copy.transform);
                 _prefabPrototypes.Add(prefabData.prefab, prototype);
             }
             
@@ -210,11 +210,68 @@ namespace PurrNet.Modules
         {
             return _prefabPrototypes.TryGetValue(prefab, out prototype);
         }
-
-        public static GameObjectPrototype GetPrototype(Transform transform)
+        
+        public static bool TryGetPrototype(Transform transform, PlayerID scope, out GameObjectPrototype prototype)
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
+            if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
+            {
+                prototype = default;
+                return false;
+            }
 
+            var rootPair = new TransformIdentityPair(transform, rootId);
+            
+            if (!rootPair.HasObserver(scope))
+            {
+                prototype = default;
+                return false;
+            }
+
+            var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
+            var pair = GetRuntimePair(null, rootId);
+
+            queue.Enqueue(pair);
+
+            while (queue.Count > 0)
+            {
+                using var current = queue.Dequeue();
+                var children = current.children;
+
+                for (var i = 0; i < children.Count; i++)
+                {
+                    var child = children[i];
+
+                    if (child.HasObserver(scope))
+                    {
+                        var childPair = GetRuntimePair(current.identity.transform, child.identity);
+                        queue.Enqueue(childPair);
+                    }
+                }
+
+                var trs = current.identity.transform;
+
+                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex,
+                    current.identity.siblingIndex);
+                var piece = new GameObjectFrameworkPiece(
+                    pid,
+                    current.identity.id ?? default,
+                    children.Count,
+                    current.identity.gameObject.activeSelf,
+                    current.identity.invertedPathToNearestParent,
+                    GetEnabledStates(trs)
+                );
+                framework.Add(piece);
+            }
+
+            QueuePool<GameObjectRuntimePair>.Destroy(queue);
+            prototype = new GameObjectPrototype { framework = framework, isScenePrototype = rootId.isSceneObject };
+            return true;
+        }
+
+        public static GameObjectPrototype GetFullPrototype(Transform transform)
+        {
+            var framework = new DisposableList<GameObjectFrameworkPiece>(16);
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
                 return new GameObjectPrototype { framework = framework, isScenePrototype = true };
 
@@ -244,7 +301,7 @@ namespace PurrNet.Modules
                     current.identity.id ?? default,
                     children.Count,
                     current.identity.gameObject.activeSelf,
-                    GetInvPath(current.parent, trs),
+                    current.identity.invertedPathToNearestParent,
                     GetEnabledStates(trs)
                 );
                 framework.Add(piece);
@@ -313,15 +370,16 @@ namespace PurrNet.Modules
             return true;
         }
 
-        private static void WalkThePath(Transform parent, Transform instance, DisposableList<int> inversedPath)
+        private static void WalkThePath(Transform parent, Transform instance, int[] inversedPath)
         {
-            if (inversedPath.Count == 0)
+            if (inversedPath.Length == 0)
             {
                 instance.SetParent(parent, false);
                 return;
             }
 
-            for (var i = inversedPath.Count - 1; i >= 1; i--)
+            int len = inversedPath.Length;
+            for (var i = len - 1; i >= 1; i--)
             {
                 var siblingIndex = inversedPath[i];
                 

@@ -164,16 +164,14 @@ namespace PurrNet
             return rules && rules.HasRemoveOwnershipAuthority(this, player, asServer);
         }
 
-        public void TryAddObserver(PlayerID player)
+        public bool TryAddObserver(PlayerID player)
         {
-            if (observers.Add(player))
-                OnObserverAdded(player);
+            return _observers.Add(player);
         }
         
-        public void TryRemoveObserver(PlayerID player)
+        public bool TryRemoveObserver(PlayerID player)
         {
-            if (observers.Remove(player))
-                OnObserverRemoved(player);
+            return _observers.Remove(player);
         }
     }
 }

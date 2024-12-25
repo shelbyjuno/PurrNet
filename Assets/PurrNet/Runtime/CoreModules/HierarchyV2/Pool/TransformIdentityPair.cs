@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using PurrNet.Pooling;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
@@ -11,6 +12,30 @@ namespace PurrNet.Modules
         {
             this.transform = transform;
             this.identity = identity;
+        }
+        
+        public bool HasObserver(PlayerID playerID)
+        {
+            if (identity.observers.Contains(playerID))
+                return true;
+
+            bool hasObserver = false;
+            var components = ListPool<NetworkIdentity>.Instantiate();
+            
+            transform.GetComponents(components);
+            var count = components.Count;
+            
+            for (var i = 0; i < count; i++)
+            {
+                if (components[i].observers.Contains(playerID))
+                {
+                    hasObserver = true;
+                    break;
+                }
+            }
+
+            ListPool<NetworkIdentity>.Destroy(components);
+            return hasObserver;
         }
     }
 }

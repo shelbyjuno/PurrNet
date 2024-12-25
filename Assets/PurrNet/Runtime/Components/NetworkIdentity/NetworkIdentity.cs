@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using JetBrains.Annotations;
+using PurrNet.Collections;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Pooling;
@@ -240,7 +241,9 @@ namespace PurrNet
         private GameObjectEvents _events;
         private GameObject _gameObject;
 
-        public HashSet<PlayerID> observers { get; } = new HashSet<PlayerID>();
+        private readonly PurrHashSet<PlayerID> _observers = new PurrHashSet<PlayerID>(4);
+        
+        public IReadonlyHashSet<PlayerID> observers => _observers;
 
         /// <summary>
         /// The root identity is the topmost parent that has a NetworkIdentity.
@@ -257,14 +260,12 @@ namespace PurrNet
         public NetworkIdentity GetRootIdentity()
         {
             var lastKnown = gameObject.GetComponent<NetworkIdentity>();
-            var current = transform.parent;
+            var currentParent = parent;
 
-            while (current)
+            while (currentParent)
             {
-                if (current.TryGetComponent(out NetworkIdentity identity))
-                    lastKnown = identity;
-                
-                current = current.parent;
+                lastKnown = currentParent;
+                currentParent = currentParent.parent;
             }
             
             root = lastKnown;
@@ -286,7 +287,7 @@ namespace PurrNet
         [ContextMenu("PurrNet/Print Prototype")]
         private void PrintPrototype()
         {
-            using var prototype = HierarchyPool.GetPrototype(transform);
+            using var prototype = HierarchyPool.GetFullPrototype(transform);
             PurrLogger.Log(prototype.ToString());
         }
         
@@ -307,7 +308,7 @@ namespace PurrNet
         /// </summary>
         public GameObject Duplicate()
         {
-            using var prototype = HierarchyPool.GetPrototype(transform);
+            using var prototype = HierarchyPool.GetFullPrototype(transform);
             if (networkManager.TryGetModule<HierarchyFactory>(isServer, out var factory) &&
                 factory.TryGetHierarchy(sceneId, out var hierarchy))
             {
@@ -987,6 +988,11 @@ namespace PurrNet
             if (asServer)
                 internalOwnerServer = actionOwner;
             else internalOwnerClient = actionOwner;
+        }
+
+        internal void ClearObservers()
+        {
+            _observers.Clear();
         }
     }
 }
