@@ -45,6 +45,41 @@ namespace PurrNet.Modules
             
             HashSetPool<PlayerID>.Destroy(affectedPlayers);
         }
+        
+        public void ClearVisibilityForGameObject(Transform transform, PlayerID player)
+        {
+            if (!transform)
+                return;
+            
+            RefreshVisibilityForGameObject(transform, player);
+            visibilityChanged?.Invoke(player, transform, false);
+        }
+        
+        private static bool RefreshVisibilityForGameObject(Transform transform, PlayerID player)
+        {
+            using var identities = new DisposableList<NetworkIdentity>(16);
+            transform.GetComponents(identities.list);
+            
+            bool removed = false;
+
+            int ccount = identities.Count;
+            for (var i = 0; i < ccount; i++)
+            {
+                var identity = identities[i];
+                if (identity.TryRemoveObserver(player))
+                    removed = true;
+            }
+            
+            var directChildren = identities[0].directChildren;
+            var dcount = directChildren.Count;
+
+            for (var i = 0; i < dcount; i++)
+            {
+                removed |= RefreshVisibilityForGameObject(directChildren[i].transform, player);
+            }
+            
+            return removed;
+        }
 
         private static void RefreshVisibilityForGameObject(Transform transform, HashSet<PlayerID> players)
         {
@@ -61,7 +96,7 @@ namespace PurrNet.Modules
             }
             
             var directChildren = identities[0].directChildren;
-            var dcount = directChildren.Length;
+            var dcount = directChildren.Count;
             
             for (var i = 0; i < dcount; i++)
                 RefreshVisibilityForGameObject(directChildren[i].transform, players);
@@ -81,7 +116,7 @@ namespace PurrNet.Modules
                 wasParentDirtied = true;
 
             var directChildren = identities[0].directChildren;
-            var count = directChildren.Length;
+            var count = directChildren.Count;
             
             for (var i = 0; i < count; i++)
             {

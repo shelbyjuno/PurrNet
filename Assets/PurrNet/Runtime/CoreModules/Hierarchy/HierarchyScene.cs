@@ -100,27 +100,14 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverRemoved += RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone += PostObserverEvents;
             
-            if (!_asServer)
-                _playersManager.onLocalPlayerReceivedID += OnLocalClientReady;
-            
             _playersManager.Subscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Subscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
 
             if (_scenes.TryGetSceneState(_sceneID, out var state))
                 _sceneObjects = SceneObjectsModule.GetSceneIdentities(state.scene);
-
-            if (_asServer)
-                SpawnSceneObjects(_sceneObjects);
-            else if (_playersManager.localPlayerId.HasValue)
-                SpawnSceneObjects(_sceneObjects);
             
             if (asServer)
                 identities.SkipIds((ushort)_sceneObjects.Count);
-        }
-
-        private void OnLocalClientReady(PlayerID player)
-        {
-            SpawnSceneObjects(_sceneObjects);
         }
 
         public void Disable(bool asServer)
@@ -128,7 +115,6 @@ namespace PurrNet.Modules
             _visibilityManager.onObserverAdded -= AddedObserverToIdentity;
             _visibilityManager.onObserverRemoved -= RemovedObserverFromIdentity;
             _visibilityManager.onTickChangesDone -= PostObserverEvents;
-            _playersManager.onLocalPlayerReceivedID -= OnLocalClientReady;
 
             _playersManager.Unsubscribe<HierarchyActionBatch>(OnHierarchyActionBatch);
             _playersManager.Unsubscribe<TriggerQueuedSpawnEvents>(OnTriggerSpawnEvents);
@@ -145,45 +131,6 @@ namespace PurrNet.Modules
                 return;
             
             TriggerSpawnEvents();
-        }
-
-        private void SpawnSceneObjects(IReadOnlyList<NetworkIdentity> sceneObjects)
-        {
-            return;
-            
-            var roots = HashSetPool<NetworkIdentity>.Instantiate();
-
-            for (int i = 0; i < sceneObjects.Count; i++)
-            {
-                var obj = sceneObjects[i];
-                var root = obj.GetRootIdentity();
-
-                if (!roots.Add(root)) continue;
-                
-                if (!_asServer && !_manager.isServer)
-                    root.gameObject.SetActive(false);
-                
-                CACHE.Clear();
-                obj.GetComponentsInChildren(true, CACHE);
-
-                var action = new SpawnAction
-                {
-                    prefabId = -1 - i,
-                    identityId = new NetworkID((ushort)i),
-                    childCount = (ushort)CACHE.Count,
-                    childOffset = 0,
-                    transformInfo = new TransformInfo(CACHE[0].transform)
-                };
-
-                for (int j = 0; j < CACHE.Count; ++j)
-                    SpawnIdentity(action, CACHE[j], (ushort)j, _asServer);
-                
-                if (_asServer)
-                    _history.AddSpawnAction(action, default);
-                onIdentityRootSpawned?.Invoke(root);
-            }
-
-            HashSetPool<NetworkIdentity>.Destroy(roots);
         }
         
         readonly Dictionary<PlayerID, DisposableHashSet<NetworkID>> _identitiesToSpawnHashset = new ();

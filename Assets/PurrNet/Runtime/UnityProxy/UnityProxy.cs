@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PurrNet.Modules;
 using PurrNet.Pooling;
 using UnityEngine;
@@ -38,7 +39,7 @@ namespace PurrNet
                 return instance;
             }
 
-            var result = hierarchy.CreatePrototype(prototype);
+            var result = hierarchy.CreatePrototype(prototype, new List<NetworkIdentity>());
             PurrNetGameObjectUtils.NotifyGameObjectCreated(result, prefab);
 
             return (T)(Object)result;

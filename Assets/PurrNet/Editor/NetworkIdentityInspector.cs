@@ -176,7 +176,7 @@ namespace PurrNet.Editor
             }
             
             EditorGUILayout.LabelField($"pathToNearestParent: {path}");
-            EditorGUILayout.LabelField($"Direct Children ({identity.directChildren?.Length ?? 0}):");
+            EditorGUILayout.LabelField($"Direct Children ({identity.directChildren?.Count ?? 0}):");
             
             if (identity.directChildren != null)
             {

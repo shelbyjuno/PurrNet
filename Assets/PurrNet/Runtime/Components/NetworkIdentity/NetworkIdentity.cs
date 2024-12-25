@@ -37,11 +37,13 @@ namespace PurrNet
         private int[] _invertedPathToNearestParent;
         
         [SerializeField, HideInInspector] 
-        private NetworkIdentity[] _directChildren;
+        private List<NetworkIdentity> _directChildren;
         
         public int[] invertedPathToNearestParent => _invertedPathToNearestParent;
         
-        public NetworkIdentity[] directChildren => _directChildren;
+        public IReadOnlyList<NetworkIdentity> directChildren => _directChildren;
+        
+        internal List<NetworkIdentity> directChildrenInternal => _directChildren;
         
         /// <summary>
         /// The nearest network parent of this object.
@@ -89,18 +91,18 @@ namespace PurrNet
 
             if (firstIdentity != this)
             {
-                _directChildren = Array.Empty<NetworkIdentity>();
+                _directChildren = new List<NetworkIdentity>();
                 return;
             }
 
             using var dChildren = new DisposableList<TransformIdentityPair>(16);
             HierarchyPool.GetDirectChildren(transform, dChildren);
 
-            if (_directChildren == null || _directChildren.Length != dChildren.Count)
+            if (_directChildren == null || _directChildren.Count != dChildren.Count)
             {
-                _directChildren = new NetworkIdentity[dChildren.Count];
+                _directChildren = new List<NetworkIdentity>(dChildren.Count);
                 for (int i = 0; i < dChildren.Count; i++)
-                    _directChildren[i] = dChildren[i].identity;
+                    _directChildren.Add(dChildren[i].identity);
             }
         }
         
@@ -268,10 +270,23 @@ namespace PurrNet
                 currentParent = currentParent.parent;
             }
             
-            root = lastKnown;
             return lastKnown;
         }
 
+        public NetworkIdentity GetClosestNotSpawnedRootIdentity()
+        {
+            var lastKnown = gameObject.GetComponent<NetworkIdentity>();
+            var currentParent = parent;
+
+            while (currentParent && currentParent.isSpawned)
+            {
+                lastKnown = currentParent;
+                currentParent = currentParent.parent;
+            }
+            
+            return lastKnown;
+        }
+        
         private IServerSceneEvents _serverSceneEvents;
         private int onTickCount;
         private ITick _ticker;
@@ -312,7 +327,7 @@ namespace PurrNet
             if (networkManager.TryGetModule<HierarchyFactory>(isServer, out var factory) &&
                 factory.TryGetHierarchy(sceneId, out var hierarchy))
             {
-                var go = hierarchy.CreatePrototype(prototype);
+                var go = hierarchy.CreatePrototype(prototype, new List<NetworkIdentity>());
                 hierarchy.Spawn(go);
                 return go;
             }
@@ -587,6 +602,11 @@ namespace PurrNet
         
         internal void ResetIdentity()
         {
+            // notify parent
+            if (parent && parent.isSpawned)
+                parent.OnChildDespawned(this);
+            
+            // reset all values
             TriggerDespawnEvent(true);
             TriggerDespawnEvent(false);
             networkManager = null;
@@ -616,8 +636,13 @@ namespace PurrNet
             _clientTickManager = null;
             _ticker = null;
         }
-        
-        internal void SetIdentity(NetworkManager manager, HierarchyV2 hierarchy, SceneID scene, NetworkID identityId, bool asServer)
+
+        private void OnChildDespawned(NetworkIdentity networkIdentity)
+        {
+            _directChildren.Remove(networkIdentity);
+        }
+
+        internal void SetIdentity(NetworkManager manager, HierarchyV2 hierarchy, SceneID scene, bool asServer)
         {
             layer = gameObject.layer;
             networkManager = manager;
@@ -628,14 +653,12 @@ namespace PurrNet
             if (asServer)
             {
                 _isSpawnedServer = true;
-                idServer = identityId;
                 _serverHierarchy = hierarchy;
                 internalOwnerServer = null;
             }
             else
             {
                 _isSpawnedClient = true;
-                idClient = identityId;
                 _clientHierarchy = hierarchy;
                 internalOwnerClient = null;
             }
@@ -993,6 +1016,12 @@ namespace PurrNet
         internal void ClearObservers()
         {
             _observers.Clear();
+        }
+
+        public void SetID(NetworkID networkID)
+        {
+            idServer = networkID;
+            idClient = networkID;
         }
     }
 }

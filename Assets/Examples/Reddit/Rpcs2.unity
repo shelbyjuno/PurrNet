@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 663706881}
   - component: {fileID: 663706880}
+  - component: {fileID: 663706882}
   m_Layer: 0
   m_Name: Test
   m_TagString: Untagged
@@ -185,6 +186,27 @@ Transform:
   - {fileID: 1223614590}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &663706882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663706879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
 --- !u!1001 &725225771
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -293,7 +315,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baacc2bfe126d544691d4f39fa3785f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _startServerFlags: 9
+  _startServerFlags: 10
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0

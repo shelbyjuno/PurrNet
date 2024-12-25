@@ -1,8 +1,25 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace PurrNet.Collections
 {
+    
+    public static class CollectionUtils
+    {
+        public static T[] RemoveAt<T>(this T[] source, int index)
+        {
+            var dest = new T[source.Length - 1];
+            if( index > 0 )
+                Array.Copy(source, 0, dest, 0, index);
+
+            if( index < source.Length - 1 )
+                Array.Copy(source, index + 1, dest, index, source.Length - index - 1);
+
+            return dest;
+        }
+    }
+    
     /// <summary>Represents hash set which don't allow for items addition.</summary>
     /// <typeparam name="T">Type of items int he set.</typeparam>
     public interface IReadonlyHashSet<T> : IReadOnlyCollection<T>

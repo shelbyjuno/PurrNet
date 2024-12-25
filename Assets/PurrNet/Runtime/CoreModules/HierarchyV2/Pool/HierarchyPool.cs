@@ -184,7 +184,7 @@ namespace PurrNet.Modules
             return enabled;
         }
 
-        private static void SetEnabledStates(GameObject go, DisposableList<bool> enabledStates)
+        private static void SetEnabledStates(GameObject go, NetworkID baseNid, List<NetworkIdentity> createdNids, DisposableList<bool> enabledStates)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
 
@@ -193,14 +193,16 @@ namespace PurrNet.Modules
             if (children.Count != enabledStates.Count)
             {
                 PurrLogger.LogError(
-                    $"Mismatched enabled states count, expected {children.Count} but got {enabledStates.Count}");
-                return;
+                    $"Mismatched enabled states count, expected {children.Count} but got {enabledStates.Count} on {go}", go);
             }
 
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];
-                child.enabled = enabledStates[i];
+                child.enabled = i < enabledStates.Count && enabledStates[i];
+                
+                createdNids.Add(child);
+                child.SetID(new NetworkID(baseNid, i));
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
@@ -311,7 +313,7 @@ namespace PurrNet.Modules
             return new GameObjectPrototype { framework = framework, isScenePrototype = rootId.isSceneObject };
         }
 
-        public bool TryBuildPrototype(GameObjectPrototype prototype, out GameObject result, out bool shouldBeActive)
+        public bool TryBuildPrototype(GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)
         {
             if (prototype.framework.Count == 0)
             {
@@ -320,10 +322,10 @@ namespace PurrNet.Modules
                 return false;
             }
 
-            return TryBuildPrototypeHelper(prototype, null, 0, 1, out result, out shouldBeActive);
+            return TryBuildPrototypeHelper(prototype, createdNids, null, 0, 1, out result, out shouldBeActive);
         }
 
-        private bool TryBuildPrototypeHelper(GameObjectPrototype prototype, Transform parent, int currentIdx,
+        private bool TryBuildPrototypeHelper(GameObjectPrototype prototype, List<NetworkIdentity> createdNids, Transform parent, int currentIdx,
             int childrenStartIdx, out GameObject result, out bool shouldBeActive)
         {
             var framework = prototype.framework;
@@ -340,7 +342,7 @@ namespace PurrNet.Modules
             var trs = instance.transform;
             shouldBeActive = current.isActive;
 
-            SetEnabledStates(instance, current.enabled);
+            SetEnabledStates(instance, current.id, createdNids, current.enabled);
 
             if (parent)
             {
@@ -354,15 +356,16 @@ namespace PurrNet.Modules
             {
                 var childIdx = childrenStartIdx + j;
                 var child = framework[childIdx];
-
+                
                 TryBuildPrototypeHelper(
                     prototype,
+                    createdNids,
                     trs,
                     childIdx,
                     nextChildIdx,
                     out _,
                     out _);
-
+                
                 nextChildIdx += child.childCount;
             }
 
@@ -408,7 +411,7 @@ namespace PurrNet.Modules
 
         private static GameObjectRuntimePair GetRuntimePair(Transform parent, NetworkIdentity rootId)
         {
-            var children = new DisposableList<TransformIdentityPair>(rootId.directChildren.Length);
+            var children = new DisposableList<TransformIdentityPair>(rootId.directChildren.Count);
             var pair = new GameObjectRuntimePair(parent, rootId, children);
 
             foreach (var c in rootId.directChildren)
