@@ -494,7 +494,7 @@ MonoBehaviour:
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
-  _cheetahData: 0
+  _cheetahData: 1
   _transport: {fileID: 1488283000}
   _networkPrefabs: {fileID: 11400000, guid: 2c44813f7cd52a94b9d62d27b62e46e1, type: 2}
   _networkRules: {fileID: 11400000, guid: d8799083b96579a42b8b2d03e4ceae98, type: 2}

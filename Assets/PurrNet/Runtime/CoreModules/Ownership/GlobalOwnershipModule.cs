@@ -82,7 +82,7 @@ namespace PurrNet.Modules
             // TODO: implement this
             // _hierarchy. += OnFlushHierarchy;
             _hierarchy.onIdentityRemoved += OnIdentityDespawned;
-            _hierarchy.onObserverAdded += OnPlayerObserverAdded;
+            _hierarchy.onEarlyObserverAdded += OnPlayerObserverAdded;
 
             _scenePlayers.onPlayerUnloadedScene += OnPlayerUnloadedScene;
             _scenePlayers.onPlayerLoadedScene += OnPlayerLoadedScene;
@@ -100,7 +100,7 @@ namespace PurrNet.Modules
             
             //_hierarchy. -= OnFlushHierarchy;
             _hierarchy.onIdentityRemoved -= OnIdentityDespawned;
-            _hierarchy.onObserverAdded -= OnPlayerObserverAdded;
+            _hierarchy.onEarlyObserverAdded -= OnPlayerObserverAdded;
 
             _scenePlayers.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
             _scenePlayers.onPlayerLoadedScene -= OnPlayerLoadedScene;

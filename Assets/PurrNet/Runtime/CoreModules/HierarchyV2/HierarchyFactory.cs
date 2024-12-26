@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
-    public class HierarchyFactory : INetworkModule, IPreFixedUpdate, IFixedUpdate
+    public class HierarchyFactory : INetworkModule, IFixedUpdate
     {
         readonly ScenesModule _scenes;
         
@@ -34,7 +34,7 @@ namespace PurrNet.Modules
 
         public event ObserverAction onEarlyObserverAdded;
         
-        public event ObserverAction onObserverAdded;
+        // public event ObserverAction onObserverAdded;
 
         public void Enable(bool asServer)
         {
@@ -79,7 +79,7 @@ namespace PurrNet.Modules
             hierarchy.onEarlyObserverAdded += onEarlyObserverAdded;
             hierarchy.onIdentityAdded += onIdentityAdded;
             hierarchy.onIdentityRemoved += onIdentityRemoved;
-            hierarchy.onObserverAdded += onObserverAdded;
+            // hierarchy.onObserverAdded += onObserverAdded;
             
             hierarchy.Enable();
 
@@ -101,19 +101,12 @@ namespace PurrNet.Modules
             hierarchy.onEarlyObserverAdded -= onEarlyObserverAdded;
             hierarchy.onIdentityAdded -= onIdentityAdded;
             hierarchy.onIdentityRemoved -= onIdentityRemoved;
-            hierarchy.onObserverAdded -= onObserverAdded;
+            // hierarchy.onObserverAdded -= onObserverAdded;
             
             _rawHierarchies.Remove(hierarchy);
             _hierarchies.Remove(scene);
         }
-
-
-        public void PreFixedUpdate()
-        {
-            for (var i = 0; i < _rawHierarchies.Count; i++)
-                _rawHierarchies[i].PreNetworkMessages();
-        }
-
+        
         public void FixedUpdate()
         {
             for (var i = 0; i < _rawHierarchies.Count; i++)

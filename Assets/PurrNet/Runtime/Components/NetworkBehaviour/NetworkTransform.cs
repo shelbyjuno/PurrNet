@@ -1,5 +1,6 @@
 using System;
 using JetBrains.Annotations;
+using PurrNet.Logging;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace PurrNet
     [Serializable]
     public enum TransformSyncMode : byte
     {
-        None,
+        [UsedImplicitly] None,
         Position = 1,
         Rotation = 2,
         Scale = 4
@@ -21,7 +22,7 @@ namespace PurrNet
     {
         No,
         World,
-        Local
+        [UsedImplicitly] Local
     }
 
     [Serializable]

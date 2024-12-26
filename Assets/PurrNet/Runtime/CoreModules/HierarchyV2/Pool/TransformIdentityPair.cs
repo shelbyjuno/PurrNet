@@ -17,9 +17,6 @@ namespace PurrNet.Modules
         
         public bool HasObserver(PlayerID playerID, List<NetworkIdentity> observed)
         {
-            if (identity.observers.Contains(playerID))
-                return true;
-
             bool hasObserver = false;
             var components = ListPool<NetworkIdentity>.Instantiate();
             

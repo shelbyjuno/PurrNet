@@ -123,18 +123,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 3
-  siblingIndex: 1
-  depthIndex: 1
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncPosition: 1
-  _syncRotation: 1
+  _syncPosition: 2
+  _syncRotation: 2
   _syncScale: 1
   _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
   _tolerances:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
@@ -263,9 +268,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 3
-  siblingIndex: 0
-  depthIndex: 0
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -275,6 +284,7 @@ MonoBehaviour:
   _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
   _tolerances:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
@@ -291,14 +301,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 3
-  siblingIndex: 0
-  depthIndex: 0
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _guid: e1d9cd280a782c84aa05e2757cc55298
-  _usePooling: 1
-  _poolWarmupCount: 5
 --- !u!1 &8928655971527653229
 GameObject:
   m_ObjectHideFlags: 0
@@ -422,18 +433,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabId: 3
-  siblingIndex: 0
-  depthIndex: 1
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _syncPosition: 1
-  _syncRotation: 1
+  _syncPosition: 2
+  _syncRotation: 2
   _syncScale: 1
   _syncParent: 1
   _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
   _tolerances:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
