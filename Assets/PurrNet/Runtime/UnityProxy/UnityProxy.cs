@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Pooling;
 using UnityEngine;
@@ -39,9 +40,15 @@ namespace PurrNet
                 return instance;
             }
 
-            var creatednids = ListPool<NetworkIdentity>.Instantiate();
-            var result = hierarchy.CreatePrototype(prototype, creatednids);
-            ListPool<NetworkIdentity>.Destroy(creatednids);
+            var result = hierarchy.CreatePrototype(prototype, null);
+
+            if (!result)
+            {
+                PurrLogger.LogError($"Failed to create prototype for `{prefab.name}`");
+                return null;
+            }
+            
+            instantiateData.ApplyToExisting(result, prefab);
             
             PurrNetGameObjectUtils.NotifyGameObjectCreated(result, prefab);
             
@@ -150,7 +157,9 @@ namespace PurrNet
             Vector3 position,
             Quaternion rotation,
             Transform parent)
-            => Object.Instantiate(original, position, rotation, parent);
+        {
+            return Object.Instantiate(original, position, rotation, parent);
+        }
 
         [UsedByIL]
         public static Object Instantiate(Object original, Scene scene)

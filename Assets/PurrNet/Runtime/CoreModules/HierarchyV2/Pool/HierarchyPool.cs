@@ -273,7 +273,7 @@ namespace PurrNet.Modules
                 var child = children[i];
                 child.enabled = i < enabledStates.Count && enabledStates[i];
                 
-                createdNids.Add(child);
+                createdNids?.Add(child);
                 child.SetID(new NetworkID(baseNid, i));
             }
 
@@ -341,7 +341,7 @@ namespace PurrNet.Modules
             }
 
             QueuePool<GameObjectRuntimePair>.Destroy(queue);
-            prototype = new GameObjectPrototype { framework = framework, isScenePrototype = rootId.isSceneObject };
+            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, framework);
             return true;
         }
 
@@ -349,7 +349,7 @@ namespace PurrNet.Modules
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
-                return new GameObjectPrototype { framework = framework, isScenePrototype = true };
+                return new GameObjectPrototype(transform.localPosition, transform.localRotation, framework);
 
             var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
             var pair = GetRuntimePair(null, rootId);
@@ -384,7 +384,8 @@ namespace PurrNet.Modules
             }
 
             QueuePool<GameObjectRuntimePair>.Destroy(queue);
-            return new GameObjectPrototype { framework = framework, isScenePrototype = rootId.isSceneObject };
+            
+            return new GameObjectPrototype(transform.localPosition, transform.localRotation, framework);
         }
 
         public static bool TryBuildPrototype(PoolPair pair, GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)
@@ -398,8 +399,16 @@ namespace PurrNet.Modules
                     return false;
                 }
 
-                return TryBuildPrototypeHelper(pair, prototype, createdNids, null, 0, 1, out result,
-                    out shouldBeActive);
+                if (TryBuildPrototypeHelper(pair, prototype, createdNids, null, 0, 1, out result,
+                        out shouldBeActive))
+                {
+                    var resultTrs = result.transform;
+                    resultTrs.localPosition = prototype.position;
+                    resultTrs.localRotation = prototype.rotation;
+                    return true;
+                }
+                
+                return false;
             }
             catch (
 #if PURRNET_DEBUG_POOLING

@@ -1,13 +1,22 @@
 ﻿using System;
 using System.Text;
 using PurrNet.Pooling;
+using UnityEngine;
 
 namespace PurrNet.Modules
 {
     public struct GameObjectPrototype : IDisposable
     {
-        public bool isScenePrototype;
+        public Vector3 position;
+        public Quaternion rotation;
         public DisposableList<GameObjectFrameworkPiece> framework;
+        
+        public GameObjectPrototype(Vector3 position, Quaternion rotation, DisposableList<GameObjectFrameworkPiece> framework)
+        {
+            this.position = position;
+            this.rotation = rotation;
+            this.framework = framework;
+        }
 
         public void Dispose()
         {
@@ -23,7 +32,7 @@ namespace PurrNet.Modules
         public override string ToString()
         {
             StringBuilder builder = new();
-            builder.Append($"GameObjectPrototype(isScenePrototype:{isScenePrototype}): {{\n    ");
+            builder.Append($"GameObjectPrototype: {{\n    ");
             for (int i = 0; i < framework.Count; i++)
             {
                 builder.Append(framework[i]);

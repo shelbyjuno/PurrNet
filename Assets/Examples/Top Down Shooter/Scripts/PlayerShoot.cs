@@ -19,7 +19,7 @@ namespace PurrNet.Examples.TopDownShooter
             var parent = GameObject.Find($"PlayerSpawn").transform;
             var trs = transform;
 
-            Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation, parent);
+            UnityProxy.Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation, parent);
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using PurrNet.Modules;
+﻿using System;
+using PurrNet.Modules;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace PurrNet
 {
@@ -9,7 +11,6 @@ namespace PurrNet
         Default,
         Parent,
         PositionRotation,
-        PositionRotationScene,
         PositionRotationParent,
         Scene,
         SceneParent
@@ -55,17 +56,6 @@ namespace PurrNet
             this.rotation = rotation;
             parent = null;
             scene = default;
-            instantiateInWorldSpace = false;
-        }
-        
-        public InstantiateData(T original, Vector3 position, Quaternion rotation, Scene scene)
-        {
-            type = InstantiateType.PositionRotationScene;
-            this.original = original;
-            this.position = position;
-            this.rotation = rotation;
-            parent = null;
-            this.scene = scene;
             instantiateInWorldSpace = false;
         }
         
@@ -150,9 +140,56 @@ namespace PurrNet
                 InstantiateType.PositionRotationParent => UnityProxy.InstantiateDirectly(original, position, rotation, parent),
                 InstantiateType.Scene => UnityProxy.InstantiateDirectly(original, scene),
                 InstantiateType.SceneParent => UnityProxy.InstantiateDirectly(original, parent),
-                InstantiateType.PositionRotationScene => UnityProxy.InstantiateDirectly(original, position, rotation, scene),
                 _ => default
             };
+        }
+
+        public void ApplyToExisting(GameObject go, GameObject prefab)
+        {
+            var trs = go.transform;
+            switch (type)
+            {
+                case InstantiateType.PositionRotation:
+                    trs.SetPositionAndRotation(position, rotation);
+                    break;
+                case InstantiateType.PositionRotationParent:
+                    trs.SetPositionAndRotation(position, rotation);
+                    trs.SetParent(parent);
+                    break;
+                case InstantiateType.Parent:
+                    if (instantiateInWorldSpace)
+                    {
+                        trs.SetParent(parent, true);
+                        trs.SetPositionAndRotation(
+                            prefab.transform.position,
+                            prefab.transform.rotation
+                        );
+                    }
+                    else
+                    {
+                        trs.SetParent(parent);
+                        trs.SetLocalPositionAndRotation(
+                            prefab.transform.localPosition,
+                            prefab.transform.localRotation
+                        );
+                    }
+                    break;
+                case InstantiateType.SceneParent:
+                    trs.SetPositionAndRotation(
+                        prefab.transform.position,
+                        prefab.transform.rotation
+                    );
+                    trs.SetParent(parent);
+                    break;
+                case InstantiateType.Default:
+                case InstantiateType.Scene: 
+                    trs.SetPositionAndRotation(
+                        prefab.transform.position,
+                        prefab.transform.rotation
+                    );
+                    break;
+                default: throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }
