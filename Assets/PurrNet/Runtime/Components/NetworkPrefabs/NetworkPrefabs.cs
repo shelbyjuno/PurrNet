@@ -21,7 +21,7 @@ namespace PurrNet
     {
         public bool autoGenerate = true;
         public bool networkOnly = true;
-        public bool defaultPooling = true;
+        public bool defaultPooling;
         public Object folder;
         public List<PrefabData> prefabs = new List<PrefabData>();
         

@@ -44,6 +44,10 @@ namespace PurrNet
             ListPool<NetworkIdentity>.Destroy(creatednids);
             
             PurrNetGameObjectUtils.NotifyGameObjectCreated(result, prefab);
+            
+            if (result.TryGetComponent(out T component))
+                return component;
+            
             return (T)(Object)result;
         }
         

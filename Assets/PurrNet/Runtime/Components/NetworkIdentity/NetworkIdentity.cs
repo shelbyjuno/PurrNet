@@ -617,8 +617,16 @@ namespace PurrNet
                 UnityProxy.DestroyDirectly(gameObject);
         }
         
+        /// <summary>
+        /// Called when this object is put back into the pool.
+        /// Use this to reset any values for the next spawn.
+        /// </summary>
+        public virtual void OnPoolReset() { }
+        
         internal void ResetIdentity()
         {
+            OnPoolReset();
+            
             // notify parent
             if (parent && parent.isSpawned)
                 parent.OnChildDespawned(this);

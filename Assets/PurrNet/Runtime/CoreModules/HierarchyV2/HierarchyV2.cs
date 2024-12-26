@@ -204,6 +204,8 @@ namespace PurrNet.Modules
                     for (var i = 0; i < count; i++)
                     {
                         var nid = list[i];
+                        if (!nid || !nid.isSpawned) continue;
+                        
                         nid.TriggerSpawnEvent(_asServer);
                         onIdentityAdded?.Invoke(nid);
                     }
@@ -536,6 +538,8 @@ namespace PurrNet.Modules
             for (var i = 0; i < _toSpawnNextFrame.Count; i++)
             {
                 var toSpawn = _toSpawnNextFrame[i];
+                
+                if (!toSpawn || !toSpawn.isSpawned) continue;
 
                 toSpawn.TriggerSpawnEvent(_asServer);
 

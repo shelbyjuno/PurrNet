@@ -69,11 +69,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b67f5d326b53eb459c681b0bcb20597, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   speed: 10
   damage: 25
-  lifeTime: 20
+  lifeTime: 3
   hitDetection: 0
 --- !u!114 &7176444390882670587
 MonoBehaviour:
@@ -87,9 +94,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _guid: e013d4a382956084e907feb2a3501cf8
 --- !u!54 &2154248365010601148
 Rigidbody:
   m_ObjectHideFlags: 0
