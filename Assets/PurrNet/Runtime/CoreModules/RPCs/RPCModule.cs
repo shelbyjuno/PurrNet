@@ -10,16 +10,14 @@ namespace PurrNet.Modules
 {
     public class RPCModule : INetworkModule
     {
-        readonly HierarchyModule _hierarchyModule;
+        readonly HierarchyFactory _hierarchyModule;
         readonly PlayersManager _playersManager;
         readonly ScenesModule _scenes;
         readonly GlobalOwnershipModule _ownership;
-        readonly VisibilityFactory _visibilityFactory;
 
-        public RPCModule(PlayersManager playersManager, VisibilityFactory visibilityFactory, HierarchyModule hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
+        public RPCModule(PlayersManager playersManager, HierarchyFactory hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
         {
             _playersManager = playersManager;
-            _visibilityFactory = visibilityFactory;
             _hierarchyModule = hierarchyModule;
             _scenes = scenes;
             _ownership = ownerships;
@@ -31,9 +29,10 @@ namespace PurrNet.Modules
             _playersManager.Subscribe<StaticRPCPacket>(ReceiveStaticRPC);
             _playersManager.Subscribe<ChildRPCPacket>(ReceiveChildRPC);
             
-            _visibilityFactory.onLateObserverAdded += OnObserverAdded;
             _playersManager.onPlayerJoined += OnPlayerJoined;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
+            
+            _hierarchyModule.onObserverAdded += OnObserverAdded;
             _hierarchyModule.onIdentityRemoved += OnIdentityRemoved;
         }
         
@@ -43,9 +42,10 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<StaticRPCPacket>(ReceiveStaticRPC);
             _playersManager.Unsubscribe<ChildRPCPacket>(ReceiveChildRPC);
             
-            _visibilityFactory.onLateObserverAdded -= OnObserverAdded;
             _playersManager.onPlayerJoined -= OnPlayerJoined;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
+            
+            _hierarchyModule.onObserverAdded -= OnObserverAdded;
             _hierarchyModule.onIdentityRemoved -= OnIdentityRemoved;
         }
 

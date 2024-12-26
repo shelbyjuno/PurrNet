@@ -6,6 +6,18 @@ using UnityEngine;
 
 namespace PurrNet.Modules
 {
+    public readonly struct PoolPair
+    {
+        public readonly HierarchyPool scenePool;
+        public readonly HierarchyPool prefabPool;
+        
+        public PoolPair(HierarchyPool scenePool, HierarchyPool prefabPool)
+        {
+            this.scenePool = scenePool;
+            this.prefabPool = prefabPool;
+        }
+    }
+    
     public class HierarchyPool
     {
         private readonly Dictionary<PrefabPieceID, Queue<GameObject>> _pool = new();
@@ -57,6 +69,64 @@ namespace PurrNet.Modules
             }
             
             PutBackInPool(copy, true);
+        }
+        
+        public static void PutBackInPool(PoolPair pool, GameObject target, bool tagName = false)
+        {
+            var toDestroy = ListPool<GameObject>.Instantiate();
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            var pidSet = HashSetPool<PrefabPieceID>.Instantiate();
+
+            target.GetComponentsInChildren(true, children);
+
+            for (var i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+
+                if (!child)
+                    continue;
+                
+                var pid = new PrefabPieceID(child.prefabId, child.depthIndex, child.siblingIndex);
+                var pair = pid.prefabId >= 0 ? pool.prefabPool : pool.scenePool;
+
+                if (!pidSet.Add(pid)) continue;
+                
+                // check if we should pool this object or not
+                if (!child.shouldBePooled)
+                {
+                    toDestroy.Add(child.gameObject);
+                    continue;
+                }
+                
+#if PURRNET_DEBUG_POOLING
+                // set the tag
+                if (tagName)
+                    child.gameObject.name += "-Warmup";
+#endif
+                // get or create the queue
+                if (!pair._pool.TryGetValue(pid, out var queue))
+                {
+                    queue = QueuePool<GameObject>.Instantiate();
+                    pair._pool.Add(pid, queue);
+                }
+                
+                // put the object in the queue
+                child.gameObject.SetActive(false);
+                child.transform.SetParent(pair._parent, false);
+                
+                queue.Enqueue(child.gameObject);
+            }
+
+            // destroy the objects that shouldn't be pooled
+            for (var i = 0; i < toDestroy.Count; i++)
+            {
+                var id = toDestroy[i];
+                if (id) UnityProxy.DestroyDirectly(id);
+            }
+
+            ListPool<GameObject>.Destroy(toDestroy);
+            ListPool<NetworkIdentity>.Destroy(children);
+            HashSetPool<PrefabPieceID>.Destroy(pidSet);
         }
         
         public void PutBackInPool(GameObject target, bool tagName = false)
@@ -117,13 +187,15 @@ namespace PurrNet.Modules
             HashSetPool<PrefabPieceID>.Destroy(pidSet);
         }
 
-        private bool TryGetFromPool(PrefabPieceID pid, out GameObject instance)
+        private static bool TryGetFromPool(PoolPair pair, PrefabPieceID pid, out GameObject instance)
         {
-            if (!_pool.TryGetValue(pid, out var queue))
+            var pool = pid.prefabId >= 0 ? pair.prefabPool : pair.scenePool;
+            
+            if (!pool._pool.TryGetValue(pid, out var queue))
             {
-                Warmup(pid);
+                pool.Warmup(pid);
 
-                if (!_pool.TryGetValue(pid, out queue))
+                if (!pool._pool.TryGetValue(pid, out queue))
                 {
                     instance = null;
                     return false;
@@ -132,7 +204,7 @@ namespace PurrNet.Modules
 
             if (queue.Count == 0)
             {
-                Warmup(pid);
+                pool.Warmup(pid);
                 
                 if (queue.Count == 0)
                 {
@@ -213,9 +285,10 @@ namespace PurrNet.Modules
             return _prefabPrototypes.TryGetValue(prefab, out prototype);
         }
         
-        public static bool TryGetPrototype(Transform transform, PlayerID scope, out GameObjectPrototype prototype)
+        public static bool TryGetPrototype(Transform transform, PlayerID scope, List<NetworkIdentity> allChildren, out GameObjectPrototype prototype)
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
+            
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
             {
                 prototype = default;
@@ -223,8 +296,7 @@ namespace PurrNet.Modules
             }
 
             var rootPair = new TransformIdentityPair(transform, rootId);
-            
-            if (!rootPair.HasObserver(scope))
+            if (!rootPair.HasObserver(scope, allChildren))
             {
                 prototype = default;
                 return false;
@@ -239,26 +311,28 @@ namespace PurrNet.Modules
             {
                 using var current = queue.Dequeue();
                 var children = current.children;
+                int actualChildCount = 0;
 
                 for (var i = 0; i < children.Count; i++)
                 {
                     var child = children[i];
-
-                    if (child.HasObserver(scope))
+                    
+                    if (child.HasObserver(scope, allChildren))
                     {
                         var childPair = GetRuntimePair(current.identity.transform, child.identity);
                         queue.Enqueue(childPair);
+
+                        ++actualChildCount;
                     }
                 }
 
                 var trs = current.identity.transform;
 
-                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex,
-                    current.identity.siblingIndex);
+                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex, current.identity.siblingIndex);
                 var piece = new GameObjectFrameworkPiece(
                     pid,
                     current.identity.id ?? default,
-                    children.Count,
+                    actualChildCount,
                     current.identity.gameObject.activeSelf,
                     current.identity.invertedPathToNearestParent,
                     GetEnabledStates(trs)
@@ -313,26 +387,43 @@ namespace PurrNet.Modules
             return new GameObjectPrototype { framework = framework, isScenePrototype = rootId.isSceneObject };
         }
 
-        public bool TryBuildPrototype(GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)
+        public static bool TryBuildPrototype(PoolPair pair, GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)
         {
-            if (prototype.framework.Count == 0)
+            try
             {
+                if (prototype.framework.Count == 0)
+                {
+                    result = null;
+                    shouldBeActive = false;
+                    return false;
+                }
+
+                return TryBuildPrototypeHelper(pair, prototype, createdNids, null, 0, 1, out result,
+                    out shouldBeActive);
+            }
+            catch (
+#if PURRNET_DEBUG_POOLING
+                System.Exception e
+#endif
+            )
+            {
+#if PURRNET_DEBUG_POOLING
+                PurrLogger.LogError($"Build prototype exception: {e.Message}\n{e.StackTrace}");
+#endif
                 result = null;
                 shouldBeActive = false;
                 return false;
             }
-
-            return TryBuildPrototypeHelper(prototype, createdNids, null, 0, 1, out result, out shouldBeActive);
         }
 
-        private bool TryBuildPrototypeHelper(GameObjectPrototype prototype, List<NetworkIdentity> createdNids, Transform parent, int currentIdx,
+        private static bool TryBuildPrototypeHelper(PoolPair pair, GameObjectPrototype prototype, List<NetworkIdentity> createdNids, Transform parent, int currentIdx,
             int childrenStartIdx, out GameObject result, out bool shouldBeActive)
         {
             var framework = prototype.framework;
             var current = framework[currentIdx];
             var childCount = current.childCount;
 
-            if (!TryGetFromPool(current.pid, out var instance))
+            if (!TryGetFromPool(pair, current.pid, out var instance))
             {
                 result = null;
                 shouldBeActive = false;
@@ -358,6 +449,7 @@ namespace PurrNet.Modules
                 var child = framework[childIdx];
                 
                 TryBuildPrototypeHelper(
+                    pair,
                     prototype,
                     createdNids,
                     trs,
@@ -401,10 +493,7 @@ namespace PurrNet.Modules
             var targetSiblingIndex = inversedPath[0];
             
             if (parent.childCount <= targetSiblingIndex)
-            {
-                PurrLogger.LogError($"Failed to set instance {instance} sibling index to {targetSiblingIndex}");
-                return;
-            }
+                targetSiblingIndex = parent.childCount;
             
             instance.SetSiblingIndex(targetSiblingIndex);
         }

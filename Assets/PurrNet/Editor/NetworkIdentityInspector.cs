@@ -168,13 +168,16 @@ namespace PurrNet.Editor
             
             string path = "";
 
-            for (var index = 0; index < identity.invertedPathToNearestParent.Length; index++)
+            if (identity.invertedPathToNearestParent != null)
             {
-                var parent = identity.invertedPathToNearestParent[index];
-                bool isLast = index == identity.invertedPathToNearestParent.Length - 1;
-                path += parent + (isLast ? ";" : " -> ");
+                for (var index = 0; index < identity.invertedPathToNearestParent.Length; index++)
+                {
+                    var parent = identity.invertedPathToNearestParent[index];
+                    bool isLast = index == identity.invertedPathToNearestParent.Length - 1;
+                    path += parent + (isLast ? ";" : " -> ");
+                }
             }
-            
+
             EditorGUILayout.LabelField($"pathToNearestParent: {path}");
             EditorGUILayout.LabelField($"Direct Children ({identity.directChildren?.Count ?? 0}):");
             

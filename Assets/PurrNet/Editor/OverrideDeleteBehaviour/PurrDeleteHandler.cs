@@ -102,7 +102,7 @@ namespace PurrNet.Editor
 
         private static bool IsChildOfAny(GameObject go, HashSet<GameObject> gameObjects)
         {
-            Transform parent = go.transform.parent;
+            var parent = go.transform.parent;
             while (parent != null)
             {
                 if (gameObjects.Contains(parent.gameObject))

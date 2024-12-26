@@ -209,5 +209,19 @@ namespace PurrNet
         }
 
         public virtual void OnInitializeModules() { }
+
+        /// <summary>
+        /// Called when this object is spawned but before any other data is received.
+        /// At this point you might be missing ownership data, module data, etc.
+        /// This is only called once even if in host mode.
+        /// </summary>
+        public virtual void OnEarlySpawn() { }
+                
+        /// <summary>
+        /// Called when this object is spawned but before any other data is received.
+        /// At this point you might be missing ownership data, module data, etc.
+        /// This is called twice in host mode, once for the server and once for the client.
+        /// </summary>
+        public virtual void OnEarlySpawn(bool asServer) { }
     }
 }

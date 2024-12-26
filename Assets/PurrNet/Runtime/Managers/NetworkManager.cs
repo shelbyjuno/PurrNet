@@ -766,13 +766,7 @@ namespace PurrNet
                 _clientScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
             }
             
-            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayers, prefabProvider);
-            var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayers);
-            var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayers, scenesModule);
-            var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
-            var rpcRequestResponseModule = new RpcRequestResponseModule(playersManager);
             
-            hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayers);
             playersManager.SetBroadcaster(playersBroadcast);
             
@@ -786,14 +780,13 @@ namespace PurrNet
             modules.AddModule(scenePlayers);
             
             var hierarchyV2 = new HierarchyFactory(this, scenesModule, scenePlayers, playersManager);
+            var ownershipModule = new GlobalOwnershipModule(hierarchyV2, playersManager, scenePlayers, scenesModule);
+            var rpcModule = new RPCModule(playersManager, hierarchyV2, ownershipModule, scenesModule);
+
             modules.AddModule(hierarchyV2);
-            
-            modules.AddModule(hierarchyModule);
-            modules.AddModule(visibilityFactory);
             modules.AddModule(ownershipModule);
-            
             modules.AddModule(rpcModule);
-            modules.AddModule(rpcRequestResponseModule);
+            modules.AddModule(new RpcRequestResponseModule(playersManager));
         }
 
         private void OnServerPreTick() => onPreTick?.Invoke(true);
@@ -1098,6 +1091,19 @@ namespace PurrNet
             if (scene.name == "DontDestroyOnLoad")
                 return true;
             return false;
+        }
+
+        public void Spawn(GameObject entry)
+        {
+            if (!entry)
+                return;
+            
+            if (TryGetModule<HierarchyFactory>(isServer, out var factory) &&
+                TryGetSceneID(entry.scene, out var sceneID) &&
+                factory.TryGetHierarchy(sceneID, out var hierarchy))
+            {
+                hierarchy.Spawn(entry);
+            }
         }
     }
 }

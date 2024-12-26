@@ -461,6 +461,20 @@ namespace PurrNet
         protected virtual void OnSpawned() { }
         
         /// <summary>
+        /// Called when this object is spawned but before any other data is received.
+        /// At this point you might be missing ownership data, module data, etc.
+        /// This is only called once even if in host mode.
+        /// </summary>
+        protected virtual void OnEarlySpawn() { }
+                
+        /// <summary>
+        /// Called when this object is spawned but before any other data is received.
+        /// At this point you might be missing ownership data, module data, etc.
+        /// This is called twice in host mode, once for the server and once for the client.
+        /// </summary>
+        protected virtual void OnEarlySpawn(bool asServer) { }
+        
+        /// <summary>
         /// Called when this object is de-spawned.
         /// This is only called once even if in host mode.
         /// </summary>
@@ -587,6 +601,8 @@ namespace PurrNet
         /// Only available when spawned.
         /// </summary>
         public int layer { get; private set; }
+        
+        public bool isInPool { get; private set; }
 
         [ContextMenu("PurrNet/Despawn")]
         public void Despawn()
@@ -597,7 +613,8 @@ namespace PurrNet
                      _serverHierarchy.Despawn(gameObject);
                 else _clientHierarchy?.Despawn(gameObject);
             }
-            else UnityProxy.DestroyDirectly(gameObject);
+            else if (!isInPool)
+                UnityProxy.DestroyDirectly(gameObject);
         }
         
         internal void ResetIdentity()
@@ -635,6 +652,7 @@ namespace PurrNet
             _serverTickManager = null;
             _clientTickManager = null;
             _ticker = null;
+            isInPool = true;
         }
 
         private void OnChildDespawned(NetworkIdentity networkIdentity)
@@ -644,6 +662,7 @@ namespace PurrNet
 
         internal void SetIdentity(NetworkManager manager, HierarchyV2 hierarchy, SceneID scene, bool asServer)
         {
+            isInPool = false;
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
@@ -885,6 +904,7 @@ namespace PurrNet
         }
         
         private int _spawnedCount;
+        private bool _wasEarlySpawned;
         
         public bool hasOwnerPended => _pendingOwnershipRequest.HasValue;
 
@@ -909,6 +929,24 @@ namespace PurrNet
             
             _spawnedCount++;
         }
+        
+        internal void TriggerEarlySpawnEvent(bool asServer)
+        {
+            OnEarlySpawn(asServer);
+
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnEarlySpawn(asServer);
+
+            if (!_wasEarlySpawned)
+            {
+                OnEarlySpawn();
+
+                for (int i = 0; i < _externalModulesView.Count; i++)
+                    _externalModulesView[i].OnEarlySpawn();
+                
+                _wasEarlySpawned = true;
+            }
+        }
 
         internal void TriggerDespawnEvent(bool asServer)
         {
@@ -916,7 +954,8 @@ namespace PurrNet
 
             InternalOnDespawn(asServer);
             
-            _spawnedCount--;
+            --_spawnedCount;
+            _wasEarlySpawned = false;
 
             if (_spawnedCount == 0)
             {

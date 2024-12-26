@@ -39,9 +39,11 @@ namespace PurrNet
                 return instance;
             }
 
-            var result = hierarchy.CreatePrototype(prototype, new List<NetworkIdentity>());
+            var creatednids = ListPool<NetworkIdentity>.Instantiate();
+            var result = hierarchy.CreatePrototype(prototype, creatednids);
+            ListPool<NetworkIdentity>.Destroy(creatednids);
+            
             PurrNetGameObjectUtils.NotifyGameObjectCreated(result, prefab);
-
             return (T)(Object)result;
         }
         

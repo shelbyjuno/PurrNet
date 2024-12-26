@@ -1,4 +1,5 @@
-﻿using PurrNet.Pooling;
+﻿using System.Collections.Generic;
+using PurrNet.Pooling;
 using UnityEngine;
 
 namespace PurrNet.Modules
@@ -14,7 +15,7 @@ namespace PurrNet.Modules
             this.identity = identity;
         }
         
-        public bool HasObserver(PlayerID playerID)
+        public bool HasObserver(PlayerID playerID, List<NetworkIdentity> observed)
         {
             if (identity.observers.Contains(playerID))
                 return true;
@@ -29,8 +30,8 @@ namespace PurrNet.Modules
             {
                 if (components[i].observers.Contains(playerID))
                 {
+                    observed.Add(components[i]);
                     hasObserver = true;
-                    break;
                 }
             }
 
