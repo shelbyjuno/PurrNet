@@ -564,6 +564,9 @@ namespace PurrNet.Modules
             
             result.transform.SetParent(null, false);
             
+            var resultTrs = result.transform;
+            resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
+            
             SceneManager.MoveGameObjectToScene(result, _scene);
             
             if (shouldActivate)

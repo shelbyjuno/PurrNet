@@ -399,16 +399,8 @@ namespace PurrNet.Modules
                     return false;
                 }
 
-                if (TryBuildPrototypeHelper(pair, prototype, createdNids, null, 0, 1, out result,
-                        out shouldBeActive))
-                {
-                    var resultTrs = result.transform;
-                    resultTrs.localPosition = prototype.position;
-                    resultTrs.localRotation = prototype.rotation;
-                    return true;
-                }
-                
-                return false;
+                return TryBuildPrototypeHelper(pair, prototype, createdNids, null, 0, 1, out result,
+                    out shouldBeActive);
             }
             catch (
 #if PURRNET_DEBUG_POOLING
