@@ -627,6 +627,9 @@ namespace PurrNet
         {
             OnPoolReset();
             
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnPoolReset();
+            
             // notify parent
             if (parent && parent.isSpawned)
                 parent.OnChildDespawned(this);

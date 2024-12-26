@@ -223,5 +223,11 @@ namespace PurrNet
         /// This is called twice in host mode, once for the server and once for the client.
         /// </summary>
         public virtual void OnEarlySpawn(bool asServer) { }
+        
+        /// <summary>
+        /// Called when this object is put back into the pool.
+        /// Use this to reset any values for the next spawn.
+        /// </summary>
+        public virtual void OnPoolReset() { }
     }
 }

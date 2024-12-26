@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace PurrNet
 {
     public class PlayerSpawner : PurrMonoBehaviour
     {
-        [SerializeField] private GameObject playerPrefab;
+        [SerializeField, HideInInspector] private NetworkIdentity playerPrefab;
+        [SerializeField] private GameObject _playerPrefab;
 
         [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
         private int _currentSpawnPoint;
@@ -23,6 +23,15 @@ namespace PurrNet
                     spawnPoints.RemoveAt(i);
                     i--;
                 }
+            }
+        }
+
+        private void OnValidate()
+        {
+            if (playerPrefab)
+            {
+                _playerPrefab = playerPrefab.gameObject;
+                playerPrefab = null;
             }
         }
 
@@ -87,11 +96,11 @@ namespace PurrNet
             {
                 var spawnPoint = spawnPoints[_currentSpawnPoint];
                 _currentSpawnPoint = (_currentSpawnPoint + 1) % spawnPoints.Count;
-                newPlayer = UnityProxy.Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation, unityScene);
+                newPlayer = UnityProxy.Instantiate(_playerPrefab, spawnPoint.position, spawnPoint.rotation, unityScene);
             }
             else
             {
-                var instance = Instantiate(playerPrefab, unityScene);
+                var instance = Instantiate(_playerPrefab, unityScene);
                 newPlayer = (GameObject)instance;
             }
             
