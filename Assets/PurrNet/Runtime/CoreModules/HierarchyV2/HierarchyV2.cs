@@ -40,7 +40,7 @@ namespace PurrNet.Modules
     public readonly struct SpawnID : IEquatable<SpawnID>
     {
         readonly int packetIdx;
-        readonly PlayerID player;
+        public readonly PlayerID player;
         
         public SpawnID(int packetIdx, PlayerID player)
         {
@@ -312,23 +312,15 @@ namespace PurrNet.Modules
             if (!_scenePlayers.IsPlayerInScene(player, _sceneId))
                 return;
             
-            var children = ListPool<NetworkIdentity>.Instantiate();
 
             if (isVisible)
             {
+                var children = ListPool<NetworkIdentity>.Instantiate();
                 if (HierarchyPool.TryGetPrototype(scope, player, children, out var prototype))
                 {
                     using (prototype)
                     {
-                        var spawnId = new SpawnID(_nextPacketIdx++, player);
-                        var packet = new SpawnPacket
-                        {
-                            sceneId = _sceneId,
-                            packetIdx = spawnId,
-                            prototype = prototype
-                        };
-
-                        _playersManager.Send(player, packet);
+                        SendSpawnPacket(player, prototype);
 
                         for (var i = 0; i < children.Count; i++)
                         {
@@ -336,8 +328,6 @@ namespace PurrNet.Modules
                             nid.TriggerOnObserverAdded(player);
                             onEarlyObserverAdded?.Invoke(player, nid);
                         }
-                        
-                        _toCompleteNextFrame.Add(spawnId);
                     }
                 }
                 else PurrLogger.LogError($"Failed to get prototype for '{scope.name}'.", scope);
@@ -356,8 +346,23 @@ namespace PurrNet.Modules
                 
                 _playersManager.Send(player, packet);
             }
-            
-            ListPool<NetworkIdentity>.Destroy(children);
+        }
+
+        private void SendSpawnPacket(PlayerID player, GameObjectPrototype prototype)
+        {
+            var spawnId = new SpawnID(_nextPacketIdx++, player);
+            var packet = new SpawnPacket
+            {
+                sceneId = _sceneId,
+                packetIdx = spawnId,
+                prototype = prototype
+            };
+
+            if (player.isServer)
+                 _playersManager.SendToServer(packet);
+            else _playersManager.Send(player, packet);
+
+            _toCompleteNextFrame.Add(spawnId);
         }
 
         private void OnGameObjectCreated(GameObject obj, GameObject prefab)
@@ -424,6 +429,9 @@ namespace PurrNet.Modules
             }
 
             AutoAssignOwnership(id);
+
+            if (!_asServer)
+                SendSpawnPacket(default, HierarchyPool.GetFullPrototype(gameObject.transform));
         }
 
         private void AutoAssignOwnership(NetworkIdentity id)
@@ -566,7 +574,9 @@ namespace PurrNet.Modules
                     packetIdx = toComplete
                 };
                 
-                _playersManager.SendToAll(packet);
+                if (_asServer)
+                     _playersManager.Send(toComplete.player, packet);
+                else _playersManager.SendToServer(packet);
             }
             
             _toCompleteNextFrame.Clear();
