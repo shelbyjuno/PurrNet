@@ -250,6 +250,12 @@ namespace PurrNet.Modules
 
         private void OnSpawnPacket(PlayerID player, SpawnPacket data, bool asServer)
         {
+            if (_asServer && !_manager.networkRules.HasSpawnAuthority(_manager, false))
+            {
+                PurrLogger.LogError($"Spawn failed from client due to lack of permissions.");
+                return;
+            }
+            
             if (data.sceneId != _sceneId)
                 return;
             
