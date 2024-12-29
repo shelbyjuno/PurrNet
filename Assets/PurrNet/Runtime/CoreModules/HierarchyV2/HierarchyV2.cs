@@ -472,10 +472,10 @@ namespace PurrNet.Modules
                     _visibility.RefreshVisibilityForGameObject(player, gameObject.transform);
             }
 
-            AutoAssignOwnership(id);
-
             if (!_asServer)
                 SendSpawnPacket(default, HierarchyPool.GetFullPrototype(gameObject.transform));
+            
+            AutoAssignOwnership(id);
         }
 
         private void AutoAssignOwnership(NetworkIdentity id)

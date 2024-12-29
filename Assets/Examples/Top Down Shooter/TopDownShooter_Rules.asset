@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _defaultSpawnRules:
     spawnAuth: 1
-    despawnAuth: 1
+    despawnAuth: -1
     defaultOwner: 1
     propagateOwnershipByDefault: 1
     despawnIfOwnerDisconnects: 0
