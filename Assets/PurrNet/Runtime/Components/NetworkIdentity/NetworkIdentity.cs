@@ -828,15 +828,8 @@ namespace PurrNet
                 RemoveOwnership();
                 return;
             }
-
-            if (!networkManager)
-            {
-                _pendingOwnershipRequest = player;
-                return;
-            }
             
-            ClearPendingRequest();
-            GiveOwnershipInternal(player.Value, silent);
+            GiveOwnership(player.Value, silent);
         }
         
         private void GiveOwnershipInternal(PlayerID player, bool silent = false)
@@ -857,7 +850,10 @@ namespace PurrNet
         public void RemoveOwnership()
         {
             if (!networkManager)
+            {
+                ClearPendingRequest();
                 return;
+            }
             
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
             {

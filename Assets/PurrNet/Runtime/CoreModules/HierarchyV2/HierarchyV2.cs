@@ -13,12 +13,22 @@ namespace PurrNet.Modules
         public SceneID sceneId;
         public SpawnID packetIdx;
         public GameObjectPrototype prototype;
+        
+        public override string ToString()
+        {
+            return $"SpawnPacket: {{ sceneId: {sceneId}, packetIdx: {packetIdx}, prototype: {prototype} }}";
+        }
     }
     
     public struct FinishSpawnPacket : IPackedAuto
     {
         public SceneID sceneId;
         public SpawnID packetIdx;
+
+        public override string ToString()
+        {
+            return $"FinishSpawnPacket: {{ sceneId: {sceneId}, packetIdx: {packetIdx} }}";
+        }
     }
         
     public struct DespawnPacket : IPackedAuto
@@ -412,8 +422,33 @@ namespace PurrNet.Modules
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, gameObject.transform);
             }
+
+            AutoAssignOwnership(id);
         }
-        
+
+        private void AutoAssignOwnership(NetworkIdentity id)
+        {
+            if (!id.ShouldClientGiveOwnershipOnSpawn(_manager))
+                return;
+            
+            PlayersManager playersManager;
+            
+            switch (_asServer)
+            {
+                case true when _manager.isClient:
+                    playersManager = _manager.GetModule<PlayersManager>(false);
+                    break;
+                case false:
+                    playersManager = _playersManager;
+                    break;
+                default:
+                    return;
+            }
+
+            if (playersManager.localPlayerId.HasValue)
+                id.GiveOwnership(playersManager.localPlayerId.Value);
+        }
+
         public static void GetComponentsInChildren(GameObject go, List<NetworkIdentity> list)
         {
             // workaround for the fact that GetComponents clears the list
@@ -510,10 +545,14 @@ namespace PurrNet.Modules
             }
         }
         
+        public void PreNetworkMessages()
+        {
+            SendDelayedCompleteSpawns();
+        }
+        
         public void PostNetworkMessages()
         {
             SpawnDelayedIdentities();
-            SendDelayedCompleteSpawns();
         }
 
         private void SendDelayedCompleteSpawns()

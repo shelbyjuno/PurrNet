@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Pooling;
@@ -44,7 +45,7 @@ namespace PurrNet.Modules
         }
     }
     
-    public class GlobalOwnershipModule : INetworkModule
+    public class GlobalOwnershipModule : INetworkModule, IFixedUpdate, IPreFixedUpdate
     {
         readonly PlayersManager _playersManager;
         readonly ScenePlayersModule _scenePlayers;
@@ -79,8 +80,6 @@ namespace PurrNet.Modules
             _scenes.onPreSceneLoaded += OnSceneLoaded;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
             
-            // TODO: implement this
-            // _hierarchy. += OnFlushHierarchy;
             _hierarchy.onIdentityRemoved += OnIdentityDespawned;
             _hierarchy.onEarlyObserverAdded += OnPlayerObserverAdded;
 
@@ -98,7 +97,6 @@ namespace PurrNet.Modules
             _scenes.onPreSceneLoaded -= OnSceneLoaded;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
             
-            //_hierarchy. -= OnFlushHierarchy;
             _hierarchy.onIdentityRemoved -= OnIdentityDespawned;
             _hierarchy.onEarlyObserverAdded -= OnPlayerObserverAdded;
 
@@ -109,11 +107,6 @@ namespace PurrNet.Modules
 
             _playersManager.Unsubscribe<OwnershipChangeBatch>(OnOwnershipChange);
             _playersManager.Unsubscribe<OwnershipChange>(OnOwnershipChange);
-        }
-
-        private void OnFlushHierarchy(SceneID scope)
-        {
-            HandlePendingChanges(scope);
         }
 
         /// <summary>
@@ -224,14 +217,15 @@ namespace PurrNet.Modules
         {
             if (!target.id.HasValue)
                 return;
-            
+
             if (!_sceneOwnerships.TryGetValue(target.sceneId, out var ownerships))
                 return;
 
             if (!_asServer)
                 return;
 
-            if (!ownerships.TryGetOwner(target, out var owner)) return;
+            if (!ownerships.TryGetOwner(target, out var owner))
+                return;
             
             var info = new OwnershipInfo
             {
@@ -592,15 +586,13 @@ namespace PurrNet.Modules
             _sceneOwnerships[scene] = new SceneOwnership(asServer);
         }
         
-        private void HandlePendingChanges(SceneID scope)
+        private void HandlePendingChanges()
         {
-            var toRemove = ListPool<PlayerSceneID>.Instantiate();
+            if (_pendingOwnershipChanges.Count == 0)
+                return;
             
             foreach (var (player, changes) in _pendingOwnershipChanges)
             {
-                if (player.scene != scope)
-                    continue;
-                
                 _playersManager.Send(player.player, new OwnershipChangeBatch
                 {
                     scene = player.scene,
@@ -608,13 +600,9 @@ namespace PurrNet.Modules
                 });
                 
                 changes.Dispose();
-                toRemove.Add(player);
             }
 
-            foreach (var remove in toRemove)
-                _pendingOwnershipChanges.Remove(remove);
-            
-            ListPool<PlayerSceneID>.Destroy(toRemove);
+            _pendingOwnershipChanges.Clear();
         }
 
         private void HandleOwenshipBatch(OwnershipChangeBatch data)
@@ -725,6 +713,16 @@ namespace PurrNet.Modules
 
                 result.Add(id);
             }
+        }
+
+        public void FixedUpdate()
+        {
+            HandlePendingChanges();
+        }
+
+        public void PreFixedUpdate()
+        {
+            HandlePendingChanges();
         }
     }
 
