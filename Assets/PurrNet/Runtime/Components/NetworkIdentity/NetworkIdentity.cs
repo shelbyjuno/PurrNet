@@ -610,8 +610,8 @@ namespace PurrNet
             if (isSpawned)
             {
                 if (_serverHierarchy != null)
-                     _serverHierarchy.Despawn(gameObject);
-                else _clientHierarchy?.Despawn(gameObject);
+                     _serverHierarchy.Despawn(gameObject, false);
+                else _clientHierarchy?.Despawn(gameObject, false);
             }
             else if (!isInPool)
                 UnityProxy.DestroyDirectly(gameObject);

@@ -265,13 +265,37 @@ namespace PurrNet.Modules
             
             var createdNids = new DisposableList<NetworkIdentity>(16);
             CreatePrototype(data.prototype, createdNids.list);
-            
-            foreach (var nid in createdNids)
+
+            if (_asServer)
             {
-                nid.SetIdentity(_manager, this, _sceneId, _asServer);
-                RegisterIdentity(nid, false);
+                foreach (var nid in createdNids)
+                {
+                    nid.SetIdentity(_manager, this, _sceneId, _asServer);
+                    RegisterIdentity(nid, false);
+
+                    if (nid.TryAddObserver(player))
+                    {
+                        nid.TriggerOnObserverAdded(player);
+                        onEarlyObserverAdded?.Invoke(player, nid);
+                    }
+                }
             }
-            
+            else
+            {
+                foreach (var nid in createdNids)
+                {
+                    nid.SetIdentity(_manager, this, _sceneId, _asServer);
+                    RegisterIdentity(nid, false);
+                }
+            }
+
+            if (createdNids.Count > 0 & _asServer && 
+                _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+            {
+                foreach (var playerInScene in players)
+                    _visibility.RefreshVisibilityForGameObject(playerInScene, createdNids[0].transform);
+            }
+
             _pendingSpawns.Add(data.packetIdx, createdNids);
         }
 
@@ -283,7 +307,13 @@ namespace PurrNet.Modules
             if (!TryGetIdentity(data.parentId, out var identity))
                 return;
             
-            Despawn(identity.gameObject);
+            if (_asServer && !identity.HasDespawnAuthority(player, !_asServer))
+            {
+                PurrLogger.LogError($"Despawn failed for '{identity.gameObject.name}' due to lack of permissions.", identity.gameObject);
+                return;
+            }
+            
+            Despawn(identity.gameObject, true);
         }
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
@@ -342,16 +372,24 @@ namespace PurrNet.Modules
                 return;
             }
             
-            if (scope.TryGetComponent<NetworkIdentity>(out var identity) && identity.id.HasValue)
+            if (scope.TryGetComponent<NetworkIdentity>(out var identity))
+                SendDespawnPacket(player, identity);
+        }
+
+        private void SendDespawnPacket(PlayerID player, NetworkIdentity identity)
+        {
+            if (!identity.id.HasValue || !identity.IsSpawned(_asServer))
+                return;
+            
+            var packet = new DespawnPacket
             {
-                var packet = new DespawnPacket
-                {
-                    sceneId = _sceneId,
-                    parentId = identity.id.Value
-                };
-                
-                _playersManager.Send(player, packet);
-            }
+                sceneId = _sceneId,
+                parentId = identity.id.Value
+            };
+
+            if (player.isServer)
+                 _playersManager.SendToServer(packet);
+            else _playersManager.Send(player, packet);
         }
 
         private void SendSpawnPacket(PlayerID player, GameObjectPrototype prototype)
@@ -406,7 +444,7 @@ namespace PurrNet.Modules
             if (id.isSpawned)
                 return;
             
-            if (!id.HasSpawnAuthority(_manager, !_asServer))
+            if (!id.HasSpawnAuthority(_manager, _asServer))
             {
                 PurrLogger.LogError($"Spawn failed from for '{gameObject.name}' due to lack of permissions.", gameObject);
                 return;
@@ -483,7 +521,7 @@ namespace PurrNet.Modules
                 GetComponentsInChildren(children[j].gameObject, list);
         }
         
-        public void Despawn(GameObject gameObject)
+        public void Despawn(GameObject gameObject, bool bypassPermissions)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             GetComponentsInChildren(gameObject, children);
@@ -494,8 +532,16 @@ namespace PurrNet.Modules
                 return;
             }
             
+            if (!bypassPermissions && !children[0].HasDespawnAuthority(_playersManager?.localPlayerId ?? default, _asServer))
+            {
+                PurrLogger.LogError($"Despawn failed for '{gameObject.name}' due to lack of permissions.", gameObject);
+                ListPool<NetworkIdentity>.Destroy(children);
+                return;
+            }
+
             if (_asServer)
                 _visibility.ClearVisibilityForGameObject(gameObject.transform);
+            else SendDespawnPacket(default, children[0]);
 
             for (var i = 0; i < children.Count; i++)
             {
