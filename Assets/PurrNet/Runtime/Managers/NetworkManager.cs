@@ -60,7 +60,7 @@ namespace PurrNet
 
         [Header("Editor Settings")]
         [Tooltip("Whether the client should stop playing when it disconnects from the server.")]
-        [SerializeField] private bool _stopPlayingOnDisconnect = true;
+        [SerializeField] private bool _stopPlayingOnDisconnect;
 
         [Header("Auto Start Settings")]
         [Tooltip("The flags to determine when the server should automatically start.")]
