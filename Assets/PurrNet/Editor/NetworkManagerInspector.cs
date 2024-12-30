@@ -11,6 +11,7 @@ namespace PurrNet.Editor
 
         private SerializedProperty _startServerFlags;
         private SerializedProperty _startClientFlags;
+        private SerializedProperty _stopPlayingOnDisconnect;
         
         private SerializedProperty _cookieScope;
 
@@ -28,6 +29,7 @@ namespace PurrNet.Editor
 
             _startServerFlags = serializedObject.FindProperty("_startServerFlags");
             _startClientFlags = serializedObject.FindProperty("_startClientFlags");
+            _stopPlayingOnDisconnect = serializedObject.FindProperty("_stopPlayingOnDisconnect");
             
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
@@ -76,6 +78,8 @@ namespace PurrNet.Editor
 
             EditorGUILayout.PropertyField(_startServerFlags);
             EditorGUILayout.PropertyField(_startClientFlags);
+            
+            EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
 
             if (Application.isPlaying)
                 RenderStartStopButtons(networkManager);

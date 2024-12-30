@@ -57,13 +57,16 @@ namespace PurrNet
         /// </summary>
         [UsedImplicitly]
         public static NetworkManager main { get; private set; }
-        
+
+        [Header("Editor Settings")]
+        [Tooltip("Whether the client should stop playing when it disconnects from the server.")]
+        [SerializeField] private bool _stopPlayingOnDisconnect = true;
+
         [Header("Auto Start Settings")]
         [Tooltip("The flags to determine when the server should automatically start.")]
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
         [Tooltip("The flags to determine when the client should automatically start.")]
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
-        
         [Header("Persistence Settings")]
         [PurrDocs("systems-and-modules/network-manager")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
@@ -1019,7 +1022,7 @@ namespace PurrNet
                 _clientModules.OnLostConnection(conn, false);
             }
 #if UNITY_EDITOR
-            if (isOffline && networkRules && networkRules.ShouldStopPlayingOnDisconnect())
+            if (isOffline && networkRules && _stopPlayingOnDisconnect)
                 EditorApplication.isPlaying = false;
 #endif
         }
