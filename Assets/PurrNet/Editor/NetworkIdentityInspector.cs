@@ -42,6 +42,12 @@ namespace PurrNet.Editor
 
         public override void OnInspectorGUI()
         {
+            var identity = (NetworkIdentity)target;
+            bool hasNetworkManagerAsChild = identity && identity.GetComponentInChildren<NetworkManager>();
+
+            if (hasNetworkManagerAsChild)
+                EditorGUILayout.HelpBox("NetworkIdentity is a child of a NetworkManager. This is not supported.", MessageType.Error);
+            
             base.OnInspectorGUI();
             
             DrawIdentityInspector();
