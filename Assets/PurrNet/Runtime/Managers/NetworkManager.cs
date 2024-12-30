@@ -1018,6 +1018,10 @@ namespace PurrNet
                 localClientConnection = null;
                 _clientModules.OnLostConnection(conn, false);
             }
+#if UNITY_EDITOR
+            if (isOffline && networkRules && networkRules.ShouldStopPlayingOnDisconnect())
+                EditorApplication.isPlaying = false;
+#endif
         }
 
         private void OnDataReceived(Connection conn, ByteData data, bool asServer)

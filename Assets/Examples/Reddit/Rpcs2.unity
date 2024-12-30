@@ -455,7 +455,6 @@ GameObject:
   - component: {fileID: 1488282996}
   - component: {fileID: 1488282998}
   - component: {fileID: 1488283000}
-  - component: {fileID: 1488283001}
   m_Layer: 0
   m_Name: PurrNet
   m_TagString: Untagged
@@ -521,20 +520,6 @@ MonoBehaviour:
   _certPath: 
   _certPassword: 
   _sslProtocols: 0
---- !u!114 &1488283001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488282995}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ced7bf28cdbee104e8cdc34ab761b039, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerPrefab: {fileID: 7115715800027318574, guid: e1d9cd280a782c84aa05e2757cc55298, type: 3}
-  spawnPoints: []
 --- !u!1 &1797481523
 GameObject:
   m_ObjectHideFlags: 0

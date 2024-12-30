@@ -6,6 +6,13 @@ using UnityEngine;
 namespace PurrNet
 {
     [Serializable]
+    public struct EditorRules
+    {
+        [UsedImplicitly]
+        public bool stopPlayingOnDisconnect;
+    }
+    
+    [Serializable]
     public struct VisibilityRules
     {
         [UsedImplicitly]
@@ -84,6 +91,11 @@ namespace PurrNet
     [CreateAssetMenu(fileName = "NetworkRules", menuName = "PurrNet/Network Rules", order = -201)]
     public class NetworkRules : ScriptableObject
     {
+        [SerializeField] private EditorRules _editorRules = new EditorRules()
+        {
+            stopPlayingOnDisconnect = true
+        };
+        
         [SerializeField] private SpawnRules _defaultSpawnRules = new SpawnRules()
         {
             despawnAuth = ActionAuth.Server | ActionAuth.Owner,
@@ -251,6 +263,11 @@ namespace PurrNet
         public bool ShouldIgnoreRequireOwner()
         {
             return _defaultRpcRules.ignoreRequireOwnerAttribute;
+        }
+
+        public bool ShouldStopPlayingOnDisconnect()
+        {
+            return _editorRules.stopPlayingOnDisconnect;
         }
     }
 }
