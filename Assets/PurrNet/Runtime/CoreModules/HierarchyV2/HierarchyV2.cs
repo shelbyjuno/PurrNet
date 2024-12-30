@@ -211,6 +211,16 @@ namespace PurrNet.Modules
                 using (list)
                 {
                     int count = list.Count;
+
+                    // if server, refresh visibility for all players in scene
+                    if (count > 0 & list[0] && _asServer && 
+                        _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+                    {
+                        foreach (var playerInScene in players)
+                            _visibility.RefreshVisibilityForGameObject(playerInScene, list[0].transform);
+                    }
+                    
+                    // trigger spawn event
                     for (var i = 0; i < count; i++)
                     {
                         var nid = list[i];
@@ -287,13 +297,6 @@ namespace PurrNet.Modules
                     nid.SetIdentity(_manager, this, _sceneId, _asServer);
                     RegisterIdentity(nid, false);
                 }
-            }
-
-            if (createdNids.Count > 0 & _asServer && 
-                _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
-            {
-                foreach (var playerInScene in players)
-                    _visibility.RefreshVisibilityForGameObject(playerInScene, createdNids[0].transform);
             }
 
             _pendingSpawns.Add(data.packetIdx, createdNids);
