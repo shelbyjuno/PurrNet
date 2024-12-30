@@ -125,9 +125,9 @@ namespace PurrNet
         /// <summary>
         /// Network id of this object. Holds more information than the ObjectId
         /// </summary>
-        public NetworkID? id => idServer ?? idClient;
+        public NetworkID? id => _idServer ?? _idClient;
         
-        public NetworkID? GetNetworkID(bool asServer) => asServer ? idServer : idClient;
+        public NetworkID? GetNetworkID(bool asServer) => asServer ? _idServer : _idClient;
         
         /// <summary>
         /// Unique ObjectId of this object
@@ -187,9 +187,9 @@ namespace PurrNet
 
         private bool _isSpawnedClient;
         private bool _isSpawnedServer;
-        
-        public NetworkID? idServer;
-        public NetworkID? idClient;
+
+        private NetworkID? _idServer;
+        private NetworkID? _idClient;
         
         /// <summary>
         /// Returns the owner of this object.
@@ -248,7 +248,7 @@ namespace PurrNet
         /// <summary>
         /// The root identity is the topmost parent that has a NetworkIdentity.
         /// </summary>
-        public NetworkIdentity root { get; private set; }
+        public NetworkIdentity root { [UsedImplicitly] get; private set; }
         
         [UsedImplicitly]
         public void QueueOnSpawned(Action action)
@@ -619,8 +619,8 @@ namespace PurrNet
             _localPlayer = null;
             _isSpawnedServer = false;
             _isSpawnedClient = false;
-            idServer = null;
-            idClient = null;
+            _idServer = null;
+            _idClient = null;
             internalOwnerServer = null;
             internalOwnerClient = null;
             _lastEnabledState = false;
@@ -788,6 +788,7 @@ namespace PurrNet
             }
         }
         
+        [UsedImplicitly]
         public void GiveOwnership(PlayerID? player, bool silent = false)
         {
             if (!player.HasValue)
@@ -1016,8 +1017,8 @@ namespace PurrNet
 
         public void SetID(NetworkID networkID)
         {
-            idServer = networkID;
-            idClient = networkID;
+            _idServer = networkID;
+            _idClient = networkID;
         }
     }
 }
