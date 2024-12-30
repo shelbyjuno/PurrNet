@@ -80,6 +80,9 @@ namespace PurrNet.Codegen
         {
             try
             {
+                if (type?.FullName == baseTypeName)
+                    return true;
+                
                 if (type?.BaseType == null)
                     return false;
 
@@ -1417,7 +1420,7 @@ namespace PurrNet.Codegen
                         if (instruction.Operand is MethodReference methodReference &&
                             methodReference.GetElementMethod() == old)
                         {
-                            var newRef = GenerateNewRef(module, @new, methodReference);
+                            var newRef = GenerateNewRef(@new, methodReference);
                             processor.Replace(instruction, Instruction.Create(instruction.OpCode, newRef));
                         }
                     }
@@ -1482,12 +1485,6 @@ namespace PurrNet.Codegen
             return newRef;
         }
         
-        private static MethodReference GenerateNewRef(ModuleDefinition module, MethodReference @new, MethodReference methodReference)
-        {
-            // return GenerateNewRef(module, @new.Name, @new.ReturnType, @new.DeclaringType, methodReference);
-            return GenerateNewRef(@new, methodReference);
-        }
-
         public static List<TypeDefinition> GetAllTypes(ModuleDefinition module)
         {
             List<TypeDefinition> types = new List<TypeDefinition> ();
@@ -1570,6 +1567,9 @@ namespace PurrNet.Codegen
                             try
                             {
                                 var method = type.Methods[i];
+
+                                if (inheritsFromNetworkIdentity && MakeSureOverrideIsCalled.ShouldProcess(method))
+                                    MakeSureOverrideIsCalled.Process(method, messages);
 
                                 if (method.DeclaringType.FullName != type.FullName)
                                     continue;

@@ -1,15 +1,19 @@
 using PurrNet;
 using PurrNet.Logging;
 
-public class SomeBehaviour : PurrMonoBehaviour
+public class SomeBehaviour : NetworkBehaviour
 {
-    public override void Subscribe(NetworkManager manager, bool asServer)
+    protected override void OnDestroy()
     {
-        PurrLogger.Log($"Subscribed to {manager} as {(asServer ? "server" : "client")}");
+        PurrLogger.Log("SomeBehaviour OnDestroy");
+    }
+    
+    public override void OnEnable()
+    {
+        base.OnEnable();
     }
 
-    public override void Unsubscribe(NetworkManager manager, bool asServer)
+    public override void OnDisable()
     {
-        PurrLogger.Log($"Unsubscribed from {manager} as {(asServer ? "server" : "client")}");
     }
 }
