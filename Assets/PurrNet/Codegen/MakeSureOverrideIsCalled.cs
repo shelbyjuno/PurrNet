@@ -48,9 +48,6 @@ namespace PurrNet.Codegen
             if (method.Parameters.Count > 0)
                 return false;
             
-            if (method.IsPrivate)
-                return false;
-            
             if (method.IsStatic)
                 return false;
             
