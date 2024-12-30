@@ -9,7 +9,7 @@ namespace PurrNet.Examples.TopDownShooter
         [SerializeField] private float lifeTime = 2f;
         [SerializeField] private HitDetection hitDetection;
 
-        public override void OnPoolReset()
+        protected override void OnPoolReset()
         {
             lifeTime = 2f;
         }

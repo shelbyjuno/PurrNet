@@ -43,8 +43,6 @@ namespace PurrNet
         
         public IReadOnlyList<NetworkIdentity> directChildren => _directChildren;
         
-        internal List<NetworkIdentity> directChildrenInternal => _directChildren;
-        
         /// <summary>
         /// The nearest network parent of this object.
         /// This can differ from transform.parent.
@@ -273,20 +271,6 @@ namespace PurrNet
             return lastKnown;
         }
 
-        public NetworkIdentity GetClosestNotSpawnedRootIdentity()
-        {
-            var lastKnown = gameObject.GetComponent<NetworkIdentity>();
-            var currentParent = parent;
-
-            while (currentParent && currentParent.isSpawned)
-            {
-                lastKnown = currentParent;
-                currentParent = currentParent.parent;
-            }
-            
-            return lastKnown;
-        }
-        
         private IServerSceneEvents _serverSceneEvents;
         private int onTickCount;
         private ITick _ticker;
@@ -589,13 +573,6 @@ namespace PurrNet
             }
         }
 
-        internal void PostSetIdentity()
-        {
-            if (!_pendingOwnershipRequest.HasValue) return;
-            GiveOwnershipInternal(_pendingOwnershipRequest.Value);
-            _pendingOwnershipRequest = null;
-        }
-
         /// <summary>
         /// The layer of this object. Avoids gameObject.layer.
         /// Only available when spawned.
@@ -621,7 +598,7 @@ namespace PurrNet
         /// Called when this object is put back into the pool.
         /// Use this to reset any values for the next spawn.
         /// </summary>
-        public virtual void OnPoolReset() { }
+        protected virtual void OnPoolReset() { }
         
         internal void ResetIdentity()
         {
@@ -664,6 +641,7 @@ namespace PurrNet
             _clientTickManager = null;
             _ticker = null;
             isInPool = true;
+            root = null;
         }
 
         private void OnChildDespawned(NetworkIdentity networkIdentity)
@@ -677,6 +655,7 @@ namespace PurrNet
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
+            root = GetRootIdentity();
 
             bool wasAlreadySpawned = isSpawned;
 
@@ -750,20 +729,8 @@ namespace PurrNet
         public void GiveOwnership(PlayerID player, bool silent = false)
         {
             if (!networkManager)
-            {
-                var targetFirst = GetComponent<NetworkIdentity>();
-                targetFirst.SetPendingOwnershipRequest(player);
                 return;
-            }
-            
-            ClearPendingRequest();
             GiveOwnershipInternal(player, silent);
-        }
-
-        private void ClearPendingRequest()
-        {
-            var targetFirst = GetComponent<NetworkIdentity>();
-            targetFirst._pendingOwnershipRequest = null;
         }
 
         /// <summary>
@@ -850,10 +817,7 @@ namespace PurrNet
         public void RemoveOwnership()
         {
             if (!networkManager)
-            {
-                ClearPendingRequest();
                 return;
-            }
             
             if (networkManager.TryGetModule(networkManager.isServer, out GlobalOwnershipModule module))
             {
@@ -912,8 +876,6 @@ namespace PurrNet
         
         private int _spawnedCount;
         private bool _wasEarlySpawned;
-        
-        public bool hasOwnerPended => _pendingOwnershipRequest.HasValue;
 
         internal void TriggerSpawnEvent(bool asServer)
         {
@@ -1027,18 +989,6 @@ namespace PurrNet
             
             for (int i = 0; i < _externalModulesView.Count; i++)
                 _externalModulesView[i].OnObserverRemoved(target);
-        }
-        
-        internal void SetPendingOwnershipRequest(PlayerID playersLocalPlayerId)
-        {
-            _pendingOwnershipRequest = playersLocalPlayerId;
-        }
-
-        internal void SetIsSpawned(bool value, bool asServer)
-        {
-            if (asServer)
-                 _isSpawnedServer = value;
-            else _isSpawnedClient = value;
         }
 
         /// <summary>
