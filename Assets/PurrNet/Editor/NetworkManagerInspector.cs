@@ -79,7 +79,6 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(_startServerFlags);
             EditorGUILayout.PropertyField(_startClientFlags);
             
-            EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
 
             if (Application.isPlaying)
                 RenderStartStopButtons(networkManager);
@@ -103,6 +102,8 @@ namespace PurrNet.Editor
 
             RenderTickSlider();
             
+            EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
+
             GUI.enabled = true;
             
             serializedObject.ApplyModifiedProperties();
