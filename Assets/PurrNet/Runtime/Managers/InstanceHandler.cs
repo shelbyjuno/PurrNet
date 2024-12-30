@@ -55,8 +55,6 @@ namespace PurrNet
         /// <typeparam name="T">Type to unregister</typeparam>
         public static void UnregisterInstance<T>() where T : class
         {
-            if (!_instances.ContainsKey(typeof(T)))
-                return;
             _instances.Remove(typeof(T));
         }
         
