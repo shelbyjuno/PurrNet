@@ -10,10 +10,9 @@ public class SomeBehaviour : NetworkBehaviour
     
     public override void OnEnable()
     {
-        base.OnEnable();
     }
 
-    public override void OnDisable()
+    public static void OnDisable()
     {
     }
 }

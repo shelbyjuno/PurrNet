@@ -42,9 +42,6 @@ namespace PurrNet.Codegen
             if (method.DeclaringType.FullName == typeof(NetworkIdentity).FullName)
                 return false;
             
-            if (!method.IsVirtual)
-                return false;
-            
             if (method.ReturnType != method.Module.TypeSystem.Void)
                 return false;
             
@@ -52,6 +49,12 @@ namespace PurrNet.Codegen
                 return false;
             
             if (method.IsPrivate)
+                return false;
+            
+            if (method.IsStatic)
+                return false;
+            
+            if (method.HasGenericParameters)
                 return false;
 
             return method.Name switch

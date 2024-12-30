@@ -32,7 +32,7 @@ namespace PurrNet.Codegen
             }
         }
 
-        public static TypeReference GetTypeReference<T>(this ModuleDefinition module)
+        private static TypeReference GetTypeReference<T>(this ModuleDefinition module)
         {
             var type = typeof(T);
 
