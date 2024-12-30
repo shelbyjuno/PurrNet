@@ -272,12 +272,12 @@ namespace PurrNet.Modules
                 {
                     nid.SetIdentity(_manager, this, _sceneId, _asServer);
                     RegisterIdentity(nid, false);
-
-                    if (nid.TryAddObserver(player))
-                    {
-                        nid.TriggerOnObserverAdded(player);
-                        onEarlyObserverAdded?.Invoke(player, nid);
-                    }
+                    nid.TryAddObserver(player);
+                    
+                    // I think it makes more sense to not trigger this event here
+                    // as it makes sense to assume they were already observers before the spawn
+                    /*nid.TriggerOnObserverAdded(player);
+                    onEarlyObserverAdded?.Invoke(player, nid);*/
                 }
             }
             else
@@ -347,7 +347,6 @@ namespace PurrNet.Modules
         {
             if (!_scenePlayers.IsPlayerInScene(player, _sceneId))
                 return;
-            
 
             if (isVisible)
             {
