@@ -31,6 +31,16 @@ namespace PurrNet.Modules
             RefreshVisibilityForGameObject(player, transform, _defaultRuleSet, true, false);
         }
         
+        public void RefreshVisibilityForGameObject(PlayerID player, Transform transform, NetworkIdentity parent)
+        {
+            if (!transform)
+                return;
+            
+            bool isParentVisible = !parent || parent.observers.Contains(player);
+            
+            RefreshVisibilityForGameObject(player, transform, _defaultRuleSet, isParentVisible, false);
+        }
+        
         public void ClearVisibilityForGameObject(Transform transform)
         {
             if (!transform)

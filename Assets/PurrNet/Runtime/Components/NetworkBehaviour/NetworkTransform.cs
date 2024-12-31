@@ -1,6 +1,6 @@
 using System;
 using JetBrains.Annotations;
-using PurrNet.Logging;
+using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
@@ -129,10 +129,6 @@ namespace PurrNet
             set => _sendIntervalInTicks = value;
         }
         
-        Transform _lastValidParent;
-        
-        internal event Action<NetworkTransform> onParentChanged;
-
         private bool _isResettingParent;
         private bool _isFirstTransform = true;
 
@@ -158,8 +154,6 @@ namespace PurrNet
             _rb = GetComponent<Rigidbody>();
             _controller = GetComponent<CharacterController>();
 
-            ValidateParent();
-            
             float sendDelta = (_sendIntervalInTicks + 1) * Time.fixedDeltaTime;
 
             if (syncPosition)
@@ -455,6 +449,9 @@ namespace PurrNet
 
         void OnTransformParentChanged()
         {
+            if (_isIgnoringParentChanges)
+                return;
+            
             if (ApplicationContext.isQuitting)
                 return;
             
@@ -463,31 +460,30 @@ namespace PurrNet
             
             if (!_trs)
                 return;
-            
-            if (!_isResettingParent && _lastValidParent != _trs.parent)
-                onParentChanged?.Invoke(this);
+
+            if (!_isResettingParent && _syncParent)
+                HandleParentChanged(_trs.parent);
         }
 
-        internal void ValidateParent()
+        private void HandleParentChanged(Transform parent)
         {
-            _lastValidParent = _trs.parent;
+            if (networkManager.TryGetModule<HierarchyFactory>(isServer, out var factory) &&
+                factory.TryGetHierarchy(sceneId, out var hierarchy))
+            {
+                hierarchy.OnParentChanged(this, parent);
+            }
         }
+
+        private bool _isIgnoringParentChanges;
         
-        internal void ResetToLastValidParent()
+        public void StartIgnoringParentChanges()
         {
-            StartIgnoreParentChanged();
-            _trs.SetParent(_lastValidParent, _syncPosition == SyncMode.World);
-            StopIgnoreParentChanged();
+            _isIgnoringParentChanges = true;
         }
 
-        internal void StartIgnoreParentChanged()
+        public void StopIgnoringParentChanges()
         {
-            _isResettingParent = true;
-        }
-
-        internal void StopIgnoreParentChanged()
-        {
-            _isResettingParent = false;
+            _isIgnoringParentChanges = false;
         }
     }
 }

@@ -1,69 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using PurrNet.Logging;
-using PurrNet.Packing;
 using PurrNet.Pooling;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
-    public struct SpawnPacket : IPackedAuto
-    {
-        public SceneID sceneId;
-        public SpawnID packetIdx;
-        public GameObjectPrototype prototype;
-        
-        public override string ToString()
-        {
-            return $"SpawnPacket: {{ sceneId: {sceneId}, packetIdx: {packetIdx}, prototype: {prototype} }}";
-        }
-    }
-    
-    public struct FinishSpawnPacket : IPackedAuto
-    {
-        public SceneID sceneId;
-        public SpawnID packetIdx;
-
-        public override string ToString()
-        {
-            return $"FinishSpawnPacket: {{ sceneId: {sceneId}, packetIdx: {packetIdx} }}";
-        }
-    }
-        
-    public struct DespawnPacket : IPackedAuto
-    {
-        public SceneID sceneId;
-        public NetworkID parentId;
-    }
-
-    public readonly struct SpawnID : IEquatable<SpawnID>
-    {
-        readonly int packetIdx;
-        public readonly PlayerID player;
-        
-        public SpawnID(int packetIdx, PlayerID player)
-        {
-            this.packetIdx = packetIdx;
-            this.player = player;
-        }
-
-        public bool Equals(SpawnID other)
-        {
-            return packetIdx == other.packetIdx && player.Equals(other.player);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is SpawnID other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(packetIdx, player);
-        }
-    }
-    
     public delegate void IdentityAction(NetworkIdentity identity);
     public delegate void ObserverAction(PlayerID player, NetworkIdentity identity);
     
@@ -182,6 +124,7 @@ namespace PurrNet.Modules
             _playersManager.Subscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Subscribe<DespawnPacket>(OnDespawnPacket);
             _playersManager.Subscribe<FinishSpawnPacket>(OnFinishSpawnPacket);
+            _playersManager.Subscribe<ChangeParentPacket>(OnParentChangedPacket);
         }
 
         public void Disable()
@@ -197,6 +140,144 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Unsubscribe<DespawnPacket>(OnDespawnPacket);
             _playersManager.Unsubscribe<FinishSpawnPacket>(OnFinishSpawnPacket);
+            _playersManager.Unsubscribe<ChangeParentPacket>(OnParentChangedPacket);
+        }
+
+        private void OnParentChangedPacket(PlayerID player, ChangeParentPacket data, bool asserver)
+        {
+            // when in host mode, let the server handle the spawning on their module
+            if (!_asServer && _manager.isServer)
+                return;
+            
+            if (data.sceneId != _sceneId)
+                return;
+
+            if (!TryGetIdentity(data.childId, out var identity))
+                return;
+
+            if (_asServer && !identity.HasChangeParentAuthority(player, !_asServer))
+            {
+                PurrLogger.LogError($"Change parent failed for '{identity.gameObject.name}' due to lack of permissions.", identity.gameObject);
+                return;
+            }
+            
+            NetworkIdentity parent = null;
+            
+            if (data.newParentId.HasValue && !TryGetIdentity(data.newParentId.Value, out parent))
+            {
+                PurrLogger.LogError($"Change parent failed for '{identity.gameObject.name}'. Parent not found.", identity.gameObject);
+                return;
+            }
+            
+            ApplyParentChange(identity, parent, data.path);
+        }
+
+        static NetworkIdentity ClosestParent(Transform trs)
+        {
+            if (!trs)
+                return null;
+            
+            var parent = trs;
+            while (parent)
+            {
+                if (parent.TryGetComponent<NetworkIdentity>(out var nid))
+                    return nid;
+                
+                parent = parent.parent;
+            }
+
+            return null;
+        }
+        
+        void ApplyParentChange(NetworkIdentity identity, NetworkIdentity parent, int[] path)
+        {
+            var idTrs = identity.transform;
+            var oldParent = identity.parent;
+            
+            var tmpList = ListPool<NetworkIdentity>.Instantiate();
+            identity.GetComponents(tmpList);
+            
+            var first = tmpList[0];
+            
+            for (var i = 0; i < tmpList.Count; i++)
+            {
+                var child = tmpList[i];
+                child.parent = parent;
+                child.invertedPathToNearestParent = path;
+            }
+            
+            ListPool<NetworkIdentity>.Destroy(tmpList);
+
+            if (parent)
+            {
+                var nt = identity.GetComponent<NetworkTransform>();
+                if (nt) nt.StartIgnoringParentChanges();
+                HierarchyPool.WalkThePath(parent.transform, idTrs, path);
+                if (nt) nt.StopIgnoringParentChanges();
+            }
+            else idTrs.SetParent(null, true);
+            
+            if (parent)
+                parent.AddDirectChild(first);
+            
+            if (oldParent)
+                oldParent.RemoveDirectChild(first);
+            
+            if (_asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+            {
+                foreach (var player in players)
+                    _visibility.RefreshVisibilityForGameObject(player, idTrs, parent);
+            }
+        }
+        
+        internal void OnParentChanged(NetworkIdentity identity, Transform parent)
+        {
+            var closestNid = ClosestParent(parent);
+            var oldParent = identity.parent;
+            
+            var tmpList = ListPool<NetworkIdentity>.Instantiate();
+            identity.GetComponents(tmpList);
+
+            var first = tmpList[0];
+            first.parent = closestNid;
+            first.RecalculateNearestPath();
+            
+            for (var i = 1; i < tmpList.Count; i++)
+            {
+                var child = tmpList[i];
+                child.parent = closestNid;
+                child.invertedPathToNearestParent = first.invertedPathToNearestParent;
+            }
+            
+            ListPool<NetworkIdentity>.Destroy(tmpList);
+
+            if (closestNid)
+                closestNid.AddDirectChild(first);
+            
+            if (oldParent)
+                oldParent.RemoveDirectChild(first);
+
+            if (identity.id.HasValue)
+            {
+                var packet = new ChangeParentPacket
+                {
+                    sceneId = _sceneId,
+                    childId = identity.id.Value,
+                    newParentId = closestNid?.id,
+                    path = identity.invertedPathToNearestParent
+                };
+
+                if (_asServer)
+                    _playersManager.Send(identity.observers, packet);
+                else _playersManager.SendToServer(packet);
+            }
+            
+            if (_asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+            {
+                var trs = identity.transform;
+                foreach (var player in players)
+                    _visibility.RefreshVisibilityForGameObject(player, trs, closestNid);
+            }
         }
         
         private readonly Dictionary<SpawnID, DisposableList<NetworkIdentity>> _pendingSpawns = new();

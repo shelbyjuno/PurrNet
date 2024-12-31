@@ -11,6 +11,8 @@ using UnityEngine;
 
 namespace PurrNet
 {
+    public delegate void NidParentChanged(NetworkIdentity oldParent, NetworkIdentity newParent);
+
     [DefaultExecutionOrder(-1000)]
     public partial class NetworkIdentity : MonoBehaviour
     {
@@ -39,8 +41,12 @@ namespace PurrNet
         [SerializeField, HideInInspector] 
         private List<NetworkIdentity> _directChildren;
         
-        public int[] invertedPathToNearestParent => _invertedPathToNearestParent;
-        
+        public int[] invertedPathToNearestParent
+        {
+            get => _invertedPathToNearestParent;
+            internal set => _invertedPathToNearestParent = value;
+        }
+
         public IReadOnlyList<NetworkIdentity> directChildren => _directChildren;
         
         /// <summary>
@@ -48,8 +54,26 @@ namespace PurrNet
         /// This can differ from transform.parent.
         /// Especially if syncing the parent is disabled.
         /// </summary>
-        public NetworkIdentity parent => _parent;
+        public NetworkIdentity parent
+        {
+            get => _parent;
+            internal set
+            {
+                if (_parent == value)
+                    return;
+
+                var oldParent = _parent;
+                _parent = value;
+                onParentChanged?.Invoke(oldParent, value);
+            }
+        }
         
+        /// <summary>
+        /// Called when the network parent of this object changes.
+        /// This will be the closest parent with a NetworkIdentity.
+        /// </summary>
+        public event NidParentChanged onParentChanged;
+
         public int prefabId => _prefabId;
         
         public int siblingIndex => _siblingIndex;
@@ -69,6 +93,38 @@ namespace PurrNet
             
             _parent = GetNearestParent();
 
+            RecalculateNearestPath();
+            
+            var firstIdentity = GetComponent<NetworkIdentity>();
+
+            if (firstIdentity != this)
+                _directChildren = new List<NetworkIdentity>();
+            else RecalculateDirectChildren();
+        }
+
+        internal void RecalculateDirectChildren()
+        {
+            using var dChildren = new DisposableList<TransformIdentityPair>(16);
+            HierarchyPool.GetDirectChildren(transform, dChildren);
+
+            _directChildren ??= new List<NetworkIdentity>(dChildren.Count);
+            _directChildren.Clear();
+            for (int i = 0; i < dChildren.Count; i++)
+                _directChildren.Add(dChildren[i].identity);
+        }
+        
+        internal void AddDirectChild(NetworkIdentity identity)
+        {
+            _directChildren.Add(identity);
+        }
+        
+        internal void RemoveDirectChild(NetworkIdentity identity)
+        {
+            _directChildren?.Remove(identity);
+        }
+
+        internal void RecalculateNearestPath()
+        {
             if (_parent)
             {
                 using var invPath = HierarchyPool.GetInvPath(_parent.transform, transform);
@@ -84,26 +140,8 @@ namespace PurrNet
             {
                 _invertedPathToNearestParent = Array.Empty<int>();
             }
-            
-            var firstIdentity = GetComponent<NetworkIdentity>();
-
-            if (firstIdentity != this)
-            {
-                _directChildren = new List<NetworkIdentity>();
-                return;
-            }
-
-            using var dChildren = new DisposableList<TransformIdentityPair>(16);
-            HierarchyPool.GetDirectChildren(transform, dChildren);
-
-            if (_directChildren == null || _directChildren.Count != dChildren.Count)
-            {
-                _directChildren = new List<NetworkIdentity>(dChildren.Count);
-                for (int i = 0; i < dChildren.Count; i++)
-                    _directChildren.Add(dChildren[i].identity);
-            }
         }
-        
+
         /// <summary>
         /// Navigates the hierarchy to find the nearest parent with a NetworkIdentity.
         /// </summary>

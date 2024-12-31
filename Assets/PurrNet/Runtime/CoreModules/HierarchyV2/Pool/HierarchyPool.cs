@@ -466,7 +466,7 @@ namespace PurrNet.Modules
             return true;
         }
 
-        private static void WalkThePath(Transform parent, Transform instance, int[] inversedPath)
+        public static void WalkThePath(Transform parent, Transform instance, int[] inversedPath)
         {
             if (inversedPath.Length == 0)
             {
@@ -481,8 +481,8 @@ namespace PurrNet.Modules
                 
                 if (parent.childCount <= siblingIndex)
                 {
-                    PurrLogger.LogError($"Parent {parent} doesn't have child with index {siblingIndex}");
-                    return;
+                    PurrLogger.LogWarning($"Parent {parent} doesn't have child with index {siblingIndex}");
+                    break;
                 }
                 
                 var sibling = parent.GetChild(siblingIndex);
