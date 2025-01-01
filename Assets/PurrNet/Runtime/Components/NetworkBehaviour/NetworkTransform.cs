@@ -1,5 +1,6 @@
 using System;
 using JetBrains.Annotations;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -242,6 +243,13 @@ namespace PurrNet
 
         public void OnTick(float delta)
         {
+            if (_parentChanged)
+            {
+                PurrLogger.Log("Parent changed");
+                OnTransformParentChangedDelayed();
+                _parentChanged = false;
+            }
+            
             if (isController)
             {
                 if (_ticksSinceLastSend >= _sendIntervalInTicks)
@@ -446,8 +454,18 @@ namespace PurrNet
             ApplyTransformData(data, true);
             ApplyLerpedPosition();
         }
+        
+        private bool _parentChanged;
 
         void OnTransformParentChanged()
+        {
+            if (_isIgnoringParentChanges)
+                return;
+            
+            _parentChanged = true;
+        }
+        
+        void OnTransformParentChangedDelayed()
         {
             if (_isIgnoringParentChanges)
                 return;

@@ -113,6 +113,11 @@ namespace PurrNet
                 _directChildren.Add(dChildren[i].identity);
         }
         
+        internal void ClearDirectChildren()
+        {
+            _directChildren.Clear();
+        }
+        
         internal void AddDirectChild(NetworkIdentity identity)
         {
             _directChildren.Add(identity);
@@ -129,12 +134,13 @@ namespace PurrNet
             {
                 using var invPath = HierarchyPool.GetInvPath(_parent.transform, transform);
 
-                if (_invertedPathToNearestParent == null || _invertedPathToNearestParent.Length != invPath.Count)
-                {
+                if (_invertedPathToNearestParent == null)
                     _invertedPathToNearestParent = new int[invPath.Count];
-                    for (int i = 0; i < invPath.Count; i++)
-                        _invertedPathToNearestParent[i] = invPath[i];
-                }
+                else if (_invertedPathToNearestParent.Length != invPath.Count)
+                    _invertedPathToNearestParent = new int[invPath.Count];
+                
+                for (int i = 0; i < invPath.Count; i++)
+                    _invertedPathToNearestParent[i] = invPath[i];
             }
             else
             {
@@ -365,6 +371,7 @@ namespace PurrNet
         
         private void InternalOnSpawn(bool asServer)
         {
+            PurrLogger.Log("Internal spawn " + asServer);
             // ReSharper disable once SuspiciousTypeConversion.Global
             if (_ticker == null && this is ITick ticker)
                 _ticker = ticker;
@@ -407,15 +414,19 @@ namespace PurrNet
         
         private void InternalOnDespawn(bool asServer)
         {
-            if (asServer)
+            PurrLogger.Log("Internal despawn " + asServer);
+            if (_ticker != null || _tickables.Count > 0)
             {
-                if (_serverTickManager != null)
-                    _serverTickManager.onTick -= ServerTick;
-            }
-            else if (_ticker != null || _tickables.Count > 0) 
-            {
-                if (_clientTickManager != null)
-                    _clientTickManager.onTick -= ClientTick;
+                if (asServer)
+                {
+                    if (_serverTickManager != null)
+                        _serverTickManager.onTick -= ServerTick;
+                }
+                else
+                {
+                    if (_clientTickManager != null)
+                        _clientTickManager.onTick -= ClientTick;
+                }
             }
 
             if (!networkManager.TryGetModule<PlayersManager>(asServer, out var players)) return;

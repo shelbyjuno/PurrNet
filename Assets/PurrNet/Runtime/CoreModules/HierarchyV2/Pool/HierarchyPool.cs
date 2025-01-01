@@ -432,17 +432,41 @@ namespace PurrNet.Modules
             }
 
             var trs = instance.transform;
-            shouldBeActive = current.isActive;
+            
+            var siblings = ListPool<NetworkIdentity>.Instantiate();
+            instance.GetComponents(siblings);
+            
+            var nid = siblings.Count > 0 ? siblings[0] : null;
 
+            shouldBeActive = current.isActive;
             SetEnabledStates(instance, current.id, createdNids, current.enabled);
 
             if (parent)
             {
                 WalkThePath(parent, trs, current.inversedRelativePath);
                 instance.SetActive(shouldBeActive);
+                
+                var p = parent.TryGetComponent(out NetworkIdentity parentId) ? parentId : null;
+
+                foreach (var sib in siblings)
+                {
+                    sib.parent = p;
+                    sib.invertedPathToNearestParent = current.inversedRelativePath;
+                }
+            }
+            else
+            {
+                foreach (var sib in siblings)
+                {
+                    sib.parent = null;
+                    sib.invertedPathToNearestParent = current.inversedRelativePath;
+                }
             }
 
             var nextChildIdx = childrenStartIdx + childCount;
+
+            if (nid)
+                nid.ClearDirectChildren();
 
             for (var j = 0; j < childCount; j++)
             {
@@ -456,8 +480,11 @@ namespace PurrNet.Modules
                     trs,
                     childIdx,
                     nextChildIdx,
-                    out _,
+                    out var childGo,
                     out _);
+
+                if (nid && childGo && childGo.TryGetComponent<NetworkIdentity>(out var childNid))
+                    nid.AddDirectChild(childNid);
                 
                 nextChildIdx += child.childCount;
             }

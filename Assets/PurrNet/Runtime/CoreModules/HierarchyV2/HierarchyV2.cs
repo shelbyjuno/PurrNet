@@ -120,6 +120,7 @@ namespace PurrNet.Modules
             _visibility.visibilityChanged += OnVisibilityChanged;
             _scenePlayers.onPrePlayerloadedScene += OnPlayerLoadedScene;
             _scenePlayers.onPlayerUnloadedScene += OnPlayerUnloadedScene;
+            _playersManager.onLocalPlayerReceivedID += OnPlayerReceivedID;
             
             _playersManager.Subscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Subscribe<DespawnPacket>(OnDespawnPacket);
@@ -136,11 +137,21 @@ namespace PurrNet.Modules
             _visibility.visibilityChanged -= OnVisibilityChanged;
             _scenePlayers.onPrePlayerloadedScene -= OnPlayerLoadedScene;
             _scenePlayers.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
+            _playersManager.onLocalPlayerReceivedID -= OnPlayerReceivedID;
 
             _playersManager.Unsubscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Unsubscribe<DespawnPacket>(OnDespawnPacket);
             _playersManager.Unsubscribe<FinishSpawnPacket>(OnFinishSpawnPacket);
             _playersManager.Unsubscribe<ChangeParentPacket>(OnParentChangedPacket);
+        }
+
+        private void OnPlayerReceivedID(PlayerID player)
+        {
+            if (!_asServer && _manager.TryGetModule<HierarchyFactory>(true, out var factory) &&
+                factory.TryGetHierarchy(_sceneId, out var other))
+            {
+                other.CatchupClient();
+            }
         }
 
         private void OnParentChangedPacket(PlayerID player, ChangeParentPacket data, bool asserver)
@@ -715,6 +726,19 @@ namespace PurrNet.Modules
             }
             
             _toCompleteNextFrame.Clear();
+        }
+
+        private void CatchupClient()
+        {
+            for (var i = 0; i < _spawnedIdentities.Count; i++)
+            {
+                var identity = _spawnedIdentities[i];
+                if (!identity.isSpawned)
+                    continue;
+                
+                identity.TriggerSpawnEvent(false);
+                onIdentityAdded?.Invoke(identity);
+            }
         }
 
         private void SpawnDelayedIdentities()
