@@ -9,7 +9,7 @@ using PurrNet.Utils;
 namespace PurrNet
 {
     [Serializable]
-    public class SyncVar<T> : NetworkModule
+    public class SyncVar<T> : NetworkModule, ITick
     {
         private TickManager _tickManager;
 
@@ -72,13 +72,8 @@ namespace PurrNet
 
         public override void OnSpawn(bool asServer)
         {
-            _tickManager = networkManager.GetModule<TickManager>(asServer);
-            _tickManager.onTick += OnTick;
-        }
-
-        public override void OnDespawned()
-        {
-            _tickManager.onTick -= OnTick;
+            if (IsController(asServer, _ownerAuth))
+                FlushImmediately();
         }
 
         public override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
@@ -115,7 +110,7 @@ namespace PurrNet
             _isDirty = false;
         }
 
-        private void OnTick()
+        public void OnTick(float delta)
         {
             bool isControlling = parent.IsController(_ownerAuth);
 
