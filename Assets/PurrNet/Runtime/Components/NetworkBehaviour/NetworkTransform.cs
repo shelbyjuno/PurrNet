@@ -240,12 +240,11 @@ namespace PurrNet
         {
             _id = id;
         }
-
+        
         public void OnTick(float delta)
         {
             if (_parentChanged)
             {
-                PurrLogger.Log("Parent changed");
                 OnTransformParentChangedDelayed();
                 _parentChanged = false;
             }

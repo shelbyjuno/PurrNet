@@ -371,7 +371,6 @@ namespace PurrNet
         
         private void InternalOnSpawn(bool asServer)
         {
-            PurrLogger.Log("Internal spawn " + asServer);
             // ReSharper disable once SuspiciousTypeConversion.Global
             if (_ticker == null && this is ITick ticker)
                 _ticker = ticker;
@@ -414,7 +413,6 @@ namespace PurrNet
         
         private void InternalOnDespawn(bool asServer)
         {
-            PurrLogger.Log("Internal despawn " + asServer);
             if (_ticker != null || _tickables.Count > 0)
             {
                 if (asServer)
