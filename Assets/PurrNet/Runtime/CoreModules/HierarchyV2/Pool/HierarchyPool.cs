@@ -70,27 +70,90 @@ namespace PurrNet.Modules
             
             PutBackInPool(copy, true);
         }
-        
+
         public static void PutBackInPool(PoolPair pool, GameObject target, bool tagName = false)
         {
-            var toDestroy = ListPool<GameObject>.Instantiate();
-            var children = ListPool<NetworkIdentity>.Instantiate();
-            var pidSet = HashSetPool<PrefabPieceID>.Instantiate();
+            var rootId = target.GetComponent<NetworkIdentity>();
+            bool shouldDestroyGo = !rootId || !rootId.shouldBePooled;
 
-            target.GetComponentsInChildren(true, children);
-
-            for (var i = 0; i < children.Count; i++)
+            if (rootId)
             {
-                var child = children[i];
+                var safeParent = rootId.transform.parent;
+                PutBackInPoolFromNid(pool, rootId, safeParent, tagName);
+            }
+            
+            if (shouldDestroyGo)
+                UnityProxy.DestroyDirectly(target);
+        }
 
-                if (!child)
-                    continue;
+        static void QueueVirtualNodesFromLeafToRoot(NetworkIdentity root, HashSet<NetworkIdentity> properNids)
+        {
+            var queue = QueuePool<NetworkIdentity>.Instantiate();
+            
+            queue.Enqueue(root);
+            
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                properNids.Add(current);
                 
+                var directChildren = new DisposableList<TransformIdentityPair>(16);
+                GetDirectChildren(current.transform, directChildren);
+
+                for (var i = 0; i < current.directChildren.Count; i++)
+                {
+                    var child = current.directChildren[i];
+                    queue.Enqueue(child);
+                }
+            }
+            
+            QueuePool<NetworkIdentity>.Destroy(queue);
+        }
+        
+        static void QueueRealNodesFromLeafToRoot(NetworkIdentity root, HashSet<NetworkIdentity> properNids)
+        {
+            var queue = QueuePool<NetworkIdentity>.Instantiate();
+            
+            queue.Enqueue(root);
+            
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                properNids.Add(current);
+                
+                var directChildren = new DisposableList<TransformIdentityPair>(16);
+                GetDirectChildren(current.transform, directChildren);
+
+                for (var i = 0; i < directChildren.Count; i++)
+                {
+                    var child = directChildren[i];
+                    queue.Enqueue(child.identity);
+                }
+            }
+            
+            QueuePool<NetworkIdentity>.Destroy(queue);
+        }
+
+        static void PutBackInPoolFromNid(PoolPair pool, NetworkIdentity root, Transform safeParent, bool tagName = false)
+        {
+            var toDestroy = ListPool<GameObject>.Instantiate();
+            var virtualNodes = HashSetPool<NetworkIdentity>.Instantiate();
+            var realNodes = HashSetPool<NetworkIdentity>.Instantiate();
+            
+            QueueVirtualNodesFromLeafToRoot(root, virtualNodes);
+            QueueRealNodesFromLeafToRoot(root, realNodes);
+
+            realNodes.ExceptWith(virtualNodes);
+
+            // save the objects that should not be despawned
+            foreach (var real in realNodes)
+                real.transform.SetParent(safeParent, true);
+
+            foreach (var child in virtualNodes)
+            {
                 var pid = new PrefabPieceID(child.prefabId, child.depthIndex, child.siblingIndex);
                 var pair = pid.prefabId >= 0 ? pool.prefabPool : pool.scenePool;
 
-                if (!pidSet.Add(pid)) continue;
-                
                 // check if we should pool this object or not
                 if (!child.shouldBePooled)
                 {
@@ -116,7 +179,7 @@ namespace PurrNet.Modules
                 
                 queue.Enqueue(child.gameObject);
             }
-
+            
             // destroy the objects that shouldn't be pooled
             for (var i = 0; i < toDestroy.Count; i++)
             {
@@ -125,8 +188,8 @@ namespace PurrNet.Modules
             }
 
             ListPool<GameObject>.Destroy(toDestroy);
-            ListPool<NetworkIdentity>.Destroy(children);
-            HashSetPool<PrefabPieceID>.Destroy(pidSet);
+            HashSetPool<NetworkIdentity>.Destroy(virtualNodes);
+            HashSetPool<NetworkIdentity>.Destroy(realNodes);
         }
         
         public void PutBackInPool(GameObject target, bool tagName = false)
@@ -402,11 +465,10 @@ namespace PurrNet.Modules
                 return TryBuildPrototypeHelper(pair, prototype, createdNids, null, 0, 1, out result,
                     out shouldBeActive);
             }
-            catch (
+            catch
 #if PURRNET_DEBUG_POOLING
-                System.Exception e
+                (System.Exception e)
 #endif
-            )
             {
 #if PURRNET_DEBUG_POOLING
                 PurrLogger.LogError($"Build prototype exception: {e.Message}\n{e.StackTrace}");
