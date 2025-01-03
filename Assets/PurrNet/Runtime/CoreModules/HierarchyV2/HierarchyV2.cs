@@ -345,7 +345,7 @@ namespace PurrNet.Modules
                 
                 var root = id.GetRootIdentity();
                 
-                if (!roots.Add(root))
+                if (!root || !roots.Add(root))
                     continue;
                 
                 _visibility.ClearVisibilityForGameObject(root.transform, player);
@@ -632,6 +632,15 @@ namespace PurrNet.Modules
                 return;
             }
             
+            using var directChildren = new DisposableList<TransformIdentityPair>(16);
+            HierarchyPool.GetDirectChildrenWithRoot(gameObject.transform, directChildren);
+
+            foreach (var idPair in directChildren)
+            {
+                var p = idPair.identity.parent;
+                if (p) p.RemoveDirectChild(idPair.identity);
+            }
+            
             if (!bypassPermissions && !children[0].HasDespawnAuthority(_playersManager?.localPlayerId ?? default, _asServer))
             {
                 PurrLogger.LogError($"Despawn failed for '{gameObject.name}' due to lack of permissions.", gameObject);
@@ -642,7 +651,7 @@ namespace PurrNet.Modules
             if (_asServer)
                 _visibility.ClearVisibilityForGameObject(gameObject.transform);
             else SendDespawnPacket(default, children[0]);
-
+            
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];

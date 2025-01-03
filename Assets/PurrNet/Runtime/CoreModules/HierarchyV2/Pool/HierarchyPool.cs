@@ -640,13 +640,25 @@ namespace PurrNet.Modules
                 GetDirectChildrenHelper(child, children);
             }
         }
+        
+        public static void GetDirectChildrenWithRoot(Transform root, DisposableList<TransformIdentityPair> children)
+        {
+            if (GetDirectChildrenHelper(root, children))
+                return;
+            
+            for (var i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                GetDirectChildrenHelper(child, children);
+            }
+        }
 
-        private static void GetDirectChildrenHelper(Transform root, DisposableList<TransformIdentityPair> children)
+        private static bool GetDirectChildrenHelper(Transform root, DisposableList<TransformIdentityPair> children)
         {
             if (root.TryGetComponent<NetworkIdentity>(out var identity))
             {
                 children.Add(new TransformIdentityPair(root, identity));
-                return;
+                return true;
             }
 
             for (var i = 0; i < root.transform.childCount; i++)
@@ -654,6 +666,8 @@ namespace PurrNet.Modules
                 var child = root.transform.GetChild(i);
                 GetDirectChildrenHelper(child, children);
             }
+            
+            return false;
         }
 
         public void Dispose()
