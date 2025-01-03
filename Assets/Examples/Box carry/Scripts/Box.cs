@@ -10,7 +10,7 @@ namespace PurrNet.Examples.BoxCarry
         [FormerlySerializedAs("renderer")] [SerializeField] private Renderer _renderer;
 
         private Rigidbody _rigidbody;
-        private readonly SyncVar<bool> _gettingCarried = new SyncVar<bool>();
+        private readonly SyncVar<bool> _gettingCarried = new SyncVar<bool>(ownerAuth: true);
         
         private void Awake()
         {

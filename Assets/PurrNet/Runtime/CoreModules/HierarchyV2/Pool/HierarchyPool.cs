@@ -509,7 +509,7 @@ namespace PurrNet.Modules
             }
             finally
             {
-                pair.prefabPool.ClearToDestroy();
+                pair.prefabPool?.ClearToDestroy();
             }
         }
 
