@@ -65,12 +65,6 @@ namespace PurrNet
     [Serializable]
     public struct NetworkIdentityRules
     {
-        public bool syncComponentActive;
-        public ActionAuth syncComponentAuth;
-
-        public bool syncGameObjectActive;
-        public ActionAuth syncGameObjectActiveAuth;
-        
         public bool receiveRpcsWhenDisabled;
     }
 
@@ -119,10 +113,6 @@ namespace PurrNet
         
         [SerializeField] private NetworkIdentityRules _defaultIdentityRules = new NetworkIdentityRules()
         {
-            syncComponentActive = true,
-            syncComponentAuth = ActionAuth.Server | ActionAuth.Owner,
-            syncGameObjectActive = true,
-            syncGameObjectActiveAuth = ActionAuth.Server | ActionAuth.Owner,
             receiveRpcsWhenDisabled = true
         };
         
@@ -143,36 +133,14 @@ namespace PurrNet
             return HasAuthority(_defaultSpawnRules.spawnAuth, asServer);
         }
         
-        public bool HasSetActiveAuthority(NetworkIdentity identity, PlayerID? player, bool asServer)
-        {
-            return HasAuthority(_defaultIdentityRules.syncGameObjectActiveAuth, identity, player, asServer);
-        }
-        
-        public bool HasSetEnabledAuthority(NetworkIdentity identity, PlayerID? player, bool asServer)
-        {
-            return HasAuthority(_defaultIdentityRules.syncComponentAuth, identity, player, asServer);
-        }
-        
         [UsedImplicitly]
-        public bool ShouldSyncParent(NetworkIdentity identity, bool asServer)
+        public bool ShouldSyncParent(NetworkIdentity identity)
         {
             return _defaultTransformRules.syncParent;
         }
         
         [UsedImplicitly]
-        public bool ShouldSyncSetActive(NetworkIdentity identity, bool asServer)
-        {
-            return _defaultIdentityRules.syncGameObjectActive;
-        }
-        
-        [UsedImplicitly]
-        public bool ShouldSyncSetEnabled(NetworkIdentity identity, bool asServer)
-        {
-            return _defaultIdentityRules.syncComponentActive;
-        }
-        
-        [UsedImplicitly]
-        public bool HasPropagateOwnershipAuthority(NetworkIdentity identity, bool asServer)
+        public bool HasPropagateOwnershipAuthority(NetworkIdentity identity)
         {
             return true;
         }

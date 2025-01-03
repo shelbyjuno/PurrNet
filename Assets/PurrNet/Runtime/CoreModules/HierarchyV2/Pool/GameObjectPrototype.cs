@@ -24,12 +24,6 @@ namespace PurrNet.Modules
 
         public void Dispose()
         {
-            for (var i = 0; i < framework.Count; i++)
-            {
-                var piece = framework[i];
-                piece.Dispose();
-            }
-
             framework.Dispose();
         }
 

@@ -366,7 +366,7 @@ namespace PurrNet.Modules
             
             var shouldOverride = overrideExistingOwners ?? nid.ShouldOverrideExistingOwnership(_asServer);
             var affectedIds = ListPool<NetworkIdentity>.Instantiate();
-            GetAllChildrenOrSelf(nid, affectedIds, propagateToChildren, _asServer);
+            GetAllChildrenOrSelf(nid, affectedIds, propagateToChildren);
 
             _idsCache.Clear();
 
@@ -455,7 +455,7 @@ namespace PurrNet.Modules
             }
             
             var children = ListPool<NetworkIdentity>.Instantiate();
-            GetAllChildrenOrSelf(id, children, true, _asServer);
+            GetAllChildrenOrSelf(id, children, true);
             
             _idsCache.Clear();
 
@@ -528,7 +528,7 @@ namespace PurrNet.Modules
             
             var originalOwner = id.owner.Value;
             var children = ListPool<NetworkIdentity>.Instantiate();
-            GetAllChildrenOrSelf(id, children, propagateToChildren, _asServer);
+            GetAllChildrenOrSelf(id, children, propagateToChildren);
             
             _idsCache.Clear();
 
@@ -697,11 +697,11 @@ namespace PurrNet.Modules
             }
         }
 
-        static void GetAllChildrenOrSelf(NetworkIdentity id, List<NetworkIdentity> result, bool? propagateToChildren, bool asServer)
+        static void GetAllChildrenOrSelf(NetworkIdentity id, List<NetworkIdentity> result, bool? propagateToChildren)
         {
             bool shouldPropagate = propagateToChildren ?? id.ShouldPropagateToChildren();
 
-            if (shouldPropagate && id.HasPropagateOwnershipAuthority(asServer))
+            if (shouldPropagate && id.HasPropagateOwnershipAuthority())
             {
                 HierarchyV2.GetComponentsInChildren(id.gameObject, result);
             }

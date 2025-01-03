@@ -44,37 +44,13 @@ namespace PurrNet
             return rules && rules.HasSpawnAuthority(manager, asServer);
         }
         
-        public bool HasSetActiveAuthority(PlayerID player, bool asServer)
-        {
-            var rules = networkRules;
-            return rules && rules.HasSetActiveAuthority(this, player, asServer);
-        }
-        
-        public bool HasSetActiveAuthority(bool asServer)
-        {
-            var rules = networkRules;
-            return rules && rules.HasSetActiveAuthority(this, localPlayer, asServer);
-        }
-        
-        public bool HasSetEnabledAuthority(PlayerID player, bool asServer)
-        {
-            var rules = networkRules;
-            return rules && rules.HasSetEnabledAuthority(this, player, asServer);
-        }
-        
-        public bool HasSetEnabledAuthority(bool asServer)
-        {
-            var rules = networkRules;
-            return rules && rules.HasSetEnabledAuthority(this, localPlayer, asServer);
-        }
-        
         public bool ShouldDespawnOnOwnerDisconnect()
         {
             var rules = networkRules;
             return rules && rules.ShouldDespawnOnOwnerDisconnect();
         }
-        
-        public NetworkRules GetNetworkRules(NetworkManager manager)
+
+        private NetworkRules GetNetworkRules(NetworkManager manager)
         {
             return _networkRules ? _networkRules : manager.networkRules;
         }
@@ -91,22 +67,10 @@ namespace PurrNet
             return rules && rules.ShouldPlayRPCsWhenDisabled();
         }
 
-        public bool ShouldSyncParent(bool asServer)
+        public bool ShouldSyncParent()
         {
             var rules = networkRules;
-            return rules && rules.ShouldSyncParent(this, asServer);
-        }
-        
-        public bool ShouldSyncSetActive(bool asServer)
-        {
-            var rules = networkRules;
-            return rules && rules.ShouldSyncSetActive(this, asServer);
-        }
-        
-        public bool ShouldSyncSetEnabled(bool asServer)
-        {
-            var rules = networkRules;
-            return rules && rules.ShouldSyncSetEnabled(this, asServer);
+            return rules && rules.ShouldSyncParent(this);
         }
         
         public bool ShouldPropagateToChildren()
@@ -121,10 +85,10 @@ namespace PurrNet
             return rules && rules.ShouldOverrideExistingOwnership(this, asServer);
         }
         
-        public bool HasPropagateOwnershipAuthority(bool asServer)
+        public bool HasPropagateOwnershipAuthority()
         {
             var rules = networkRules;
-            return rules && rules.HasPropagateOwnershipAuthority(this, asServer);
+            return rules && rules.HasPropagateOwnershipAuthority(this);
         }
         
         public bool HasChangeParentAuthority(bool asServer)

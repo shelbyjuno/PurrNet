@@ -4,23 +4,21 @@ using PurrNet.Pooling;
 
 namespace PurrNet.Modules
 {
-    public struct GameObjectFrameworkPiece : IDisposable
+    public readonly struct GameObjectFrameworkPiece
     {
         public readonly PrefabPieceID pid;
         public readonly NetworkID id;
         public readonly int childCount;
         public readonly bool isActive;
         public readonly int[] inversedRelativePath;
-        public DisposableList<bool> enabled;
         
         public GameObjectFrameworkPiece(PrefabPieceID pid, NetworkID id, int childCount, bool isActive,
-            int[] path, DisposableList<bool> enabled)
+            int[] path)
         {
             this.pid = pid;
             this.id = id;
             this.childCount = childCount;
             this.inversedRelativePath = path;
-            this.enabled = enabled;
             this.isActive = isActive;
         }
 
@@ -41,20 +39,8 @@ namespace PurrNet.Modules
                 if (i < inversedRelativePath.Length - 1)
                     builder.Append(" <- ");
             }
-            builder.Append(", Enabled: ");
-            for (int i = 0; i < enabled.Count; i++)
-            {
-                builder.Append(enabled[i]);
-                if (i < enabled.Count - 1)
-                    builder.Append(":");
-            }
             builder.Append(" }");
             return builder.ToString();
-        }
-
-        public void Dispose()
-        {
-            enabled.Dispose();
         }
     }
 }

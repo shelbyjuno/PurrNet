@@ -316,41 +316,16 @@ namespace PurrNet.Modules
 
             return depth;
         }
-
-        private static DisposableList<bool> GetEnabledStates(Transform transform)
-        {
-            var children = ListPool<NetworkIdentity>.Instantiate();
-            var enabled = new DisposableList<bool>(16);
-
-            transform.GetComponents(children);
-
-            for (var i = 0; i < children.Count; i++)
-            {
-                var child = children[i];
-                enabled.Add(child.enabled);
-            }
-
-            ListPool<NetworkIdentity>.Destroy(children);
-            return enabled;
-        }
-
-        private static void SetEnabledStates(GameObject go, NetworkID baseNid, List<NetworkIdentity> createdNids, DisposableList<bool> enabledStates)
+        
+        private static void GetNids(GameObject go, NetworkID baseNid, List<NetworkIdentity> createdNids)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
 
             go.GetComponents(children);
 
-            if (children.Count != enabledStates.Count)
-            {
-                PurrLogger.LogError(
-                    $"Mismatched enabled states count, expected {children.Count} but got {enabledStates.Count} on {go}", go);
-            }
-
             for (var i = 0; i < children.Count; i++)
             {
                 var child = children[i];
-                child.enabled = i < enabledStates.Count && enabledStates[i];
-                
                 createdNids?.Add(child);
                 child.SetID(new NetworkID(baseNid, i));
             }
@@ -404,16 +379,13 @@ namespace PurrNet.Modules
                     }
                 }
 
-                var trs = current.identity.transform;
-
                 var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex, current.identity.siblingIndex);
                 var piece = new GameObjectFrameworkPiece(
                     pid,
                     current.identity.id ?? default,
                     actualChildCount,
                     current.identity.gameObject.activeSelf,
-                    current.identity.invertedPathToNearestParent,
-                    GetEnabledStates(trs)
+                    current.identity.invertedPathToNearestParent
                 );
                 framework.Add(piece);
             }
@@ -454,8 +426,6 @@ namespace PurrNet.Modules
                     queue.Enqueue(childPair);
                 }
 
-                var trs = current.identity.transform;
-
                 var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex,
                     current.identity.siblingIndex);
                 var piece = new GameObjectFrameworkPiece(
@@ -463,8 +433,7 @@ namespace PurrNet.Modules
                     current.identity.id ?? default,
                     children.Count,
                     current.identity.gameObject.activeSelf,
-                    current.identity.invertedPathToNearestParent,
-                    GetEnabledStates(trs)
+                    current.identity.invertedPathToNearestParent
                 );
                 framework.Add(piece);
             }
@@ -535,7 +504,7 @@ namespace PurrNet.Modules
             var nid = siblings.Count > 0 ? siblings[0] : null;
 
             shouldBeActive = current.isActive;
-            SetEnabledStates(instance, current.id, createdNids, current.enabled);
+            GetNids(instance, current.id, createdNids);
 
             if (parent)
             {
