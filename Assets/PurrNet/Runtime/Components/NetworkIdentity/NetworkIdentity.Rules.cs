@@ -66,12 +66,6 @@ namespace PurrNet
             var rules = networkRules;
             return rules && rules.ShouldPlayRPCsWhenDisabled();
         }
-
-        public bool ShouldSyncParent()
-        {
-            var rules = networkRules;
-            return rules && rules.ShouldSyncParent(this);
-        }
         
         public bool ShouldPropagateToChildren()
         {
