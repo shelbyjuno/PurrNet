@@ -121,6 +121,7 @@ namespace PurrNet.Modules
             _scenePlayers.onPrePlayerloadedScene += OnPlayerLoadedScene;
             _scenePlayers.onPlayerUnloadedScene += OnPlayerUnloadedScene;
             _playersManager.onLocalPlayerReceivedID += OnPlayerReceivedID;
+            _playersManager.onNetworkIDReceived += OnNetworkIDReceived;
             
             _playersManager.Subscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Subscribe<DespawnPacket>(OnDespawnPacket);
@@ -138,11 +139,18 @@ namespace PurrNet.Modules
             _scenePlayers.onPrePlayerloadedScene -= OnPlayerLoadedScene;
             _scenePlayers.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
             _playersManager.onLocalPlayerReceivedID -= OnPlayerReceivedID;
+            _playersManager.onNetworkIDReceived -= OnNetworkIDReceived;
 
             _playersManager.Unsubscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Unsubscribe<DespawnPacket>(OnDespawnPacket);
             _playersManager.Unsubscribe<FinishSpawnPacket>(OnFinishSpawnPacket);
             _playersManager.Unsubscribe<ChangeParentPacket>(OnParentChangedPacket);
+        }
+
+        private void OnNetworkIDReceived(NetworkID nid)
+        {
+            if (nid.id >= _nextId)
+                _nextId = nid.id + 1;
         }
 
         private void OnPlayerReceivedID(PlayerID player)
@@ -384,6 +392,14 @@ namespace PurrNet.Modules
                     // as it makes sense to assume they were already observers before the spawn
                     /*nid.TriggerOnObserverAdded(player);
                     onEarlyObserverAdded?.Invoke(player, nid);*/
+                }
+
+                if (createdNids.Count > 0)
+                {
+                    var lastNid = createdNids[^1];
+                    
+                    if (lastNid.id.HasValue)
+                        _playersManager.RegisterClientLastId(player, lastNid.id.Value);
                 }
             }
             else

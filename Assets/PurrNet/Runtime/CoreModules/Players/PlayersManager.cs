@@ -19,10 +19,12 @@ namespace PurrNet.Modules
     public struct ServerLoginResponse : IPackedAuto
     {
         public PlayerID playerId { get; }
+        public NetworkID lastNidId { get; }
 
-        public ServerLoginResponse(PlayerID playerId)
+        public ServerLoginResponse(PlayerID playerId, NetworkID lastNidId)
         {
             this.playerId = playerId;
+            this.lastNidId = lastNidId;
         }
     }
     
@@ -116,6 +118,8 @@ namespace PurrNet.Modules
         /// Callback for when the local player has received their PlayerID
         /// </summary>
         public event OnPlayerEvent onLocalPlayerReceivedID;
+        
+        public event Action<NetworkID> onNetworkIDReceived;
 
         private bool _asServer;
 
@@ -303,6 +307,7 @@ namespace PurrNet.Modules
         {
             localPlayerId = data.playerId;
             onLocalPlayerReceivedID?.Invoke(data.playerId);
+            onNetworkIDReceived?.Invoke(data.lastNidId);
         }
 
         private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asServer)
@@ -320,8 +325,12 @@ namespace PurrNet.Modules
                 PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
                 return;
             }
+
+            var lastNidId = new NetworkID(0, playerId);
+            if (_lastNidId.TryGetValue(playerId, out var lastNid))
+                lastNidId = lastNid;
             
-            _broadcastModule.Send(conn, new ServerLoginResponse(playerId));
+            _broadcastModule.Send(conn, new ServerLoginResponse(playerId, lastNidId));
 
             SendSnapshotToClient(conn);
             if (RegisterPlayer(conn, playerId, out var isReconnect))
@@ -418,6 +427,13 @@ namespace PurrNet.Modules
                 SendUserLeftToAllClients(playerId);
 
             UnregisterPlayer(conn);
+        }
+
+        readonly Dictionary<PlayerID, NetworkID> _lastNidId = new Dictionary<PlayerID, NetworkID>();
+        
+        public void RegisterClientLastId(PlayerID player, NetworkID lastNidID)
+        {
+            _lastNidId[player] = lastNidID;
         }
     }
 }
