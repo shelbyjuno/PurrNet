@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Packing;
@@ -11,28 +12,38 @@ namespace PurrNet
     {
         protected NetworkIdentity parent { get; private set; }
         
+        [UsedImplicitly]
         public string name { get; private set; }
 
+        [UsedImplicitly]
         public byte index { get; private set; } = 255;
 
+        [UsedImplicitly]
         public NetworkManager networkManager => parent ? parent.networkManager : null;
         
+        [UsedImplicitly]
         public bool isSceneObject => parent && parent.isSceneObject;
         
+        [UsedImplicitly]
         public bool isOwner => parent && parent.isOwner;
         
+        [UsedImplicitly]
         public bool isClient => parent && parent.isClient;
 
+        [UsedImplicitly]
         public bool isServer => parent && parent.isServer;
         
+        [UsedImplicitly]
         public bool isHost => parent && parent.isHost;
-        
+
+        [UsedImplicitly]
         public bool isSpawned => parent && parent.isSpawned;
         
         public bool hasOwner => parent.hasOwner;
         
         public bool hasConnectedOwner => parent && parent.hasConnectedOwner;
         
+        [UsedImplicitly]
         public PlayerID? localPlayer => parent ? parent.localPlayer : null;
         
         [UsedByIL]
@@ -42,7 +53,11 @@ namespace PurrNet
         
         public bool isController => parent && parent.isController;
 
+        [UsedImplicitly]
         public bool IsController(bool ownerHasAuthority) => parent && parent.IsController(ownerHasAuthority);
+        
+        [UsedImplicitly]
+        public bool IsController(bool asServer, bool ownerHasAuthority) => parent && parent.IsController(asServer, ownerHasAuthority);
         
         [UsedByIL]
         public void Error(string message)
