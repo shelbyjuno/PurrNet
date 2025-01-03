@@ -127,7 +127,7 @@ namespace PurrNet
         
         internal void RemoveDirectChild(NetworkIdentity identity)
         {
-            _directChildren?.Remove(identity);
+            _directChildren.Remove(identity);
         }
 
         internal void RecalculateNearestPath()

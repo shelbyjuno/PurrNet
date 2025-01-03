@@ -265,7 +265,7 @@ namespace PurrNet.Modules
             if (closestNid)
                 closestNid.AddDirectChild(first);
             
-            if (oldParent)
+            if (oldParent && oldParent != closestNid)
                 oldParent.RemoveDirectChild(first);
 
             if (identity.id.HasValue)

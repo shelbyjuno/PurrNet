@@ -97,7 +97,6 @@ namespace PurrNet
         static readonly List<NetworkIdentity> _identities = new List<NetworkIdentity>();
 #if UNITY_EDITOR
         private bool _generating;
-        static readonly List<PrefabLink> _links = new List<PrefabLink>();
 #endif
 
         /// <summary>
@@ -227,8 +226,6 @@ namespace PurrNet
                     }
                 }
 
-                PostProcess();
-
                 if (removed > 0 || added > 0)
                     EditorUtility.SetDirty(this);
             }
@@ -242,74 +239,6 @@ namespace PurrNet
                 _generating = false;
             }
         #endif
-        }
-
-        public void PostProcess()
-        {
-#if UNITY_EDITOR
-            if (ApplicationContext.isClone)
-                return;
-
-            for (int i = 0; i < prefabs.Count; ++i)
-            {
-                if (!prefabs[i].prefab)
-                    continue;
-
-                var assetPath = AssetDatabase.GetAssetPath(prefabs[i].prefab);
-
-                if (!assetPath.EndsWith(".prefab"))
-                    continue;
-                
-                var guid = AssetDatabase.AssetPathToGUID(assetPath);
-                var prefabContents = PrefabUtility.LoadPrefabContents(assetPath);
-                
-                bool isDirty = false;
-
-                prefabContents.GetComponentsInChildren(true, _links);
-
-                if (_links.Count > 0)
-                {
-                    if (_links[0].gameObject != prefabContents)
-                    {
-                        for (int j = 0; j < _links.Count; j++)
-                            DestroyImmediate(_links[j]);
-                        var link = prefabContents.AddComponent<PrefabLink>();
-                        link.SetGUID(guid);
-                        link.hideFlags = HideFlags.NotEditable;
-                        isDirty = true;
-                    }
-                    else
-                    {
-                        if (_links.Count > 1)
-                        {
-                            isDirty = true;
-                            for (int j = 1; j < _links.Count; j++)
-                                DestroyImmediate(_links[j]);
-                        }
-
-                        if (_links[0].SetGUID(guid))
-                        {
-                            isDirty = true;
-                            _links[0].hideFlags = HideFlags.NotEditable;
-                        }
-                    }
-                }
-                else
-                {
-                    var link = prefabContents.AddComponent<PrefabLink>();
-                    link.SetGUID(guid);
-                    link.hideFlags = HideFlags.NotEditable;
-                    isDirty = true;
-                }
-
-                if (isDirty)
-                    PrefabUtility.SaveAsPrefabAsset(prefabContents, assetPath);
-                PrefabUtility.UnloadPrefabContents(prefabContents);
-            }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-#endif
         }
     }
 }

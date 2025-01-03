@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66869b09091574e4c972f42f5ae2268e, type: 3}
   m_Name: Sumo_Prefabs
   m_EditorClassIdentifier: 
-  autoGenerate: 0
-  networkOnly: 1
+  autoGenerate: 1
+  networkOnly: 0
   defaultPooling: 0
   folder: {fileID: 102900000, guid: 882254e0ba6ecf9418d0754b108072a0, type: 3}
   prefabs:
