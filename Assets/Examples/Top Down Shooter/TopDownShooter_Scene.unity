@@ -727,7 +727,7 @@ GameObject:
   - component: {fileID: 550669885}
   - component: {fileID: 550669886}
   m_Layer: 0
-  m_Name: PlayerSpawn FUCK
+  m_Name: PlayerSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1867,6 +1867,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baacc2bfe126d544691d4f39fa3785f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _stopPlayingOnDisconnect: 0
   _startServerFlags: 13
   _startClientFlags: 7
   _cookieScope: 1

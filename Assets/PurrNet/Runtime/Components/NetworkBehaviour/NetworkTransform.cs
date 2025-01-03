@@ -1,6 +1,5 @@
 using System;
 using JetBrains.Annotations;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -143,8 +142,6 @@ namespace PurrNet
         
         private bool _prevWasController;
 
-        private new bool isController => hasConnectedOwner ? (isOwner && _ownerAuth) || (!_ownerAuth && isServer) : isServer;
-        
         static Vector3 NoInterpolation(Vector3 a, Vector3 b, float t) => b;
         
         static Quaternion NoInterpolation(Quaternion a, Quaternion b, float t) => b;
@@ -194,7 +191,7 @@ namespace PurrNet
 
         protected override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
         {
-            if (isController)
+            if (IsController(_ownerAuth))
                 ReconcileTickIdToOthers();
             
             if (!_trs)
@@ -213,7 +210,7 @@ namespace PurrNet
 
         private void ReconcileTickIdToOthers()
         {
-            if (!isController)
+            if (!IsController(_ownerAuth))
                 return;
             
             if (isServer)
@@ -249,7 +246,7 @@ namespace PurrNet
                 _parentChanged = false;
             }
             
-            if (isController)
+            if (IsController(_ownerAuth))
             {
                 if (_ticksSinceLastSend >= _sendIntervalInTicks)
                 {
@@ -287,18 +284,20 @@ namespace PurrNet
         {
             if (!isSpawned)
                 return;
+
+            bool isLocalController = IsController(_ownerAuth);
             
-            if (!isController)
+            if (!isLocalController)
             {
                 ApplyLerpedPosition();
             }
             
-            if (_prevWasController != isController)
+            if (_prevWasController != isLocalController)
             {
-                if (isController && _rb)
+                if (isLocalController && _rb)
                     _rb.WakeUp();
                 
-                _prevWasController = isController;
+                _prevWasController = isLocalController;
             }
         }
 
@@ -398,12 +397,14 @@ namespace PurrNet
         
         private void ReceiveTransform_Internal(NetworkTransformData data)
         {
-            if (isController)
+            if (IsController(_ownerAuth))
                 return;
 
             // if we receive an old transform, ignore it
             if (data.id <= _id)
+            {
                 return;
+            }
             
             // update the last received id in case we switch to a new owner
             // that way the new owner will send the latest transform

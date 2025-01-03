@@ -180,7 +180,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            ApplyParentChange(identity, parent, data.path);
+            ApplyParentChange(identity, parent, data.path, true);
         }
 
         static NetworkIdentity ClosestParent(Transform trs)
@@ -200,7 +200,7 @@ namespace PurrNet.Modules
             return null;
         }
         
-        void ApplyParentChange(NetworkIdentity identity, NetworkIdentity parent, int[] path)
+        void ApplyParentChange(NetworkIdentity identity, NetworkIdentity parent, int[] path, bool refreshVisibility)
         {
             var idTrs = identity.transform;
             var oldParent = identity.parent;
@@ -231,10 +231,10 @@ namespace PurrNet.Modules
             if (parent)
                 parent.AddDirectChild(first);
             
-            if (oldParent)
+            if (oldParent && parent != oldParent)
                 oldParent.RemoveDirectChild(first);
             
-            if (_asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+            if (refreshVisibility && _asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
             {
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, idTrs, parent);
@@ -305,12 +305,14 @@ namespace PurrNet.Modules
                     int count = list.Count;
 
                     // if server, refresh visibility for all players in scene
-                    if (count > 0 & list[0] && _asServer && 
+                    if (count > 0 && list[0] && _asServer && 
                         _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
                     {
                         foreach (var playerInScene in players)
                             _visibility.RefreshVisibilityForGameObject(playerInScene, list[0].transform);
                     }
+
+                    bool isHost = _asServer && _manager.isClient;
                     
                     // trigger spawn event
                     for (var i = 0; i < count; i++)
@@ -319,6 +321,8 @@ namespace PurrNet.Modules
                         if (!nid || !nid.isSpawned) continue;
                         
                         nid.TriggerSpawnEvent(_asServer);
+                        if (isHost)
+                            nid.TriggerSpawnEvent(false);
                         onIdentityAdded?.Invoke(nid);
                     }
                 }
@@ -557,8 +561,10 @@ namespace PurrNet.Modules
                 scope = _playersManager.localPlayerId.Value;
             }
             
+            
             var baseNid = new NetworkID(_nextId++, scope);
             SetupIdsLocally(id, ref baseNid);
+            ApplyParentChange(id, id.parent, id.invertedPathToNearestParent, false);
 
             if (_scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
             {
@@ -743,6 +749,7 @@ namespace PurrNet.Modules
 
         private void SpawnDelayedIdentities()
         {
+            bool isHost = _asServer && _manager.isClient;
             for (var i = 0; i < _toSpawnNextFrame.Count; i++)
             {
                 var toSpawn = _toSpawnNextFrame[i];
@@ -751,7 +758,7 @@ namespace PurrNet.Modules
 
                 toSpawn.TriggerSpawnEvent(_asServer);
 
-                if (_asServer && _manager.isClient)
+                if (isHost)
                     toSpawn.TriggerSpawnEvent(false);
                 
                 onIdentityAdded?.Invoke(toSpawn);
@@ -763,19 +770,36 @@ namespace PurrNet.Modules
         public GameObject CreatePrototype(GameObjectPrototype prototype, List<NetworkIdentity> createdNids)
         {
             var pair = new PoolPair(_scenePool, _prefabsPool);
-            
+
             if (!HierarchyPool.TryBuildPrototype(pair, prototype, createdNids, out var result, out var shouldActivate))
             {
-                PurrLogger.LogError("Failed to create prototype");
+                PurrLogger.LogError($"Failed to create prototype {prototype}");
                 return null;
             }
             
-            result.transform.SetParent(null, false);
-            
             var resultTrs = result.transform;
-            resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
-            
+            result.transform.SetParent(null, false);
             SceneManager.MoveGameObjectToScene(result, _scene);
+
+            if (prototype.parentID.HasValue)
+            {
+                if (TryGetIdentity(prototype.parentID.Value, out var parent))
+                {
+                    result.transform.SetParent(parent.transform, false);
+                    resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
+
+                    if (result.TryGetComponent<NetworkIdentity>(out var nid))
+                        ApplyParentChange(nid, parent, prototype.path, false);
+                }
+                else
+                {
+                    PurrLogger.LogError($"Failed to find parent for '{result.name}' with id '{prototype.parentID}'.", result);
+                }
+            }
+            else
+            {
+                resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
+            }
             
             if (shouldActivate)
                 result.SetActive(true);
@@ -797,7 +821,7 @@ namespace PurrNet.Modules
                 _spawnedIdentitiesMap.Add(identity.id.Value, identity);
                 
                 identity.TriggerEarlySpawnEvent(_asServer);
-                if (_asServer && _manager.isClient)
+                if (_asServer && _manager.isClient) 
                     identity.TriggerEarlySpawnEvent(false);
                 
                 onEarlyIdentityAdded?.Invoke(identity);
@@ -824,6 +848,14 @@ namespace PurrNet.Modules
         
         public bool TryGetIdentity(NetworkID id, out NetworkIdentity identity)
         {
+            if (!_asServer && _manager.isServer)
+            {
+                if (_manager.TryGetModule<HierarchyFactory>(true, out var factory) &&
+                    factory.TryGetHierarchy(_sceneId, out var other))
+                {
+                    return other.TryGetIdentity(id, out identity);
+                }
+            }
             return _spawnedIdentitiesMap.TryGetValue(id, out identity);
         }
     }

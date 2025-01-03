@@ -91,7 +91,7 @@ namespace PurrNet
             this._depthIndex = depthIndex;
             this._shouldBePooled = shouldBePooled;
             
-            _parent = GetNearestParent();
+            parent = GetNearestParent();
 
             RecalculateNearestPath();
             
@@ -120,6 +120,8 @@ namespace PurrNet
         
         internal void AddDirectChild(NetworkIdentity identity)
         {
+            if (_directChildren.Contains(identity))
+                return;
             _directChildren.Add(identity);
         }
         

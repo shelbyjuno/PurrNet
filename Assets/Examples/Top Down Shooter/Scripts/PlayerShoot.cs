@@ -16,10 +16,10 @@ namespace PurrNet.Examples.TopDownShooter
             if (!Input.GetMouseButtonDown(0))
                 return;
             
-            // var parent = GameObject.Find($"PlayerSpawn").transform;
+            var parent = GameObject.Find($"PlayerSpawn").transform;
             var trs = transform;
 
-            UnityProxy.Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation);
+            UnityProxy.Instantiate(bulletPrefab, trs.position + trs.forward * 0.5f + Vector3.up * 0.7f, trs.rotation, parent);
         }
     }
 }

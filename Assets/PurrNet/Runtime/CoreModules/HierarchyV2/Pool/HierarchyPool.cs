@@ -191,10 +191,11 @@ namespace PurrNet.Modules
             HashSetPool<NetworkIdentity>.Destroy(virtualNodes);
             HashSetPool<NetworkIdentity>.Destroy(realNodes);
         }
+
+        readonly HashSet<GameObject> _toDestroy = new HashSet<GameObject>();
         
         public void PutBackInPool(GameObject target, bool tagName = false)
         {
-            var toDestroy = ListPool<GameObject>.Instantiate();
             var children = ListPool<NetworkIdentity>.Instantiate();
             var pidSet = HashSetPool<PrefabPieceID>.Instantiate();
 
@@ -213,10 +214,7 @@ namespace PurrNet.Modules
                 
                 // check if we should pool this object or not
                 if (!child.shouldBePooled)
-                {
-                    toDestroy.Add(child.gameObject);
-                    continue;
-                }
+                    _toDestroy.Add(child.gameObject);
                 
 #if PURRNET_DEBUG_POOLING
                 // set the tag
@@ -238,16 +236,21 @@ namespace PurrNet.Modules
                 queue.Enqueue(child.gameObject);
             }
 
-            // destroy the objects that shouldn't be pooled
-            for (var i = 0; i < toDestroy.Count; i++)
-            {
-                var id = toDestroy[i];
-                if (id) UnityProxy.DestroyDirectly(id);
-            }
-
-            ListPool<GameObject>.Destroy(toDestroy);
             ListPool<NetworkIdentity>.Destroy(children);
             HashSetPool<PrefabPieceID>.Destroy(pidSet);
+        }
+        
+        void ClearToDestroy()
+        {
+            int c = _toDestroy.Count;
+            
+            if (c == 0)
+                return;
+
+            foreach (var go in _toDestroy)
+                if (go) UnityProxy.DestroyDirectly(go);
+            
+            _toDestroy.Clear();
         }
 
         private static bool TryGetFromPool(PoolPair pair, PrefabPieceID pid, out GameObject instance)
@@ -276,13 +279,25 @@ namespace PurrNet.Modules
                 }
             }
 
-            return queue.TryDequeue(out instance);
+
+            if (queue.TryDequeue(out instance))
+            {
+                pool._toDestroy.Remove(instance);
+                return true;
+            }
+            
+            instance = null;
+            return false;
         }
 
         private void Warmup(PrefabPieceID pid)
         {
-            if (pid.prefabId >= 0 && _prefabs != null && _prefabs.TryGetPrefabData(pid.prefabId, out var prefab))
-                Warmup(prefab, pid.prefabId);
+            if (pid.prefabId >= 0 && _prefabs != null)
+            {
+                if (_prefabs.TryGetPrefabData(pid.prefabId, out var prefab))
+                    Warmup(prefab, pid.prefabId);
+                else PurrLogger.LogError($"Prefab with piece id of '{pid}' was not found");
+            }
         }
 
         public static DisposableList<int> GetInvPath(Transform parent, Transform transform)
@@ -404,7 +419,15 @@ namespace PurrNet.Modules
             }
 
             QueuePool<GameObjectRuntimePair>.Destroy(queue);
-            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, framework);
+            
+            var parentNid = rootId.parent ? rootId.parent : default;
+            var parentID = parentNid?.id;
+            int[] path = null;
+            
+            if (parentNid)
+                path = GetInvPath(parentNid.transform, transform).list.ToArray();
+            
+            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework);
             return true;
         }
 
@@ -412,7 +435,7 @@ namespace PurrNet.Modules
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
-                return new GameObjectPrototype(transform.localPosition, transform.localRotation, framework);
+                return new GameObjectPrototype(transform.localPosition, transform.localRotation, null, null, framework);
 
             var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
             var pair = GetRuntimePair(null, rootId);
@@ -447,8 +470,15 @@ namespace PurrNet.Modules
             }
 
             QueuePool<GameObjectRuntimePair>.Destroy(queue);
+
+            var parentNid = rootId.parent ? rootId.parent : default;
+            var parentID = parentNid?.id;
+            int[] path = null;
             
-            return new GameObjectPrototype(transform.localPosition, transform.localRotation, framework);
+            if (parentNid)
+                path = GetInvPath(parentNid.transform, transform).list.ToArray();
+            
+            return new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework);
         }
 
         public static bool TryBuildPrototype(PoolPair pair, GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)
@@ -476,6 +506,10 @@ namespace PurrNet.Modules
                 result = null;
                 shouldBeActive = false;
                 return false;
+            }
+            finally
+            {
+                pair.prefabPool.ClearToDestroy();
             }
         }
 
@@ -557,7 +591,7 @@ namespace PurrNet.Modules
 
         public static void WalkThePath(Transform parent, Transform instance, int[] inversedPath)
         {
-            if (inversedPath.Length == 0)
+            if (inversedPath == null || inversedPath.Length == 0)
             {
                 instance.SetParent(parent, false);
                 return;

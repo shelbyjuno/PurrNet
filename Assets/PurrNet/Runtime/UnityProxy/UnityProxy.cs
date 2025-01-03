@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Pooling;
@@ -24,19 +23,26 @@ namespace PurrNet
         static T OnPreInstantiate<T>(NetworkPrefabs.PrefabData prefabData, InstantiateData<T> instantiateData) where T : Object
         {
             var prefab = prefabData.prefab;
+
+            if (!instantiateData.TryGetHierarchy(out var hierarchy))
+            {
+                PurrLogger.LogError($"Failed to get hierarchy for `{prefab.name}`");
+                return null;
+            }
             
             if (!prefabData.pool)
             {
                 var instance = instantiateData.Instantiate();
-                PurrNetGameObjectUtils.NotifyGameObjectCreated(GetGameObject(instance), prefab);
+                var go = GetGameObject(instance);
+                PurrNetGameObjectUtils.NotifyGameObjectCreated(go, prefab);
                 return instance;
             }
 
-            if (!instantiateData.TryGetHierarchy(out var hierarchy) ||
-                !HierarchyPool.TryGetPrefabPrototype(prefab, out var prototype))
+            if (!HierarchyPool.TryGetPrefabPrototype(prefab, out var prototype))
             {
                 var instance = instantiateData.Instantiate();
-                PurrNetGameObjectUtils.NotifyGameObjectCreated(GetGameObject(instance), prefab);
+                var go = GetGameObject(instance);
+                PurrNetGameObjectUtils.NotifyGameObjectCreated(go, prefab);
                 return instance;
             }
 
@@ -49,7 +55,6 @@ namespace PurrNet
             }
             
             instantiateData.ApplyToExisting(result, prefab);
-            
             PurrNetGameObjectUtils.NotifyGameObjectCreated(result, prefab);
             
             if (result.TryGetComponent(out T component))
