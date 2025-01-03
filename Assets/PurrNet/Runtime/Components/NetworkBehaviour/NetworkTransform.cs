@@ -459,6 +459,9 @@ namespace PurrNet
 
         void OnTransformParentChanged()
         {
+            if (!isSpawned)
+                return;
+            
             if (_isIgnoringParentChanges)
                 return;
             
