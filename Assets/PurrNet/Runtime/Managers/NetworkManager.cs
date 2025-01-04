@@ -615,15 +615,21 @@ namespace PurrNet
         /// </summary>
         public event OnPlayerJoinedEvent onPlayerJoined;
         
+        void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer) => onPlayerJoined?.Invoke(player, isReconnect, asServer);
+
         /// <summary>
         /// This event is triggered when a player leaves.
         /// </summary>
         public event OnPlayerLeftEvent onPlayerLeft;
         
+        void OnPlayerLeft(PlayerID player, bool asServer) => onPlayerLeft?.Invoke(player, asServer);
+        
         /// <summary>
         /// This event is triggered when the local player receives an ID.
         /// </summary>
         public event OnPlayerEvent onLocalPlayerReceivedID;
+        
+        void OnLocalPlayerReceivedID(PlayerID player) => onLocalPlayerReceivedID?.Invoke(player);
         
         /// <summary>
         /// This event is triggered when a player joins the scene.
@@ -632,10 +638,14 @@ namespace PurrNet
         /// </summary>
         public event OnPlayerSceneEvent onPlayerJoinedScene;
         
+        void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asServer) => onPlayerJoinedScene?.Invoke(player, scene, asServer);
+        
         /// <summary>
         /// This event is triggered when a player loads the scene.
         /// </summary>
         public event OnPlayerSceneEvent onPlayerLoadedScene;
+        
+        void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer) => onPlayerLoadedScene?.Invoke(player, scene, asServer);
         
         /// <summary>
         /// This event is triggered when a player unloads the scene.
@@ -643,12 +653,16 @@ namespace PurrNet
         /// </summary>
         public event OnPlayerSceneEvent onPlayerUnloadedScene;
         
+        void OnPlayerUnloadedScene(PlayerID player, SceneID scene, bool asServer) => onPlayerUnloadedScene?.Invoke(player, scene, asServer);
+        
         /// <summary>
         /// This event is triggered when a player leaves the scene.
         /// This might not be triggered if the network rules keep the player in the scene.
         /// In that case, you want to use onPlayerUnloadedScene.
         /// </summary>
         public event OnPlayerSceneEvent onPlayerLeftScene;
+        
+        void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer) => onPlayerLeftScene?.Invoke(player, scene, asServer);
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
@@ -693,31 +707,31 @@ namespace PurrNet
             {
                 if (_serverPlayersManager != null)
                 {
-                    _serverPlayersManager.onPlayerJoined -= onPlayerJoined;
-                    _serverPlayersManager.onPlayerLeft -= onPlayerLeft;
-                    _serverPlayersManager.onLocalPlayerReceivedID -= onLocalPlayerReceivedID;
+                    _serverPlayersManager.onPlayerJoined -= OnPlayerJoined;
+                    _serverPlayersManager.onPlayerLeft -= OnPlayerLeft;
+                    _serverPlayersManager.onLocalPlayerReceivedID -= OnLocalPlayerReceivedID;
                 }
                 
                 _serverPlayersManager = playersManager;
                 
-                _serverPlayersManager.onPlayerJoined += onPlayerJoined;
-                _serverPlayersManager.onPlayerLeft += onPlayerLeft;
-                _serverPlayersManager.onLocalPlayerReceivedID += onLocalPlayerReceivedID;
+                _serverPlayersManager.onPlayerJoined += OnPlayerJoined;
+                _serverPlayersManager.onPlayerLeft += OnPlayerLeft;
+                _serverPlayersManager.onLocalPlayerReceivedID += OnLocalPlayerReceivedID;
             }
             else
             {
                 if (_clientPlayersManager != null)
                 {
-                    _clientPlayersManager.onPlayerJoined -= onPlayerJoined;
-                    _clientPlayersManager.onPlayerLeft -= onPlayerLeft;
-                    _clientPlayersManager.onLocalPlayerReceivedID -= onLocalPlayerReceivedID;
+                    _clientPlayersManager.onPlayerJoined -= OnPlayerJoined;
+                    _clientPlayersManager.onPlayerLeft -= OnPlayerLeft;
+                    _clientPlayersManager.onLocalPlayerReceivedID -= OnLocalPlayerReceivedID;
                 }
                 
                 _clientPlayersManager = playersManager;
                 
-                _clientPlayersManager.onPlayerJoined += onPlayerJoined;
-                _clientPlayersManager.onPlayerLeft += onPlayerLeft;
-                _clientPlayersManager.onLocalPlayerReceivedID += onLocalPlayerReceivedID;
+                _clientPlayersManager.onPlayerJoined += OnPlayerJoined;
+                _clientPlayersManager.onPlayerLeft += OnPlayerLeft;
+                _clientPlayersManager.onLocalPlayerReceivedID += OnLocalPlayerReceivedID;
             }
             
             var playersBroadcast = new PlayersBroadcaster(connBroadcaster, playersManager);
@@ -738,35 +752,35 @@ namespace PurrNet
             {
                 if (_serverScenePlayersModule != null)
                 {
-                    _serverScenePlayersModule.onPlayerJoinedScene -= onPlayerJoinedScene;
-                    _serverScenePlayersModule.onPlayerLoadedScene -= onPlayerLoadedScene;
-                    _serverScenePlayersModule.onPlayerUnloadedScene -= onPlayerUnloadedScene;
-                    _serverScenePlayersModule.onPlayerLeftScene -= onPlayerLeftScene;
+                    _serverScenePlayersModule.onPlayerJoinedScene -= OnPlayerJoinedScene;
+                    _serverScenePlayersModule.onPlayerLoadedScene -= OnPlayerLoadedScene;
+                    _serverScenePlayersModule.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
+                    _serverScenePlayersModule.onPlayerLeftScene -= OnPlayerLeftScene;
                 }
                 
                 _serverScenePlayersModule = scenePlayers;
                 
-                _serverScenePlayersModule.onPlayerJoinedScene += onPlayerJoinedScene;
-                _serverScenePlayersModule.onPlayerLoadedScene += onPlayerLoadedScene;
-                _serverScenePlayersModule.onPlayerUnloadedScene += onPlayerUnloadedScene;
-                _serverScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
+                _serverScenePlayersModule.onPlayerJoinedScene += OnPlayerJoinedScene;
+                _serverScenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+                _serverScenePlayersModule.onPlayerUnloadedScene += OnPlayerUnloadedScene;
+                _serverScenePlayersModule.onPlayerLeftScene += OnPlayerLeftScene;
             }
             else
             {
                 if (_clientScenePlayersModule != null)
                 {
-                    _clientScenePlayersModule.onPlayerJoinedScene -= onPlayerJoinedScene;
-                    _clientScenePlayersModule.onPlayerLoadedScene -= onPlayerLoadedScene;
-                    _clientScenePlayersModule.onPlayerUnloadedScene -= onPlayerUnloadedScene;
-                    _clientScenePlayersModule.onPlayerLeftScene -= onPlayerLeftScene;
+                    _clientScenePlayersModule.onPlayerJoinedScene -= OnPlayerJoinedScene;
+                    _clientScenePlayersModule.onPlayerLoadedScene -= OnPlayerLoadedScene;
+                    _clientScenePlayersModule.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
+                    _clientScenePlayersModule.onPlayerLeftScene -= OnPlayerLeftScene;
                 }
                 
                 _clientScenePlayersModule = scenePlayers;
                 
-                _clientScenePlayersModule.onPlayerJoinedScene += onPlayerJoinedScene;
-                _clientScenePlayersModule.onPlayerLoadedScene += onPlayerLoadedScene;
-                _clientScenePlayersModule.onPlayerUnloadedScene += onPlayerUnloadedScene;
-                _clientScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
+                _clientScenePlayersModule.onPlayerJoinedScene += OnPlayerJoinedScene;
+                _clientScenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+                _clientScenePlayersModule.onPlayerUnloadedScene += OnPlayerUnloadedScene;
+                _clientScenePlayersModule.onPlayerLeftScene += OnPlayerLeftScene;
             }
             
             
