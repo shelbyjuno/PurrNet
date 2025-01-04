@@ -1873,7 +1873,7 @@ MonoBehaviour:
   _cookieScope: 1
   _dontDestroyOnLoad: 0
   _cheetahData: 0
-  _transport: {fileID: 1216416902}
+  _transport: {fileID: 1216416901}
   _networkPrefabs: {fileID: 11400000, guid: 37af97d33ef8d9747b965053a79d21f4, type: 2}
   _networkRules: {fileID: 11400000, guid: 5879a6fa5625f844e9c773a4ca0099dc, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}
@@ -1906,8 +1906,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _roomName: 62449e84f02b4ccf9dccb7d87fc598b
-  _region: eu-central
-  _host: eu1.purrlay.riten.dev
+  _region: africa-south
+  _host: za.purrlay.riten.dev
 --- !u!114 &1216416902
 MonoBehaviour:
   m_ObjectHideFlags: 0

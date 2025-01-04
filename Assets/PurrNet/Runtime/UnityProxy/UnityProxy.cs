@@ -100,7 +100,7 @@ namespace PurrNet
 
             var manager = NetworkManager.main;
             
-            if (!manager)
+            if (!manager || manager.isOffline)
             {
                 prefabData = default;
                 return false;

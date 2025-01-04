@@ -150,21 +150,17 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<ChangeParentPacket>(OnParentChangedPacket);
         }
         
+        bool _isDisposed;
+        
         public bool Cleanup()
         {
+            if (_isDisposed)
+                return true;
+            
+            _isDisposed = true;
+            
             if (ApplicationContext.isQuitting)
             {
-                return true;
-            }
-
-            if (!_manager.isOffline)
-            {
-                if (_defaultPrototypes.Count > 0)
-                {
-                    for (var i = 0; i < _defaultPrototypes.Count; i++)
-                        _defaultPrototypes[i].Dispose();
-                    _defaultPrototypes.Clear();
-                }
                 return true;
             }
             
