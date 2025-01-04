@@ -41,44 +41,31 @@ namespace PurrNet
             get => _value;
             set
             {
-                if (isSpawned)
-                {
-                    bool isControlling = parent.IsController(_ownerAuth);
-                    if (!isControlling)
-                    {
-                        PurrLogger.LogError(
-                            $"Invalid permissions when setting '<b>SyncVar<{typeof(T).Name}> {name}</b>' on '{parent.name}'." +
-                            $"\nMaybe try enabling owner authority.", parent);
-                        return;
-                    }
-
-                    bool bothNull = value == null && _value == null;
-                    bool bothEqual = value != null && value.Equals(_value);
+                bool bothNull = value == null && _value == null;
+                bool bothEqual = value != null && value.Equals(_value);
             
-                    if (bothNull || bothEqual)
-                        return;
-
-                    _value = value;
-                    _isDirty = true;
-                }
-                else
+                if (bothNull || bothEqual)
+                    return;
+                
+                if (isSpawned && !parent.IsController(_ownerAuth))
                 {
-                    _value = value;
+                    PurrLogger.LogError(
+                        $"Invalid permissions when setting '<b>SyncVar<{typeof(T).Name}> {name}</b>' on '{parent.name}'." +
+                        $"\nMaybe try enabling owner authority.", parent);
+                    return;
                 }
 
+                _value = value;
+                _isDirty = true;
+                
                 onChanged?.Invoke(value);
             }
         }
 
-        public override void OnSpawn(bool asServer)
-        {
-            if (IsController(asServer, _ownerAuth))
-                FlushImmediately();
-        }
-
         public override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
         {
-            _id = 0;
+            if (_ownerAuth)
+                _id = 0;
         }
 
         public override void OnObserverAdded(PlayerID player)
