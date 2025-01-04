@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Pooling;
+using PurrNet.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -56,6 +57,8 @@ namespace PurrNet.Modules
             SetupSceneObjects(scene);
         }
 
+        readonly List<SceneGameObjectPrototype> _defaultPrototypes = new List<SceneGameObjectPrototype>();
+
         private void SetupSceneObjects(Scene scene)
         {
             if (_manager.TryGetModule<HierarchyFactory>(!_asServer, out var factory) &&
@@ -70,6 +73,8 @@ namespace PurrNet.Modules
             
             if (areSceneObjectsReady)
                 return;
+            
+            _defaultPrototypes.Clear();
             
             var allSceneIdentities = ListPool<NetworkIdentity>.Instantiate();
             SceneObjectsModule.GetSceneIdentities(scene, allSceneIdentities);
@@ -104,6 +109,7 @@ namespace PurrNet.Modules
                 }
 
                 SpawnSceneObject(children);
+                _defaultPrototypes.Add(new SceneGameObjectPrototype(root.transform.parent, HierarchyPool.GetFullPrototype(root.transform)));
                 ListPool<NetworkIdentity>.Destroy(children);
                 
                 if (!_asServer)
@@ -131,9 +137,6 @@ namespace PurrNet.Modules
 
         public void Disable()
         {
-            /*if (_manager.isOffline)
-                PutAllBackInPool();*/
-            
             PurrNetGameObjectUtils.onGameObjectCreated -= OnGameObjectCreated;
             _visibility.visibilityChanged -= OnVisibilityChanged;
             _scenePlayers.onPrePlayerloadedScene -= OnPlayerLoadedScene;
@@ -145,6 +148,55 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<DespawnPacket>(OnDespawnPacket);
             _playersManager.Unsubscribe<FinishSpawnPacket>(OnFinishSpawnPacket);
             _playersManager.Unsubscribe<ChangeParentPacket>(OnParentChangedPacket);
+        }
+        
+        public bool Cleanup()
+        {
+            if (ApplicationContext.isQuitting)
+            {
+                return true;
+            }
+
+            if (!_manager.isOffline)
+            {
+                if (_defaultPrototypes.Count > 0)
+                {
+                    for (var i = 0; i < _defaultPrototypes.Count; i++)
+                        _defaultPrototypes[i].Dispose();
+                    _defaultPrototypes.Clear();
+                }
+                return true;
+            }
+            
+            var hash = HashSetPool<NetworkIdentity>.Instantiate();
+
+            for (var i = 0; i < _spawnedIdentities.Count; i++)
+            {
+                var nid = _spawnedIdentities[i];
+                var root = nid.GetRootIdentity();
+
+                if (!root)
+                    continue;
+
+                hash.Add(root);
+            }
+
+            foreach (var r in hash)
+                Despawn(r.gameObject, true);
+
+            foreach (var defaultPrototype in _defaultPrototypes)
+            {
+                var result = CreatePrototype(defaultPrototype.prototype, null);
+                if (result && defaultPrototype.ogParent)
+                    result.transform.parent = defaultPrototype.ogParent;
+                
+                defaultPrototype.Dispose();
+            }
+            
+            _defaultPrototypes.Clear();
+            
+            HashSetPool<NetworkIdentity>.Destroy(hash);
+            return true;
         }
 
         private void OnNetworkIDReceived(NetworkID nid)
@@ -797,10 +849,7 @@ namespace PurrNet.Modules
             var pair = new PoolPair(_scenePool, _prefabsPool);
 
             if (!HierarchyPool.TryBuildPrototype(pair, prototype, createdNids, out var result, out var shouldActivate))
-            {
-                PurrLogger.LogError($"Failed to create prototype {prototype}");
                 return null;
-            }
             
             var resultTrs = result.transform;
             result.transform.SetParent(null, false);

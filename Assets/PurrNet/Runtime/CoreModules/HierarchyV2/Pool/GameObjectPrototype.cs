@@ -5,6 +5,23 @@ using UnityEngine;
 
 namespace PurrNet.Modules
 {
+    public struct SceneGameObjectPrototype : IDisposable
+    {
+        public readonly Transform ogParent;
+        public GameObjectPrototype prototype;
+        
+        public SceneGameObjectPrototype(Transform ogParent, GameObjectPrototype prototype)
+        {
+            this.ogParent = ogParent;
+            this.prototype = prototype;
+        }
+
+        public void Dispose()
+        {
+            prototype.Dispose();
+        }
+    }
+    
     public struct GameObjectPrototype : IDisposable
     {
         public Vector3 position;

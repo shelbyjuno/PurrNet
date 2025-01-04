@@ -292,11 +292,6 @@ namespace PurrNet
         private readonly PurrHashSet<PlayerID> _observers = new PurrHashSet<PlayerID>(4);
         
         public IReadonlyHashSet<PlayerID> observers => _observers;
-
-        /// <summary>
-        /// The root identity is the topmost parent that has a NetworkIdentity.
-        /// </summary>
-        public NetworkIdentity root { [UsedImplicitly] get; private set; }
         
         [UsedImplicitly]
         public void QueueOnSpawned(Action action)
@@ -692,7 +687,6 @@ namespace PurrNet
             _clientTickManager = null;
             _ticker = null;
             isInPool = true;
-            root = null;
         }
 
         private void OnChildDespawned(NetworkIdentity networkIdentity)
@@ -706,7 +700,6 @@ namespace PurrNet
             layer = gameObject.layer;
             networkManager = manager;
             sceneId = scene;
-            root = GetRootIdentity();
 
             bool wasAlreadySpawned = isSpawned;
 

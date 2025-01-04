@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
-    public class HierarchyFactory : INetworkModule, IFixedUpdate, IPreFixedUpdate
+    public class HierarchyFactory : INetworkModule, IFixedUpdate, IPreFixedUpdate, ICleanup
     {
         readonly ScenesModule _scenes;
         
@@ -144,6 +144,17 @@ namespace PurrNet.Modules
                 return hierarchy.TryGetIdentity(id, out result);
             result = null;
             return false;
+        }
+
+        public bool Cleanup()
+        {
+            for (var i = 0; i < _rawHierarchies.Count; i++)
+            {
+                if (!_rawHierarchies[i].Cleanup())
+                    return false;
+            }
+
+            return true;
         }
     }
 }
