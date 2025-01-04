@@ -401,7 +401,7 @@ namespace PurrNet.Modules
             if (parentNid)
                 path = GetInvPath(parentNid.transform, transform).list.ToArray();
             
-            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework, isDefaultParent);
+            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework, isDefaultParent ? transform.GetSiblingIndex() : null);
             return true;
         }
 
@@ -409,7 +409,7 @@ namespace PurrNet.Modules
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
-                return new GameObjectPrototype(transform.localPosition, transform.localRotation, null, null, framework, false);
+                return new GameObjectPrototype(transform.localPosition, transform.localRotation, null, null, framework, null);
 
             bool isDefaultParent = transform.parent == rootId.defaultParent;
             var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
@@ -450,7 +450,7 @@ namespace PurrNet.Modules
             if (parentNid)
                 path = GetInvPath(parentNid.transform, transform).list.ToArray();
             
-            return new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework, isDefaultParent);
+            return new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework, isDefaultParent ? transform.GetSiblingIndex() : null);
         }
 
         public static bool TryBuildPrototype(PoolPair pair, GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)

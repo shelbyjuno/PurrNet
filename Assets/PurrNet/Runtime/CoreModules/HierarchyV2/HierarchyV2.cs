@@ -867,9 +867,10 @@ namespace PurrNet.Modules
                     PurrLogger.LogError($"Failed to find parent for '{result.name}' with id '{prototype.parentID}'.", result);
                 }
             }
-            else if (prototype.isDefaultParent && result.TryGetComponent<NetworkIdentity>(out var nid) && nid.defaultParent)
+            else if (prototype.defaultParentSiblingIndex.HasValue && result.TryGetComponent<NetworkIdentity>(out var nid) && nid.defaultParent)
             {
                 result.transform.SetParent(nid.defaultParent, false);
+                result.transform.SetSiblingIndex(prototype.defaultParentSiblingIndex.Value);
                 resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
             }
             else

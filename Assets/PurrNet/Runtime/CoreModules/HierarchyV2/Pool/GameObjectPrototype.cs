@@ -11,7 +11,7 @@ namespace PurrNet.Modules
         public Quaternion rotation;
         public NetworkID? parentID;
         public readonly int[] path;
-        public readonly bool isDefaultParent;
+        public readonly int? defaultParentSiblingIndex;
         public DisposableList<GameObjectFrameworkPiece> framework;
         
         public GameObjectPrototype(
@@ -20,14 +20,14 @@ namespace PurrNet.Modules
             NetworkID? parentID, 
             int[] path,
             DisposableList<GameObjectFrameworkPiece> framework,
-            bool isDefaultParent)
+            int? defaultParentSiblingIndex)
         {
             this.position = position;
             this.rotation = rotation;
             this.framework = framework;
             this.parentID = parentID;
             this.path = path;
-            this.isDefaultParent = isDefaultParent;
+            this.defaultParentSiblingIndex = defaultParentSiblingIndex;
         }
 
         public void Dispose()
