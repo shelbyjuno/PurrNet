@@ -5,38 +5,29 @@ using UnityEngine;
 
 namespace PurrNet.Modules
 {
-    public struct SceneGameObjectPrototype : IDisposable
-    {
-        public readonly Transform ogParent;
-        public GameObjectPrototype prototype;
-        
-        public SceneGameObjectPrototype(Transform ogParent, GameObjectPrototype prototype)
-        {
-            this.ogParent = ogParent;
-            this.prototype = prototype;
-        }
-
-        public void Dispose()
-        {
-            prototype.Dispose();
-        }
-    }
-    
     public struct GameObjectPrototype : IDisposable
     {
         public Vector3 position;
         public Quaternion rotation;
         public NetworkID? parentID;
         public readonly int[] path;
+        public readonly bool isDefaultParent;
         public DisposableList<GameObjectFrameworkPiece> framework;
         
-        public GameObjectPrototype(Vector3 position, Quaternion rotation, NetworkID? parentID, int[] path, DisposableList<GameObjectFrameworkPiece> framework)
+        public GameObjectPrototype(
+            Vector3 position, 
+            Quaternion rotation,
+            NetworkID? parentID, 
+            int[] path,
+            DisposableList<GameObjectFrameworkPiece> framework,
+            bool isDefaultParent)
         {
             this.position = position;
             this.rotation = rotation;
             this.framework = framework;
             this.parentID = parentID;
             this.path = path;
+            this.isDefaultParent = isDefaultParent;
         }
 
         public void Dispose()

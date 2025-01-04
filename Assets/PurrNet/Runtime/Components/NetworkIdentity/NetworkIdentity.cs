@@ -41,6 +41,8 @@ namespace PurrNet
         [SerializeField, HideInInspector] 
         private List<NetworkIdentity> _directChildren;
         
+        internal Transform defaultParent { get; private set; }
+        
         public int[] invertedPathToNearestParent
         {
             get => _invertedPathToNearestParent;
@@ -84,6 +86,9 @@ namespace PurrNet
         
         public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled, bool isSceneObject)
         {
+            if (isSceneObject)
+                defaultParent = transform.parent;
+            
             this.isSceneObject = isSceneObject;
 
             this._prefabId = prefabId;

@@ -57,7 +57,7 @@ namespace PurrNet.Modules
             SetupSceneObjects(scene);
         }
 
-        readonly List<SceneGameObjectPrototype> _defaultPrototypes = new List<SceneGameObjectPrototype>();
+        readonly List<GameObjectPrototype> _defaultPrototypes = new List<GameObjectPrototype>();
 
         private void SetupSceneObjects(Scene scene)
         {
@@ -109,7 +109,7 @@ namespace PurrNet.Modules
                 }
 
                 SpawnSceneObject(children);
-                _defaultPrototypes.Add(new SceneGameObjectPrototype(root.transform.parent, HierarchyPool.GetFullPrototype(root.transform)));
+                _defaultPrototypes.Add(HierarchyPool.GetFullPrototype(root.transform));
                 ListPool<NetworkIdentity>.Destroy(children);
                 
                 if (!_asServer)
@@ -186,10 +186,7 @@ namespace PurrNet.Modules
 
             foreach (var defaultPrototype in _defaultPrototypes)
             {
-                var result = CreatePrototype(defaultPrototype.prototype, null);
-                if (result && defaultPrototype.ogParent)
-                    result.transform.parent = defaultPrototype.ogParent;
-                
+                CreatePrototype(defaultPrototype, null);
                 defaultPrototype.Dispose();
             }
             
@@ -869,6 +866,11 @@ namespace PurrNet.Modules
                 {
                     PurrLogger.LogError($"Failed to find parent for '{result.name}' with id '{prototype.parentID}'.", result);
                 }
+            }
+            else if (prototype.isDefaultParent && result.TryGetComponent<NetworkIdentity>(out var nid) && nid.defaultParent)
+            {
+                result.transform.SetParent(nid.defaultParent, false);
+                resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
             }
             else
             {

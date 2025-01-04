@@ -347,6 +347,8 @@ namespace PurrNet.Modules
                 prototype = default;
                 return false;
             }
+            
+            bool isDefaultParent = transform.parent == rootId.defaultParent;
 
             var rootPair = new TransformIdentityPair(transform, rootId);
             if (!rootPair.HasObserver(scope, allChildren))
@@ -399,7 +401,7 @@ namespace PurrNet.Modules
             if (parentNid)
                 path = GetInvPath(parentNid.transform, transform).list.ToArray();
             
-            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework);
+            prototype = new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework, isDefaultParent);
             return true;
         }
 
@@ -407,8 +409,9 @@ namespace PurrNet.Modules
         {
             var framework = new DisposableList<GameObjectFrameworkPiece>(16);
             if (!transform.TryGetComponent<NetworkIdentity>(out var rootId))
-                return new GameObjectPrototype(transform.localPosition, transform.localRotation, null, null, framework);
+                return new GameObjectPrototype(transform.localPosition, transform.localRotation, null, null, framework, false);
 
+            bool isDefaultParent = transform.parent == rootId.defaultParent;
             var queue = QueuePool<GameObjectRuntimePair>.Instantiate();
             var pair = GetRuntimePair(null, rootId);
 
@@ -447,7 +450,7 @@ namespace PurrNet.Modules
             if (parentNid)
                 path = GetInvPath(parentNid.transform, transform).list.ToArray();
             
-            return new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework);
+            return new GameObjectPrototype(transform.localPosition, transform.localRotation, parentID, path, framework, isDefaultParent);
         }
 
         public static bool TryBuildPrototype(PoolPair pair, GameObjectPrototype prototype, List<NetworkIdentity> createdNids, out GameObject result, out bool shouldBeActive)
