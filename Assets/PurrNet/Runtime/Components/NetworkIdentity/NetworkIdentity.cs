@@ -23,10 +23,7 @@ namespace PurrNet
         private int _prefabId = int.MinValue;
 
         [SerializeField, HideInInspector]
-        private int _siblingIndex = int.MinValue;
-        
-        [SerializeField, HideInInspector]
-        private int _depthIndex = int.MinValue;
+        private int _componentIndex = int.MinValue;
 
         [SerializeField, HideInInspector] 
         private bool _shouldBePooled;
@@ -77,15 +74,13 @@ namespace PurrNet
 
         public int prefabId => _prefabId;
         
-        public int siblingIndex => _siblingIndex;
-        
-        public int depthIndex => _depthIndex;
+        public int componentIndex => _componentIndex;
         
         public bool shouldBePooled => _shouldBePooled;
         
         public bool isSetup => _isSetup;
         
-        public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled, bool isSceneObject)
+        public void PreparePrefabInfo(int prefabId, int componentIndex, bool shouldBePooled, bool isSceneObject)
         {
             _isSetup = true;
             
@@ -95,8 +90,7 @@ namespace PurrNet
             this.isSceneObject = isSceneObject;
 
             this._prefabId = prefabId;
-            this._siblingIndex = siblingIndex;
-            this._depthIndex = depthIndex;
+            this._componentIndex = componentIndex;
             this._shouldBePooled = shouldBePooled;
             
             parent = GetNearestParent();

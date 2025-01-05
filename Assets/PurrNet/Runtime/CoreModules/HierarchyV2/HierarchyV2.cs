@@ -97,7 +97,6 @@ namespace PurrNet.Modules
                 
                 var cc = children.Count;
                 var pid = -i - 2;
-                var rootDepth = root.transform.GetTransformDepth();
                 
                 for (int j = 0; j < cc; j++)
                 {
@@ -107,8 +106,9 @@ namespace PurrNet.Modules
                         continue;
                     
                     var trs = child.transform;
-                    int depth = trs.GetTransformDepth() - rootDepth;
-                    child.PreparePrefabInfo(pid, trs.parent ? trs.GetSiblingIndex() : 0, depth, true, true);
+                    var first = trs.GetComponent<NetworkIdentity>();
+
+                    child.PreparePrefabInfo(pid, child == first ? j : first.componentIndex, true, true);
                     
                     if (!_asServer)
                         child.ResetIdentity();
@@ -604,9 +604,7 @@ namespace PurrNet.Modules
             if (!_manager.TryGetPrefabData(prefab, out var data, out var idx))
                 return;
             
-            var rootOffset = obj.transform.GetTransformDepth();
-
-            NetworkManager.SetupPrefabInfo(obj, idx, data.pooled, false, -rootOffset);
+            NetworkManager.SetupPrefabInfo(obj, idx, data.pooled);
 
             Spawn(obj);
         }

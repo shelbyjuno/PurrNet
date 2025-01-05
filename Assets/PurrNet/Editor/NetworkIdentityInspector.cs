@@ -167,8 +167,7 @@ namespace PurrNet.Editor
             EditorGUILayout.BeginVertical("box", GUILayout.ExpandWidth(false));
             
             EditorGUILayout.LabelField($"prefabId: {identity.prefabId}");
-            EditorGUILayout.LabelField($"siblingIndex: {identity.siblingIndex}");
-            EditorGUILayout.LabelField($"depthIndex: {identity.depthIndex}");
+            EditorGUILayout.LabelField($"componentIndex: {identity.componentIndex}");
             EditorGUILayout.LabelField($"shouldBePooled: {identity.shouldBePooled}");
             EditorGUILayout.ObjectField("parent", identity.parent, typeof(NetworkIdentity), true);
             

@@ -60,7 +60,7 @@ namespace PurrNet.Modules
         private void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
         {
             var copy = UnityProxy.InstantiateDirectly(prefabData.prefab, _parent);
-            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pooled, false, -1);
+            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pooled);
             
             if (!_prefabPrototypes.ContainsKey(prefabData.prefab))
             {
@@ -151,7 +151,7 @@ namespace PurrNet.Modules
 
             foreach (var child in virtualNodes)
             {
-                var pid = new PrefabPieceID(child.prefabId, child.depthIndex, child.siblingIndex);
+                var pid = new PrefabPieceID(child.prefabId, child.componentIndex);
                 var pair = pid.prefabId >= 0 ? pool.prefabPool : pool.scenePool;
 
                 // check if we should pool this object or not
@@ -208,7 +208,7 @@ namespace PurrNet.Modules
                 if (!child)
                     continue;
                 
-                var pid = new PrefabPieceID(child.prefabId, child.depthIndex, child.siblingIndex);
+                var pid = new PrefabPieceID(child.prefabId, child.componentIndex);
 
                 if (!pidSet.Add(pid)) continue;
                 
@@ -381,7 +381,7 @@ namespace PurrNet.Modules
                     }
                 }
 
-                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex, current.identity.siblingIndex);
+                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.componentIndex);
                 var piece = new GameObjectFrameworkPiece(
                     pid,
                     current.identity.id ?? default,
@@ -429,8 +429,7 @@ namespace PurrNet.Modules
                     queue.Enqueue(childPair);
                 }
 
-                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.depthIndex,
-                    current.identity.siblingIndex);
+                var pid = new PrefabPieceID(current.identity.prefabId, current.identity.componentIndex);
                 var piece = new GameObjectFrameworkPiece(
                     pid,
                     current.identity.id ?? default,

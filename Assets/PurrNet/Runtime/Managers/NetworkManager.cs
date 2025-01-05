@@ -313,9 +313,7 @@ namespace PurrNet
         /// <param name="instance"></param>
         /// <param name="pid">The prefab index in the network prefabs list.</param>
         /// <param name="shouldBePooled">Whether the object should be pooled.</param>
-        /// <param name="isSceneObject">Scene objects are not part of the prefab list and come from the scene itself.</param>
-        /// <param name="depthOffset">The depth offset to apply to the transform depth. If it's a root object, the offset should be zero.</param>
-        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject, int depthOffset = 0)
+        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             
@@ -329,18 +327,22 @@ namespace PurrNet
                 var child = children[i];
                 var trs = child.transform;
                 
-                bool isRoot = trs == instance.transform;
+                var first = trs.GetComponent<NetworkIdentity>();
 
                 child.PreparePrefabInfo(
                     pid,
-                    isRoot ? 0 : trs.GetSiblingIndex(),
-                    trs.GetTransformDepth() + depthOffset, 
+                    child == first ? i : first.componentIndex,
                     shouldBePooled,
-                    isSceneObject
+                    false
                 );
             }
 
             ListPool<NetworkIdentity>.Destroy(children);
+        }
+
+        static void PreparePrefabInfo()
+        {
+            
         }
         
         public bool TryGetPrefabData(GameObject prefab, out NetworkPrefabs.PrefabData o, out int pid)

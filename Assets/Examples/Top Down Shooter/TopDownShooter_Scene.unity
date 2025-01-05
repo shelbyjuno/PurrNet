@@ -543,8 +543,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -695,8 +694,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -728,6 +726,7 @@ GameObject:
   m_Component:
   - component: {fileID: 550669885}
   - component: {fileID: 550669886}
+  - component: {fileID: 550669887}
   m_Layer: 0
   m_Name: PlayerSpawn
   m_TagString: Untagged
@@ -764,8 +763,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+--- !u!114 &550669887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 550669884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _isSetup: 0
+  _prefabId: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -1277,8 +1296,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -2382,8 +2400,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
