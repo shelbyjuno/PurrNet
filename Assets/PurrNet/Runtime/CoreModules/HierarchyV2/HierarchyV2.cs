@@ -100,6 +100,10 @@ namespace PurrNet.Modules
                 for (int j = 0; j < cc; j++)
                 {
                     var child = children[j];
+                    
+                    if (child.isSetup)
+                        continue;
+                    
                     var trs = child.transform;
                     int depth = trs.GetTransformDepth() - rootDepth;
                     child.PreparePrefabInfo(pid, trs.parent ? trs.GetSiblingIndex() : 0, depth, true, true);
@@ -542,7 +546,7 @@ namespace PurrNet.Modules
                     onObserverRemoved?.Invoke(player, child);
                 }
                 
-                
+                ListPool<NetworkIdentity>.Destroy(children);
                 SendDespawnPacket(player, identity);
             }
         }

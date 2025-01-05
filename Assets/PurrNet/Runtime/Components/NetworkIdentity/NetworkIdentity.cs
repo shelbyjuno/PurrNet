@@ -16,10 +16,9 @@ namespace PurrNet
     [DefaultExecutionOrder(-1000)]
     public partial class NetworkIdentity : MonoBehaviour
     {
-        /// <summary>
-        /// The prefab id of this object;
-        /// Is -1 if scene object.
-        /// </summary>
+        [SerializeField, HideInInspector]
+        private bool _isSetup;
+        
         [SerializeField, HideInInspector]
         private int _prefabId = int.MinValue;
 
@@ -84,8 +83,12 @@ namespace PurrNet
         
         public bool shouldBePooled => _shouldBePooled;
         
+        public bool isSetup => _isSetup;
+        
         public void PreparePrefabInfo(int prefabId, int siblingIndex, int depthIndex, bool shouldBePooled, bool isSceneObject)
         {
+            _isSetup = true;
+            
             if (isSceneObject)
                 defaultParent = transform.parent;
             

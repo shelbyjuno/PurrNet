@@ -158,6 +158,7 @@ namespace PurrNet.Modules
             for (var i = 0; i < identities.Count; i++)
             {
                 var identity = identities[i];
+                
                 var r = identity.GetOverrideOrDefault(rules);
 
                 if (r && r.childrenInherit)
