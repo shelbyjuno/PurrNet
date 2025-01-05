@@ -285,15 +285,6 @@ namespace PurrNet
         [UsedByIL]
         public PlayerID localPlayerForced => localPlayer ?? default;
         
-        public event Action<NetworkIdentity> onFlush;
-        public event Action<NetworkIdentity> onRemoved;
-        public event Action<NetworkIdentity, bool> onEnabledChanged;
-        public event Action<NetworkIdentity, bool> onActivatedChanged;
-        
-        private bool _lastEnabledState;
-        private GameObjectEvents _events;
-        private GameObject _gameObject;
-
         private readonly PurrHashSet<PlayerID> _observers = new PurrHashSet<PlayerID>(4);
         
         public IReadonlyHashSet<PlayerID> observers => _observers;
@@ -577,39 +568,6 @@ namespace PurrNet
         {
             return player != owner;
         }
-        
-        private void OnActivated(bool active)
-        {
-            if (_ignoreNextActivation)
-            {
-                _ignoreNextActivation = false;
-                return;
-            }
-            
-            onActivatedChanged?.Invoke(this, active);
-        }
-
-        public virtual void OnEnable()
-        {
-            UpdateEnabledState();
-        }
-        
-        public virtual void OnDisable()
-        {
-            UpdateEnabledState();
-        }
-
-        internal void UpdateEnabledState()
-        {
-            if (_lastEnabledState != enabled)
-            {
-                if (_ignoreNextEnable)
-                     _ignoreNextEnable = false;
-                else onEnabledChanged?.Invoke(this, enabled);
-
-                _lastEnabledState = enabled;
-            }
-        }
 
         private void CallInitMethods()
         {
@@ -674,17 +632,11 @@ namespace PurrNet
             _idClient = null;
             internalOwnerServer = null;
             internalOwnerClient = null;
-            _lastEnabledState = false;
-            _gameObject = null;
-            _events = null;
             _moduleId = 0;
             _modules.Clear();
             _externalModulesView.Clear();
             _tickables.Clear();
             _visitiblityRules = null;
-            _ignoreNextDestroy = false;
-            _ignoreNextActivation = false;
-            _ignoreNextEnable = false;
             _spawnedCount = 0;
             _onSpawnedQueue?.Clear();
             _serverSceneEvents = null;
@@ -721,18 +673,6 @@ namespace PurrNet
                 internalOwnerClient = null;
             }
             
-            _lastEnabledState = enabled;
-            _gameObject = gameObject;
-            
-            if (!_gameObject.TryGetComponent(out _events))
-            {
-                _events = _gameObject.AddComponent<GameObjectEvents>();
-                _events.InternalAwake();
-                _events.hideFlags = HideFlags.HideInInspector;
-                _events.onActivatedChanged += OnActivated;
-                _events.Register(this);
-            }
-
             if (!wasAlreadySpawned)
             {
                 _modules.Clear();
@@ -756,18 +696,6 @@ namespace PurrNet
             }
         }
 
-        private bool _ignoreNextDestroy;
-        
-        internal void IgnoreNextDestroyCallback()
-        {
-            _ignoreNextDestroy = true;
-        }
-        
-        internal void ResetIgnoreNextDestroy()
-        {
-            _ignoreNextDestroy = false;
-        }
-        
         private PlayerID? _pendingOwnershipRequest;
         
         /// <summary>
@@ -878,50 +806,13 @@ namespace PurrNet
         
         protected virtual void OnDestroy()
         {
-            if (_events)
-                _events.Unregister(this);
-            
-            if (_ignoreNextDestroy)
-            {
-                _ignoreNextDestroy = false;
-                
-                TriggerDespawnEvent(true);
-                TriggerDespawnEvent(false);
-                return;
-            }
-            
             if (ApplicationContext.isQuitting)
                 return;
-
-            onRemoved?.Invoke(this);
             
             TriggerDespawnEvent(true);
             TriggerDespawnEvent(false);
 
             _ticker = null;
-        }
-        
-        private bool _ignoreNextActivation;
-        private bool _ignoreNextEnable;
-
-        internal void IgnoreNextActivationCallback()
-        {
-            _ignoreNextActivation = true;
-        }
-        
-        internal void IgnoreNextEnableCallback()
-        {
-            _ignoreNextEnable = true;
-        }
-        
-        internal void ResetIgnoreNextActivation()
-        {
-            _ignoreNextActivation = false;
-        }
-        
-        internal void ResetIgnoreNextEnable()
-        {
-            _ignoreNextEnable = false;
         }
         
         private int _spawnedCount;
@@ -1039,24 +930,6 @@ namespace PurrNet
             
             for (int i = 0; i < _externalModulesView.Count; i++)
                 _externalModulesView[i].OnObserverRemoved(target);
-        }
-
-        /// <summary>
-        /// Sends all the queued actions to the server.
-        /// For example an auto-spawn or destroying a networked gameobject.
-        /// Without flushing your RPC could be sent before the auto-spawn or destroy.
-        /// Same for parent changes, etc.
-        /// </summary>
-        public void FlushHierarchyActions()
-        {
-            onFlush?.Invoke(this);
-        }
-
-        public void SetLocalOwner(bool asServer, PlayerID? actionOwner)
-        {
-            if (asServer)
-                internalOwnerServer = actionOwner;
-            else internalOwnerClient = actionOwner;
         }
 
         internal void ClearObservers()

@@ -76,7 +76,7 @@ namespace PurrNet.Modules
             var hierarchy = new HierarchyV2(_manager, scene, sceneState.scene, _scenePlayersModule, _playersManager, asServer);
 
             hierarchy.onEarlyIdentityAdded += OnEarlyIdentityAdded;
-            hierarchy.onEarlyObserverAdded += OnEarlyObserverAdded;
+            hierarchy.onObserverAdded += OnObserverAdded;
             hierarchy.onIdentityAdded += OnIdentityAdded;
             hierarchy.onIdentityRemoved += OnIdentityRemoved;
             
@@ -88,7 +88,7 @@ namespace PurrNet.Modules
 
         private void OnEarlyIdentityAdded(NetworkIdentity identity) => onEarlyIdentityAdded?.Invoke(identity);
         
-        private void OnEarlyObserverAdded(PlayerID player, NetworkIdentity identity) => onEarlyObserverAdded?.Invoke(player, identity);
+        private void OnObserverAdded(PlayerID player, NetworkIdentity identity) => onEarlyObserverAdded?.Invoke(player, identity);
         
         private void OnIdentityAdded(NetworkIdentity identity) => onIdentityAdded?.Invoke(identity);
         
@@ -105,7 +105,7 @@ namespace PurrNet.Modules
             hierarchy.Disable();
             
             hierarchy.onEarlyIdentityAdded -= OnEarlyIdentityAdded;
-            hierarchy.onEarlyObserverAdded -= OnEarlyObserverAdded;
+            hierarchy.onObserverAdded -= OnObserverAdded;
             hierarchy.onIdentityAdded -= OnIdentityAdded;
             hierarchy.onIdentityRemoved -= OnIdentityRemoved;
             

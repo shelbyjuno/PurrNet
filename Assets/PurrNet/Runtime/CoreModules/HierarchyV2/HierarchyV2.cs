@@ -28,7 +28,7 @@ namespace PurrNet.Modules
         
         private int _nextId;
 
-        public bool areSceneObjectsReady { get; private set; }
+        private bool _areSceneObjectsReady;
         
         public event IdentityAction onEarlyIdentityAdded;
 
@@ -36,9 +36,9 @@ namespace PurrNet.Modules
         
         public event IdentityAction onIdentityRemoved;
 
-        public event ObserverAction onEarlyObserverAdded;
+        public event ObserverAction onObserverAdded;
         
-        // public event ObserverAction onObserverAdded;
+        public event ObserverAction onObserverRemoved;
         
         public HierarchyV2(NetworkManager manager, SceneID sceneId, Scene scene, 
             ScenePlayersModule players, PlayersManager playersManager, bool asServer)
@@ -64,14 +64,14 @@ namespace PurrNet.Modules
             if (_manager.TryGetModule<HierarchyFactory>(!_asServer, out var factory) &&
                 factory.TryGetHierarchy(_sceneId, out var other))
             {
-                if (other.areSceneObjectsReady)
+                if (other._areSceneObjectsReady)
                 {
-                    areSceneObjectsReady = true;
+                    _areSceneObjectsReady = true;
                     return;
                 }
             }
             
-            if (areSceneObjectsReady)
+            if (_areSceneObjectsReady)
                 return;
             
             _defaultPrototypes.Clear();
@@ -117,7 +117,7 @@ namespace PurrNet.Modules
             }
             
             ListPool<NetworkIdentity>.Destroy(allSceneIdentities);
-            areSceneObjectsReady = true;
+            _areSceneObjectsReady = true;
         }
 
         public void Enable()
@@ -521,7 +521,7 @@ namespace PurrNet.Modules
                         {
                             var nid = children[i];
                             nid.TriggerOnObserverAdded(player);
-                            onEarlyObserverAdded?.Invoke(player, nid);
+                            onObserverAdded?.Invoke(player, nid);
                         }
                     }
                 }
@@ -530,9 +530,21 @@ namespace PurrNet.Modules
                 ListPool<NetworkIdentity>.Destroy(children);
                 return;
             }
-            
+
             if (scope.TryGetComponent<NetworkIdentity>(out var identity))
+            {
+                var children = ListPool<NetworkIdentity>.Instantiate();
+                GetComponentsInChildren(identity.gameObject, children);
+
+                foreach (var child in children)
+                {
+                    child.TriggerOnObserverRemoved(player);
+                    onObserverRemoved?.Invoke(player, child);
+                }
+                
+                
                 SendDespawnPacket(player, identity);
+            }
         }
 
         private void SendDespawnPacket(PlayerID player, NetworkIdentity identity)
@@ -627,14 +639,15 @@ namespace PurrNet.Modules
             SetupIdsLocally(id, ref baseNid);
             ApplyParentChange(id, id.parent, id.invertedPathToNearestParent, false);
 
-            if (_scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+            if (!_asServer)
+            {
+                SendSpawnPacket(default, HierarchyPool.GetFullPrototype(gameObject.transform));
+            }
+            else if (_scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
             {
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, gameObject.transform);
             }
-
-            if (!_asServer)
-                SendSpawnPacket(default, HierarchyPool.GetFullPrototype(gameObject.transform));
             
             AutoAssignOwnership(id);
         }

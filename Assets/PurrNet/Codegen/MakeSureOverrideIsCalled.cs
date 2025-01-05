@@ -57,8 +57,6 @@ namespace PurrNet.Codegen
             return method.Name switch
             {
                 "OnDestroy" => true,
-                "OnEnable" => true,
-                "OnDisable" => true,
                 _ => false
             };
         }

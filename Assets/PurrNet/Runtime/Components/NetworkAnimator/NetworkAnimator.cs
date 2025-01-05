@@ -45,16 +45,14 @@ namespace PurrNet
                 _sontSyncHashes.Add(Animator.StringToHash(param));
         }
 
-        public override void OnEnable()
+        void OnEnable()
         {
-            base.OnEnable();
             if (_animator && !_animator.enabled)
                 _animator.enabled = true;
         }
 
-        public override void OnDisable()
+        void OnDisable()
         {
-            base.OnDisable();
             if (_animator && _animator.enabled)
                 _animator.enabled = false;
         }
