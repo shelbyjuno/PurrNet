@@ -39,6 +39,8 @@ namespace PurrNet.Modules
         public event ObserverAction onObserverAdded;
         
         public event ObserverAction onObserverRemoved;
+
+        private bool _isPlayerReady;
         
         public HierarchyV2(NetworkManager manager, SceneID sceneId, Scene scene, 
             ScenePlayersModule players, PlayersManager playersManager, bool asServer)
@@ -204,6 +206,8 @@ namespace PurrNet.Modules
 
         private void OnPlayerReceivedID(PlayerID player)
         {
+            _isPlayerReady = true;
+            
             if (!_asServer && _manager.TryGetModule<HierarchyFactory>(true, out var factory) &&
                 factory.TryGetHierarchy(_sceneId, out var other))
             {
@@ -369,7 +373,7 @@ namespace PurrNet.Modules
                             _visibility.RefreshVisibilityForGameObject(playerInScene, list[0].transform);
                     }
 
-                    bool isHost = _asServer && _manager.isClient;
+                    bool isHost = IsServerHost();
                     
                     // trigger spawn event
                     for (var i = 0; i < count; i++)
@@ -834,9 +838,23 @@ namespace PurrNet.Modules
             }
         }
 
+        private bool IsServerHost()
+        {
+            if (!_asServer)
+                return false;
+            
+            if (_manager.TryGetModule<HierarchyFactory>(false, out var factory) &&
+                factory.TryGetHierarchy(_sceneId, out var other))
+            {
+                return other._isPlayerReady;
+            }
+            
+            return _asServer;
+        }
+
         private void SpawnDelayedIdentities()
         {
-            bool isHost = _asServer && _manager.isClient;
+            bool isHost = IsServerHost();
             for (var i = 0; i < _toSpawnNextFrame.Count; i++)
             {
                 var toSpawn = _toSpawnNextFrame[i];
