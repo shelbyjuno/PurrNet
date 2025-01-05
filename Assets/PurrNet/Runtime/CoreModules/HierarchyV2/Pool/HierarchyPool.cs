@@ -49,7 +49,7 @@ namespace PurrNet.Modules
             {
                 var prefab = _prefabs.allPrefabs[i];
 
-                if (prefab.pool && _alreadyWarmedUp.Add(prefab.prefab))
+                if (prefab.pooled && _alreadyWarmedUp.Add(prefab.prefab))
                 {
                     for (int j = 0; j < prefab.warmupCount; j++)
                         Warmup(prefab, i);
@@ -60,7 +60,7 @@ namespace PurrNet.Modules
         private void Warmup(NetworkPrefabs.PrefabData prefabData, int pid)
         {
             var copy = UnityProxy.InstantiateDirectly(prefabData.prefab, _parent);
-            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pool, false, -1);
+            NetworkManager.SetupPrefabInfo(copy, pid, prefabData.pooled, false, -1);
             
             if (!_prefabPrototypes.ContainsKey(prefabData.prefab))
             {

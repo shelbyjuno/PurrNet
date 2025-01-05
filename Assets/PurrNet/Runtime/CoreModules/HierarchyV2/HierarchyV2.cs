@@ -600,7 +600,7 @@ namespace PurrNet.Modules
             
             var rootOffset = obj.transform.GetTransformDepth();
 
-            NetworkManager.SetupPrefabInfo(obj, idx, data.pool, false, -rootOffset);
+            NetworkManager.SetupPrefabInfo(obj, idx, data.pooled, false, -rootOffset);
 
             Spawn(obj);
         }

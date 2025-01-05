@@ -30,7 +30,7 @@ namespace PurrNet
                 return null;
             }
             
-            if (!prefabData.pool)
+            if (!prefabData.pooled)
             {
                 var instance = instantiateData.Instantiate();
                 var go = GetGameObject(instance);

@@ -72,7 +72,7 @@ namespace PurrNet
                     list.serializedProperty.arraySize++;
                     var element = list.serializedProperty.GetArrayElementAtIndex(index);
                     element.FindPropertyRelative("prefab").objectReferenceValue = null;
-                    element.FindPropertyRelative("pool").boolValue = networkPrefabs.defaultPooling;
+                    element.FindPropertyRelative("pool").boolValue = networkPrefabs.poolByDefault;
                     element.FindPropertyRelative("warmupCount").intValue = 5;
                     serializedObject.ApplyModifiedProperties();
                     UpdateAllPoolingState();
@@ -90,7 +90,7 @@ namespace PurrNet
                             list.serializedProperty.arraySize++;
                             var element = list.serializedProperty.GetArrayElementAtIndex(index);
                             element.FindPropertyRelative("prefab").objectReferenceValue = obj;
-                            element.FindPropertyRelative("pool").boolValue = networkPrefabs.defaultPooling;
+                            element.FindPropertyRelative("pool").boolValue = networkPrefabs.poolByDefault;
                             element.FindPropertyRelative("warmupCount").intValue = 5;
                         }
                     }
@@ -161,7 +161,7 @@ namespace PurrNet
 
             DrawToggleButton("Auto generate", ref networkPrefabs.autoGenerate);
             DrawToggleButton("Networked only", ref networkPrefabs.networkOnly);
-            DrawToggleButton("Default pooling", ref networkPrefabs.defaultPooling);
+            DrawToggleButton("Default pooling", ref networkPrefabs.poolByDefault);
 
             GUILayout.EndHorizontal();
 

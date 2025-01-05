@@ -21,7 +21,7 @@ namespace PurrNet
     {
         public bool autoGenerate = true;
         public bool networkOnly = true;
-        public bool defaultPooling;
+        public bool poolByDefault;
         public Object folder;
         public List<PrefabData> prefabs = new List<PrefabData>();
         
@@ -29,7 +29,7 @@ namespace PurrNet
         public struct PrefabData
         {
             public GameObject prefab;
-            public bool pool;
+            public bool pooled;
             public int warmupCount;
         }
 
@@ -221,7 +221,7 @@ namespace PurrNet
                     var foundPath = AssetDatabase.GetAssetPath(foundPrefab);
                     if (!existingPaths.Contains(foundPath))
                     {
-                        prefabs.Add(new PrefabData { prefab = foundPrefab, pool = defaultPooling, warmupCount = 5});
+                        prefabs.Add(new PrefabData { prefab = foundPrefab, pooled = poolByDefault, warmupCount = 5});
                         added++;
                     }
                 }
