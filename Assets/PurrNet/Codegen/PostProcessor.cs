@@ -80,10 +80,10 @@ namespace PurrNet.Codegen
         {
             try
             {
-                if (type == null)
-                    return false;
+                if (type?.FullName == baseTypeName)
+                    return true;
                 
-                if (type.BaseType == null)
+                if (type?.BaseType == null)
                     return false;
 
                 if (type.BaseType.FullName == baseTypeName)
@@ -1436,7 +1436,7 @@ namespace PurrNet.Codegen
             return true;
         }
         
-        private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
+         private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
         {
             // Check if methodReference is a MethodDefinition for a deeper copy if possible
             var methodDefinition = methodReference.Resolve();
@@ -1484,7 +1484,7 @@ namespace PurrNet.Codegen
 
             return newRef;
         }
-
+        
         public static List<TypeDefinition> GetAllTypes(ModuleDefinition module)
         {
             List<TypeDefinition> types = new List<TypeDefinition> ();
@@ -1530,8 +1530,9 @@ namespace PurrNet.Codegen
 
                     for (var t = 0; t < types.Count; t++)
                     {
+                        UnityProxyProcessor.Process(types[t], messages);
                         RegisterSerializersProcessor.HandleType(module, types[t], messages);
-                        
+
                         var type = types[t];
                         
                         if (GenerateSerializersProcessor.HasInterface(type, typeof(IPackedAuto)))
@@ -1566,6 +1567,9 @@ namespace PurrNet.Codegen
                             try
                             {
                                 var method = type.Methods[i];
+
+                                if (inheritsFromNetworkIdentity && MakeSureOverrideIsCalled.ShouldProcess(method))
+                                    MakeSureOverrideIsCalled.Process(method, messages);
 
                                 if (method.DeclaringType.FullName != type.FullName)
                                     continue;
@@ -1677,7 +1681,7 @@ namespace PurrNet.Codegen
                 
                 foreach (var typeRef in typesToPrepareHasher)
                     GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, visitedTypes, messages);
-
+                
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();
 

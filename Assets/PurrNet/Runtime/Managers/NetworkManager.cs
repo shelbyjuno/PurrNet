@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
+using PurrNet.Pooling;
 using PurrNet.Transports;
 using PurrNet.Utils;
 using UnityEngine;
@@ -56,13 +57,16 @@ namespace PurrNet
         /// </summary>
         [UsedImplicitly]
         public static NetworkManager main { get; private set; }
-        
+
+        [Header("Editor Settings")]
+        [Tooltip("Whether the client should stop playing when it disconnects from the server.")]
+        [SerializeField] private bool _stopPlayingOnDisconnect;
+
         [Header("Auto Start Settings")]
         [Tooltip("The flags to determine when the server should automatically start.")]
         [SerializeField] private StartFlags _startServerFlags = StartFlags.ServerBuild | StartFlags.Editor;
         [Tooltip("The flags to determine when the client should automatically start.")]
         [SerializeField] private StartFlags _startClientFlags = StartFlags.ClientBuild | StartFlags.Editor | StartFlags.Clone;
-        
         [Header("Persistence Settings")]
         [PurrDocs("systems-and-modules/network-manager")]
         [SerializeField] private CookieScope _cookieScope = CookieScope.LiveWithProcess;
@@ -302,6 +306,62 @@ namespace PurrNet
             prefabProvider = provider;
         }
 
+        /// <summary>
+        /// Prepares the prefab info for the given instance.
+        /// This needs to be ready before the object is spawned.
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="pid">The prefab index in the network prefabs list.</param>
+        /// <param name="shouldBePooled">Whether the object should be pooled.</param>
+        /// <param name="isSceneObject">Scene objects are not part of the prefab list and come from the scene itself.</param>
+        /// <param name="depthOffset">The depth offset to apply to the transform depth. If it's a root object, the offset should be zero.</param>
+        public static void SetupPrefabInfo(GameObject instance, int pid, bool shouldBePooled, bool isSceneObject, int depthOffset = 0)
+        {
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            
+            if (!instance.GetComponent<NetworkIdentity>())
+                instance.AddComponent<NetworkIdentity>();
+            
+            instance.GetComponentsInChildren(true, children);
+
+            for (var i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                var trs = child.transform;
+                
+                bool isRoot = trs == instance.transform;
+
+                child.PreparePrefabInfo(
+                    pid,
+                    isRoot ? 0 : trs.GetSiblingIndex(),
+                    trs.GetTransformDepth() + depthOffset, 
+                    shouldBePooled,
+                    isSceneObject
+                );
+            }
+
+            ListPool<NetworkIdentity>.Destroy(children);
+        }
+        
+        public bool TryGetPrefabData(GameObject prefab, out NetworkPrefabs.PrefabData o, out int pid)
+        {
+            var prefabs = _networkPrefabs.prefabs;
+            for (var i = 0; i < prefabs.Count; i++)
+            {
+                var data = prefabs[i];
+                if (data.prefab == prefab)
+                {
+                    o = data;
+                    pid = i;
+                    return true;
+                }
+            }
+            
+            o = default;
+            pid = -1;
+            return false;
+        }
+
         private void Awake()
         {
             if (main && main != this)
@@ -337,11 +397,11 @@ namespace PurrNet
 
             if (_networkPrefabs)
             {
-                prefabProvider ??= _networkPrefabs;
+                if (prefabProvider == null)
+                    SetPrefabProvider(_networkPrefabs);
 
                 if (_networkPrefabs.autoGenerate)
                     _networkPrefabs.Generate();
-                _networkPrefabs.PostProcess();
             }
 
             if (!_subscribed)
@@ -555,15 +615,21 @@ namespace PurrNet
         /// </summary>
         public event OnPlayerJoinedEvent onPlayerJoined;
         
+        void OnPlayerJoined(PlayerID player, bool isReconnect, bool asServer) => onPlayerJoined?.Invoke(player, isReconnect, asServer);
+
         /// <summary>
         /// This event is triggered when a player leaves.
         /// </summary>
         public event OnPlayerLeftEvent onPlayerLeft;
         
+        void OnPlayerLeft(PlayerID player, bool asServer) => onPlayerLeft?.Invoke(player, asServer);
+        
         /// <summary>
         /// This event is triggered when the local player receives an ID.
         /// </summary>
         public event OnPlayerEvent onLocalPlayerReceivedID;
+        
+        void OnLocalPlayerReceivedID(PlayerID player) => onLocalPlayerReceivedID?.Invoke(player);
         
         /// <summary>
         /// This event is triggered when a player joins the scene.
@@ -572,10 +638,14 @@ namespace PurrNet
         /// </summary>
         public event OnPlayerSceneEvent onPlayerJoinedScene;
         
+        void OnPlayerJoinedScene(PlayerID player, SceneID scene, bool asServer) => onPlayerJoinedScene?.Invoke(player, scene, asServer);
+        
         /// <summary>
         /// This event is triggered when a player loads the scene.
         /// </summary>
         public event OnPlayerSceneEvent onPlayerLoadedScene;
+        
+        void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asServer) => onPlayerLoadedScene?.Invoke(player, scene, asServer);
         
         /// <summary>
         /// This event is triggered when a player unloads the scene.
@@ -583,12 +653,16 @@ namespace PurrNet
         /// </summary>
         public event OnPlayerSceneEvent onPlayerUnloadedScene;
         
+        void OnPlayerUnloadedScene(PlayerID player, SceneID scene, bool asServer) => onPlayerUnloadedScene?.Invoke(player, scene, asServer);
+        
         /// <summary>
         /// This event is triggered when a player leaves the scene.
         /// This might not be triggered if the network rules keep the player in the scene.
         /// In that case, you want to use onPlayerUnloadedScene.
         /// </summary>
         public event OnPlayerSceneEvent onPlayerLeftScene;
+        
+        void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer) => onPlayerLeftScene?.Invoke(player, scene, asServer);
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
@@ -633,31 +707,31 @@ namespace PurrNet
             {
                 if (_serverPlayersManager != null)
                 {
-                    _serverPlayersManager.onPlayerJoined -= onPlayerJoined;
-                    _serverPlayersManager.onPlayerLeft -= onPlayerLeft;
-                    _serverPlayersManager.onLocalPlayerReceivedID -= onLocalPlayerReceivedID;
+                    _serverPlayersManager.onPlayerJoined -= OnPlayerJoined;
+                    _serverPlayersManager.onPlayerLeft -= OnPlayerLeft;
+                    _serverPlayersManager.onLocalPlayerReceivedID -= OnLocalPlayerReceivedID;
                 }
                 
                 _serverPlayersManager = playersManager;
                 
-                _serverPlayersManager.onPlayerJoined += onPlayerJoined;
-                _serverPlayersManager.onPlayerLeft += onPlayerLeft;
-                _serverPlayersManager.onLocalPlayerReceivedID += onLocalPlayerReceivedID;
+                _serverPlayersManager.onPlayerJoined += OnPlayerJoined;
+                _serverPlayersManager.onPlayerLeft += OnPlayerLeft;
+                _serverPlayersManager.onLocalPlayerReceivedID += OnLocalPlayerReceivedID;
             }
             else
             {
                 if (_clientPlayersManager != null)
                 {
-                    _clientPlayersManager.onPlayerJoined -= onPlayerJoined;
-                    _clientPlayersManager.onPlayerLeft -= onPlayerLeft;
-                    _clientPlayersManager.onLocalPlayerReceivedID -= onLocalPlayerReceivedID;
+                    _clientPlayersManager.onPlayerJoined -= OnPlayerJoined;
+                    _clientPlayersManager.onPlayerLeft -= OnPlayerLeft;
+                    _clientPlayersManager.onLocalPlayerReceivedID -= OnLocalPlayerReceivedID;
                 }
                 
                 _clientPlayersManager = playersManager;
                 
-                _clientPlayersManager.onPlayerJoined += onPlayerJoined;
-                _clientPlayersManager.onPlayerLeft += onPlayerLeft;
-                _clientPlayersManager.onLocalPlayerReceivedID += onLocalPlayerReceivedID;
+                _clientPlayersManager.onPlayerJoined += OnPlayerJoined;
+                _clientPlayersManager.onPlayerLeft += OnPlayerLeft;
+                _clientPlayersManager.onLocalPlayerReceivedID += OnLocalPlayerReceivedID;
             }
             
             var playersBroadcast = new PlayersBroadcaster(connBroadcaster, playersManager);
@@ -678,44 +752,38 @@ namespace PurrNet
             {
                 if (_serverScenePlayersModule != null)
                 {
-                    _serverScenePlayersModule.onPlayerJoinedScene -= onPlayerJoinedScene;
-                    _serverScenePlayersModule.onPlayerLoadedScene -= onPlayerLoadedScene;
-                    _serverScenePlayersModule.onPlayerUnloadedScene -= onPlayerUnloadedScene;
-                    _serverScenePlayersModule.onPlayerLeftScene -= onPlayerLeftScene;
+                    _serverScenePlayersModule.onPlayerJoinedScene -= OnPlayerJoinedScene;
+                    _serverScenePlayersModule.onPlayerLoadedScene -= OnPlayerLoadedScene;
+                    _serverScenePlayersModule.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
+                    _serverScenePlayersModule.onPlayerLeftScene -= OnPlayerLeftScene;
                 }
                 
                 _serverScenePlayersModule = scenePlayers;
                 
-                _serverScenePlayersModule.onPlayerJoinedScene += onPlayerJoinedScene;
-                _serverScenePlayersModule.onPlayerLoadedScene += onPlayerLoadedScene;
-                _serverScenePlayersModule.onPlayerUnloadedScene += onPlayerUnloadedScene;
-                _serverScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
+                _serverScenePlayersModule.onPlayerJoinedScene += OnPlayerJoinedScene;
+                _serverScenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+                _serverScenePlayersModule.onPlayerUnloadedScene += OnPlayerUnloadedScene;
+                _serverScenePlayersModule.onPlayerLeftScene += OnPlayerLeftScene;
             }
             else
             {
                 if (_clientScenePlayersModule != null)
                 {
-                    _clientScenePlayersModule.onPlayerJoinedScene -= onPlayerJoinedScene;
-                    _clientScenePlayersModule.onPlayerLoadedScene -= onPlayerLoadedScene;
-                    _clientScenePlayersModule.onPlayerUnloadedScene -= onPlayerUnloadedScene;
-                    _clientScenePlayersModule.onPlayerLeftScene -= onPlayerLeftScene;
+                    _clientScenePlayersModule.onPlayerJoinedScene -= OnPlayerJoinedScene;
+                    _clientScenePlayersModule.onPlayerLoadedScene -= OnPlayerLoadedScene;
+                    _clientScenePlayersModule.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
+                    _clientScenePlayersModule.onPlayerLeftScene -= OnPlayerLeftScene;
                 }
                 
                 _clientScenePlayersModule = scenePlayers;
                 
-                _clientScenePlayersModule.onPlayerJoinedScene += onPlayerJoinedScene;
-                _clientScenePlayersModule.onPlayerLoadedScene += onPlayerLoadedScene;
-                _clientScenePlayersModule.onPlayerUnloadedScene += onPlayerUnloadedScene;
-                _clientScenePlayersModule.onPlayerLeftScene += onPlayerLeftScene;
+                _clientScenePlayersModule.onPlayerJoinedScene += OnPlayerJoinedScene;
+                _clientScenePlayersModule.onPlayerLoadedScene += OnPlayerLoadedScene;
+                _clientScenePlayersModule.onPlayerUnloadedScene += OnPlayerUnloadedScene;
+                _clientScenePlayersModule.onPlayerLeftScene += OnPlayerLeftScene;
             }
             
-            var hierarchyModule = new HierarchyModule(this, scenesModule, playersManager, scenePlayers, prefabProvider);
-            var visibilityFactory = new VisibilityFactory(this, playersManager, hierarchyModule, scenePlayers);
-            var ownershipModule = new GlobalOwnershipModule(visibilityFactory, hierarchyModule, playersManager, scenePlayers, scenesModule);
-            var rpcModule = new RPCModule(playersManager, visibilityFactory, hierarchyModule, ownershipModule, scenesModule);
-            var rpcRequestResponseModule = new RpcRequestResponseModule(playersManager);
             
-            hierarchyModule.SetVisibilityFactory(visibilityFactory);
             scenesModule.SetScenePlayers(scenePlayers);
             playersManager.SetBroadcaster(playersBroadcast);
             
@@ -724,15 +792,18 @@ namespace PurrNet
             modules.AddModule(tickManager);
             modules.AddModule(connBroadcaster);
             modules.AddModule(networkCookies);
+            
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayers);
             
-            modules.AddModule(hierarchyModule);
-            modules.AddModule(visibilityFactory);
+            var hierarchyV2 = new HierarchyFactory(this, scenesModule, scenePlayers, playersManager);
+            var ownershipModule = new GlobalOwnershipModule(hierarchyV2, playersManager, scenePlayers, scenesModule);
+            var rpcModule = new RPCModule(playersManager, hierarchyV2, ownershipModule, scenesModule);
+
+            modules.AddModule(hierarchyV2);
             modules.AddModule(ownershipModule);
-            
             modules.AddModule(rpcModule);
-            modules.AddModule(rpcRequestResponseModule);
+            modules.AddModule(new RpcRequestResponseModule(playersManager));
         }
 
         private void OnServerPreTick() => onPreTick?.Invoke(true);
@@ -815,6 +886,12 @@ namespace PurrNet
             {
                 StopClient();
                 StopServer();
+                
+                if (clientState != ConnectionState.Disconnected)
+                    _clientModules.UnregisterModules();
+                
+                if (serverState != ConnectionState.Disconnected)
+                    _serverModules.UnregisterModules();
             }
         }
 
@@ -958,6 +1035,10 @@ namespace PurrNet
                 localClientConnection = null;
                 _clientModules.OnLostConnection(conn, false);
             }
+#if UNITY_EDITOR
+            if (isOffline && networkRules && _stopPlayingOnDisconnect)
+                EditorApplication.isPlaying = false;
+#endif
         }
 
         private void OnDataReceived(Connection conn, ByteData data, bool asServer)
@@ -1019,16 +1100,6 @@ namespace PurrNet
             _transport.StopClient(this);
         }
 
-        /// <summary>
-        /// Gets the prefab from the given guid.
-        /// </summary>
-        /// <param name="guid">The guid of the prefab to get.</param>
-        /// <returns>The prefab with the given guid.</returns>
-        public GameObject GetPrefabFromGuid(string guid)
-        {
-            return _networkPrefabs.GetPrefabFromGuid(guid);
-        }
-
         public void ResetOriginalScene(Scene activeScene)
         {
             originalScene = activeScene;
@@ -1041,6 +1112,19 @@ namespace PurrNet
             if (scene.name == "DontDestroyOnLoad")
                 return true;
             return false;
+        }
+
+        public void Spawn(GameObject entry)
+        {
+            if (!entry)
+                return;
+            
+            if (TryGetModule<HierarchyFactory>(isServer, out var factory) &&
+                TryGetSceneID(entry.scene, out var sceneID) &&
+                factory.TryGetHierarchy(sceneID, out var hierarchy))
+            {
+                hierarchy.Spawn(entry);
+            }
         }
     }
 }

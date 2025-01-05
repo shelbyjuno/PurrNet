@@ -42,6 +42,12 @@ namespace PurrNet.Editor
 
         public override void OnInspectorGUI()
         {
+            var identity = (NetworkIdentity)target;
+            bool hasNetworkManagerAsChild = identity && identity.GetComponentInChildren<NetworkManager>();
+
+            if (hasNetworkManagerAsChild)
+                EditorGUILayout.HelpBox("NetworkIdentity is a child of a NetworkManager. This is not supported.", MessageType.Error);
+            
             base.OnInspectorGUI();
             
             DrawIdentityInspector();
@@ -139,10 +145,12 @@ namespace PurrNet.Editor
                     GUI.enabled = old;
                 }
 
-                EditorGUILayout.BeginHorizontal("box");
-                EditorGUILayout.LabelField($"ID: {identity.id}", GUILayout.Width(80));
-                EditorGUILayout.LabelField($"Prefab ID: {(identity.prefabId == -1 ? "None" : identity.prefabId.ToString())}", GUILayout.Width(120));
-                EditorGUILayout.LabelField($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}");
+                EditorGUILayout.BeginHorizontal("box", GUILayout.ExpandWidth(false));
+                GUILayout.Label($"ID: {identity.id}", GUILayout.ExpandWidth(false));
+                GUILayout.FlexibleSpace();
+                GUILayout.Label($"Owner ID: {(identity.owner.HasValue ? identity.owner.Value.ToString() : "None")}", GUILayout.ExpandWidth(false));
+                GUILayout.FlexibleSpace();
+                GUILayout.Label($"Local Player: {(identity.localPlayer.HasValue ? identity.localPlayer.Value.ToString() : "None")}", GUILayout.ExpandWidth(false));
                 EditorGUILayout.EndHorizontal();
             }
             else if (Application.isPlaying)
@@ -151,6 +159,47 @@ namespace PurrNet.Editor
                 EditorGUILayout.LabelField("Not Spawned");
                 EditorGUILayout.EndHorizontal();
             }
+            
+#if PURRNET_DEBUG_NETWORK_IDENTITY
+            var old2 = GUI.enabled;
+            GUI.enabled = false;
+
+            EditorGUILayout.BeginVertical("box", GUILayout.ExpandWidth(false));
+            
+            EditorGUILayout.LabelField($"prefabId: {identity.prefabId}");
+            EditorGUILayout.LabelField($"siblingIndex: {identity.siblingIndex}");
+            EditorGUILayout.LabelField($"depthIndex: {identity.depthIndex}");
+            EditorGUILayout.LabelField($"shouldBePooled: {identity.shouldBePooled}");
+            EditorGUILayout.ObjectField("parent", identity.parent, typeof(NetworkIdentity), true);
+            
+            string path = "";
+
+            if (identity.invertedPathToNearestParent != null)
+            {
+                for (var index = 0; index < identity.invertedPathToNearestParent.Length; index++)
+                {
+                    var parent = identity.invertedPathToNearestParent[index];
+                    bool isLast = index == identity.invertedPathToNearestParent.Length - 1;
+                    path += parent + (isLast ? ";" : " -> ");
+                }
+            }
+
+            EditorGUILayout.LabelField($"pathToNearestParent: {path}");
+            EditorGUILayout.LabelField($"Direct Children ({identity.directChildren?.Count ?? 0}):");
+            
+            if (identity.directChildren != null)
+            {
+                EditorGUI.indentLevel++;
+                foreach (var child in identity.directChildren)
+                {
+                    EditorGUILayout.ObjectField(child, typeof(NetworkIdentity), true);
+                }
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.EndVertical();
+            GUI.enabled = old2;
+#endif
         }
 
         private void PrintObserversDropdown(NetworkIdentity identity)

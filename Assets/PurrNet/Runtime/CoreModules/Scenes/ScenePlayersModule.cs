@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PurrNet.Collections;
 using PurrNet.Logging;
 
 namespace PurrNet.Modules
@@ -12,8 +13,8 @@ namespace PurrNet.Modules
 
     public class ScenePlayersModule : INetworkModule
     {
-        private readonly Dictionary<SceneID, HashSet<PlayerID>> _scenePlayers = new Dictionary<SceneID, HashSet<PlayerID>>();
-        private readonly Dictionary<SceneID, HashSet<PlayerID>> _sceneLoadedPlayers = new Dictionary<SceneID, HashSet<PlayerID>>();
+        private readonly Dictionary<SceneID, PurrHashSet<PlayerID>> _scenePlayers = new Dictionary<SceneID, PurrHashSet<PlayerID>>();
+        private readonly Dictionary<SceneID, PurrHashSet<PlayerID>> _sceneLoadedPlayers = new Dictionary<SceneID, PurrHashSet<PlayerID>>();
         
         readonly ScenesModule _scenes;
         readonly PlayersManager _players;
@@ -174,7 +175,7 @@ namespace PurrNet.Modules
         /// <summary>
         /// Get all players that are both part of the scene and have finished loading the scene
         /// </summary>
-        public bool TryGetPlayersInScene(SceneID scene, out HashSet<PlayerID> players)
+        public bool TryGetPlayersInScene(SceneID scene, out IReadonlyHashSet<PlayerID> players)
         {
             if (_sceneLoadedPlayers.TryGetValue(scene, out var data))
             {
@@ -336,8 +337,8 @@ namespace PurrNet.Modules
                 return;
             }
 
-            _scenePlayers.Add(scene, new HashSet<PlayerID>());
-            _sceneLoadedPlayers.Add(scene, new HashSet<PlayerID>());
+            _scenePlayers.Add(scene, new PurrHashSet<PlayerID>());
+            _sceneLoadedPlayers.Add(scene, new PurrHashSet<PlayerID>());
             
             OnSceneVisibilityChanged(scene, state.settings.isPublic, asServer);
         }

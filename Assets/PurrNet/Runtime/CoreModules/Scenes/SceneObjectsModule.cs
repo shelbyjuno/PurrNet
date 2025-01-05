@@ -7,6 +7,21 @@ namespace PurrNet.Modules
     {
         private static readonly List<NetworkIdentity> _sceneIdentities = new List<NetworkIdentity>();
         
+        public static void GetSceneIdentities(Scene scene, List<NetworkIdentity> networkIdentities)
+        {
+            var rootGameObjects = scene.GetRootGameObjects();
+
+            foreach (var rootObject in rootGameObjects)
+            {
+                rootObject.GetComponentsInChildren(true, _sceneIdentities);
+                
+                if (_sceneIdentities.Count == 0) continue;
+                
+                rootObject.MakeSureAwakeIsCalled();
+                networkIdentities.AddRange(_sceneIdentities);
+            }
+        }
+        
         public static List<NetworkIdentity> GetSceneIdentities(Scene scene)
         {
             var rootGameObjects = scene.GetRootGameObjects();
@@ -18,7 +33,7 @@ namespace PurrNet.Modules
                 
                 if (_sceneIdentities.Count == 0) continue;
                 
-                HierarchyScene.MakeSureAwakeIsCalled(rootObject);
+                rootObject.MakeSureAwakeIsCalled();
                 networkIdentities.AddRange(_sceneIdentities);
             }
 

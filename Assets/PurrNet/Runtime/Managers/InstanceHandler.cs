@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using PurrNet.Logging;
-using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet
 {
-    public class InstanceHandler
+    public static class InstanceHandler
     {
-        private static Dictionary<Type, object> _instances = new Dictionary<Type, object>();
+        private static readonly Dictionary<Type, object> _instances = new Dictionary<Type, object>();
         
         /// <summary>
         /// Returns the NetworkManager instance. It will dynamically find it if it's null.
@@ -17,20 +17,17 @@ namespace PurrNet
             get
             {
                 if (_networkManager == null)
-                    PopulateNetworkManager();
+                {
+                    _networkManager = Object.FindAnyObjectByType<NetworkManager>();
+                    if (!_networkManager)
+                        PurrLogger.LogError($"No {nameof(NetworkManager)} found in scene!");
+                }
                 return _networkManager;
             }
             private set => _networkManager = value;
         }
 
         private static NetworkManager _networkManager;
-        
-        private static void PopulateNetworkManager()
-        {
-            NetworkManager = GameObject.FindAnyObjectByType<NetworkManager>();
-            if (!NetworkManager)
-                PurrLogger.LogError($"No {nameof(NetworkManager)} found in scene!");
-        }
         
         /// <summary>
         /// Clears every instance in the handler.
@@ -43,7 +40,7 @@ namespace PurrNet
 
         
         /// <summary>
-        /// Registers a instance of the given type, in order to use GetInstance<T> later.
+        /// Registers a instance of the given type, in order to use GetInstance later.
         /// </summary>
         /// <param name="instance">Instance to register</param>
         /// <typeparam name="T"></typeparam>
@@ -58,8 +55,6 @@ namespace PurrNet
         /// <typeparam name="T">Type to unregister</typeparam>
         public static void UnregisterInstance<T>() where T : class
         {
-            if (!_instances.ContainsKey(typeof(T)))
-                return;
             _instances.Remove(typeof(T));
         }
         

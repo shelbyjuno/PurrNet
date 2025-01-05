@@ -12,9 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66869b09091574e4c972f42f5ae2268e, type: 3}
   m_Name: TopDownShooter_Prefabs
   m_EditorClassIdentifier: 
-  autoGenerate: 1
+  autoGenerate: 0
   networkOnly: 1
+  defaultPooling: 1
   folder: {fileID: 102900000, guid: 16bd9ffa7f6b76846af25af50c685cda, type: 3}
   prefabs:
-  - {fileID: 2021845121686469242, guid: 20ec334e1da5edf44ac0079941c62c2b, type: 3}
-  - {fileID: 539409471466885925, guid: e013d4a382956084e907feb2a3501cf8, type: 3}
+  - prefab: {fileID: 2021845121686469242, guid: 20ec334e1da5edf44ac0079941c62c2b, type: 3}
+    pool: 1
+    warmupCount: 5
+  - prefab: {fileID: 539409471466885925, guid: e013d4a382956084e907feb2a3501cf8, type: 3}
+    pool: 1
+    warmupCount: 5

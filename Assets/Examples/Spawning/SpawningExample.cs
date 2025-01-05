@@ -45,7 +45,7 @@ public class SpawningExample : MonoBehaviour
 
         var entry = Instantiate(_prefab, randomPosition, Quaternion.identity);
 
-        _networkManager.GetModule<HierarchyModule>(true).Spawn(entry);
+        _networkManager.Spawn(entry);
     }
 
     private void OnDrawGizmos()

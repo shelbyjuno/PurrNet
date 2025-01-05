@@ -19,10 +19,12 @@ namespace PurrNet.Modules
     public struct ServerLoginResponse : IPackedAuto
     {
         public PlayerID playerId { get; }
+        public NetworkID lastNidId { get; }
 
-        public ServerLoginResponse(PlayerID playerId)
+        public ServerLoginResponse(PlayerID playerId, NetworkID lastNidId)
         {
             this.playerId = playerId;
+            this.lastNidId = lastNidId;
         }
     }
     
@@ -65,7 +67,6 @@ namespace PurrNet.Modules
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
     {
-        private readonly NetworkManager _manager;
         private readonly CookiesModule _cookiesModule;
         private readonly BroadcastModule _broadcastModule;
         private readonly ITransport _transport;
@@ -76,8 +77,10 @@ namespace PurrNet.Modules
         private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new Dictionary<Connection, PlayerID>();
         private readonly Dictionary<PlayerID, Connection> _playerToConnection = new Dictionary<PlayerID, Connection>();
 
-        public List<PlayerID> players { get; } = new List<PlayerID>();
+        private readonly List<PlayerID> _players = new List<PlayerID>();
         private readonly HashSet<PlayerID> _allSeenPlayers = new HashSet<PlayerID>();
+        
+        public IReadOnlyList<PlayerID> players => _players;
 
         public PlayerID? localPlayerId { get; private set; }
 
@@ -115,6 +118,8 @@ namespace PurrNet.Modules
         /// Callback for when the local player has received their PlayerID
         /// </summary>
         public event OnPlayerEvent onLocalPlayerReceivedID;
+        
+        public event Action<NetworkID> onNetworkIDReceived;
 
         private bool _asServer;
 
@@ -151,7 +156,6 @@ namespace PurrNet.Modules
 
         public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaster)
         {
-            _manager = nm;
             _transport = nm.transport.transport;
             _cookiesModule = cookiesModule;
             _broadcastModule = broadcaster;
@@ -200,6 +204,14 @@ namespace PurrNet.Modules
         {
             return localPlayerId == playerId;
         }
+        
+        /// <summary>
+        /// Check if a playerId is the local player.
+        /// </summary>
+        public bool IsLocalPlayer(PlayerID? playerId)
+        {
+            return localPlayerId == playerId;
+        }
 
         /// <summary>
         /// Check if a playerId is a valid player.
@@ -207,7 +219,18 @@ namespace PurrNet.Modules
         /// </summary>
         public bool IsValidPlayer(PlayerID playerId)
         {
-            return players.Contains(playerId);
+            return _players.Contains(playerId);
+        }
+        
+        /// <summary>
+        /// Check if a playerId is a valid player.
+        /// A valid player is a player that is connected to the server.
+        /// </summary>
+        public bool IsValidPlayer(PlayerID? playerId)
+        {
+            if (!playerId.HasValue)
+                return false;
+            return _players.Contains(playerId.Value);
         }
         
         /// <summary>
@@ -284,6 +307,7 @@ namespace PurrNet.Modules
         {
             localPlayerId = data.playerId;
             onLocalPlayerReceivedID?.Invoke(data.playerId);
+            onNetworkIDReceived?.Invoke(data.lastNidId);
         }
 
         private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asServer)
@@ -294,18 +318,19 @@ namespace PurrNet.Modules
                 _cookieToPlayerId.Add(data.join, playerId);
             }
             
-            if (players.Contains(playerId))
+            if (_players.Contains(playerId))
             {
                 // Player is already connected?
                 _transport.CloseConnection(conn);
                 PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
                 return;
             }
-            
-            _broadcastModule.Send(conn, new ServerLoginResponse(playerId));
 
-            if (_manager.localClientConnection == conn)
-                localPlayerId = playerId;
+            var lastNidId = new NetworkID(0, playerId);
+            if (_lastNidId.TryGetValue(playerId, out var lastNid))
+                lastNidId = lastNid;
+            
+            _broadcastModule.Send(conn, new ServerLoginResponse(playerId, lastNidId));
 
             SendSnapshotToClient(conn);
             if (RegisterPlayer(conn, playerId, out var isReconnect))
@@ -338,7 +363,7 @@ namespace PurrNet.Modules
                 return false;
             }
 
-            players.Add(player);
+            _players.Add(player);
 
             if (conn.isValid)
             {
@@ -362,7 +387,7 @@ namespace PurrNet.Modules
             if (!_connectionToPlayerId.TryGetValue(conn, out var player))
                 return;
             
-            players.Remove(player);
+            _players.Remove(player);
             _playerToConnection.Remove(player);
             _connectionToPlayerId.Remove(conn);
             
@@ -375,7 +400,7 @@ namespace PurrNet.Modules
         {
             if (_playerToConnection.TryGetValue(playerId, out var conn))
                 _connectionToPlayerId.Remove(conn);
-            players.Remove(playerId);
+            _players.Remove(playerId);
             _playerToConnection.Remove(playerId);
             
             onPrePlayerLeft?.Invoke(playerId, _asServer);
@@ -402,6 +427,13 @@ namespace PurrNet.Modules
                 SendUserLeftToAllClients(playerId);
 
             UnregisterPlayer(conn);
+        }
+
+        readonly Dictionary<PlayerID, NetworkID> _lastNidId = new Dictionary<PlayerID, NetworkID>();
+        
+        public void RegisterClientLastId(PlayerID player, NetworkID lastNidID)
+        {
+            _lastNidId[player] = lastNidID;
         }
     }
 }

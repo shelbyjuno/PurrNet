@@ -825,8 +825,8 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   scriptingDefineSymbols:
-    Standalone: STEAMWORKS_NET
-    WebGL: STEAMWORKS_NET
+    Standalone: STEAMWORKS_NET;PURRNET_DEBUG_POOLING;PURRNET_DEBUG_NETWORK_IDENTITY
+    WebGL: STEAMWORKS_NET;PURRNET_DEBUG_POOLING
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
