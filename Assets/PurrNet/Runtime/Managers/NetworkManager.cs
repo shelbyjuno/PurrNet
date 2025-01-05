@@ -493,7 +493,7 @@ namespace PurrNet
         /// <summary>
         /// Gets the current player count.
         /// </summary>
-        public int playerCount => GetModule<PlayersManager>(isServer).players.Count;
+        public int playerCount => playerModule?.players.Count ?? 0;
         
         /// <summary>
         /// Gets the current player list.
