@@ -154,21 +154,16 @@ namespace PurrNet.Editor
                         addon.icon = defaultIcon;
                         _addons.Add(addon);
 
-                        switch (addon.category)
-                        {
-                            case "Example":
-                                _exampleAddons.Add(addon);
-                                break;
-                            case "Transport":
-                                _transportAddons.Add(addon);
-                                break;
-                            case "Tool":
-                                _toolAddons.Add(addon);
-                                break;
-                            case "System":
-                                _systemAddons.Add(addon);
-                                break;
-                        }
+                        string category = addon.category.ToLower();
+
+                        if (category.Contains("example"))
+                            _exampleAddons.Add(addon);
+                        if (category.Contains("transport"))
+                            _transportAddons.Add(addon);
+                        if (category.Contains("tool"))
+                            _toolAddons.Add(addon);
+                        if (category.Contains("system"))
+                            _systemAddons.Add(addon);
                     }
 
                     _fetchedAddons = true;
