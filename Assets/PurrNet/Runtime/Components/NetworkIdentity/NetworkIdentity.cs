@@ -230,7 +230,7 @@ namespace PurrNet
         
         public bool IsController(bool asServer, bool ownerHasAuthority) => ownerHasAuthority ? isController : asServer;
         
-        public bool hasConnectedOwner => owner.HasValue && networkManager.TryGetModule<PlayersManager>(isServer, out var module) && module.IsPlayerConnected(owner.Value);
+        public bool hasConnectedOwner => networkManager && owner.HasValue && networkManager.TryGetModule<PlayersManager>(isServer, out var module) && module.IsPlayerConnected(owner.Value);
 
         internal PlayerID? internalOwnerServer;
         internal PlayerID? internalOwnerClient;
