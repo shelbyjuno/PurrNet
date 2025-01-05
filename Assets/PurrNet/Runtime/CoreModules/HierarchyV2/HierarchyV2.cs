@@ -117,8 +117,11 @@ namespace PurrNet.Modules
                 SpawnSceneObject(children);
                 _defaultPrototypes.Add(HierarchyPool.GetFullPrototype(root.transform));
                 ListPool<NetworkIdentity>.Destroy(children);
-                
-                if (!_asServer)
+            }
+
+            if (!_asServer)
+            {
+                foreach (var root in roots)
                     _scenePool.PutBackInPool(root.gameObject);
             }
             
@@ -450,7 +453,6 @@ namespace PurrNet.Modules
                 if (createdNids.Count > 0)
                 {
                     var lastNid = createdNids[^1];
-                    
                     if (lastNid.id.HasValue)
                         _playersManager.RegisterClientLastId(player, lastNid.id.Value);
                 }
