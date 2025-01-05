@@ -48,7 +48,7 @@ namespace PurrNet
             {
                 SerializedProperty element = prefabs.GetArrayElementAtIndex(index);
                 SerializedProperty prefabProp = element.FindPropertyRelative("prefab");
-                SerializedProperty poolProp = element.FindPropertyRelative("pool");
+                SerializedProperty poolProp = element.FindPropertyRelative("pooled");
                 SerializedProperty warmupCountProp = element.FindPropertyRelative("warmupCount");
 
                 float fullWidth = rect.width - REORDERABLE_LIST_BUTTON_WIDTH;
@@ -72,7 +72,7 @@ namespace PurrNet
                     list.serializedProperty.arraySize++;
                     var element = list.serializedProperty.GetArrayElementAtIndex(index);
                     element.FindPropertyRelative("prefab").objectReferenceValue = null;
-                    element.FindPropertyRelative("pool").boolValue = networkPrefabs.poolByDefault;
+                    element.FindPropertyRelative("pooled").boolValue = networkPrefabs.poolByDefault;
                     element.FindPropertyRelative("warmupCount").intValue = 5;
                     serializedObject.ApplyModifiedProperties();
                     UpdateAllPoolingState();
@@ -90,7 +90,7 @@ namespace PurrNet
                             list.serializedProperty.arraySize++;
                             var element = list.serializedProperty.GetArrayElementAtIndex(index);
                             element.FindPropertyRelative("prefab").objectReferenceValue = obj;
-                            element.FindPropertyRelative("pool").boolValue = networkPrefabs.poolByDefault;
+                            element.FindPropertyRelative("pooled").boolValue = networkPrefabs.poolByDefault;
                             element.FindPropertyRelative("warmupCount").intValue = 5;
                         }
                     }
@@ -121,12 +121,12 @@ namespace PurrNet
                 return;
             }
 
-            bool firstState = prefabs.GetArrayElementAtIndex(0).FindPropertyRelative("pool").boolValue;
+            bool firstState = prefabs.GetArrayElementAtIndex(0).FindPropertyRelative("pooled").boolValue;
             allPoolingState = firstState;
 
             for (int i = 1; i < prefabs.arraySize; i++)
             {
-                if (prefabs.GetArrayElementAtIndex(i).FindPropertyRelative("pool").boolValue != firstState)
+                if (prefabs.GetArrayElementAtIndex(i).FindPropertyRelative("pooled").boolValue != firstState)
                 {
                     allPoolingState = null;
                     return;
