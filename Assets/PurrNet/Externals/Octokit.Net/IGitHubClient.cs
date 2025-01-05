@@ -77,6 +77,7 @@ namespace Octokit
         /// <remarks>
         /// Refer to the API documentation for more information: https://developer.github.com/v3/misc/
         /// </remarks>
+        [Obsolete("Obsolete")]
         IMiscellaneousClient Miscellaneous { get; }
 
         /// <summary>

@@ -139,7 +139,9 @@ namespace Octokit
                 return string.Format(
                     CultureInfo.InvariantCulture,
                     "GitHubServicesSha: {0}, VerifiablePasswordAuthentication: {1} ",
+#pragma warning disable CS0618 // Type or member is obsolete
                     GitHubServicesSha,
+#pragma warning restore CS0618 // Type or member is obsolete
                     VerifiablePasswordAuthentication);
             }
         }
