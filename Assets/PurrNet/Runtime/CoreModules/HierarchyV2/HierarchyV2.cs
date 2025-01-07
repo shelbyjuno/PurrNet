@@ -135,8 +135,12 @@ namespace PurrNet.Modules
             _visibility.visibilityChanged += OnVisibilityChanged;
             _scenePlayers.onPrePlayerloadedScene += OnPlayerLoadedScene;
             _scenePlayers.onPlayerUnloadedScene += OnPlayerUnloadedScene;
-            _playersManager.onLocalPlayerReceivedID += OnPlayerReceivedID;
             _playersManager.onNetworkIDReceived += OnNetworkIDReceived;
+
+            if (_playersManager.localPlayerId.HasValue)
+                _isPlayerReady = true;
+            else _playersManager.onLocalPlayerReceivedID += OnPlayerReceivedID;
+
             
             _playersManager.Subscribe<SpawnPacket>(OnSpawnPacket);
             _playersManager.Subscribe<DespawnPacket>(OnDespawnPacket);
