@@ -1935,7 +1935,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _stopPlayingOnDisconnect: 0
   _startServerFlags: 13
-  _startClientFlags: 7
+  _startClientFlags: 6
   _cookieScope: 1
   _dontDestroyOnLoad: 1
   _cheetahData: 0

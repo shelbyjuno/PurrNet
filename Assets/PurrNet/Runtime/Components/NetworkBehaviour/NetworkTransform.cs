@@ -1,5 +1,6 @@
 using System;
 using JetBrains.Annotations;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -178,7 +179,6 @@ namespace PurrNet
             if (syncRotation) _rotation.maxBufferSize = ticksPerBuffer;
             if (syncScale) _scale.maxBufferSize = ticksPerBuffer;
         }
-
         protected override void OnObserverAdded(PlayerID player)
         {
             SendLatestTransform(player, GetCurrentTransformData());

@@ -853,7 +853,7 @@ namespace PurrNet.Modules
                 return other._isPlayerReady;
             }
             
-            return _asServer;
+            return false;
         }
 
         private void SpawnDelayedIdentities()
