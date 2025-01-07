@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Text;
 using JetBrains.Annotations;
 using PurrNet.Modules;
 using PurrNet.Transports;
@@ -257,6 +259,33 @@ namespace PurrNet.Packing
         public void SkipBits(int skip)
         {
             positionInBits += skip;
+        }
+
+        public void WriteString(Encoding utf8, string valueValue)
+        {
+            if (valueValue == null)
+            {
+                WriteBits(0, 1);
+                return;
+            }
+
+            WriteBits(1, 1);
+
+            byte[] bytes = utf8.GetBytes(valueValue);
+            WriteBits((ulong)bytes.Length, 31);
+            WriteBytes(bytes);
+        }
+        
+        public string ReadString(Encoding utf8)
+        {
+            if (ReadBits(1) == 0)
+                return null;
+
+            int byteCount = (int)ReadBits(31);
+            byte[] bytes = new byte[byteCount];
+            
+            ReadBytes(bytes);
+            return utf8.GetString(bytes);
         }
     }
 }
