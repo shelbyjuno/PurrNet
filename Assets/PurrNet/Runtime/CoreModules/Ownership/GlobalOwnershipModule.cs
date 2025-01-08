@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Pooling;
@@ -44,26 +45,24 @@ namespace PurrNet.Modules
         }
     }
     
-    public class GlobalOwnershipModule : INetworkModule
+    public class GlobalOwnershipModule : INetworkModule, IFixedUpdate, IPreFixedUpdate
     {
         readonly PlayersManager _playersManager;
         readonly ScenePlayersModule _scenePlayers;
-        readonly HierarchyModule _hierarchy;
-        readonly VisibilityFactory _visibilityFactory;
+        readonly HierarchyFactory _hierarchy;
         
         readonly ScenesModule _scenes;
-        readonly Dictionary<SceneID, SceneOwnership> _sceneOwnerships = new ();
+        readonly Dictionary<SceneID, SceneOwnership> _sceneOwnerships = new Dictionary<SceneID, SceneOwnership>();
         
         private bool _asServer;
         
-        public GlobalOwnershipModule(VisibilityFactory visibilityFactory, HierarchyModule hierarchy,
+        public GlobalOwnershipModule(HierarchyFactory hierarchy,
             PlayersManager players, ScenePlayersModule scenePlayers, ScenesModule scenes)
         {
             _hierarchy = hierarchy;
             _scenes = scenes;
             _playersManager = players;
             _scenePlayers = scenePlayers;
-            _visibilityFactory = visibilityFactory;
         }
         
         public void Enable(bool asServer)
@@ -82,10 +81,8 @@ namespace PurrNet.Modules
             _scenes.onSceneUnloaded += OnSceneUnloaded;
             
             _hierarchy.onIdentityRemoved += OnIdentityDespawned;
-            _hierarchy.onBeforeSpawnTrigger += OnFlushHierarchy;
-            
-            _visibilityFactory.onLateObserverAdded += OnPlayerObserverAdded;
-            
+            _hierarchy.onEarlyObserverAdded += OnPlayerObserverAdded;
+
             _scenePlayers.onPlayerUnloadedScene += OnPlayerUnloadedScene;
             _scenePlayers.onPlayerLoadedScene += OnPlayerLoadedScene;
             
@@ -101,10 +98,8 @@ namespace PurrNet.Modules
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
             
             _hierarchy.onIdentityRemoved -= OnIdentityDespawned;
-            _hierarchy.onBeforeSpawnTrigger -= OnFlushHierarchy;
+            _hierarchy.onEarlyObserverAdded -= OnPlayerObserverAdded;
 
-            _visibilityFactory.onLateObserverAdded -= OnPlayerObserverAdded;
-            
             _scenePlayers.onPlayerUnloadedScene -= OnPlayerUnloadedScene;
             _scenePlayers.onPlayerLoadedScene -= OnPlayerLoadedScene;
 
@@ -114,11 +109,6 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<OwnershipChange>(OnOwnershipChange);
         }
 
-        private void OnFlushHierarchy(SceneID scope)
-        {
-            HandlePendingChanges(scope);
-        }
-
         /// <summary>
         /// Gets all the objects owned by the given player.
         /// This creates a new list every time it's called.
@@ -126,7 +116,7 @@ namespace PurrNet.Modules
         /// </summary>
         public List<NetworkIdentity> GetAllPlayerOwnedIds(PlayerID player)
         {
-            List<NetworkIdentity> ids = new ();
+            List<NetworkIdentity> ids = new List<NetworkIdentity>();
 
             foreach (var (scene, owned) in _sceneOwnerships)
             {
@@ -221,20 +211,21 @@ namespace PurrNet.Modules
             }
         }
 
-        readonly Dictionary<PlayerSceneID, DisposableList<OwnershipInfo>> _pendingOwnershipChanges = new ();
+        readonly Dictionary<PlayerSceneID, DisposableList<OwnershipInfo>> _pendingOwnershipChanges = new Dictionary<PlayerSceneID, DisposableList<OwnershipInfo>>();
 
         private void OnPlayerObserverAdded(PlayerID player, NetworkIdentity target)
         {
             if (!target.id.HasValue)
                 return;
-            
+
             if (!_sceneOwnerships.TryGetValue(target.sceneId, out var ownerships))
                 return;
 
             if (!_asServer)
                 return;
 
-            if (!ownerships.TryGetOwner(target, out var owner)) return;
+            if (!ownerships.TryGetOwner(target, out var owner))
+                return;
             
             var info = new OwnershipInfo
             {
@@ -338,7 +329,7 @@ namespace PurrNet.Modules
             _sceneOwnerships.Remove(scene);
         }
 
-        private static readonly List<NetworkID> _idsCache = new ();
+        private static readonly List<NetworkID> _idsCache = new List<NetworkID>();
 
         public void GiveOwnership(NetworkIdentity nid, PlayerID player, bool? propagateToChildren = null, bool? overrideExistingOwners = null, bool silent = false)
         {
@@ -374,7 +365,8 @@ namespace PurrNet.Modules
             }
             
             var shouldOverride = overrideExistingOwners ?? nid.ShouldOverrideExistingOwnership(_asServer);
-            var affectedIds = GetAllChildrenOrSelf(nid, propagateToChildren, _asServer);
+            var affectedIds = ListPool<NetworkIdentity>.Instantiate();
+            GetAllChildrenOrSelf(nid, affectedIds, propagateToChildren);
 
             _idsCache.Clear();
 
@@ -409,6 +401,8 @@ namespace PurrNet.Modules
             {
                 if (!silent)
                     PurrLogger.LogError($"Failed to give ownership of '{nid.gameObject.name}' to {player} because no identities were affected.");
+                
+                ListPool<NetworkIdentity>.Destroy(affectedIds);
                 return;
             }
 
@@ -430,6 +424,8 @@ namespace PurrNet.Modules
             {
                 _playersManager.SendToServer(data);
             }
+            
+            ListPool<NetworkIdentity>.Destroy(affectedIds);
         }
 
         /// <summary>
@@ -458,7 +454,8 @@ namespace PurrNet.Modules
                 return;
             }
             
-            var children = GetAllChildrenOrSelf(id, true, _asServer);
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            GetAllChildrenOrSelf(id, children, true);
             
             _idsCache.Clear();
 
@@ -498,6 +495,8 @@ namespace PurrNet.Modules
                     _playersManager.Send(players, data);
             }
             else _playersManager.SendToServer(data);
+            
+            ListPool<NetworkIdentity>.Destroy(children);
         }
         
         /// <summary>
@@ -528,7 +527,8 @@ namespace PurrNet.Modules
             }
             
             var originalOwner = id.owner.Value;
-            var children = GetAllChildrenOrSelf(id, propagateToChildren, _asServer);
+            var children = ListPool<NetworkIdentity>.Instantiate();
+            GetAllChildrenOrSelf(id, children, propagateToChildren);
             
             _idsCache.Clear();
 
@@ -568,6 +568,8 @@ namespace PurrNet.Modules
                     _playersManager.Send(players, data);
             }
             else _playersManager.SendToServer(data);
+            
+            ListPool<NetworkIdentity>.Destroy(children);
         }
 
         public bool TryGetOwner(NetworkIdentity id, out PlayerID player)
@@ -584,15 +586,13 @@ namespace PurrNet.Modules
             _sceneOwnerships[scene] = new SceneOwnership(asServer);
         }
         
-        private void HandlePendingChanges(SceneID scope)
+        private void HandlePendingChanges()
         {
-            var toRemove = ListPool<PlayerSceneID>.Instantiate();
+            if (_pendingOwnershipChanges.Count == 0)
+                return;
             
             foreach (var (player, changes) in _pendingOwnershipChanges)
             {
-                if (player.scene != scope)
-                    continue;
-                
                 _playersManager.Send(player.player, new OwnershipChangeBatch
                 {
                     scene = player.scene,
@@ -600,13 +600,9 @@ namespace PurrNet.Modules
                 });
                 
                 changes.Dispose();
-                toRemove.Add(player);
             }
 
-            foreach (var remove in toRemove)
-                _pendingOwnershipChanges.Remove(remove);
-            
-            ListPool<PlayerSceneID>.Destroy(toRemove);
+            _pendingOwnershipChanges.Clear();
         }
 
         private void HandleOwenshipBatch(OwnershipChangeBatch data)
@@ -701,14 +697,13 @@ namespace PurrNet.Modules
             }
         }
 
-        internal static List<NetworkIdentity> GetAllChildrenOrSelf(NetworkIdentity id, bool? propagateToChildren, bool asServer)
+        static void GetAllChildrenOrSelf(NetworkIdentity id, List<NetworkIdentity> result, bool? propagateToChildren)
         {
-            var cache = HierarchyScene.CACHE;
             bool shouldPropagate = propagateToChildren ?? id.ShouldPropagateToChildren();
 
-            if (shouldPropagate && id.HasPropagateOwnershipAuthority(asServer))
+            if (shouldPropagate && id.HasPropagateOwnershipAuthority())
             {
-                id.GetComponentsInChildren(true, cache);
+                HierarchyV2.GetComponentsInChildren(id.gameObject, result);
             }
             else
             {
@@ -716,21 +711,28 @@ namespace PurrNet.Modules
                     PurrLogger.LogError(
                         $"Failed to propagate ownership of '{id.gameObject.name}' because of missing authority, assigning only to the identity.");
 
-                cache.Clear();
-                cache.Add(id);
+                result.Add(id);
             }
+        }
 
-            return cache;
+        public void FixedUpdate()
+        {
+            HandlePendingChanges();
+        }
+
+        public void PreFixedUpdate()
+        {
+            HandlePendingChanges();
         }
     }
 
     internal class SceneOwnership
     {
-        static readonly List<OwnershipInfo> _cache = new ();
+        static readonly List<OwnershipInfo> _cache = new List<OwnershipInfo>();
         
-        readonly Dictionary<NetworkID, PlayerID> _owners = new ();
+        readonly Dictionary<NetworkID, PlayerID> _owners = new Dictionary<NetworkID, PlayerID>();
 
-        readonly Dictionary<PlayerID, HashSet<NetworkID>> _playerOwnedIds = new ();
+        readonly Dictionary<PlayerID, HashSet<NetworkID>> _playerOwnedIds = new Dictionary<PlayerID, HashSet<NetworkID>>();
 
         private readonly bool _asServer;
         

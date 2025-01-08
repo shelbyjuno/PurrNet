@@ -8,7 +8,7 @@ namespace PurrNet.Pooling
 
         static ListPool() => _instance = new ListPool<T>();
 
-        static List<T> Factory() => new();
+        static List<T> Factory() => new List<T>();
 
         static void Reset(List<T> list) => list.Clear();
 

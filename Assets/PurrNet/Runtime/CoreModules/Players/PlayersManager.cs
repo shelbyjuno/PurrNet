@@ -1,28 +1,21 @@
 using System;
 using System.Collections.Generic;
+using PurrNet.Authentication;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Transports;
 
 namespace PurrNet.Modules
 {
-    public struct ClientLoginRequest : IPackedAuto
-    {
-        public string join { get; }
-        
-        public ClientLoginRequest(string join)
-        {
-            this.join = join;
-        }
-    }
-    
     public struct ServerLoginResponse : IPackedAuto
     {
         public PlayerID playerId { get; }
+        public NetworkID lastNidId { get; }
 
-        public ServerLoginResponse(PlayerID playerId)
+        public ServerLoginResponse(PlayerID playerId, NetworkID lastNidId)
         {
             this.playerId = playerId;
+            this.lastNidId = lastNidId;
         }
     }
     
@@ -65,19 +58,21 @@ namespace PurrNet.Modules
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
     {
-        private readonly NetworkManager _manager;
-        private readonly CookiesModule _cookiesModule;
+        private readonly AuthModule _authModule;
         private readonly BroadcastModule _broadcastModule;
         private readonly ITransport _transport;
 
-        private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new();
+        private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new Dictionary<string, PlayerID>();
+        private readonly Dictionary<PlayerID, string> _playerIdToCookie = new Dictionary<PlayerID, string>();
         private ushort _playerIdCounter;
         
-        private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new();
-        private readonly Dictionary<PlayerID, Connection> _playerToConnection = new();
+        private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new Dictionary<Connection, PlayerID>();
+        private readonly Dictionary<PlayerID, Connection> _playerToConnection = new Dictionary<PlayerID, Connection>();
 
-        public List<PlayerID> players { get; } = new();
-        private readonly HashSet<PlayerID> _allSeenPlayers = new();
+        private readonly List<PlayerID> _players = new List<PlayerID>();
+        private readonly HashSet<PlayerID> _allSeenPlayers = new HashSet<PlayerID>();
+        
+        public IReadOnlyList<PlayerID> players => _players;
 
         public PlayerID? localPlayerId { get; private set; }
 
@@ -115,6 +110,8 @@ namespace PurrNet.Modules
         /// Callback for when the local player has received their PlayerID
         /// </summary>
         public event OnPlayerEvent onLocalPlayerReceivedID;
+        
+        public event Action<NetworkID> onNetworkIDReceived;
 
         private bool _asServer;
 
@@ -149,11 +146,10 @@ namespace PurrNet.Modules
         public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
             => _playerBroadcaster.Subscribe(callback);
 
-        public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaster)
+        public PlayersManager(NetworkManager nm, AuthModule auth, BroadcastModule broadcaster)
         {
-            _manager = nm;
             _transport = nm.transport.transport;
-            _cookiesModule = cookiesModule;
+            _authModule = auth;
             _broadcastModule = broadcaster;
         }
         
@@ -200,6 +196,14 @@ namespace PurrNet.Modules
         {
             return localPlayerId == playerId;
         }
+        
+        /// <summary>
+        /// Check if a playerId is the local player.
+        /// </summary>
+        public bool IsLocalPlayer(PlayerID? playerId)
+        {
+            return localPlayerId == playerId;
+        }
 
         /// <summary>
         /// Check if a playerId is a valid player.
@@ -207,7 +211,18 @@ namespace PurrNet.Modules
         /// </summary>
         public bool IsValidPlayer(PlayerID playerId)
         {
-            return players.Contains(playerId);
+            return _players.Contains(playerId);
+        }
+        
+        /// <summary>
+        /// Check if a playerId is a valid player.
+        /// A valid player is a player that is connected to the server.
+        /// </summary>
+        public bool IsValidPlayer(PlayerID? playerId)
+        {
+            if (!playerId.HasValue)
+                return false;
+            return _players.Contains(playerId.Value);
         }
         
         /// <summary>
@@ -249,7 +264,7 @@ namespace PurrNet.Modules
             
             if (asServer)
             {
-                _broadcastModule.Subscribe<ClientLoginRequest>(OnClientLoginRequest);
+                _authModule.onConnection += OnClientAuthed;
             }
             else
             {
@@ -257,6 +272,50 @@ namespace PurrNet.Modules
                 _broadcastModule.Subscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent);
                 _broadcastModule.Subscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent);
                 _broadcastModule.Subscribe<PlayerLeftEvent>(OnPlayerLeftEvent);
+            }
+        }
+        
+        /// <summary>
+        /// Try to get the cookie of a playerId.
+        /// Good for session management.
+        /// </summary>
+        public bool TryGetCookie(PlayerID playerId, out string cookie)
+        {
+            return _playerIdToCookie.TryGetValue(playerId, out cookie);
+        }
+
+        private void OnClientAuthed(Connection conn, AuthenticationResponse data)
+        {
+            if (data.cookie == null || !_cookieToPlayerId.TryGetValue(data.cookie, out var playerId))
+            {
+                playerId = new PlayerID(++_playerIdCounter, false);
+
+                if (data.cookie != null)
+                {
+                    _cookieToPlayerId.Add(data.cookie, playerId);
+                    _playerIdToCookie.Add(playerId, data.cookie);
+                }
+            }
+            
+            if (_players.Contains(playerId))
+            {
+                // Player is already connected?
+                _transport.CloseConnection(conn);
+                PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
+                return;
+            }
+
+            var lastNidId = new NetworkID(0, playerId);
+            if (_lastNidId.TryGetValue(playerId, out var lastNid))
+                lastNidId = lastNid;
+            
+            _broadcastModule.Send(conn, new ServerLoginResponse(playerId, lastNidId));
+
+            SendSnapshotToClient(conn);
+            if (RegisterPlayer(conn, playerId, out var isReconnect))
+            {
+                SendNewUserToAllClients(conn, playerId);
+                TriggerOnJoinedEvent(playerId, isReconnect);
             }
         }
 
@@ -284,37 +343,9 @@ namespace PurrNet.Modules
         {
             localPlayerId = data.playerId;
             onLocalPlayerReceivedID?.Invoke(data.playerId);
+            onNetworkIDReceived?.Invoke(data.lastNidId);
         }
 
-        private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asServer)
-        {
-            if (!_cookieToPlayerId.TryGetValue(data.join, out var playerId))
-            {
-                playerId = new PlayerID(++_playerIdCounter, false);
-                _cookieToPlayerId.Add(data.join, playerId);
-            }
-            
-            if (players.Contains(playerId))
-            {
-                // Player is already connected?
-                _transport.CloseConnection(conn);
-                PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
-                return;
-            }
-            
-            _broadcastModule.Send(conn, new ServerLoginResponse(playerId));
-
-            if (_manager.localClientConnection == conn)
-                localPlayerId = playerId;
-
-            SendSnapshotToClient(conn);
-            if (RegisterPlayer(conn, playerId, out var isReconnect))
-            {
-                SendNewUserToAllClients(conn, playerId);
-                TriggerOnJoinedEvent(playerId, isReconnect);
-            }
-        }
-        
         private void SendNewUserToAllClients(Connection conn, PlayerID playerId)
         {
             _broadcastModule.SendToAll(new PlayerJoinedEvent(playerId, conn));
@@ -338,7 +369,7 @@ namespace PurrNet.Modules
                 return false;
             }
 
-            players.Add(player);
+            _players.Add(player);
 
             if (conn.isValid)
             {
@@ -362,7 +393,7 @@ namespace PurrNet.Modules
             if (!_connectionToPlayerId.TryGetValue(conn, out var player))
                 return;
             
-            players.Remove(player);
+            _players.Remove(player);
             _playerToConnection.Remove(player);
             _connectionToPlayerId.Remove(conn);
             
@@ -375,7 +406,7 @@ namespace PurrNet.Modules
         {
             if (_playerToConnection.TryGetValue(playerId, out var conn))
                 _connectionToPlayerId.Remove(conn);
-            players.Remove(playerId);
+            _players.Remove(playerId);
             _playerToConnection.Remove(playerId);
             
             onPrePlayerLeft?.Invoke(playerId, _asServer);
@@ -383,16 +414,22 @@ namespace PurrNet.Modules
             onPostPlayerLeft?.Invoke(playerId, _asServer);
         }
 
-        public void Disable(bool asServer) { }
-        
-        public void OnConnected(Connection conn, bool asServer)
+        public void Disable(bool asServer)
         {
-            if (asServer) return;
-            
-            // Generate a new session cookie or get the existing one and send it to the server
-            var cookie = _cookiesModule.GetOrSet("client_connection_session", Guid.NewGuid().ToString(), false);
-            _broadcastModule.SendToServer(new ClientLoginRequest(cookie), Channel.ReliableUnordered);
+            if (asServer)
+            {
+                _authModule.onConnection -= OnClientAuthed;
+            }
+            else
+            {
+                _broadcastModule.Unsubscribe<ServerLoginResponse>(OnClientLoginResponse);
+                _broadcastModule.Unsubscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent);
+                _broadcastModule.Unsubscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent);
+                _broadcastModule.Unsubscribe<PlayerLeftEvent>(OnPlayerLeftEvent);
+            }
         }
+        
+        public void OnConnected(Connection conn, bool asServer) { }
 
         public void OnDisconnected(Connection conn, bool asServer)
         {
@@ -402,6 +439,13 @@ namespace PurrNet.Modules
                 SendUserLeftToAllClients(playerId);
 
             UnregisterPlayer(conn);
+        }
+
+        readonly Dictionary<PlayerID, NetworkID> _lastNidId = new Dictionary<PlayerID, NetworkID>();
+        
+        public void RegisterClientLastId(PlayerID player, NetworkID lastNidID)
+        {
+            _lastNidId[player] = lastNidID;
         }
     }
 }

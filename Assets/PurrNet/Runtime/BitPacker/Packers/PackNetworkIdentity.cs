@@ -100,7 +100,7 @@ namespace PurrNet
                 return;
             }
 
-            if (!networkManager.TryGetModule<HierarchyModule>(networkManager.isServer, out var module) ||
+            if (!networkManager.TryGetModule<HierarchyFactory>(networkManager.isServer, out var module) ||
                 !module.TryGetIdentity(sceneId, id, out var result) || result is not T identity)
             {
                 value = null;

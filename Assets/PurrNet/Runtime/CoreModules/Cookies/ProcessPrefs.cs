@@ -4,7 +4,7 @@ namespace PurrNet.Modules
 {
     internal static class ProcessPrefs
     {
-        static readonly Dictionary<string, string> _prefs = new();
+        static readonly Dictionary<string, string> _prefs = new Dictionary<string, string>();
 
 #if UNITY_EDITOR
         public static void Set(string key, string value)

@@ -11,12 +11,12 @@ namespace PurrNet.Editor
 {
     public class AddonLibrary : EditorWindow
     {
-        private static readonly List<Addon> _addons = new();
-        private static readonly List<Addon> _exampleAddons = new();
-        private static readonly List<Addon> _transportAddons = new();
-        private static readonly List<Addon> _toolAddons = new();
-        private static readonly List<Addon> _systemAddons = new();
-        private static readonly List<UnityWebRequest> _imageRequests = new();
+        private static readonly List<Addon> _addons = new List<Addon>();
+        private static readonly List<Addon> _exampleAddons = new List<Addon>();
+        private static readonly List<Addon> _transportAddons = new List<Addon>();
+        private static readonly List<Addon> _toolAddons = new List<Addon>();
+        private static readonly List<Addon> _systemAddons = new List<Addon>();
+        private static readonly List<UnityWebRequest> _imageRequests = new List<UnityWebRequest>();
 
         private static bool _fetchedAddons;
         private UnityWebRequest _request;
@@ -26,20 +26,17 @@ namespace PurrNet.Editor
 
         private const int imageWidth = 100;
         private const int sectionOneWidth = 250;
-        private const int sectionTwoWidth = 100;
 
         private GUIStyle wrapStyle;
         
-        [MenuItem("Window/PurrNet Addon Library")]
+        [MenuItem("Tools/PurrNet/Addon Library")]
         public static void ShowWindow()
         {
             _fetchedAddons = false;
             _imageRequests.Clear();
-         
-            const int width = (imageWidth + sectionOneWidth + sectionTwoWidth) * 2;
+
             var window = GetWindow<AddonLibrary>("PurrNet Addon Library");
-            window.minSize = new Vector2(width, 300);
-            window.maxSize = new Vector2(width, 9999);
+            window.minSize = new Vector2(350, 300);
             window.LoadDefaultIcon();
         }
 
@@ -77,11 +74,11 @@ namespace PurrNet.Editor
             
             List<string> availableTabs = new List<string>();
 
+            availableTabs.Add("All");
             if (_exampleAddons.Count > 0) availableTabs.Add("Examples");
             if (_transportAddons.Count > 0) availableTabs.Add("Transports");
             if (_toolAddons.Count > 0) availableTabs.Add("Tools");
             if (_systemAddons.Count > 0) availableTabs.Add("Systems");
-            availableTabs.Add("All");
 
             selectedTab = GUILayout.Toolbar(selectedTab, availableTabs.ToArray());
 
@@ -90,6 +87,9 @@ namespace PurrNet.Editor
             //Debug.Log($"example count: {_exampleAddons.Count} | transport count: {_transportAddons.Count} | tool count: {_toolAddons.Count} | system count: {_systemAddons.Count} | all count: {_addons.Count}");
             switch (availableTabs[selectedTab])
             {
+                case "All":
+                    HandleAddons(_addons);
+                    break;
                 case "Examples":
                     HandleAddons(_exampleAddons);
                     break;
@@ -101,9 +101,6 @@ namespace PurrNet.Editor
                     break;
                 case "Systems":
                     HandleAddons(_systemAddons);
-                    break;
-                case "All":
-                    HandleAddons(_addons);
                     break;
             }
 
@@ -151,29 +148,22 @@ namespace PurrNet.Editor
 
                     foreach (var addon in wrapper.addons)
                     {
-                        
-                        // Synchronously download the image
                         var imageRequest = UnityWebRequestTexture.GetTexture(addon.imageUrl); 
                         imageRequest.SendWebRequest();
                         _imageRequests.Add(imageRequest);
                         addon.icon = defaultIcon;
                         _addons.Add(addon);
 
-                        switch (addon.category)
-                        {
-                            case "Example":
-                                _exampleAddons.Add(addon);
-                                break;
-                            case "Transport":
-                                _transportAddons.Add(addon);
-                                break;
-                            case "Tool":
-                                _toolAddons.Add(addon);
-                                break;
-                            case "System":
-                                _systemAddons.Add(addon);
-                                break;
-                        }
+                        string category = addon.category.ToLower();
+
+                        if (category.Contains("example"))
+                            _exampleAddons.Add(addon);
+                        if (category.Contains("transport"))
+                            _transportAddons.Add(addon);
+                        if (category.Contains("tool"))
+                            _toolAddons.Add(addon);
+                        if (category.Contains("system"))
+                            _systemAddons.Add(addon);
                     }
 
                     _fetchedAddons = true;
@@ -183,41 +173,63 @@ namespace PurrNet.Editor
 
         private void HandleAddons(List<Addon> addonsToHandle)
         {
-            for (var i = 0; i < addonsToHandle.Count; i += 2)
-            {
-                EditorGUILayout.BeginHorizontal(); // Begin a new row
+            int columns = Mathf.Max(1, Mathf.FloorToInt(position.width / (imageWidth + sectionOneWidth + 20)));
+            float cardWidth = position.width / columns - 10;
 
-                for (var j = 0; j < 2; j++)
+            for (int i = 0; i < addonsToHandle.Count; i += columns)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                for (int j = 0; j < columns; j++)
                 {
                     if (i + j < addonsToHandle.Count)
                     {
-                        var addon = addonsToHandle[i + j]; 
-                        EditorGUILayout.BeginVertical("box");
+                        var addon = addonsToHandle[i + j];
+                        GUIStyle centerTitle = new GUIStyle(GUI.skin.label)
+                        {
+                            alignment = TextAnchor.MiddleCenter,
+                            fontStyle = FontStyle.Bold
+                        };
+                        GUIStyle centerDescription = new GUIStyle(GUI.skin.label)
+                        {
+                            alignment = TextAnchor.MiddleCenter,
+                            wordWrap = true
+                        };
 
-                        EditorGUILayout.BeginHorizontal();
+                        GUIStyle boxStyle = new GUIStyle("box") { alignment = TextAnchor.MiddleCenter };
 
-                        if (_imageRequests.Count > i + j && _imageRequests[i + j].isDone && _imageRequests[i + j].result == UnityWebRequest.Result.Success)
-                            addon.icon = DownloadHandlerTexture.GetContent(_imageRequests[i + j]);
+                        EditorGUILayout.BeginVertical(boxStyle, GUILayout.Width(cardWidth));
 
-                        GUILayout.Label(addon.icon, GUILayout.Width(imageWidth), GUILayout.Height(imageWidth));
+                        if (columns == 1 || position.width < 500)
+                        {
+                            GUILayout.BeginHorizontal();
+                            GUILayout.FlexibleSpace();
+                            GUILayout.Label(addon.icon, GUILayout.Width(imageWidth), GUILayout.Height(imageWidth));
+                            GUILayout.FlexibleSpace();
+                            GUILayout.EndHorizontal();
 
-                        EditorGUILayout.BeginVertical(GUILayout.MaxWidth(sectionOneWidth));
-                        EditorGUILayout.LabelField(addon.name, EditorStyles.boldLabel, GUILayout.MaxWidth(sectionOneWidth));
-                        EditorGUILayout.LabelField(addon.description, wrapStyle, GUILayout.MaxWidth(sectionOneWidth));
-                        EditorGUILayout.EndVertical();
+                            GUILayout.Label(addon.name, centerTitle);
+                            GUILayout.Label(addon.description, centerDescription, GUILayout.Width(cardWidth - 20));
+                        }
+                        else
+                        {
+                            EditorGUILayout.BeginHorizontal();
 
-                        EditorGUILayout.BeginVertical(GUILayout.MaxWidth(sectionTwoWidth));
-                        EditorGUILayout.LabelField($"Version {addon.version}", GUILayout.MaxWidth(sectionTwoWidth));
-                        EditorGUILayout.LabelField("Author:", wrapStyle, GUILayout.MaxWidth(sectionTwoWidth));
-                        EditorGUILayout.LabelField(addon.author, GUILayout.MaxWidth(sectionTwoWidth));
-                        EditorGUILayout.EndVertical();
+                            GUILayout.Label(addon.icon, GUILayout.Width(imageWidth), GUILayout.Height(imageWidth));
 
-                        EditorGUILayout.EndHorizontal();
+                            EditorGUILayout.BeginVertical();
+                            GUILayout.Label(addon.name, EditorStyles.boldLabel);
+                            GUILayout.Label(addon.description, wrapStyle);
+                            GUILayout.Label($"Version: {addon.version}");
+                            GUILayout.Label($"Author: {addon.author}");
+                            EditorGUILayout.EndVertical();
+
+                            EditorGUILayout.EndHorizontal();
+                        }
 
                         HandleInstallButton(addon);
 
                         EditorGUILayout.EndVertical();
-
                         EditorGUILayout.Space(10);
                     }
                 }

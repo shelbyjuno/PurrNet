@@ -80,10 +80,10 @@ namespace PurrNet.Codegen
         {
             try
             {
-                if (type == null)
-                    return false;
+                if (type?.FullName == baseTypeName)
+                    return true;
                 
-                if (type.BaseType == null)
+                if (type?.BaseType == null)
                     return false;
 
                 if (type.BaseType.FullName == baseTypeName)
@@ -914,6 +914,9 @@ namespace PurrNet.Codegen
             
             if (methodRpc.Signature.isStatic)
                 attributes |= MethodAttributes.Static;
+            
+            if (method.IsVirtual)
+                attributes |= MethodAttributes.Virtual;
 
             var newMethod = new MethodDefinition(ogName, attributes, method.ReturnType);
             
@@ -1356,7 +1359,7 @@ namespace PurrNet.Codegen
 
         private static bool UpdateMethodReferences(ModuleDefinition module, MethodReference old, MethodReference @new, [UsedImplicitly] List<DiagnosticMessage> messages)
         {
-            List<TypeDefinition> types = new();
+            List<TypeDefinition> types = new List<TypeDefinition>();
             
             var startLocalExecutionFlag = module.GetTypeDefinition(typeof(PurrCompilerFlags)).GetMethod("EnterLocalExecution").FullName;
             var exitLocalExecutionFlag = module.GetTypeDefinition(typeof(PurrCompilerFlags)).GetMethod("ExitLocalExecution").FullName;
@@ -1433,7 +1436,7 @@ namespace PurrNet.Codegen
             return true;
         }
         
-        private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
+         private static MethodReference GenerateNewRef(MethodReference @new, MethodReference methodReference)
         {
             // Check if methodReference is a MethodDefinition for a deeper copy if possible
             var methodDefinition = methodReference.Resolve();
@@ -1481,10 +1484,10 @@ namespace PurrNet.Codegen
 
             return newRef;
         }
-
+        
         public static List<TypeDefinition> GetAllTypes(ModuleDefinition module)
         {
-            List<TypeDefinition> types = new();
+            List<TypeDefinition> types = new List<TypeDefinition> ();
             
             types.AddRange(module.Types);
             foreach (var type in module.Types)
@@ -1498,11 +1501,11 @@ namespace PurrNet.Codegen
             try
             {
                 if (!WillProcess(compiledAssembly))
-                    return default!;
+                    return null!;
                 
-                HashSet<string> visitedTypes = new();
-                HashSet<TypeReference> typesToGenerateSerializer = new();
-                HashSet<TypeReference> typesToPrepareHasher = new();
+                var visitedTypes = new HashSet<string>();
+                var typesToGenerateSerializer = new HashSet<TypeReference>();
+                var typesToPrepareHasher = new HashSet<TypeReference>();
                 
                 var messages = new List<DiagnosticMessage>();
 
@@ -1527,15 +1530,29 @@ namespace PurrNet.Codegen
 
                     for (var t = 0; t < types.Count; t++)
                     {
+                        UnityProxyProcessor.Process(types[t], messages);
                         RegisterSerializersProcessor.HandleType(module, types[t], messages);
-                        
+
                         var type = types[t];
+                        
+                        // check if it has RegisterNetworkTypeAttribute
+                        foreach (var customAttribute in type.CustomAttributes)
+                        {
+                            if (customAttribute.AttributeType.FullName == typeof(RegisterNetworkTypeAttribute).FullName)
+                            {
+                                foreach (var field in customAttribute.ConstructorArguments)
+                                {
+                                    if (field.Value is TypeReference tref)
+                                        typesToGenerateSerializer.Add(tref);
+                                }
+                            }
+                        }
                         
                         if (GenerateSerializersProcessor.HasInterface(type, typeof(IPackedAuto)))
                         {
                             typesToGenerateSerializer.Add(type);
                         }
-
+                        
                         if (!type.IsClass)
                             continue;
 
@@ -1545,13 +1562,13 @@ namespace PurrNet.Codegen
                         bool inheritsFromNetworkIdentity = type.FullName == idFullName || InheritsFrom(type, idFullName);
                         bool inheritsFromNetworkClass = type.FullName == classFullName || InheritsFrom(type, classFullName);
 
-                        List<RPCMethod> _rpcMethods = new();
+                        var _rpcMethods = new List<RPCMethod>();
 
                         int idOffset = GetIDOffset(type, messages);
 
                         if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                         {
-                            List<FieldDefinition> _networkFields = new();
+                            var _networkFields = new List<FieldDefinition>();
                             
                             IncludeAnyConcreteGenericParameters(type, typesToGenerateSerializer);
                             FindNetworkModules(type, classFullName, _networkFields);
@@ -1564,6 +1581,9 @@ namespace PurrNet.Codegen
                             {
                                 var method = type.Methods[i];
 
+                                if (inheritsFromNetworkIdentity && MakeSureOverrideIsCalled.ShouldProcess(method))
+                                    MakeSureOverrideIsCalled.Process(method, messages);
+
                                 if (method.DeclaringType.FullName != type.FullName)
                                     continue;
                                 
@@ -1574,7 +1594,8 @@ namespace PurrNet.Codegen
                                 
                                 if (!rpcType.Value.isStatic && !inheritsFromNetworkIdentity && !inheritsFromNetworkClass)
                                 {
-                                    Error(messages, "RPC must be static if not inheriting from NetworkIdentity or NetworkClass", method);
+                                    string inheritsFrom = type.BaseType?.FullName ?? "null";
+                                    Error(messages, $"RPC must be static if not inheriting from NetworkIdentity or NetworkClass | {inheritsFrom}", method);
                                     continue;
                                 }
                                 
@@ -1598,10 +1619,10 @@ namespace PurrNet.Codegen
                                 break;
                         }
 
-                        if (inheritsFromNetworkIdentity)
+                        if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                             typesToGenerateSerializer.Add(type);
                         
-                        HashSet<TypeReference> usedTypes = new();
+                        HashSet<TypeReference> usedTypes = new HashSet<TypeReference>();
 
                         for (var index = 0; index < _rpcMethods.Count; index++)
                         {
@@ -1673,7 +1694,7 @@ namespace PurrNet.Codegen
                 
                 foreach (var typeRef in typesToPrepareHasher)
                     GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, visitedTypes, messages);
-
+                
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();
 
@@ -1751,8 +1772,8 @@ namespace PurrNet.Codegen
 
         private static void ExpandNested(AssemblyDefinition assembly, HashSet<TypeReference> typesToHandle)
         {
-            HashSet<TypeReference> visited = new();
-            HashSet<TypeReference> visited2 = new();
+            HashSet<TypeReference> visited = new HashSet<TypeReference>();
+            HashSet<TypeReference> visited2 = new HashSet<TypeReference>();
             var copy = typesToHandle.ToArray();
 
             for (var i = 0; i < copy.Length; i++)
@@ -1838,7 +1859,7 @@ namespace PurrNet.Codegen
 
         static List<TypeReference> GetConcreteFields(TypeReference typeReference)
         {
-            List<TypeReference> concreteFields = new();
+            List<TypeReference> concreteFields = new List<TypeReference>();
 
             if (typeReference is GenericInstanceType genericInstance)
             {
@@ -1850,7 +1871,7 @@ namespace PurrNet.Codegen
                 }
 
                 // Map generic parameters to concrete arguments
-                Dictionary<string, TypeReference> genericMapping = new();
+                Dictionary<string, TypeReference> genericMapping = new Dictionary<string, TypeReference>();
                 for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
                 {
                     string paramName = typeDef.GenericParameters[i].Name;
@@ -2127,6 +2148,12 @@ namespace PurrNet.Codegen
                 return true;
             
             if (IsGeneric(typeReference, typeof(List<>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(Queue<>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(Stack<>)))
                 return true;
             
             if (IsGeneric(typeReference, typeof(Nullable<>)))

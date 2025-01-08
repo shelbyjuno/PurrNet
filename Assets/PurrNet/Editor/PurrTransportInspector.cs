@@ -8,6 +8,7 @@ namespace PurrNet.Editor
     [CustomEditor(typeof(PurrTransport), true)]
     public class PurrTransportInspector : UnityEditor.Editor
     {
+        private SerializedProperty _masterServer;
         private SerializedProperty _roomName;
         private SerializedProperty _region;
         private SerializedProperty _host;
@@ -18,6 +19,7 @@ namespace PurrNet.Editor
  
         void OnEnable()
         {
+            _masterServer = serializedObject.FindProperty("_masterServer");
             _roomName = serializedObject.FindProperty("_roomName");
             _region = serializedObject.FindProperty("_region");
             _host = serializedObject.FindProperty("_host");
@@ -29,7 +31,7 @@ namespace PurrNet.Editor
         public static string _bestRegion;
         static bool _loadingRegions;
         
-        static async void LoadRegions()
+        async void LoadRegions()
         {
             try
             {
@@ -37,7 +39,7 @@ namespace PurrNet.Editor
                     return;
                 
                 _loadingRegions = true;
-                var servers = await PurrTransportUtils.GetRelayServersAsync();
+                var servers = await PurrTransportUtils.GetRelayServersAsync(_masterServer.stringValue);
                 
                 _hosts = new string[servers.servers.Length];
                 _regions = new string[servers.servers.Length];
@@ -81,7 +83,7 @@ namespace PurrNet.Editor
                 
                 _lookingForBestRegion = true;
             
-                var server = await PurrTransportUtils.GetRelayServerAsync();
+                var server = await PurrTransportUtils.GetRelayServerAsync(_masterServer.stringValue);
             
                 _region.stringValue = server.region;
                 _bestRegion = server.region;
@@ -100,18 +102,22 @@ namespace PurrNet.Editor
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            
-            EditorGUILayout.Space();
 
-            // draw help box saying this is meant for dev use only
-            EditorGUILayout.HelpBox("This is meant for development use only.\n" +
-                                    "Usage in production is strictly prohibited.", MessageType.Info);
-            
             EditorGUILayout.Space();
             
             var transport = (PurrTransport)target;
             
-            // draw the room name
+            EditorGUILayout.PropertyField(_masterServer);
+            
+            var server = _masterServer.stringValue;
+            if (Uri.TryCreate(server, UriKind.Absolute, out var url) && url.Host.EndsWith("riten.dev"))
+            {
+                // draw help box saying this is meant for dev use only
+                EditorGUILayout.HelpBox("This server is meant for development use only.\n" +
+                                        "Usage in production is strictly prohibited.\n" +
+                                        "You need to host your own relay servers for production.", MessageType.Warning);
+            }
+            
             EditorGUILayout.PropertyField(_roomName);
             
             bool oldEnabled = GUI.enabled;

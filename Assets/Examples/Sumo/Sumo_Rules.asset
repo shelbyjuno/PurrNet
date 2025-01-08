@@ -18,16 +18,24 @@ MonoBehaviour:
     defaultOwner: 1
     propagateOwnershipByDefault: 1
     despawnIfOwnerDisconnects: 1
+  _defaultRpcRules:
+    ignoreRequireServerAttribute: 0
+    ignoreRequireOwnerAttribute: 0
+  _defaultVisibilityRules:
+    visibilityMode: 0
   _defaultOwnershipRules:
     assignAuth: 1
     transferAuth: -1
     removeAuth: -1
     overrideWhenPropagating: 1
+  _defaultSceneRules:
+    removePlayerFromSceneOnDisconnect: 0
   _defaultIdentityRules:
     syncComponentActive: 0
     syncComponentAuth: 0
     syncGameObjectActive: 1
     syncGameObjectActiveAuth: 1
+    receiveRpcsWhenDisabled: 1
   _defaultTransformRules:
     syncParent: 1
     changeParentAuth: -1

@@ -1,4 +1,3 @@
-using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Examples.TopDownShooter
@@ -7,12 +6,14 @@ namespace PurrNet.Examples.TopDownShooter
     {
         [SerializeField] private int maxHealth = 100;
         [SerializeField] private TextMesh healthText;
-        private readonly SyncVar<int> _health = new();
+        [SerializeField] SyncVar<int> _health = new SyncVar<int>();
 
         protected override void OnSpawned(bool asServer)
         {
             if (asServer)
+            {
                 _health.value = maxHealth;
+            }
             else
             {
                 UpdateHealthUI();

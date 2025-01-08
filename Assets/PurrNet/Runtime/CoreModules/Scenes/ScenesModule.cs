@@ -51,12 +51,12 @@ namespace PurrNet.Modules
         private readonly SceneHistory _history;
         private bool _asServer;
         
-        private readonly List<PendingOperation> _pendingOperations = new ();
-        private readonly Queue<SceneAction> _actionsQueue = new ();
+        private readonly List<PendingOperation> _pendingOperations = new List<PendingOperation>();
+        private readonly Queue<SceneAction> _actionsQueue = new Queue<SceneAction>();
 
-        private readonly Dictionary<SceneID, SceneState> _scenes = new ();
-        private readonly Dictionary<Scene, SceneID> _idToScene = new ();
-        private readonly List<SceneID> _rawScenes = new ();
+        private readonly Dictionary<SceneID, SceneState> _scenes = new Dictionary<SceneID, SceneState>();
+        private readonly Dictionary<Scene, SceneID> _idToScene = new Dictionary<Scene, SceneID>();
+        private readonly List<SceneID> _rawScenes = new List<SceneID>();
         
         /// <summary>
         /// First callback for when a scene is loaded
@@ -83,7 +83,7 @@ namespace PurrNet.Modules
         /// </summary>
         public event OnSceneVisibilityEvent onSceneVisibilityChanged;
 
-        private ushort _nextSceneID;
+        private ushort _nextSceneID = 1;
         private ScenePlayersModule _scenePlayers;
         
         public IReadOnlyList<SceneID> scenes => _rawScenes;
@@ -150,7 +150,7 @@ namespace PurrNet.Modules
             onSceneVisibilityChanged?.Invoke(scene, isPublic, _asServer);
         }
         
-        private readonly List<SceneID> _scenesToTriggerUnloadEvent = new();
+        private readonly List<SceneID> _scenesToTriggerUnloadEvent = new List<SceneID>();
         
         private void RemoveScene(Scene scene)
         {
@@ -640,7 +640,7 @@ namespace PurrNet.Modules
             return op;
         }
         
-        static readonly List<SceneAction> _playerFilteredActions = new();
+        static readonly List<SceneAction> _playerFilteredActions = new List<SceneAction>();
 
         private void FilterActionsForPlayer(PlayerID player, IReadOnlyList<SceneAction> actions, ICollection<SceneAction> destination)
         {
@@ -719,7 +719,7 @@ namespace PurrNet.Modules
             _history.Flush();
         }
 
-        private readonly List<AsyncOperation> _pendingUnloads = new();
+        private readonly List<AsyncOperation> _pendingUnloads = new List<AsyncOperation>();
         private CleanupStage _cleanupStage;
 
         enum CleanupStage

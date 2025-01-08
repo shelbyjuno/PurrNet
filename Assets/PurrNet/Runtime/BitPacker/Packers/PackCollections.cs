@@ -41,12 +41,114 @@ namespace PurrNet.Packing
             value = val;
         }
 
-
         [UsedByIL]
         public static void RegisterDictionary<TKey, TValue>()
         {
             Packer<Dictionary<TKey, TValue>>.RegisterWriter(WriteDictionary);
             Packer<Dictionary<TKey, TValue>>.RegisterReader(ReadDictionary);
+        }
+        
+        
+        [UsedByIL]
+        public static void RegisterQueue<T>()
+        {
+            Packer<Queue<T>>.RegisterWriter(WriteQueue);
+            Packer<Queue<T>>.RegisterReader(ReadQueue);
+        }
+        
+        [UsedByIL]
+        public static void RegisterStack<T>()
+        {
+            Packer<Stack<T>>.RegisterWriter(WriteStack);
+            Packer<Stack<T>>.RegisterReader(ReadStack);
+        }
+        
+        public static void WriteQueue<T>(BitPacker packer, Queue<T> value)
+        {
+            if (value == null)
+            {
+                Packer<bool>.Write(packer, false);
+                return;
+            }
+            
+            Packer<bool>.Write(packer, true);
+
+            int length = value.Count;
+            packer.WriteInteger(length, 31);
+            
+            foreach (var v in value)
+                Packer<T>.Write(packer, v);
+        }
+        
+        public static void ReadQueue<T>(BitPacker packer, ref Queue<T> value)
+        {
+            bool hasValue = default;
+            packer.Read(ref hasValue);
+            
+            if (!hasValue)
+            {
+                value = null;
+                return;
+            }
+            
+            long length = default;
+            
+            packer.ReadInteger(ref length, 31);
+            
+            if (value == null)
+                value = new Queue<T>((int)length);
+            else value.Clear();
+            
+            for (int i = 0; i < length; i++)
+            {
+                T item = default;
+                Packer<T>.Read(packer, ref item);
+                value.Enqueue(item);
+            }
+        }
+        
+        public static void WriteStack<T>(BitPacker packer, Stack<T> value)
+        {
+            if (value == null)
+            {
+                Packer<bool>.Write(packer, false);
+                return;
+            }
+            
+            Packer<bool>.Write(packer, true);
+
+            int length = value.Count;
+            packer.WriteInteger(length, 31);
+            
+            foreach (var v in value)
+                Packer<T>.Write(packer, v);
+        }
+        
+        public static void ReadStack<T>(BitPacker packer, ref Stack<T> value)
+        {
+            bool hasValue = default;
+            packer.Read(ref hasValue);
+            
+            if (!hasValue)
+            {
+                value = null;
+                return;
+            }
+            
+            long length = default;
+            
+            packer.ReadInteger(ref length, 31);
+            
+            if (value == null)
+                value = new Stack<T>((int)length);
+            else value.Clear();
+            
+            for (int i = 0; i < length; i++)
+            {
+                T item = default;
+                Packer<T>.Read(packer, ref item);
+                value.Push(item);
+            }
         }
 
         private static void WriteDictionary<K, V>(BitPacker packer, Dictionary<K, V> value)

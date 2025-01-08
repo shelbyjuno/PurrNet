@@ -21,8 +21,8 @@ namespace PurrNet
 
     public sealed partial class NetworkManager
     {
-        readonly List<RegisterEventsDelegate> _subscribeEvents = new ();
-        readonly List<RegisterEventsDelegate> _unsubscribeEvents = new ();
+        readonly List<RegisterEventsDelegate> _subscribeEvents = new List<RegisterEventsDelegate>();
+        readonly List<RegisterEventsDelegate> _unsubscribeEvents = new List<RegisterEventsDelegate>();
         
         /// <summary>
         /// Event called when the network is started.

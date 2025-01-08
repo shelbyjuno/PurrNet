@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.github.kurotu.unity-terminal-launcher": {
+      "version": "https://github.com/kurotu/UnityTerminalLauncher.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "52a7c762327216ef86b776b88cab9531c77e0980"
+    },
     "com.rlabrecque.steamworks.net": {
       "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2024.8.0",
       "depth": 0,

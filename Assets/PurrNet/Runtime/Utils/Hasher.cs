@@ -14,11 +14,11 @@ namespace PurrNet.Utils
         private const ulong FNV_offset_basis64 = 14695981039346656037;
         private const ulong FNV_prime64 = 1099511628211;
         
-        static readonly Dictionary<Type, uint> _hashes = new ();
-        static readonly Dictionary<uint, Type> _decoder = new ();
+        static readonly Dictionary<Type, uint> _hashes = new Dictionary<Type, uint>();
+        static readonly Dictionary<uint, Type> _decoder = new Dictionary<uint, Type>();
         
-        static readonly Dictionary<Type, ulong> _hashes_64 = new ();
-        static readonly Dictionary<ulong, Type> _decoder_64 = new ();
+        static readonly Dictionary<Type, ulong> _hashes_64 = new Dictionary<Type, ulong>();
+        static readonly Dictionary<ulong, Type> _decoder_64 = new Dictionary<ulong, Type>();
         
         public static Type ResolveType(uint hash)
         {

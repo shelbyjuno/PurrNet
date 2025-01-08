@@ -71,8 +71,8 @@ namespace PurrNet.Codegen
             if (!isStatic)
                 return;
             
-            List<PackType> writeTypes = new ();
-            List<PackType> readTypes = new ();
+            List<PackType> writeTypes = new List<PackType>();
+            List<PackType> readTypes = new List<PackType>();
 
             foreach (var method in type.Methods)
             {

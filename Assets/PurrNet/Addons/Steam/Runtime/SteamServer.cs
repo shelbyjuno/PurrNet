@@ -2,6 +2,10 @@
 #define DISABLESTEAMWORKS
 #endif
 
+#if STEAMWORKS_NET
+#define STEAMWORKS_NET_PACKAGE
+#endif
+
 using System;
 using PurrNet.Transports;
 #if STEAMWORKS_NET_PACKAGE && !DISABLESTEAMWORKS
@@ -25,9 +29,9 @@ namespace PurrNet.Steam
 
         Callback<SteamNetConnectionStatusChangedCallback_t> _connectionStatusChanged;
         
-        private readonly List<HSteamNetConnection> _connections = new ();
-        private readonly Dictionary<int, HSteamNetConnection> _connectionById = new ();
-        private readonly Dictionary<HSteamNetConnection, int> _idByConnection = new ();
+        private readonly List<HSteamNetConnection> _connections = new List<HSteamNetConnection>();
+        private readonly Dictionary<int, HSteamNetConnection> _connectionById = new Dictionary<int, HSteamNetConnection>();
+        private readonly Dictionary<HSteamNetConnection, int> _idByConnection = new Dictionary<HSteamNetConnection, int>();
         
         readonly IntPtr[] _messages = new IntPtr[MAX_MESSAGES];
 #endif

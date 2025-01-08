@@ -10,16 +10,14 @@ namespace PurrNet.Modules
 {
     public class RPCModule : INetworkModule
     {
-        readonly HierarchyModule _hierarchyModule;
+        readonly HierarchyFactory _hierarchyModule;
         readonly PlayersManager _playersManager;
         readonly ScenesModule _scenes;
         readonly GlobalOwnershipModule _ownership;
-        readonly VisibilityFactory _visibilityFactory;
 
-        public RPCModule(PlayersManager playersManager, VisibilityFactory visibilityFactory, HierarchyModule hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
+        public RPCModule(PlayersManager playersManager, HierarchyFactory hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
         {
             _playersManager = playersManager;
-            _visibilityFactory = visibilityFactory;
             _hierarchyModule = hierarchyModule;
             _scenes = scenes;
             _ownership = ownerships;
@@ -31,9 +29,10 @@ namespace PurrNet.Modules
             _playersManager.Subscribe<StaticRPCPacket>(ReceiveStaticRPC);
             _playersManager.Subscribe<ChildRPCPacket>(ReceiveChildRPC);
             
-            _visibilityFactory.onLateObserverAdded += OnObserverAdded;
             _playersManager.onPlayerJoined += OnPlayerJoined;
             _scenes.onSceneUnloaded += OnSceneUnloaded;
+            
+            _hierarchyModule.onEarlyObserverAdded += OnObserverAdded;
             _hierarchyModule.onIdentityRemoved += OnIdentityRemoved;
         }
         
@@ -43,9 +42,10 @@ namespace PurrNet.Modules
             _playersManager.Unsubscribe<StaticRPCPacket>(ReceiveStaticRPC);
             _playersManager.Unsubscribe<ChildRPCPacket>(ReceiveChildRPC);
             
-            _visibilityFactory.onLateObserverAdded -= OnObserverAdded;
             _playersManager.onPlayerJoined -= OnPlayerJoined;
             _scenes.onSceneUnloaded -= OnSceneUnloaded;
+            
+            _hierarchyModule.onEarlyObserverAdded -= OnObserverAdded;
             _hierarchyModule.onIdentityRemoved -= OnIdentityRemoved;
         }
 
@@ -197,7 +197,7 @@ namespace PurrNet.Modules
             }
         }
         
-        static readonly List<PlayerID> _observers = new();
+        static readonly List<PlayerID> _observers = new List<PlayerID>();
 
         static IEnumerable<PlayerID> GetImmediateExcept(PlayersManager players, PlayerID except)
         {
@@ -294,7 +294,7 @@ namespace PurrNet.Modules
             }
         }
         
-        static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new();
+        static readonly Dictionary<StaticGenericKey, MethodInfo> _staticGenericHandlers = new Dictionary<StaticGenericKey, MethodInfo>();
         
         [UsedByIL]
         public static object CallStaticGeneric(RuntimeTypeHandle type, string methodName, GenericRPCHeader rpcHeader)
@@ -449,13 +449,13 @@ namespace PurrNet.Modules
             stream.Dispose();
         }
         
-        readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new();
-        readonly Dictionary<RPC_ID, STATIC_RPC_DATA> _bufferedStaticRpcsKeys = new();
-        readonly Dictionary<RPC_ID, CHILD_RPC_DATA> _bufferedChildRpcsKeys = new();
+        readonly Dictionary<RPC_ID, RPC_DATA> _bufferedRpcsKeys = new Dictionary<RPC_ID, RPC_DATA>();
+        readonly Dictionary<RPC_ID, STATIC_RPC_DATA> _bufferedStaticRpcsKeys = new Dictionary<RPC_ID, STATIC_RPC_DATA>();
+        readonly Dictionary<RPC_ID, CHILD_RPC_DATA> _bufferedChildRpcsKeys = new Dictionary<RPC_ID, CHILD_RPC_DATA>();
 
-        readonly List<RPC_DATA> _bufferedRpcsDatas = new();
-        readonly List<STATIC_RPC_DATA> _bufferedStaticRpcsDatas = new();
-        readonly List<CHILD_RPC_DATA> _bufferedChildRpcsDatas = new();
+        readonly List<RPC_DATA> _bufferedRpcsDatas = new List<RPC_DATA>();
+        readonly List<STATIC_RPC_DATA> _bufferedStaticRpcsDatas = new List<STATIC_RPC_DATA>();
+        readonly List<CHILD_RPC_DATA> _bufferedChildRpcsDatas = new List<CHILD_RPC_DATA>();
 
         private void AppendToBufferedRPCs(StaticRPCPacket packet, RPCSignature signature)
         {
@@ -602,7 +602,7 @@ namespace PurrNet.Modules
             }
         }
         
-        static readonly Dictionary<RPCKey, IntPtr> _rpcHandlers = new();
+        static readonly Dictionary<RPCKey, IntPtr> _rpcHandlers = new Dictionary<RPCKey, IntPtr>();
 
         static IntPtr GetRPCHandler(IReflect type, byte rpcId)
         {

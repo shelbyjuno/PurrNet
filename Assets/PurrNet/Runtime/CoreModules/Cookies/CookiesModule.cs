@@ -37,12 +37,14 @@ namespace PurrNet.Modules
     {
         private const string SAVE_KEY = "rabsi_cookies";
 
-        readonly List<CookiePair> _cookies = new ();
+        readonly List<CookiePair> _cookies = new List<CookiePair>();
         readonly CookieScope _scope;
+        readonly bool _asServer;
         
-        public CookiesModule(CookieScope scope)
+        public CookiesModule(CookieScope scope, bool asServer)
         {
             _scope = scope;
+            _asServer = asServer;
         }
         
         public void Enable(bool asServer)
@@ -55,12 +57,12 @@ namespace PurrNet.Modules
             Save(asServer);
         }
         
-        public string GetOrSet(string key, string defaultValue, bool asServer)
+        public string GetOrSet(string key, string defaultValue)
         {
             var value = Get(key);
             if (value == null)
             {
-                Set(key, defaultValue, asServer);
+                Set(key, defaultValue, _asServer);
                 return defaultValue;
             }
 
@@ -70,14 +72,14 @@ namespace PurrNet.Modules
         /// <summary>
         /// Unset a cookie by key.
         /// </summary>
-        public bool Unset(string key, bool asServer)
+        public bool Unset(string key)
         {
             for (int i = 0; i < _cookies.Count; i++)
             {
                 if (_cookies[i].key == key)
                 {
                     _cookies.RemoveAt(i);
-                    Save(asServer);
+                    Save(_asServer);
                     return true;
                 }
             }

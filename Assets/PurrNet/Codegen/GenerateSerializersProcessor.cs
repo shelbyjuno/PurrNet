@@ -20,7 +20,9 @@ namespace PurrNet.Codegen
             Array,
             HashSet,
             Dictionary,
-            Nullable
+            Nullable,
+            Queue,
+            Stack
         }
 
         static bool ValideType(TypeReference type)
@@ -72,7 +74,7 @@ namespace PurrNet.Codegen
         
         public static string MakeFullNameValidCSharp(string name)
         {
-            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_");
+            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_").Replace("[", "_I_").Replace("]", "_I_");
         }
         
         public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, List<DiagnosticMessage> messages)
@@ -116,7 +118,7 @@ namespace PurrNet.Codegen
                 !HasInterface(resolvedType, typeof(IPackedSimple)))
                 return;
 
-            if (isNetworkModule || hasINetworkModule)
+            if (hasINetworkModule)
                 return;
             
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitPacker)).Import(assembly.MainModule);
@@ -139,6 +141,12 @@ namespace PurrNet.Codegen
             if (isNetworkIdentity)
             {
                 HandleNetworkIdentity(assembly, type, serializerClass);
+                return;
+            }
+
+            if (isNetworkModule)
+            {
+                HandleNetworkModule(assembly, type, serializerClass);
                 return;
             }
             
@@ -222,6 +230,25 @@ namespace PurrNet.Codegen
             GenerateRegisterMethodForIdentity(type, register);
             serializerClass.Methods.Add(registerMethod);
         }
+        
+        private static void HandleNetworkModule(AssemblyDefinition assembly, TypeReference type,
+            TypeDefinition serializerClass)
+        {
+            var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
+            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
+            var attribute = new CustomAttribute(constructor);
+            registerMethod.CustomAttributes.Add(attribute);
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            registerMethod.Body = new MethodBody(registerMethod)
+            {
+                InitLocals = true
+            };
+            
+            var register = registerMethod.Body.GetILProcessor();
+            GenerateRegisterMethodForModule(type, register);
+            serializerClass.Methods.Add(registerMethod);
+        }
 
         private static void HandleGenerics(AssemblyDefinition assembly, TypeReference type, HandledGenericTypes genericT,
             TypeDefinition serializerClass)
@@ -246,6 +273,18 @@ namespace PurrNet.Codegen
         {
             var packType = type.Module.GetTypeDefinition(typeof(PackNetworkIdentity));
             var registerMethod = packType.GetMethod("RegisterIdentity", true).Import(type.Module);
+            
+            var genericRegisterMethod = new GenericInstanceMethod(registerMethod);
+            genericRegisterMethod.GenericArguments.Add(type);
+            
+            il.Emit(OpCodes.Call, genericRegisterMethod);
+            il.Emit(OpCodes.Ret);
+        }
+        
+        private static void GenerateRegisterMethodForModule(TypeReference type, ILProcessor il)
+        {
+            var packType = type.Module.GetTypeDefinition(typeof(PackNetworkModule));
+            var registerMethod = packType.GetMethod("RegisterNetworkModule", true).Import(type.Module);
             
             var genericRegisterMethod = new GenericInstanceMethod(registerMethod);
             genericRegisterMethod.GenericArguments.Add(type);
@@ -285,6 +324,22 @@ namespace PurrNet.Codegen
                     genericRegisterHashSetMethod.GenericArguments.Add(hashSetType.GenericArguments[0]);
                     
                     il.Emit(OpCodes.Call, genericRegisterHashSetMethod);
+                    break;
+                case HandledGenericTypes.Queue when importedType is GenericInstanceType queueType:
+                    
+                    var registerQueueMethod = packCollectionsType.GetMethod("RegisterQueue", true).Import(module);
+                    var genericregisterQueueMethod = new GenericInstanceMethod(registerQueueMethod);
+                    genericregisterQueueMethod.GenericArguments.Add(queueType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericregisterQueueMethod);
+                    break;
+                case HandledGenericTypes.Stack when importedType is GenericInstanceType stackType:
+                    
+                    var registerStackMethod = packCollectionsType.GetMethod("RegisterStack", true).Import(module);
+                    var genericRegisterStackMethod = new GenericInstanceMethod(registerStackMethod);
+                    genericRegisterStackMethod.GenericArguments.Add(stackType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericRegisterStackMethod);
                     break;
                 case HandledGenericTypes.Dictionary when importedType is GenericInstanceType dictionaryType:
                     
@@ -548,7 +603,10 @@ namespace PurrNet.Codegen
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldarg_1);
                     if (isClass && !isWriting) il.Emit(OpCodes.Ldind_Ref);
-                    il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, field);
+                    
+                    var fieldRef = new FieldReference(field.Name, field.FieldType, typeRef).Import(mainmodule);
+                    
+                    il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, fieldRef);
                     il.Emit(OpCodes.Call, genericM);
                 }
 
@@ -713,6 +771,18 @@ namespace PurrNet.Codegen
             if (IsGeneric(typeDef, typeof(List<>)))
             {
                 type = HandledGenericTypes.List;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(Queue<>)))
+            {
+                type = HandledGenericTypes.Queue;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(Stack<>)))
+            {
+                type = HandledGenericTypes.Stack;
                 return true;
             }
             

@@ -60,7 +60,7 @@ namespace PurrNet.Transports
 
         public bool shouldClientSendKeepAlive => true;
         
-        private readonly List<Connection> _connections = new ();
+        private readonly List<Connection> _connections = new List<Connection>();
 
         public override ITransport transport => this;
         

@@ -14,7 +14,7 @@ namespace PurrNet.Packing
             _instanceTmp = new BitPackerPool();
         }
 
-        static BitPacker Factory() => new();
+        static BitPacker Factory() => new BitPacker();
 
         static void Reset(BitPacker list) => list.ResetPosition();
         

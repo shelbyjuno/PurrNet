@@ -285,6 +285,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -294,6 +301,7 @@ MonoBehaviour:
   _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
   _tolerances:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
@@ -310,6 +318,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd77507c02b41114b8238b4ba3ebda43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!1 &1192066300
@@ -466,6 +481,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -475,6 +497,7 @@ MonoBehaviour:
   _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
   _tolerances:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
@@ -491,6 +514,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd77507c02b41114b8238b4ba3ebda43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
 --- !u!65 &1339498898
@@ -643,11 +673,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baacc2bfe126d544691d4f39fa3785f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _stopPlayingOnDisconnect: 0
   _startServerFlags: 9
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
-  _transport: {fileID: 1488282999}
+  _cheetahData: 0
+  _transport: {fileID: 1488282997}
   _networkPrefabs: {fileID: 11400000, guid: 7e8d528809eb3d049aee237120863a81, type: 2}
   _networkRules: {fileID: 11400000, guid: d8799083b96579a42b8b2d03e4ceae98, type: 2}
   _visibilityRules: {fileID: 11400000, guid: 8f014a5bd8dc68646a2a3c0b18c5bbd8, type: 2}

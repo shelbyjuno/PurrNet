@@ -122,6 +122,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  prefabId: 0
+  siblingIndex: 0
+  depthIndex: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _syncPosition: 1
@@ -147,6 +150,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  prefabId: 0
+  siblingIndex: 0
+  depthIndex: 0
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   _guid: df5ee5117fc76014797efbc3bceb0fa6
+  _usePooling: 1
+  _poolWarmupCount: 5

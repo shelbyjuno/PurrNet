@@ -91,8 +91,8 @@ namespace PurrNet.Packing
     {
         public static int registeredTypes => _readMethods.Count;
         
-        static readonly Dictionary<Type, MethodInfo> _writeMethods = new ();
-        static readonly Dictionary<Type, MethodInfo> _readMethods = new ();
+        static readonly Dictionary<Type, MethodInfo> _writeMethods = new Dictionary<Type, MethodInfo>();
+        static readonly Dictionary<Type, MethodInfo> _readMethods = new Dictionary<Type, MethodInfo>();
         
         public static void RegisterWriter(Type type, MethodInfo method)
         {

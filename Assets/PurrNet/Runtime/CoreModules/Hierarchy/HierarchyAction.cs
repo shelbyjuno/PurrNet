@@ -32,7 +32,7 @@ namespace PurrNet.Modules
         public SetActiveAction setActiveAction;
         public SetEnabledAction setEnabledAction;
 
-        static readonly StringBuilder _sb = new ();
+        static readonly StringBuilder _sb = new StringBuilder();
         
         [UsedImplicitly]
         public static void WriteType(BitPacker packer, HierarchyAction type)

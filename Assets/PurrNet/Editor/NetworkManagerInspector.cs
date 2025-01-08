@@ -11,12 +11,15 @@ namespace PurrNet.Editor
 
         private SerializedProperty _startServerFlags;
         private SerializedProperty _startClientFlags;
+        private SerializedProperty _stopPlayingOnDisconnect;
         
         private SerializedProperty _cookieScope;
 
         private SerializedProperty _dontDestroyOnLoad;
+        private SerializedProperty _cheetahData;
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _networkRules;
+        private SerializedProperty _authenticator;
         private SerializedProperty _transport;
         private SerializedProperty _tickRate;
         private SerializedProperty _visibilityRules;
@@ -27,15 +30,18 @@ namespace PurrNet.Editor
 
             _startServerFlags = serializedObject.FindProperty("_startServerFlags");
             _startClientFlags = serializedObject.FindProperty("_startClientFlags");
+            _stopPlayingOnDisconnect = serializedObject.FindProperty("_stopPlayingOnDisconnect");
             
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
             _dontDestroyOnLoad = serializedObject.FindProperty("_dontDestroyOnLoad");
+            _cheetahData = serializedObject.FindProperty("_cheetahData");
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _networkRules = serializedObject.FindProperty("_networkRules");
             _transport = serializedObject.FindProperty("_transport");
             _tickRate = serializedObject.FindProperty("_tickRate");
             _visibilityRules = serializedObject.FindProperty("_visibilityRules");
+            _authenticator = serializedObject.FindProperty("_authenticator");
         }
 
         public override void OnInspectorGUI()
@@ -74,6 +80,7 @@ namespace PurrNet.Editor
 
             EditorGUILayout.PropertyField(_startServerFlags);
             EditorGUILayout.PropertyField(_startClientFlags);
+            
 
             if (Application.isPlaying)
                 RenderStartStopButtons(networkManager);
@@ -84,10 +91,12 @@ namespace PurrNet.Editor
                 GUI.enabled = false;
             
             EditorGUILayout.PropertyField(_dontDestroyOnLoad);
+            EditorGUILayout.PropertyField(_cheetahData);
             EditorGUILayout.PropertyField(_transport);
             DrawNetworkPrefabs();
             EditorGUILayout.PropertyField(_networkRules);
             EditorGUILayout.PropertyField(_visibilityRules);
+            EditorGUILayout.PropertyField(_authenticator);
 
             GUI.enabled = true;
 
@@ -96,6 +105,8 @@ namespace PurrNet.Editor
 
             RenderTickSlider();
             
+            EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
+
             GUI.enabled = true;
             
             serializedObject.ApplyModifiedProperties();
@@ -125,7 +136,7 @@ namespace PurrNet.Editor
         private void CreateNewNetworkPrefabs()
         {
             string folderPath = "Assets";
-            UnityEngine.Object prefabsFolder = null;
+            Object prefabsFolder = null;
             string[] prefabsFolders = AssetDatabase.FindAssets("t:Folder Prefabs");
     
             foreach (string guid in prefabsFolders)
@@ -135,7 +146,7 @@ namespace PurrNet.Editor
                     path.Split('/').Length == 2)
                 {
                     folderPath = path;
-                    prefabsFolder = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
+                    prefabsFolder = AssetDatabase.LoadAssetAtPath<Object>(path);
                     break;
                 }
             }

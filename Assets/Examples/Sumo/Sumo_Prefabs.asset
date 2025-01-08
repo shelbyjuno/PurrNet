@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: Sumo_Prefabs
   m_EditorClassIdentifier: 
   autoGenerate: 1
-  networkOnly: 1
+  networkOnly: 0
+  defaultPooling: 0
   folder: {fileID: 102900000, guid: 882254e0ba6ecf9418d0754b108072a0, type: 3}
   prefabs:
-  - {fileID: 2003487104454383947, guid: 76a08edfa72e6fe49ba8fc7c96eb70e7, type: 3}
+  - prefab: {fileID: 2003487104454383947, guid: 76a08edfa72e6fe49ba8fc7c96eb70e7, type: 3}
+    pool: 0
+    warmupCount: 5

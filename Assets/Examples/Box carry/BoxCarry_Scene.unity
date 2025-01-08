@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -333,12 +334,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _clientAuth: 1
   _syncPosition: 1
   _syncRotation: 1
   _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!54 &309240625
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -452,6 +468,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2481f4d27ce85044e9f1cab08cf2b606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   ownerMaterial: {fileID: 2100000, guid: f44469eb3f8779d4fa45c85976794302, type: 2}
@@ -1284,12 +1307,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _clientAuth: 1
   _syncPosition: 1
   _syncRotation: 1
   _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!54 &820702090
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1403,6 +1441,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2481f4d27ce85044e9f1cab08cf2b606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   ownerMaterial: {fileID: 2100000, guid: f44469eb3f8779d4fa45c85976794302, type: 2}
@@ -2006,10 +2051,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baacc2bfe126d544691d4f39fa3785f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _startServerFlags: 9
+  _stopPlayingOnDisconnect: 0
+  _startServerFlags: 10
   _startClientFlags: 7
   _cookieScope: 1
   _dontDestroyOnLoad: 0
+  _cheetahData: 0
   _transport: {fileID: 1216416896}
   _networkPrefabs: {fileID: 11400000, guid: 15f0c777cc2391249a3152c5dfd1d782, type: 2}
   _networkRules: {fileID: 11400000, guid: 524017b159394024ebde3609a05acc55, type: 2}
@@ -2042,7 +2089,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ced7bf28cdbee104e8cdc34ab761b039, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerPrefab: {fileID: -875045220401535052, guid: db65450515269e4418d7ffcc25973f7c, type: 3}
+  playerPrefab: {fileID: 0}
+  _playerPrefab: {fileID: 2021845121686469242, guid: db65450515269e4418d7ffcc25973f7c, type: 3}
   spawnPoints:
   - {fileID: 296507700}
   - {fileID: 667181804}
@@ -2282,12 +2330,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _clientAuth: 1
   _syncPosition: 1
   _syncRotation: 1
   _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!54 &1394430712
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2401,6 +2464,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2481f4d27ce85044e9f1cab08cf2b606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   ownerMaterial: {fileID: 2100000, guid: f44469eb3f8779d4fa45c85976794302, type: 2}
@@ -3029,6 +3099,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2481f4d27ce85044e9f1cab08cf2b606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
   ownerMaterial: {fileID: 2100000, guid: f44469eb3f8779d4fa45c85976794302, type: 2}
@@ -3061,12 +3138,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _prefabId: -2147483648
+  _siblingIndex: -2147483648
+  _depthIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   _networkRules: {fileID: 0}
   _visitiblityRules: {fileID: 0}
-  _clientAuth: 1
   _syncPosition: 1
   _syncRotation: 1
   _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _ownerAuth: 1
+  _sendIntervalInTicks: 0
+  _characterControllerPatch: 0
+  _tolerances:
+    positionTolerance: 0.1
+    rotationAngleTolerance: 1
+    scaleTolerance: 0.05
 --- !u!1001 &1997076166
 PrefabInstance:
   m_ObjectHideFlags: 0

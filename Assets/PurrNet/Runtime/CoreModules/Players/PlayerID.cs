@@ -10,6 +10,10 @@ namespace PurrNet
         public bool isBot { get; }
         
         public ushort id => _id;
+        
+        public static readonly PlayerID Server = new PlayerID(0, false);
+        
+        public bool isServer => _id == 0;
 
         public PlayerID(ushort id, bool isBot)
         {
