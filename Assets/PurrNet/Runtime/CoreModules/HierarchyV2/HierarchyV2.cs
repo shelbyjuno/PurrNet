@@ -490,6 +490,12 @@ namespace PurrNet.Modules
             Despawn(identity.gameObject, true);
         }
 
+        public void EvaluateAllVisibilities()
+        {
+            if (_asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+                _visibility.EvaluateAll(players, _spawnedIdentities);
+        }
+
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneId)
