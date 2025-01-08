@@ -63,6 +63,7 @@ namespace PurrNet.Modules
         private readonly ITransport _transport;
 
         private readonly Dictionary<string, PlayerID> _cookieToPlayerId = new Dictionary<string, PlayerID>();
+        private readonly Dictionary<PlayerID, string> _playerIdToCookie = new Dictionary<PlayerID, string>();
         private ushort _playerIdCounter;
         
         private readonly Dictionary<Connection, PlayerID> _connectionToPlayerId = new Dictionary<Connection, PlayerID>();
@@ -273,15 +274,27 @@ namespace PurrNet.Modules
                 _broadcastModule.Subscribe<PlayerLeftEvent>(OnPlayerLeftEvent);
             }
         }
+        
+        /// <summary>
+        /// Try to get the cookie of a playerId.
+        /// Good for session management.
+        /// </summary>
+        public bool TryGetCookie(PlayerID playerId, out string cookie)
+        {
+            return _playerIdToCookie.TryGetValue(playerId, out cookie);
+        }
 
         private void OnClientAuthed(Connection conn, AuthenticationResponse data)
         {
             if (data.cookie == null || !_cookieToPlayerId.TryGetValue(data.cookie, out var playerId))
             {
                 playerId = new PlayerID(++_playerIdCounter, false);
-                
+
                 if (data.cookie != null)
+                {
                     _cookieToPlayerId.Add(data.cookie, playerId);
+                    _playerIdToCookie.Add(playerId, data.cookie);
+                }
             }
             
             if (_players.Contains(playerId))
