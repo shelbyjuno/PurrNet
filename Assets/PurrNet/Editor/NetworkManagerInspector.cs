@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using PurrNet.Transports;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet.Editor
 {
@@ -24,6 +26,11 @@ namespace PurrNet.Editor
         private SerializedProperty _tickRate;
         private SerializedProperty _visibilityRules;
         
+        private bool _showStatusFoldout = true;
+        private bool _showPlayersFoldout = false;
+        private Dictionary<object, bool> _playerFoldouts = new Dictionary<object, bool>();
+
+        
         private void OnEnable()
         {
             _scriptProp = serializedObject.FindProperty("m_Script");
@@ -42,6 +49,13 @@ namespace PurrNet.Editor
             _tickRate = serializedObject.FindProperty("_tickRate");
             _visibilityRules = serializedObject.FindProperty("_visibilityRules");
             _authenticator = serializedObject.FindProperty("_authenticator");
+            
+            EditorApplication.update += Repaint;
+        }
+
+        private void OnDisable()
+        {
+            EditorApplication.update -= Repaint;
         }
 
         public override void OnInspectorGUI()
@@ -108,6 +122,12 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
 
             GUI.enabled = true;
+            
+            _showStatusFoldout = EditorGUILayout.Foldout(_showStatusFoldout, "Status");
+            if (_showStatusFoldout)
+            {
+                DrawStatusFoldout(networkManager);
+            }
             
             serializedObject.ApplyModifiedProperties();
         }
@@ -180,6 +200,77 @@ namespace PurrNet.Editor
                 Time.fixedDeltaTime = 1f / _tickRate.intValue;
                 AssetDatabase.SaveAssets();
             }
+        }
+        
+        private void DrawStatusFoldout(NetworkManager networkManager)
+        {
+            if (!networkManager.isServer && !networkManager.isClient)
+                return;
+
+            if (networkManager.players == null)
+                return;
+
+            EditorGUILayout.BeginVertical("box");
+
+            EditorGUILayout.LabelField("Server State:", networkManager.serverState.ToString());
+            EditorGUILayout.LabelField("Client State:", networkManager.clientState.ToString());
+            EditorGUILayout.LabelField("Player Count:", networkManager.playerCount.ToString());
+
+            var players = networkManager.players;
+            if (players != null)
+            {
+                _showPlayersFoldout = EditorGUILayout.Foldout(_showPlayersFoldout, $"Players ({players.Count})");
+                if (_showPlayersFoldout)
+                {
+                    foreach (var playerId in players)
+                    {
+                        EditorGUI.indentLevel++;
+                        if (!_playerFoldouts.ContainsKey(playerId))
+                            _playerFoldouts[playerId] = false;
+
+                        _playerFoldouts[playerId] = EditorGUILayout.Foldout(_playerFoldouts[playerId], $"Player: {playerId}");
+                        if (_playerFoldouts[playerId])
+                        {
+                            EditorGUI.indentLevel++;
+                            EditorGUILayout.LabelField("Owned Objects:", networkManager.GetAllPlayerOwnedIds(playerId, networkManager.isServer).Count.ToString());
+
+                            if (!networkManager.isServer)
+                            {
+                                EditorGUI.indentLevel--;
+                                EditorGUI.indentLevel--;
+                                continue;
+                            }
+                            
+                            if (networkManager.TryGetPlayerScenes(playerId, out var scenes) && scenes.Length > 0)
+                            {
+                                EditorGUILayout.LabelField("Scenes (SceneId):");
+                                foreach (var sceneId in scenes)
+                                {
+                                    if (!networkManager.TryGetScene(sceneId, out var scene))
+                                        continue;
+                                    
+                                    EditorGUI.indentLevel++;
+                                    EditorGUILayout.LabelField($"- {scene.name} ({sceneId})");
+                                    EditorGUI.indentLevel--;
+                                }
+                            }
+                            else
+                            {
+                                EditorGUILayout.LabelField("Scenes:", "None");
+                            }
+
+                            EditorGUI.indentLevel--;
+                        }
+                        EditorGUI.indentLevel--;
+                    }
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField("No players connected.");
+            }
+
+            EditorGUILayout.EndVertical();
         }
 
         private static void RenderStartStopButtons(NetworkManager networkManager)

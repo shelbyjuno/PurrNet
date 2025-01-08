@@ -296,6 +296,27 @@ namespace PurrNet.Modules
             if (playersInScene.Add(player))
                 onPlayerJoinedScene?.Invoke(player, scene, _asServer);
         }
+
+        public bool TryGetScenesForPlayer(PlayerID playerId, out SceneID[] scenes)
+        {
+            var playerScenes = new List<SceneID>();
+
+            foreach (var (scene, players) in _scenePlayers)
+            {
+                if (players.Contains(playerId))
+                    playerScenes.Add(scene);
+            }
+
+            if (playerScenes.Count > 0)
+            {
+                scenes = playerScenes.ToArray();
+                return true;
+            }
+
+            scenes = null;
+            return false;
+        }
+
         
         public void RemovePlayerFromScene(PlayerID player, SceneID scene)
         {
