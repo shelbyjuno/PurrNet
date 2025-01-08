@@ -1619,7 +1619,7 @@ namespace PurrNet.Codegen
                                 break;
                         }
 
-                        if (inheritsFromNetworkIdentity)
+                        if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                             typesToGenerateSerializer.Add(type);
                         
                         HashSet<TypeReference> usedTypes = new HashSet<TypeReference>();

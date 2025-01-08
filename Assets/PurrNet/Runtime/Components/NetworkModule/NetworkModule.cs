@@ -10,7 +10,7 @@ namespace PurrNet
 {
     public class NetworkModule
     {
-        protected NetworkIdentity parent { get; private set; }
+        public NetworkIdentity parent { get; private set; }
         
         [UsedImplicitly]
         public string name { get; private set; }

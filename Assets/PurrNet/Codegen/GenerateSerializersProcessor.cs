@@ -74,7 +74,7 @@ namespace PurrNet.Codegen
         
         public static string MakeFullNameValidCSharp(string name)
         {
-            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_");
+            return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_").Replace("[", "_I_").Replace("]", "_I_");
         }
         
         public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, List<DiagnosticMessage> messages)
@@ -118,7 +118,7 @@ namespace PurrNet.Codegen
                 !HasInterface(resolvedType, typeof(IPackedSimple)))
                 return;
 
-            if (isNetworkModule || hasINetworkModule)
+            if (hasINetworkModule)
                 return;
             
             var bitStreamType = assembly.MainModule.GetTypeDefinition(typeof(BitPacker)).Import(assembly.MainModule);
@@ -141,6 +141,12 @@ namespace PurrNet.Codegen
             if (isNetworkIdentity)
             {
                 HandleNetworkIdentity(assembly, type, serializerClass);
+                return;
+            }
+
+            if (isNetworkModule)
+            {
+                HandleNetworkModule(assembly, type, serializerClass);
                 return;
             }
             
@@ -224,6 +230,25 @@ namespace PurrNet.Codegen
             GenerateRegisterMethodForIdentity(type, register);
             serializerClass.Methods.Add(registerMethod);
         }
+        
+        private static void HandleNetworkModule(AssemblyDefinition assembly, TypeReference type,
+            TypeDefinition serializerClass)
+        {
+            var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
+            var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
+            var attribute = new CustomAttribute(constructor);
+            registerMethod.CustomAttributes.Add(attribute);
+            attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
+            registerMethod.Body = new MethodBody(registerMethod)
+            {
+                InitLocals = true
+            };
+            
+            var register = registerMethod.Body.GetILProcessor();
+            GenerateRegisterMethodForModule(type, register);
+            serializerClass.Methods.Add(registerMethod);
+        }
 
         private static void HandleGenerics(AssemblyDefinition assembly, TypeReference type, HandledGenericTypes genericT,
             TypeDefinition serializerClass)
@@ -248,6 +273,18 @@ namespace PurrNet.Codegen
         {
             var packType = type.Module.GetTypeDefinition(typeof(PackNetworkIdentity));
             var registerMethod = packType.GetMethod("RegisterIdentity", true).Import(type.Module);
+            
+            var genericRegisterMethod = new GenericInstanceMethod(registerMethod);
+            genericRegisterMethod.GenericArguments.Add(type);
+            
+            il.Emit(OpCodes.Call, genericRegisterMethod);
+            il.Emit(OpCodes.Ret);
+        }
+        
+        private static void GenerateRegisterMethodForModule(TypeReference type, ILProcessor il)
+        {
+            var packType = type.Module.GetTypeDefinition(typeof(PackNetworkModule));
+            var registerMethod = packType.GetMethod("RegisterNetworkModule", true).Import(type.Module);
             
             var genericRegisterMethod = new GenericInstanceMethod(registerMethod);
             genericRegisterMethod.GenericArguments.Add(type);
