@@ -18,8 +18,8 @@
     
     public interface IServerSceneEvents
     {
-        void OnPlayerJoinedScene(PlayerID playerId);
+        void OnPlayerLoadedScene(PlayerID playerId);
         
-        void OnPlayerLeftScene(PlayerID playerId);
+        void OnPlayerUnloadedScene(PlayerID playerId);
     }
 }

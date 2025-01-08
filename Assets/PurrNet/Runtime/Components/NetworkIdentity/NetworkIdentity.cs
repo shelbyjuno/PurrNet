@@ -396,8 +396,8 @@ namespace PurrNet
                     if (this is IServerSceneEvents sceneEvents)
                     {
                         _serverSceneEvents = sceneEvents;
-                        scenePlayers.onPlayerJoinedScene += OnServerJoinedScene;
-                        scenePlayers.onPlayerLeftScene += OnServerLeftScene;
+                        scenePlayers.onPlayerLoadedScene += OnServerJoinedScene;
+                        scenePlayers.onPlayerUnloadedScene += OnServerLeftScene;
                     }
                 }
             }
@@ -432,20 +432,20 @@ namespace PurrNet
             
             if (_serverSceneEvents == null) return;
             
-            scenePlayers.onPlayerJoinedScene -= OnServerJoinedScene;
-            scenePlayers.onPlayerLeftScene -= OnServerLeftScene;
+            scenePlayers.onPlayerLoadedScene -= OnServerJoinedScene;
+            scenePlayers.onPlayerUnloadedScene -= OnServerLeftScene;
         }
         
         void OnServerJoinedScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene == sceneId)
-                _serverSceneEvents?.OnPlayerJoinedScene(player);
+                _serverSceneEvents?.OnPlayerLoadedScene(player);
         }
         
         void OnServerLeftScene(PlayerID player, SceneID scene, bool asServer)
         {
             if (scene == sceneId)
-                _serverSceneEvents?.OnPlayerLeftScene(player);
+                _serverSceneEvents?.OnPlayerUnloadedScene(player);
         }
         
         private void ClientTick()
