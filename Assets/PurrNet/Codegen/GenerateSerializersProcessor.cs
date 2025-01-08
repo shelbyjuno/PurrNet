@@ -5,6 +5,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using PurrNet.Modules;
 using PurrNet.Packing;
+using PurrNet.Pooling;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -22,7 +23,9 @@ namespace PurrNet.Codegen
             Dictionary,
             Nullable,
             Queue,
-            Stack
+            Stack,
+            DisposableList,
+            DisposableHashSet
         }
 
         static bool ValideType(TypeReference type)
@@ -340,6 +343,21 @@ namespace PurrNet.Codegen
                     genericRegisterStackMethod.GenericArguments.Add(stackType.GenericArguments[0]);
                     
                     il.Emit(OpCodes.Call, genericRegisterStackMethod);
+                    break;
+                case HandledGenericTypes.DisposableList when importedType is GenericInstanceType stackType:
+                    
+                    var registerDisposableListMethod = packCollectionsType.GetMethod("RegisterDisposableList", true).Import(module);
+                    var genericRegisterDListMethod = new GenericInstanceMethod(registerDisposableListMethod);
+                    genericRegisterDListMethod.GenericArguments.Add(stackType.GenericArguments[0]);
+                    
+                    il.Emit(OpCodes.Call, genericRegisterDListMethod);
+                    break;
+                case HandledGenericTypes.DisposableHashSet when importedType is GenericInstanceType stackType:
+                    
+                    var registerDisposableHashSetMethod = packCollectionsType.GetMethod("RegisterDisposableHashSet", true).Import(module);
+                    var genericRegisterDSetMethod = new GenericInstanceMethod(registerDisposableHashSetMethod);
+                    genericRegisterDSetMethod.GenericArguments.Add(stackType.GenericArguments[0]);
+                    il.Emit(OpCodes.Call, genericRegisterDSetMethod);
                     break;
                 case HandledGenericTypes.Dictionary when importedType is GenericInstanceType dictionaryType:
                     
@@ -765,6 +783,18 @@ namespace PurrNet.Codegen
             if (typeDef.IsArray)
             {
                 type = HandledGenericTypes.Array; 
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(DisposableList<>)))
+            {
+                type = HandledGenericTypes.DisposableList;
+                return true;
+            }
+            
+            if (IsGeneric(typeDef, typeof(DisposableHashSet<>)))
+            {
+                type = HandledGenericTypes.DisposableHashSet;
                 return true;
             }
             
