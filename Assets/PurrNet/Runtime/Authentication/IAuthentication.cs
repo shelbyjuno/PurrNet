@@ -12,11 +12,6 @@ namespace PurrNet.Authentication
     public struct AuthenticationRequest : IPackedAuto
     {
         [CanBeNull] public string cookie;
-        
-        public AuthenticationRequest(CookiesModule cookies)
-        {
-            cookie = cookies.GetOrSet("client_connection_session", Guid.NewGuid().ToString());
-        }
     }
     
     public struct AuthenticationRequest<T> : IPackedAuto
