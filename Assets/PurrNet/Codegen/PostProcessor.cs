@@ -1535,11 +1535,24 @@ namespace PurrNet.Codegen
 
                         var type = types[t];
                         
+                        // check if it has RegisterNetworkTypeAttribute
+                        foreach (var customAttribute in type.CustomAttributes)
+                        {
+                            if (customAttribute.AttributeType.FullName == typeof(RegisterNetworkTypeAttribute).FullName)
+                            {
+                                foreach (var field in customAttribute.ConstructorArguments)
+                                {
+                                    if (field.Value is TypeReference tref)
+                                        typesToGenerateSerializer.Add(tref);
+                                }
+                            }
+                        }
+                        
                         if (GenerateSerializersProcessor.HasInterface(type, typeof(IPackedAuto)))
                         {
                             typesToGenerateSerializer.Add(type);
                         }
-
+                        
                         if (!type.IsClass)
                             continue;
 

@@ -566,7 +566,10 @@ namespace PurrNet.Codegen
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldarg_1);
                     if (isClass && !isWriting) il.Emit(OpCodes.Ldind_Ref);
-                    il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, field);
+                    
+                    var fieldRef = new FieldReference(field.Name, field.FieldType, typeRef).Import(mainmodule);
+                    
+                    il.Emit(isWriting ? OpCodes.Ldfld : OpCodes.Ldflda, fieldRef);
                     il.Emit(OpCodes.Call, genericM);
                 }
 

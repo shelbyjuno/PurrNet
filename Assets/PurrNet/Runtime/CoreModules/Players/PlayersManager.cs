@@ -1,21 +1,12 @@
 using System;
 using System.Collections.Generic;
+using PurrNet.Authentication;
 using PurrNet.Logging;
 using PurrNet.Packing;
 using PurrNet.Transports;
 
 namespace PurrNet.Modules
 {
-    public struct ClientLoginRequest : IPackedAuto
-    {
-        public string join { get; }
-        
-        public ClientLoginRequest(string join)
-        {
-            this.join = join;
-        }
-    }
-    
     public struct ServerLoginResponse : IPackedAuto
     {
         public PlayerID playerId { get; }
@@ -67,7 +58,7 @@ namespace PurrNet.Modules
     
     public class PlayersManager : INetworkModule, IConnectionListener, IPlayerBroadcaster
     {
-        private readonly CookiesModule _cookiesModule;
+        private readonly AuthModule _authModule;
         private readonly BroadcastModule _broadcastModule;
         private readonly ITransport _transport;
 
@@ -154,10 +145,10 @@ namespace PurrNet.Modules
         public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
             => _playerBroadcaster.Subscribe(callback);
 
-        public PlayersManager(NetworkManager nm, CookiesModule cookiesModule, BroadcastModule broadcaster)
+        public PlayersManager(NetworkManager nm, AuthModule auth, BroadcastModule broadcaster)
         {
             _transport = nm.transport.transport;
-            _cookiesModule = cookiesModule;
+            _authModule = auth;
             _broadcastModule = broadcaster;
         }
         
@@ -272,7 +263,7 @@ namespace PurrNet.Modules
             
             if (asServer)
             {
-                _broadcastModule.Subscribe<ClientLoginRequest>(OnClientLoginRequest);
+                _authModule.onConnection += OnClientAuthed;
             }
             else
             {
@@ -280,6 +271,38 @@ namespace PurrNet.Modules
                 _broadcastModule.Subscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent);
                 _broadcastModule.Subscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent);
                 _broadcastModule.Subscribe<PlayerLeftEvent>(OnPlayerLeftEvent);
+            }
+        }
+
+        private void OnClientAuthed(Connection conn, AuthenticationResponse data)
+        {
+            if (data.cookie == null || !_cookieToPlayerId.TryGetValue(data.cookie, out var playerId))
+            {
+                playerId = new PlayerID(++_playerIdCounter, false);
+                
+                if (data.cookie != null)
+                    _cookieToPlayerId.Add(data.cookie, playerId);
+            }
+            
+            if (_players.Contains(playerId))
+            {
+                // Player is already connected?
+                _transport.CloseConnection(conn);
+                PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
+                return;
+            }
+
+            var lastNidId = new NetworkID(0, playerId);
+            if (_lastNidId.TryGetValue(playerId, out var lastNid))
+                lastNidId = lastNid;
+            
+            _broadcastModule.Send(conn, new ServerLoginResponse(playerId, lastNidId));
+
+            SendSnapshotToClient(conn);
+            if (RegisterPlayer(conn, playerId, out var isReconnect))
+            {
+                SendNewUserToAllClients(conn, playerId);
+                TriggerOnJoinedEvent(playerId, isReconnect);
             }
         }
 
@@ -310,36 +333,6 @@ namespace PurrNet.Modules
             onNetworkIDReceived?.Invoke(data.lastNidId);
         }
 
-        private void OnClientLoginRequest(Connection conn, ClientLoginRequest data, bool asServer)
-        {
-            if (!_cookieToPlayerId.TryGetValue(data.join, out var playerId))
-            {
-                playerId = new PlayerID(++_playerIdCounter, false);
-                _cookieToPlayerId.Add(data.join, playerId);
-            }
-            
-            if (_players.Contains(playerId))
-            {
-                // Player is already connected?
-                _transport.CloseConnection(conn);
-                PurrLogger.LogError("Client connected using a cookie from an already connected player; closing their connection.");
-                return;
-            }
-
-            var lastNidId = new NetworkID(0, playerId);
-            if (_lastNidId.TryGetValue(playerId, out var lastNid))
-                lastNidId = lastNid;
-            
-            _broadcastModule.Send(conn, new ServerLoginResponse(playerId, lastNidId));
-
-            SendSnapshotToClient(conn);
-            if (RegisterPlayer(conn, playerId, out var isReconnect))
-            {
-                SendNewUserToAllClients(conn, playerId);
-                TriggerOnJoinedEvent(playerId, isReconnect);
-            }
-        }
-        
         private void SendNewUserToAllClients(Connection conn, PlayerID playerId)
         {
             _broadcastModule.SendToAll(new PlayerJoinedEvent(playerId, conn));
@@ -408,16 +401,22 @@ namespace PurrNet.Modules
             onPostPlayerLeft?.Invoke(playerId, _asServer);
         }
 
-        public void Disable(bool asServer) { }
-        
-        public void OnConnected(Connection conn, bool asServer)
+        public void Disable(bool asServer)
         {
-            if (asServer) return;
-            
-            // Generate a new session cookie or get the existing one and send it to the server
-            var cookie = _cookiesModule.GetOrSet("client_connection_session", Guid.NewGuid().ToString(), false);
-            _broadcastModule.SendToServer(new ClientLoginRequest(cookie), Channel.ReliableUnordered);
+            if (asServer)
+            {
+                _authModule.onConnection -= OnClientAuthed;
+            }
+            else
+            {
+                _broadcastModule.Unsubscribe<ServerLoginResponse>(OnClientLoginResponse);
+                _broadcastModule.Unsubscribe<PlayerSnapshotEvent>(OnPlayerSnapshotEvent);
+                _broadcastModule.Unsubscribe<PlayerJoinedEvent>(OnPlayerJoinedEvent);
+                _broadcastModule.Unsubscribe<PlayerLeftEvent>(OnPlayerLeftEvent);
+            }
         }
+        
+        public void OnConnected(Connection conn, bool asServer) { }
 
         public void OnDisconnected(Connection conn, bool asServer)
         {

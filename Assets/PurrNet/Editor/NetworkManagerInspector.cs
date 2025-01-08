@@ -19,6 +19,7 @@ namespace PurrNet.Editor
         private SerializedProperty _cheetahData;
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _networkRules;
+        private SerializedProperty _authenticator;
         private SerializedProperty _transport;
         private SerializedProperty _tickRate;
         private SerializedProperty _visibilityRules;
@@ -40,6 +41,7 @@ namespace PurrNet.Editor
             _transport = serializedObject.FindProperty("_transport");
             _tickRate = serializedObject.FindProperty("_tickRate");
             _visibilityRules = serializedObject.FindProperty("_visibilityRules");
+            _authenticator = serializedObject.FindProperty("_authenticator");
         }
 
         public override void OnInspectorGUI()
@@ -94,6 +96,7 @@ namespace PurrNet.Editor
             DrawNetworkPrefabs();
             EditorGUILayout.PropertyField(_networkRules);
             EditorGUILayout.PropertyField(_visibilityRules);
+            EditorGUILayout.PropertyField(_authenticator);
 
             GUI.enabled = true;
 
@@ -133,7 +136,7 @@ namespace PurrNet.Editor
         private void CreateNewNetworkPrefabs()
         {
             string folderPath = "Assets";
-            UnityEngine.Object prefabsFolder = null;
+            Object prefabsFolder = null;
             string[] prefabsFolders = AssetDatabase.FindAssets("t:Folder Prefabs");
     
             foreach (string guid in prefabsFolders)
@@ -143,7 +146,7 @@ namespace PurrNet.Editor
                     path.Split('/').Length == 2)
                 {
                     folderPath = path;
-                    prefabsFolder = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
+                    prefabsFolder = AssetDatabase.LoadAssetAtPath<Object>(path);
                     break;
                 }
             }

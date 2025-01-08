@@ -5,6 +5,7 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using PurrNet.Authentication;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Pooling;
@@ -85,6 +86,7 @@ namespace PurrNet
         [SerializeField] private NetworkRules _networkRules;
         [PurrDocs("systems-and-modules/network-manager/network-visibility")]
         [SerializeField] private NetworkVisibilityRuleSet _visibilityRules;
+        [SerializeField] private AuthenticationLayer _authenticator;
         [Tooltip("Number of target ticks per second.")]
         [SerializeField] private int _tickRate = 20;
         
@@ -92,7 +94,7 @@ namespace PurrNet
         /// The local client connection.
         /// Null if the client is not connected.
         /// </summary>
-        public Connection? localClientConnection { get; private set; }
+        public Connection? localClientConnection { [UsedImplicitly] get; private set; }
 
         /// <summary>
         /// The cookie scope of the network manager.
@@ -339,11 +341,6 @@ namespace PurrNet
 
             ListPool<NetworkIdentity>.Destroy(children);
         }
-
-        static void PreparePrefabInfo()
-        {
-            
-        }
         
         public bool TryGetPrefabData(GameObject prefab, out NetworkPrefabs.PrefabData o, out int pid)
         {
@@ -572,7 +569,9 @@ namespace PurrNet
         /// If the local player is not set, this will return the default value of the player id.
         /// </summary>
         public PlayerID localPlayer => _clientPlayersManager?.localPlayerId ?? default;
-        
+
+        public AuthenticationLayer authenticator => _authenticator;
+
         private ScenesModule _clientSceneModule;
         private ScenesModule _serverSceneModule;
         
@@ -702,8 +701,9 @@ namespace PurrNet
             }
 
             var connBroadcaster = new BroadcastModule(this, asServer);
-            var networkCookies = new CookiesModule(_cookieScope);
-            var playersManager = new PlayersManager(this, networkCookies, connBroadcaster);
+            var networkCookies = new CookiesModule(_cookieScope, asServer);
+            var authModule = new AuthModule(this, connBroadcaster, networkCookies);
+            var playersManager = new PlayersManager(this, authModule, connBroadcaster);
 
             if (asServer)
             {
@@ -785,7 +785,6 @@ namespace PurrNet
                 _clientScenePlayersModule.onPlayerLeftScene += OnPlayerLeftScene;
             }
             
-            
             scenesModule.SetScenePlayers(scenePlayers);
             playersManager.SetBroadcaster(playersBroadcast);
             
@@ -793,6 +792,7 @@ namespace PurrNet
             modules.AddModule(playersBroadcast);
             modules.AddModule(tickManager);
             modules.AddModule(connBroadcaster);
+            modules.AddModule(authModule);
             modules.AddModule(networkCookies);
             
             modules.AddModule(scenesModule);
@@ -1127,6 +1127,12 @@ namespace PurrNet
             {
                 hierarchy.Spawn(entry);
             }
+        }
+
+        public void CloseConnection(Connection conn)
+        {
+            if (isServer && _transport)
+                _transport.transport.CloseConnection(conn);
         }
     }
 }
