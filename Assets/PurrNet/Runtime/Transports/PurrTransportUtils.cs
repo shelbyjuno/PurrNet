@@ -55,13 +55,9 @@ namespace PurrNet.Transports
             return request.SendWebRequest().ToUniTask().ContinueWith(_ => request.downloadHandler.text);
         }
         
-        internal static async UniTask<ClientJoinInfo> Join(string roomName)
+        internal static async UniTask<ClientJoinInfo> Join(string server, string roomName)
         {
-#if USE_LOCAL_MASTER
-            var url = $"http://localhost:8080/join";
-#else
-            var url = $"https://purrbalancer.riten.dev:8080/join";
-#endif
+            var url = $"{server}join";
             var request = UnityWebRequest.Get(url);
             request.SetRequestHeader("name", roomName);
             var response = await request.SendWebRequest().ToUniTask();
@@ -75,13 +71,9 @@ namespace PurrNet.Transports
             return res;
         }
         
-        internal static async UniTask<HostJoinInfo> Alloc(string region, string roomName)
+        internal static async UniTask<HostJoinInfo> Alloc(string server, string region, string roomName)
         {
-#if USE_LOCAL_MASTER
-            var url = $"http://localhost:8080/allocate_ws";
-#else
-            var url = $"https://purrbalancer.riten.dev:8080/allocate_ws";
-#endif
+            var url = $"{server}allocate_ws";
 
             var request = UnityWebRequest.Get(url);
             request.SetRequestHeader("region", region);
@@ -106,21 +98,16 @@ namespace PurrNet.Transports
             return (float)(received - sent).TotalSeconds;
         }
 
-        public static async UniTask<Relayers> GetRelayServersAsync()
+        public static async UniTask<Relayers> GetRelayServersAsync(string server)
         {
-#if USE_LOCAL_MASTER
-            const string MASTER = "http://localhost:8080/servers";
-#else
-            const string MASTER = "https://purrbalancer.riten.dev:8080/servers";
-#endif
-            var response = await Get(MASTER);
-            
+            string master = $"{server}servers";
+            var response = await Get(master);
             return JsonUtility.FromJson<Relayers>(response);
         }
         
-        public static async UniTask<RelayServer> GetRelayServerAsync()
+        public static async UniTask<RelayServer> GetRelayServerAsync(string masterServer)
         {
-            var servers = await GetRelayServersAsync();
+            var servers = await GetRelayServersAsync(masterServer);
             float minPing = float.MaxValue;
             RelayServer result = default;
             

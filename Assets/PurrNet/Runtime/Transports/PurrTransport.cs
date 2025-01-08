@@ -35,6 +35,7 @@ namespace PurrNet.Transports
             public string clientSecret;
         }
         
+        [SerializeField, HideInInspector] private string _masterServer = "https://purrbalancer.riten.dev:8080/";
         [SerializeField, HideInInspector] private string _roomName;
         [SerializeField, HideInInspector] private string _region = "eu-central";
         [SerializeField, HideInInspector] private string _host;
@@ -298,7 +299,7 @@ namespace PurrNet.Transports
 
                     if (!hasRegionAndHost)
                     {
-                        var relayServer = await PurrTransportUtils.GetRelayServerAsync();
+                        var relayServer = await PurrTransportUtils.GetRelayServerAsync(_masterServer);
                         _region = relayServer.region;
                         _host = relayServer.host;
                     }
@@ -306,7 +307,7 @@ namespace PurrNet.Transports
                     if (token.IsCancellationRequested)
                         return;
 
-                    _hostJoinInfo = await PurrTransportUtils.Alloc(_region, _roomName);
+                    _hostJoinInfo = await PurrTransportUtils.Alloc(_masterServer, _region, _roomName);
                     
                     var builder = new UriBuilder
                     {
@@ -399,7 +400,7 @@ namespace PurrNet.Transports
                     var token = new CancellationTokenSource();
                     AddCancellation(token, false);
 
-                    _clientJoinInfo = await PurrTransportUtils.Join(_roomName);
+                    _clientJoinInfo = await PurrTransportUtils.Join(_masterServer, _roomName);
                     
                     var builder = new UriBuilder
                     {

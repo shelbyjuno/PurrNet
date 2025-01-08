@@ -1929,9 +1929,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 332e746c3c3253246aacad4d5559f1fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _roomName: 62449e84f02b4ccf9dccb7d87fc598b
-  _region: africa-south
-  _host: za.purrlay.riten.dev
+  _masterServer: https://purrbalancer.riten.dev:8080/
+  _roomName: PurrNet
+  _region: eu-central
+  _host: eu1.purrlay.riten.dev
 --- !u!114 &1216416902
 MonoBehaviour:
   m_ObjectHideFlags: 0
