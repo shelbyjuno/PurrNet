@@ -295,7 +295,9 @@ namespace PurrNet.Packing
                 V val = default;
                 Packer<K>.Read(packer, ref key);
                 Packer<V>.Read(packer, ref val);
-                value.Add(key, val);
+                
+                if (key is not null)
+                    value.Add(key, val);
             }
         }
 
@@ -362,7 +364,9 @@ namespace PurrNet.Packing
             {
                 T item = default;
                 Packer<T>.Read(packer, ref item);
-                value.Add(item);
+                
+                if (item is not null)
+                    value.Add(item);
             }
         }
         
