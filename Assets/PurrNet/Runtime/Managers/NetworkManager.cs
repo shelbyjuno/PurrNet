@@ -797,15 +797,15 @@ namespace PurrNet
             
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayers);
-            
+
             var hierarchyV2 = new HierarchyFactory(this, scenesModule, scenePlayers, playersManager);
             var ownershipModule = new GlobalOwnershipModule(hierarchyV2, playersManager, scenePlayers, scenesModule);
             var rpcModule = new RPCModule(playersManager, hierarchyV2, ownershipModule, scenesModule);
 
-            modules.AddModule(hierarchyV2);
             modules.AddModule(ownershipModule);
             modules.AddModule(rpcModule);
             modules.AddModule(new RpcRequestResponseModule(playersManager));
+            modules.AddModule(hierarchyV2);
         }
 
         private void OnServerPreTick() => onPreTick?.Invoke(true);

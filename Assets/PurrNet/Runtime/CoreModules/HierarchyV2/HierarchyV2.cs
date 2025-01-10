@@ -306,6 +306,7 @@ namespace PurrNet.Modules
             {
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, idTrs, parent);
+                TriggerObserverEvents();
             }
         }
         
@@ -356,6 +357,7 @@ namespace PurrNet.Modules
                 var trs = identity.transform;
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, trs, closestNid);
+                TriggerObserverEvents();
             }
         }
         
@@ -378,6 +380,7 @@ namespace PurrNet.Modules
                     {
                         foreach (var playerInScene in players)
                             _visibility.RefreshVisibilityForGameObject(playerInScene, list[0].transform);
+                        TriggerObserverEvents();
                     }
 
                     bool isHost = IsServerHost();
@@ -417,6 +420,7 @@ namespace PurrNet.Modules
                     continue;
                 
                 _visibility.ClearVisibilityForGameObject(root.transform, player);
+                TriggerObserverEvents();
             }
 
             HashSetPool<NetworkIdentity>.Destroy(roots);
@@ -493,7 +497,10 @@ namespace PurrNet.Modules
         public void EvaluateAllVisibilities()
         {
             if (_asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+            {
                 _visibility.EvaluateAll(players, _spawnedIdentities);
+                TriggerObserverEvents();
+            }
         }
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
@@ -516,12 +523,21 @@ namespace PurrNet.Modules
                     continue;
                 
                 _visibility.RefreshVisibilityForGameObject(player, root.transform);
+                TriggerObserverEvents();
             }
 
             HashSetPool<NetworkIdentity>.Destroy(roots);
         }
         
         private int _nextPacketIdx;
+
+        struct PlayerNid
+        {
+            public PlayerID player;
+            public NetworkIdentity nid;
+        }
+        
+        private readonly List<PlayerNid> _triggerObserverAdded = new List<PlayerNid>();
         
         private void OnVisibilityChanged(PlayerID player, Transform scope, bool isVisible)
         {
@@ -540,8 +556,13 @@ namespace PurrNet.Modules
                         for (var i = 0; i < children.Count; i++)
                         {
                             var nid = children[i];
-                            nid.TriggerOnObserverAdded(player);
-                            onObserverAdded?.Invoke(player, nid);
+                            _triggerObserverAdded.Add(new PlayerNid
+                            {
+                                player = player,
+                                nid = nid
+                            });
+                            /*nid.TriggerOnObserverAdded(player);
+                            onObserverAdded?.Invoke(player, nid);*/
                         }
                     }
                 }
@@ -666,8 +687,23 @@ namespace PurrNet.Modules
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, gameObject.transform);
             }
-            
             AutoAssignOwnership(id);
+            TriggerObserverEvents();
+        }
+
+        private void TriggerObserverEvents()
+        {
+            if (_triggerObserverAdded.Count > 0)
+            {
+                // _ownershipModule.FixedUpdate();
+
+                foreach (var nid in _triggerObserverAdded)
+                {
+                    nid.nid.TriggerOnObserverAdded(nid.player);
+                    onObserverAdded?.Invoke(nid.player, nid.nid);
+                }
+                _triggerObserverAdded.Clear();
+            }
         }
 
         private void AutoAssignOwnership(NetworkIdentity id)
@@ -741,7 +777,10 @@ namespace PurrNet.Modules
             }
 
             if (_asServer)
+            {
                 _visibility.ClearVisibilityForGameObject(gameObject.transform);
+                TriggerObserverEvents();
+            }
             else SendDespawnPacket(default, children[0]);
             
             for (var i = 0; i < children.Count; i++)
@@ -966,6 +1005,9 @@ namespace PurrNet.Modules
         
         public bool TryGetIdentity(NetworkID id, out NetworkIdentity identity)
         {
+            if (_spawnedIdentitiesMap.TryGetValue(id, out identity))
+                return identity;
+            
             if (!_asServer && _manager.isServer)
             {
                 if (_manager.TryGetModule<HierarchyFactory>(true, out var factory) &&
@@ -974,7 +1016,8 @@ namespace PurrNet.Modules
                     return other.TryGetIdentity(id, out identity);
                 }
             }
-            return _spawnedIdentitiesMap.TryGetValue(id, out identity);
+            
+            return false;
         }
     }
 }
