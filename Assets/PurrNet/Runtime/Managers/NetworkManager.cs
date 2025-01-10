@@ -941,6 +941,25 @@ namespace PurrNet
         }
         
         /// <summary>
+        /// Returns all the scenes of a given player
+        /// </summary>
+        /// <param name="playerId">PlayerID for the player whose scenes you want</param>
+        /// <param name="scenes">An array of the scenes</param>
+        /// <returns></returns>
+        public bool TryGetPlayerScenes(PlayerID playerId, out SceneID[] scenes)
+        {
+            scenes = null;
+
+            if (scenePlayersModule == null || playerId == default)
+                return false;
+
+            if (scenePlayersModule.TryGetScenesForPlayer(playerId, out scenes))
+                return true;
+
+            return false;
+        }
+        
+        /// <summary>
         /// Tries to get the scene state of the given scene ID.
         /// </summary>
         /// <param name="sceneID">The scene ID to get the state of.</param>
