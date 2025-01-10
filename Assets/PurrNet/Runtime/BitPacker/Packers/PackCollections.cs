@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using PurrNet.Modules;
 using PurrNet.Pooling;
+using UnityEngine;
 
 namespace PurrNet.Packing
 {
@@ -295,9 +296,15 @@ namespace PurrNet.Packing
                 V val = default;
                 Packer<K>.Read(packer, ref key);
                 Packer<V>.Read(packer, ref val);
-                
-                if (key is not null)
+             
+                try
+                {
                     value.Add(key, val);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
 
@@ -364,9 +371,14 @@ namespace PurrNet.Packing
             {
                 T item = default;
                 Packer<T>.Read(packer, ref item);
-                
-                if (item is not null)
+                try
+                {
                     value.Add(item);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
         
