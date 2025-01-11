@@ -7,11 +7,6 @@ public class SomeNode : NetworkIdentity
 {
     [SerializeField] SyncList<SomeNode> _list = new (true);
 
-    protected override void OnSpawned(bool asServer)
-    {
-        if (asServer)
-            TickManager.TestServerRpc();
-    }
 
     public void CreateMore(SomeNode prefab, PlayerID? player)
     {

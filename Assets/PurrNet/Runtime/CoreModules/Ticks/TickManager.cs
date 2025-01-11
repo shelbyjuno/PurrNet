@@ -100,7 +100,7 @@ namespace PurrNet.Modules
 
             if (_networkManager.isServer || !_networkManager.isClient)
                 return;
-            if(_lastSyncTime + _networkManager.networkRules. < Time.unscaledTime)
+            if(_lastSyncTime + _networkManager.networkRules.GetSyncedTickUpdateInterval() < Time.unscaledTime)
             {
                 _lastSyncTime = Time.unscaledTime;
                 HandleTickSync();
@@ -155,9 +155,9 @@ namespace PurrNet.Modules
         private class RPCClass
         {
             [ServerRpc(requireOwnership: false)]
-            public static Task<uint> RequestServerTick()
+            public static Task<uint> RequestServerTick(RPCInfo info = default)
             {
-                return Task.FromResult(NetworkManager.main.tickModule.tick);
+                return Task.FromResult(info.manager.tickModule.tick);
             }
         }
     }

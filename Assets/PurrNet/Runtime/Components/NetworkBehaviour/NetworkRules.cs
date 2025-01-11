@@ -73,6 +73,12 @@ namespace PurrNet
     {
         public ActionAuth changeParentAuth;
     }
+
+    [Serializable]
+    public struct MiscRules
+    {
+        [Range(1, 10)] public int syncedTickUpdateInterval;
+    }
     
     [CreateAssetMenu(fileName = "NetworkRules", menuName = "PurrNet/Network Rules", order = -201)]
     public class NetworkRules : ScriptableObject
@@ -118,6 +124,11 @@ namespace PurrNet
         [SerializeField] private NetworkTransformRules _defaultTransformRules = new NetworkTransformRules()
         {
             changeParentAuth = ActionAuth.Server | ActionAuth.Owner
+        };
+        
+        [SerializeField] private MiscRules _defaultMiscRules = new MiscRules()
+        {
+            syncedTickUpdateInterval = 1
         };
 
         public bool HasDespawnAuthority(NetworkIdentity identity, PlayerID player, bool asServer)
@@ -211,6 +222,11 @@ namespace PurrNet
         public bool ShouldIgnoreRequireOwner()
         {
             return _defaultRpcRules.ignoreRequireOwnerAttribute;
+        }
+        
+        public float GetSyncedTickUpdateInterval()
+        {
+            return _defaultMiscRules.syncedTickUpdateInterval;
         }
     }
 }
