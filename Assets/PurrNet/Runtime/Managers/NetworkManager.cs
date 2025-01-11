@@ -667,7 +667,7 @@ namespace PurrNet
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
-            var tickManager = new TickManager(_tickRate);
+            var tickManager = new TickManager(_tickRate, this);
 
             if (asServer)
             {
