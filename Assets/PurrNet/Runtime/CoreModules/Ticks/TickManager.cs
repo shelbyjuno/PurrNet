@@ -151,7 +151,7 @@ namespace PurrNet.Modules
             float halfRTT = (float)rtt / 2;
             syncedTick = rawServerTick + TimeToTick(halfRTT);
         }
-        
+
         private class RPCClass
         {
             [ServerRpc(requireOwnership: false)]

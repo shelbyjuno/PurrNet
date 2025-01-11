@@ -14,9 +14,11 @@ namespace PurrNet.Modules
         readonly PlayersManager _playersManager;
         readonly ScenesModule _scenes;
         readonly GlobalOwnershipModule _ownership;
+        readonly NetworkManager _manager;
 
-        public RPCModule(PlayersManager playersManager, HierarchyFactory hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
+        public RPCModule(NetworkManager manager, PlayersManager playersManager, HierarchyFactory hierarchyModule, GlobalOwnershipModule ownerships, ScenesModule scenes)
         {
+            _manager = manager;
             _playersManager = playersManager;
             _hierarchyModule = hierarchyModule;
             _scenes = scenes;
@@ -621,7 +623,7 @@ namespace PurrNet.Modules
             return ptr;
         }
 
-        static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
+        unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
         {
             if (!Hasher.TryGetType(data.typeHash, out var type))
             {
@@ -634,6 +636,7 @@ namespace PurrNet.Modules
             var rpcHandlerPtr = GetRPCHandler(type, data.rpcId);
             var info = new RPCInfo
             {
+                manager = _manager,
                 sender = player,
                 asServer = asServer
             };
@@ -660,6 +663,7 @@ namespace PurrNet.Modules
             
             var info = new RPCInfo
             {
+                manager = _manager,
                 sender = player,
                 asServer = asServer
             };
@@ -703,6 +707,7 @@ namespace PurrNet.Modules
             
             var info = new RPCInfo
             {
+                manager = _manager,
                 sender = packet.senderId,
                 asServer = asServer
             };

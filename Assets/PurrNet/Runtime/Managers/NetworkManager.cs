@@ -800,7 +800,7 @@ namespace PurrNet
 
             var hierarchyV2 = new HierarchyFactory(this, scenesModule, scenePlayers, playersManager);
             var ownershipModule = new GlobalOwnershipModule(hierarchyV2, playersManager, scenePlayers, scenesModule);
-            var rpcModule = new RPCModule(playersManager, hierarchyV2, ownershipModule, scenesModule);
+            var rpcModule = new RPCModule(this, playersManager, hierarchyV2, ownershipModule, scenesModule);
 
             modules.AddModule(ownershipModule);
             modules.AddModule(rpcModule);
