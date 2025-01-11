@@ -623,7 +623,7 @@ namespace PurrNet.Modules
             return ptr;
         }
 
-        static unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
+        unsafe void ReceiveStaticRPC(PlayerID player, StaticRPCPacket data, bool asServer)
         {
             if (!Hasher.TryGetType(data.typeHash, out var type))
             {
@@ -636,7 +636,7 @@ namespace PurrNet.Modules
             var rpcHandlerPtr = GetRPCHandler(type, data.rpcId);
             var info = new RPCInfo
             {
-                manager = NetworkManager.main,
+                manager = _manager,
                 sender = player,
                 asServer = asServer
             };
