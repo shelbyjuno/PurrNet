@@ -220,6 +220,12 @@ namespace PurrNet.Steam
 
         public void SendToClient(Connection target, ByteData data, Channel method = Channel.ReliableOrdered)
         {
+            if (listenerState is not ConnectionState.Connected)
+                return;
+            
+            if (!target.isValid)
+                return;
+
             _server.SendToConnection(target.connectionId, data, method);
         }
 
