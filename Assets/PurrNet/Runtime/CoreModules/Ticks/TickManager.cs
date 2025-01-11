@@ -99,5 +99,11 @@ namespace PurrNet.Modules
         {
             return time * tickRate;
         }
+        
+        [ServerRpc]
+        public static void TestServerRpc()
+        {
+            Debug.Log("ServerRpc");
+        }
     }
 }

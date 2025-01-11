@@ -6,6 +6,7 @@ namespace PurrNet
 {
     public struct RPCInfo
     {
+        public NetworkManager manager;
         public PlayerID sender;
         public bool asServer;
         
