@@ -548,7 +548,6 @@ namespace PurrNet.Modules
                         for (var i = 0; i < children.Count; i++)
                         {
                             var nid = children[i];
-                            nid.TriggerOnObserverAdded(player);
                             onObserverAdded?.Invoke(player, nid);
                             _triggerLateObserverAdded.Add(new PlayerNid { player = player, nid = nid });
                         }
@@ -843,7 +842,7 @@ namespace PurrNet.Modules
             for (var i = 0; i < _triggerLateObserverAdded.Count; i++)
             {
                 var nid = _triggerLateObserverAdded[i];
-                nid.nid.TriggerOnLateObserverAdded(nid.player);
+                nid.nid.TriggerOnObserverAdded(nid.player);
             }
             
             _triggerLateObserverAdded.Clear();
