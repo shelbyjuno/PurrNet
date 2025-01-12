@@ -230,9 +230,11 @@ namespace PurrNet.Modules
                 }
                 
                 // put the object in the queue
-                child.gameObject.SetActive(false);
+                if (child.shouldBePooled)
+                    child.gameObject.SetActive(false);
+
                 child.transform.SetParent(_parent, false);
-                
+
                 queue.Enqueue(child.gameObject);
             }
 

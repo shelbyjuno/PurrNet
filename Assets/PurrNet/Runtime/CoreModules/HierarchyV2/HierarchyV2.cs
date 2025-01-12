@@ -951,7 +951,7 @@ namespace PurrNet.Modules
                 resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
             }
             
-            if (shouldActivate)
+            if (shouldActivate && !result.activeSelf)
                 result.SetActive(true);
 
             return result;
