@@ -483,11 +483,7 @@ namespace PurrNet
                 return;
 
             if (!_isResettingParent && _syncParent)
-            {
-                _id++;
-
                 HandleParentChanged(_trs.parent);
-            }
         }
 
         private void HandleParentChanged(Transform parent)
