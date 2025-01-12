@@ -339,7 +339,6 @@ namespace PurrNet
         private interface IPendingSubscription 
         {
             void Subscribe(PlayersBroadcaster broadcaster);
-            void Unsubscribe(PlayersBroadcaster broadcaster);
         }
 
         private class PendingSubscription<T> : IPendingSubscription where T : new()
@@ -356,11 +355,6 @@ namespace PurrNet
             public void Subscribe(PlayersBroadcaster broadcaster)
             {
                 broadcaster.Subscribe(Callback);
-            }
-    
-            public void Unsubscribe(PlayersBroadcaster broadcaster)
-            {
-                broadcaster.Unsubscribe(Callback);
             }
         }
     }
