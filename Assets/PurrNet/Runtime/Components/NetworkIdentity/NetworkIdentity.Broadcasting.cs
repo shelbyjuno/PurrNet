@@ -9,7 +9,6 @@ using PurrNet.Modules;
 using PurrNet.Packing;
 using PurrNet.Transports;
 using PurrNet.Utils;
-using UnityEngine.Rendering;
 using UnityEngine.Scripting;
 using Channel = PurrNet.Transports.Channel;
 
@@ -261,7 +260,7 @@ namespace PurrNet
                     else SendToServer(packet, signature.channel);
                     break;
                 }
-                case RPCType.TargetRPC: 
+                case RPCType.TargetRPC:
                     if (isServer)
                          SendToTarget(signature.targetPlayer!.Value, packet, signature.channel);
                     else SendToServer(packet, signature.channel);
@@ -273,9 +272,14 @@ namespace PurrNet
             
             bool ShouldSend(PlayerID player)
             {
-                if (signature.runLocally && player == networkManager.localPlayer)
+                bool isLocalPlayer = player == networkManager.localPlayer;
+                
+                if (signature.runLocally && isLocalPlayer)
                     return false;
-
+                
+                if (signature.excludeSender && isLocalPlayer)
+                    return false;
+                
                 return !signature.excludeOwner || IsNotOwnerPredicate(player);
             }
         }

@@ -184,7 +184,16 @@ namespace PurrNet.Modules
                 case RPCType.ObserversRPC:
                 {
                     if (nm.isServer)
-                         nm.GetModule<PlayersManager>(true).SendToAll(packet, signature.channel);
+                    {
+                        var players = nm.GetModule<PlayersManager>(true);
+                        _observers.Clear();
+                        _observers.AddRange(players.players);
+                        
+                        if (signature.excludeSender && nm.isClient)
+                            _observers.Remove(GetLocalPlayer(nm));
+                        
+                        players.Send(_observers, packet, signature.channel);
+                    }
                     else nm.GetModule<PlayersManager>(false).SendToServer(packet, signature.channel);
                     break;
                 }
@@ -227,7 +236,7 @@ namespace PurrNet.Modules
                     PurrLogger.LogError($"Aborted RPC {signature.type} '{signature.rpcName}' on client. ServerRpc are meant for server only.");
                     return false;
                 }
-                
+
                 return true;
             }
             

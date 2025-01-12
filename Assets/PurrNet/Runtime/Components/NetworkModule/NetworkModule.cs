@@ -136,26 +136,26 @@ namespace PurrNet
                 return;
             }
 
-            if (signature.requireOwnership && !parent.isOwner)
+            var rules = networkManager.networkRules;
+            bool shouldIgnoreOwnership = rules && rules.ShouldIgnoreRequireOwner();
+            
+            if (!shouldIgnoreOwnership && signature.requireOwnership && !isOwner)
             {
-                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{parent.name}' without ownership.",
-                    parent);
+                if (!signature.runLocally)
+                    PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without ownership.", parent);
                 return;
             }
 
-            if (signature.requireServer && !nm.isServer)
+            bool shouldIgnore = rules && rules.ShouldIgnoreRequireServer();
+            
+            if (!shouldIgnore && signature.requireServer && !networkManager.isServer)
             {
-                PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{parent.name}' without server.",
-                    parent);
+                if (!signature.runLocally)
+                    PurrLogger.LogError($"Trying to send RPC '{signature.rpcName}' from '{GetType().Name}' without server.", parent);
                 return;
             }
 
             module.AppendToBufferedRPCs(packet, signature);
-
-            Func<PlayerID, bool> predicate = null;
-            
-            if (signature.excludeOwner)
-                predicate = parent.IsNotOwnerPredicate;
 
             switch (signature.type)
             {
@@ -163,7 +163,7 @@ namespace PurrNet
                 case RPCType.ObserversRPC:
                 {
                     if (isServer)
-                        parent.SendToObservers(packet, predicate, signature.channel);
+                        parent.SendToObservers(packet, ShouldSend, signature.channel);
                     else parent.SendToServer(packet, signature.channel);
                     break;
                 }
@@ -173,6 +173,21 @@ namespace PurrNet
                     else parent.SendToServer(packet, signature.channel);
                     break;
                 default: throw new ArgumentOutOfRangeException();
+            }
+            
+            return;
+            
+            bool ShouldSend(PlayerID player)
+            {
+                bool isLocalPlayer = player == networkManager.localPlayer;
+                
+                if (signature.runLocally && isLocalPlayer)
+                    return false;
+                
+                if (signature.excludeSender && isLocalPlayer)
+                    return false;
+                
+                return !signature.excludeOwner || parent.IsNotOwnerPredicate(player);
             }
         }
         
