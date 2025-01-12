@@ -806,6 +806,8 @@ namespace PurrNet
             modules.AddModule(rpcModule);
             modules.AddModule(new RpcRequestResponseModule(playersManager));
             modules.AddModule(hierarchyV2);
+
+            RenewSubscriptions(asServer);
         }
 
         private void OnServerPreTick() => onPreTick?.Invoke(true);
