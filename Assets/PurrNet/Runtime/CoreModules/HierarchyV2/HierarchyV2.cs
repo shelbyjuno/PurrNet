@@ -829,8 +829,8 @@ namespace PurrNet.Modules
         
         public void PreNetworkMessages()
         {
-            SendDelayedCompleteSpawns();
             SendDelayedObserverEvents();
+            SendDelayedCompleteSpawns();
         }
         
         public void PostNetworkMessages()
