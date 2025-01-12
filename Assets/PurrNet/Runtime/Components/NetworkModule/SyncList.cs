@@ -108,7 +108,7 @@ namespace PurrNet
             else SendInitialStateToServer(_list);
         }
 
-        public override void OnObserverAdded(PlayerID player)
+        public override void OnLateObserverAdded(PlayerID player)
         {
             SendInitialToTarget(player, _list);
         }

@@ -82,6 +82,12 @@ namespace PurrNet
         public virtual void OnObserverAdded(PlayerID player) { }
         
         /// <summary>
+        /// Called when an observer is added but later.
+        /// </summary>
+        /// <param name="player"></param>
+        public virtual void OnLateObserverAdded(PlayerID player) { }
+        
+        /// <summary>
         /// Called when an observer is removed.
         /// Server only.
         /// </summary>

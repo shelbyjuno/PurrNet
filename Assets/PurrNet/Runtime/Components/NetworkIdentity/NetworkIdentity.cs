@@ -555,6 +555,12 @@ namespace PurrNet
         protected virtual void OnObserverAdded(PlayerID player) { }
         
         /// <summary>
+        /// Same as OnObserverAdded but called after all other observers have been added.
+        /// </summary>
+        /// <param name="player">The observer player id</param>
+        protected virtual void OnLateObserverAdded(PlayerID player) { }
+        
+        /// <summary>
         /// Called when an observer is removed.
         /// Server only.
         /// </summary>
@@ -919,6 +925,14 @@ namespace PurrNet
             
             for (int i = 0; i < _externalModulesView.Count; i++)
                 _externalModulesView[i].OnObserverAdded(target);
+        }
+        
+        public void TriggerOnLateObserverAdded(PlayerID target)
+        {
+            OnLateObserverAdded(target);
+            
+            for (int i = 0; i < _externalModulesView.Count; i++)
+                _externalModulesView[i].OnLateObserverAdded(target);
         }
 
         public void TriggerOnObserverRemoved(PlayerID target)
