@@ -192,11 +192,11 @@ namespace PurrNet.Editor
             // serializedObject.Update();
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.IntSlider(_tickRate, 1, 128, new GUIContent("Tick Rate"));
-            if (EditorGUI.EndChangeCheck())
+            /*if (EditorGUI.EndChangeCheck())
             {
                 Time.fixedDeltaTime = 1f / _tickRate.intValue;
                 AssetDatabase.SaveAssets();
-            }
+            }*/
         }
         
         private void DrawStatusFoldout(NetworkManager networkManager)
