@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Modules
@@ -14,17 +15,15 @@ namespace PurrNet.Modules
         /// <summary>
         /// Tracks the ticks aligned with the servers ticks for synchronization.
         /// </summary>
-        public uint syncedTick {
+        public uint syncedTick 
+        {
             get
             {
                 if(_networkManager.isServer)
                     return tick;
                 return _syncedTick;
             }
-            private set
-            {
-                _syncedTick = value;
-            }
+            private set => _syncedTick = value;
         }
         
         /// <summary>
@@ -67,8 +66,8 @@ namespace PurrNet.Modules
         
         public event Action onPreTick, onTick, onPostTick;
 
+        private readonly NetworkManager _networkManager;
         private uint _syncedTick;
-        private NetworkManager _networkManager;
         private float _lastSyncTime = -99;
         private float _lastTickTime;
         private const int MaxTickPerFrame = 5;
@@ -82,7 +81,12 @@ namespace PurrNet.Modules
             this.tickRate = tickRate;
         }
 
-        public void Enable(bool asServer) { }
+        private bool _asServer;
+
+        public void Enable(bool asServer)
+        {
+            _asServer = asServer;
+        }
 
         public void Disable(bool asServer) { }
 
@@ -109,7 +113,7 @@ namespace PurrNet.Modules
                 tick++;
                 syncedTick++;
                 floatingPoint = 0;
-            
+                
                 onPreTick?.Invoke();
                 onTick?.Invoke();
                 onPostTick?.Invoke();
@@ -158,14 +162,21 @@ namespace PurrNet.Modules
 
         private async void HandleTickSync()
         {
-            float requestSendTime = Time.unscaledTime;
-            var rawServerTick = await RPCClass.RequestServerTick();
-            rtt = Time.unscaledTime - requestSendTime;
-            float halfRTT = (float)rtt / 2;
-            syncedTick = rawServerTick + TimeToTick(halfRTT);
+            try
+            {
+                float requestSendTime = Time.unscaledTime;
+                var rawServerTick = await RPCClass.RequestServerTick();
+                rtt = Time.unscaledTime - requestSendTime;
+                float halfRTT = (float)rtt / 2;
+                syncedTick = rawServerTick + TimeToTick(halfRTT);
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to sync tick: {e}");
+            }
         }
 
-        private class RPCClass
+        private static class RPCClass
         {
             [ServerRpc(requireOwnership: false)]
             public static Task<uint> RequestServerTick(RPCInfo info = default)

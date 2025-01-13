@@ -872,7 +872,11 @@ namespace PurrNet.Modules
             for (var i = 0; i < _spawnedIdentities.Count; i++)
             {
                 var identity = _spawnedIdentities[i];
+                
                 if (!identity.isSpawned)
+                    continue;
+                
+                if (_toSpawnNextFrame.Contains(identity))
                     continue;
                 
                 identity.TriggerSpawnEvent(false);
@@ -897,10 +901,9 @@ namespace PurrNet.Modules
         private void SpawnDelayedIdentities()
         {
             bool isHost = IsServerHost();
-            for (var i = 0; i < _toSpawnNextFrame.Count; i++)
+
+            foreach (var toSpawn in _toSpawnNextFrame)
             {
-                var toSpawn = _toSpawnNextFrame[i];
-                
                 if (!toSpawn || !toSpawn.isSpawned) continue;
 
                 toSpawn.TriggerSpawnEvent(_asServer);
@@ -957,7 +960,7 @@ namespace PurrNet.Modules
             return result;
         }
         
-        readonly List<NetworkIdentity> _toSpawnNextFrame = new List<NetworkIdentity>();
+        readonly HashSet<NetworkIdentity> _toSpawnNextFrame = new HashSet<NetworkIdentity>();
         readonly List<SpawnID> _toCompleteNextFrame = new List<SpawnID>();
 
         /// <summary>
