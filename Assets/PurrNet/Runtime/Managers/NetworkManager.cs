@@ -389,7 +389,7 @@ namespace PurrNet
             
             main = this;
 
-            Time.fixedDeltaTime = 1f / _tickRate;
+            //Time.fixedDeltaTime = 1f / _tickRate;
             Application.runInBackground = true;
 
             if (_networkPrefabs)
@@ -419,7 +419,8 @@ namespace PurrNet
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        //Below is no longer needed, as we don't need the fixed delta time to be set to the tick rate.
+        /*private void OnValidate()
         {
             if (!gameObject.scene.isLoaded)
                 return;
@@ -433,7 +434,7 @@ namespace PurrNet
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-        }
+        }*/
 #endif
 
         /// <summary>
