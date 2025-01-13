@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PurrNet.Modules
 {
-    public class TickManager : INetworkModule, IFixedUpdate, IUpdate
+    public class TickManager : INetworkModule, IUpdate
     {
         /// <summary>
         /// Tracks local ticks starting from client connection to the server for synchronization.
@@ -70,9 +70,12 @@ namespace PurrNet.Modules
         private uint _syncedTick;
         private NetworkManager _networkManager;
         private float _lastSyncTime = -99;
+        private float _lastTickTime;
+        private const int MaxTickPerFrame = 5;
         
         public TickManager(int tickRate, NetworkManager nm)
         {
+            _lastTickTime = Time.unscaledTime;
             _networkManager = nm;
             tickDelta = 1f / tickRate;
             tickDeltaDouble = 1d / tickRate;
@@ -83,19 +86,9 @@ namespace PurrNet.Modules
 
         public void Disable(bool asServer) { }
 
-        public void FixedUpdate()
-        {
-            tick++;
-            syncedTick++;
-            floatingPoint = 0;
-            
-            onPreTick?.Invoke();
-            onTick?.Invoke();
-            onPostTick?.Invoke();
-        }
-
         public void Update()
         {
+            HandleTick();
             floatingPoint += Time.unscaledDeltaTime * tickRate;
 
             if (_networkManager.isServer || !_networkManager.isClient)
@@ -105,6 +98,26 @@ namespace PurrNet.Modules
                 _lastSyncTime = Time.unscaledTime;
                 HandleTickSync();
             }
+        }
+        
+        private void HandleTick()
+        {
+            int ticksHandled = 0;
+            while (_lastTickTime + tickDelta <= Time.unscaledTime && ticksHandled < MaxTickPerFrame)
+            {
+                _lastTickTime += tickDelta;
+                tick++;
+                syncedTick++;
+                floatingPoint = 0;
+            
+                onPreTick?.Invoke();
+                onTick?.Invoke();
+                onPostTick?.Invoke();
+                ticksHandled++;
+            }
+
+            if (ticksHandled >= MaxTickPerFrame)
+                _lastTickTime = Time.unscaledTime;
         }
 
         /// <summary>

@@ -667,6 +667,7 @@ namespace PurrNet
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
             var tickManager = new TickManager(_tickRate, this);
+            tickManager.onTick += OnTick;
 
             if (asServer)
             {
@@ -850,7 +851,7 @@ namespace PurrNet
                 _transport.transport.UpdateEvents(Time.deltaTime);
         }
 
-        private void FixedUpdate()
+        private void OnTick()
         {
             bool serverConnected = serverState == ConnectionState.Connected;
             bool clientConnected = clientState == ConnectionState.Connected;
