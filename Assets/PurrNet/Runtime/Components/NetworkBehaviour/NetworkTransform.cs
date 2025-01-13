@@ -1,6 +1,5 @@
 using System;
 using JetBrains.Annotations;
-using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using PurrNet.Utils;
@@ -242,7 +241,6 @@ namespace PurrNet
         
         public void OnTick(float delta)
         {
-            PurrLogger.Log(Time.frameCount.ToString());
             if (_parentChanged)
             {
                 OnTransformParentChangedDelayed();

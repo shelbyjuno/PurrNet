@@ -663,11 +663,12 @@ namespace PurrNet
         public event OnPlayerSceneEvent onPlayerLeftScene;
         
         void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer) => onPlayerLeftScene?.Invoke(player, scene, asServer);
+
+        private bool _isServerTicking;
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
             var tickManager = new TickManager(_tickRate, this);
-            tickManager.onTick += OnTick;
 
             if (asServer)
             {
@@ -679,6 +680,7 @@ namespace PurrNet
                 }
                 
                 _serverTickManager = tickManager;
+                _isServerTicking = true;
                 
                 _serverTickManager.onPreTick += OnServerPreTick;
                 _serverTickManager.onTick += OnServerTick;
@@ -694,7 +696,6 @@ namespace PurrNet
                 }
                 
                 _clientTickManager = tickManager;
-                
                 _clientTickManager.onPreTick += OnClientPreTick;
                 _clientTickManager.onTick += OnClientTick;
                 _clientTickManager.onPostTick += OnClientPostTick;
@@ -812,13 +813,22 @@ namespace PurrNet
 
         private void OnServerPreTick() => onPreTick?.Invoke(true);
 
-        private void OnServerTick() => onTick?.Invoke(true);
+        private void OnServerTick()
+        {
+            OnTick();
+            onTick?.Invoke(true);
+        }
 
         private void OnServerPostTick() => onPostTick?.Invoke(true);
 
         private void OnClientPreTick() => onPreTick?.Invoke(false);
 
-        private void OnClientTick() => onTick?.Invoke(false);
+        private void OnClientTick()
+        {
+            if (!_isServerTicking)
+                OnTick();
+            onTick?.Invoke(false);
+        }
 
         private void OnClientPostTick() => onPostTick?.Invoke(false);
 
@@ -846,9 +856,6 @@ namespace PurrNet
         {
             _serverModules.TriggerOnUpdate();
             _clientModules.TriggerOnUpdate();
-            
-            if (_transport) 
-                _transport.transport.UpdateEvents(Time.deltaTime);
         }
 
         private void OnTick()
@@ -861,6 +868,9 @@ namespace PurrNet
             
             if (clientConnected)
                 _clientModules.TriggerOnPreFixedUpdate();
+            
+            if (_transport) 
+                _transport.transport.UpdateEvents(tickModule.tickDelta);
             
             if (serverConnected)
                 _serverModules.TriggerOnFixedUpdate();
@@ -876,6 +886,7 @@ namespace PurrNet
 
             if (_isCleaningServer && _serverModules.Cleanup())
             {
+                _isServerTicking = false;
                 _serverModules.UnregisterModules();
                 _isCleaningServer = false;
             }
@@ -890,9 +901,12 @@ namespace PurrNet
                 
                 if (clientState != ConnectionState.Disconnected)
                     _clientModules.UnregisterModules();
-                
+
                 if (serverState != ConnectionState.Disconnected)
+                {
+                    _isServerTicking = false;
                     _serverModules.UnregisterModules();
+                }
             }
         }
 
@@ -986,6 +1000,7 @@ namespace PurrNet
         /// </summary>
         public void InternalRegisterServerModules()
         {
+            _isServerTicking = false;
             _serverModules.RegisterModules();
             _isSubscribedServer = true;
             TriggerSubscribeEvents(true);
