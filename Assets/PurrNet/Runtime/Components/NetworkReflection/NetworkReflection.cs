@@ -46,8 +46,6 @@ namespace PurrNet
             for (var i = 0; i < _trackedFields.Count; i++)
             {
                 var value = new ReflectedValue(_trackedBehaviour, _trackedFields[i]);
-                if (value.valueType != null)
-                    Hasher.PrepareType(value.valueType);
                 _reflectedValues[i] = value;
             }
         }

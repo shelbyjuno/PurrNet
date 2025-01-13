@@ -151,9 +151,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817f00a8b1748484fa837fad3cb9ac28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -176,9 +176,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7993de99671eec42ad040029a9f6593, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -198,9 +198,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f888c0a97f882af4b9ff62f84d211951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -209,6 +209,10 @@ MonoBehaviour:
   _visitiblityRules: {fileID: 0}
   maxHealth: 100
   healthText: {fileID: 2339485392063238819}
+  _health:
+    _value: 0
+    _ownerAuth: 0
+    _sendIntervalInSeconds: 0
 --- !u!143 &4393774338475174367
 CharacterController:
   m_ObjectHideFlags: 0
@@ -246,9 +250,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d589309a8b0b45f44a0ddd1e2e82017a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -267,9 +271,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -283,7 +287,7 @@ MonoBehaviour:
   _interpolateSettings: 7
   _ownerAuth: 1
   _sendIntervalInTicks: 0
-  _characterControllerPatch: 0
+  _characterControllerPatch: 1
   _tolerances:
     positionTolerance: 0.1
     rotationAngleTolerance: 1
@@ -333,9 +337,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5681fe548eb84304ea28a286062791f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -354,9 +358,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
@@ -424,9 +428,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbe775319f3e9a249829cec13ab24f7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isSetup: 0
   _prefabId: -2147483648
-  _siblingIndex: -2147483648
-  _depthIndex: -2147483648
+  _componentIndex: -2147483648
   _shouldBePooled: 0
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 

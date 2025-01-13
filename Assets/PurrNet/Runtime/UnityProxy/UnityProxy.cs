@@ -225,7 +225,7 @@ namespace PurrNet
                 var obj = Object.Instantiate(original, position, rotation);
                 var go = GetGameObject(obj);
 
-                if (go && go.scene != scene)
+                if (go && go.scene.handle != scene.handle)
                     SceneManager.MoveGameObjectToScene(go, scene);
                 return obj;
             }

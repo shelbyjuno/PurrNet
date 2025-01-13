@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 
 namespace PurrNet
 {
-    public struct NetworkID : Packing.IPackedAuto, IEquatable<NetworkID>
+    public struct NetworkID : IEquatable<NetworkID>
     {
         [UsedImplicitly] private PlayerID _scope;
         [UsedImplicitly] private int _id;
