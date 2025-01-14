@@ -11,6 +11,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using PurrNet.Modules;
 using PurrNet.Packing;
+using PurrNet.Pooling;
 using PurrNet.Utils;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
@@ -2148,6 +2149,12 @@ namespace PurrNet.Codegen
                 return true;
             
             if (IsGeneric(typeReference, typeof(List<>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(DisposableList<>)))
+                return true;
+            
+            if (IsGeneric(typeReference, typeof(DisposableHashSet<>)))
                 return true;
             
             if (IsGeneric(typeReference, typeof(Queue<>)))
