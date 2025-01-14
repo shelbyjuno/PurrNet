@@ -51,9 +51,8 @@ namespace PurrNet.Editor
             const string PATH = "Packages/manifest.json";
             var manifestString = File.ReadAllText(PATH);
             
-            var manifest = JObject.Parse(manifestString);
-
-            if (manifest.TryGetValue("purrnet", out var purrnet))
+            var manifest = (JObject)JObject.Parse(manifestString)["dependencies"];
+            if (manifest != null && manifest.TryGetValue("purrnet", out var purrnet))
             {
                 var value = purrnet.Value<string>();
                 var url = new Uri(value);
@@ -240,6 +239,19 @@ namespace PurrNet.Editor
         
         private Vector2 _scrollPosition;
 
+        private int GetCurrentIndex(string version)
+        {
+            for (int i = 0; i < _optionsActual.Length; i++)
+            {
+                if (_optionsActual[i] == version)
+                    return i;
+            }
+
+            return -1;
+        }
+        
+        private string _targetVersion;
+        
         private void OnGUI()
         {
             bool anyRefreshing = _isRefreshingBranches || _isRefreshingReleases || _isRefreshingContributors;
@@ -251,14 +263,34 @@ namespace PurrNet.Editor
             EditorGUILayout.BeginVertical();
             GUILayout.Space(10);
             
-            EditorGUILayout.HelpBox("This window is still in development", MessageType.Warning);
-            
-            EditorGUILayout.LabelField($"PurrNet Version - {_purrnetEntry?.fragment ?? "NULL"}", EditorStyles.boldLabel);
+            if (_purrnetEntry == null)
+            {
+                EditorGUILayout.LabelField("PurrNet not found in manifest.json", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Add this git package from url:", EditorStyles.wordWrappedLabel);
+                EditorGUILayout.TextField("https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release");
+                EditorGUILayout.HelpBox("Make sure you only have one installation of PurrNet in your project.\n" +
+                                        "Since you are seeing this message, you already have it installed somewhere.",
+                    MessageType.Warning);
+            }
+            else
+            {
+                EditorGUILayout.LabelField("PurrNet Version", EditorStyles.boldLabel);
 
-            EditorGUILayout.Popup(0, _options);
-            
-            DrawButtons(anyRefreshing);
-            
+                string currentFragment = _targetVersion ?? _purrnetEntry?.fragment ?? "release";
+                int actual = GetCurrentIndex(currentFragment);
+                if (actual == -1)
+                {
+                    actual = GetCurrentIndex("release");
+                }
+
+                int newActual = EditorGUILayout.Popup(actual, _options);
+
+                if (newActual != actual)
+                    _targetVersion = _optionsActual[newActual];
+                
+                DrawButtons(anyRefreshing);
+            }
+
             GUILayout.FlexibleSpace();
             
             EditorGUILayout.LabelField("PurrNet Contributors", EditorStyles.boldLabel);
@@ -305,6 +337,7 @@ namespace PurrNet.Editor
             GUILayout.Space(20);
             
             EditorGUILayout.EndVertical();
+            GUILayout.Space(10 + 64 + 10);
             EditorGUILayout.EndHorizontal();
         }
 
@@ -321,10 +354,18 @@ namespace PurrNet.Editor
             }
             else
             {
+                bool hasNewPendingChanges = _targetVersion != _purrnetEntry?.fragment;
+                if (hasNewPendingChanges)
+                    GUI.backgroundColor = Color.yellow;
                 if (GUILayout.Button("Update"))
                 {
                     // Update the PurrNet Entry
+                    if (_targetVersion != _purrnetEntry?.fragment)
+                    {
+                        _targetVersion = null;
+                    }
                 }
+                GUI.backgroundColor = Color.white;
             }
 
             if (GUILayout.Button("Refresh", GUILayout.Width(100)))
