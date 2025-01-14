@@ -274,7 +274,7 @@ namespace PurrNet.Editor
             }
             else
             {
-                EditorGUILayout.LabelField("PurrNet Version", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"PurrNet Version - {_purrnetEntry?.query}#{_purrnetEntry?.fragment}", EditorStyles.boldLabel);
 
                 string currentFragment = _targetVersion ?? _purrnetEntry?.fragment ?? "release";
                 int actual = GetCurrentIndex(currentFragment);
