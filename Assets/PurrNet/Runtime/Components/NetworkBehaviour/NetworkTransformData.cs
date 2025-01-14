@@ -1,14 +1,15 @@
 ﻿using System;
+using PurrNet.Packing;
 using UnityEngine;
 
 namespace PurrNet
 {
     public struct NetworkTransformData : IEquatable<NetworkTransformData>
     {
-        public ushort id;
+        public readonly ushort id;
         public Vector3 position;
         public Quaternion rotation;
-        public Vector3 scale;
+        public HalfVector3 scale;
         
         public NetworkTransformData(ushort id, Vector3 position, Quaternion rotation, Vector3 scale)
         {

@@ -151,8 +151,11 @@ namespace PurrNet
             _trs = transform;
             _rb = GetComponent<Rigidbody>();
             _controller = GetComponent<CharacterController>();
+        }
 
-            float sendDelta = (_sendIntervalInTicks + 1) * Time.fixedDeltaTime;
+        protected override void OnEarlySpawn()
+        {
+            float sendDelta = (_sendIntervalInTicks + 1) * networkManager.tickModule.tickDelta;
 
             if (syncPosition)
             {
@@ -290,9 +293,14 @@ namespace PurrNet
                     _ticksSinceLastSend++;
                 }
             }
-            else if (_rb) _rb.Sleep();
         }
-        
+
+        private void FixedUpdate()
+        {
+            if (_rb && !IsController(_ownerAuth))
+                _rb.Sleep();
+        }
+
         private void Update()
         {
             if (!isSpawned)
@@ -421,9 +429,9 @@ namespace PurrNet
 
             if (resetInterpolation)
             {
-                _position.Teleport(data.position);
-                _rotation.Teleport(data.rotation);
-                _scale.Teleport(data.scale);
+                _position?.Teleport(data.position);
+                _rotation?.Teleport(data.rotation);
+                _scale?.Teleport(data.scale);
             }
             
             // update the last received id in case we switch to a new owner
