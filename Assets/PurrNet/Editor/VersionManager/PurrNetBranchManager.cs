@@ -253,7 +253,7 @@ namespace PurrNet.Editor
             
             EditorGUILayout.HelpBox("This window is still in development", MessageType.Warning);
             
-            EditorGUILayout.LabelField("PurrNet Version", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField($"PurrNet Version - {_purrnetEntry?.fragment ?? "NULL"}", EditorStyles.boldLabel);
 
             EditorGUILayout.Popup(0, _options);
             
