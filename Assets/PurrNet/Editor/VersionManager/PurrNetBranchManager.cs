@@ -61,7 +61,7 @@ namespace PurrNet.Editor
                     name = "purrnet",
                     url = $"{url.Scheme}://{url.Host}/{url.AbsolutePath}",
                     query = url.Query,
-                    fragment = url.Fragment
+                    fragment = url.Fragment[1..]
                 };
                 return true;
             }
