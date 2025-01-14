@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using PurrNet.Logging;
 using PurrNet.Modules;
 using PurrNet.Transports;
 using UnityEngine;
@@ -23,6 +24,8 @@ namespace PurrNet
     {
         readonly List<RegisterEventsDelegate> _subscribeEvents = new List<RegisterEventsDelegate>();
         readonly List<RegisterEventsDelegate> _unsubscribeEvents = new List<RegisterEventsDelegate>();
+        private readonly Dictionary<Type, List<object>> _serverPendingSubscriptions = new Dictionary<Type, List<object>>();
+        private readonly Dictionary<Type, List<object>> _clientPendingSubscriptions = new Dictionary<Type, List<object>>();
         
         /// <summary>
         /// Event called when the network is started.
@@ -161,20 +164,105 @@ namespace PurrNet
             UnregisterEvents(events.Subscribe, events.Unsubscribe);
         }
         
+        /// <summary>
+        /// Subscribe to a broadcast
+        /// </summary>
+        /// <param name="callback">The callback of the broadcast upon receiving data</param>
+        /// <param name="asServer">Whether it's the server or client listening for data</param>
+        /// <typeparam name="T">The data type to broadcast</typeparam>
         [UsedImplicitly]
-        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback, bool asServer)  where T : new()
+        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback, bool asServer) where T : new()
         {
-            var broadcaster = GetModule<PlayersBroadcaster>(asServer);
-            broadcaster.Subscribe(callback);
+            var pendingDict = asServer ? _serverPendingSubscriptions : _clientPendingSubscriptions;
+            var type = typeof(T);
+
+            if (!pendingDict.TryGetValue(type, out var subscriptions))
+            {
+                subscriptions = new List<object>();
+                pendingDict[type] = subscriptions;
+            }
+
+            var subscription = new PendingSubscription<T>(callback, asServer);
+            subscriptions.Add(subscription);
+
+            if (TryGetModule(out PlayersBroadcaster broadcaster, asServer))
+            {
+                broadcaster.Subscribe(callback);
+            }
         }
         
+        /// <summary>
+        /// Subscribe to a broadcast
+        /// </summary>
+        /// <param name="callback">The callback of the broadcast upon receiving data</param>
+        /// <typeparam name="T">The data type to broadcast</typeparam>
+        [UsedImplicitly]
+        public void Subscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
+        {
+            Subscribe(callback, true);
+            Subscribe(callback, false);
+        }
+        
+        private void RenewSubscriptions(bool asServer)
+        {
+            if (!TryGetModule(out PlayersBroadcaster broadcaster, asServer))
+            {
+                return;
+            }
+
+            var pendingDict = asServer ? _serverPendingSubscriptions : _clientPendingSubscriptions;
+
+            foreach (var subscriptionList in pendingDict.Values)
+            {
+                foreach (var subscription in subscriptionList)
+                {
+                    ((IPendingSubscription)subscription).Subscribe(broadcaster);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Unsubscribe to a broadcast
+        /// </summary>
+        /// <param name="callback">The callback of the broadcast upon receiving data</param>
+        /// <param name="asServer">Whether it's the server or client listening for data</param>
+        /// <typeparam name="T">The data type to broadcast</typeparam>
         [UsedImplicitly]
         public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback, bool asServer) where T : new()
         {
-            var broadcaster = GetModule<PlayersBroadcaster>(asServer);
-            broadcaster.Unsubscribe(callback);
+            var pendingDict = asServer ? _serverPendingSubscriptions : _clientPendingSubscriptions;
+            var type = typeof(T);
+
+            if (pendingDict.TryGetValue(type, out var subscriptions))
+            {
+                subscriptions.RemoveAll(s => ((PendingSubscription<T>)s).Callback == callback);
+            }
+
+            if (TryGetModule(out PlayersBroadcaster broadcaster, asServer))
+            {
+                broadcaster.Unsubscribe(callback);
+            }
+        }
+        
+        /// <summary>
+        /// Unsubscribe from a broadcast
+        /// </summary>
+        /// <param name="callback">The callback of the broadcast upon receiving data</param>
+        /// <typeparam name="T">The data type to broadcast</typeparam>
+        [UsedImplicitly]
+        public void Unsubscribe<T>(PlayerBroadcastDelegate<T> callback) where T : new()
+        {
+            Unsubscribe(callback, true);
+            Unsubscribe(callback, false);
         }
 
+        /// <summary>
+        /// Send a broadcast to a given player
+        /// </summary>
+        /// <param name="player">player to send the broadcast to</param>
+        /// <param name="data">Data to send with the broadcast</param>
+        /// <param name="method">The channel to use for broadcasting</param>
+        /// <typeparam name="T">The data type to send with the broadcast</typeparam>
         [UsedImplicitly]
         public void Send<T>(PlayerID player, T data, Channel method = Channel.ReliableOrdered)
         {
@@ -182,6 +270,14 @@ namespace PurrNet
             broadcaster.Send(player, data, method);
         }
 
+        
+        /// <summary>
+        /// Send a broadcast to a given set of players
+        /// </summary>
+        /// <param name="playersCollection">dataset of players to send the broadcast to</param>
+        /// <param name="data">Data to send with the broadcast</param>
+        /// <param name="method">The channel to use for broadcasting</param>
+        /// <typeparam name="T">The data type to send with the broadcast</typeparam>
         [UsedImplicitly]
         public void Send<T>(IEnumerable<PlayerID> playersCollection, T data, Channel method = Channel.ReliableOrdered)
         {
@@ -189,6 +285,13 @@ namespace PurrNet
             broadcaster.Send(playersCollection, data, method);
         }
         
+        /// <summary>
+        /// Send a broadcast to everyone within a given scene
+        /// </summary>
+        /// <param name="sceneId">Scene ID which you want to broadcast to</param>
+        /// <param name="data">Data to send with the broadcast</param>
+        /// <param name="method">The channel to use for broadcasting</param>
+        /// <typeparam name="T">The data type to send with the broadcast</typeparam>
         [UsedImplicitly]
         public void SendToScene<T>(SceneID sceneId, T data, Channel method = Channel.ReliableOrdered)
         {
@@ -199,6 +302,13 @@ namespace PurrNet
                 broadcaster.Send(playersInScene, data, method);
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
+        /// <summary>
+        /// Send a broadcast to the server
+        /// </summary>
+        /// <param name="data">Data to send with the broadcast</param>
+        /// <param name="method">The channel to use for broadcasting</param>
+        /// <typeparam name="T">The data type to send with the broadcast</typeparam>
         [UsedImplicitly]
         public void SendToServer<T>(T data, Channel method = Channel.ReliableOrdered)
         {
@@ -206,11 +316,46 @@ namespace PurrNet
             broadcaster.SendToServer(data, method);
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
+        /// <summary>
+        /// Send a broadcast to everyone listening. Only possible as the server
+        /// </summary>
+        /// <param name="data">Data to send with the broadcast</param>
+        /// <param name="method">The channel to use for broadcasting</param>
+        /// <typeparam name="T">The data type to send with the broadcast</typeparam>
         [UsedImplicitly]
         public void SendToAll<T>(T data, Channel method = Channel.ReliableOrdered)
         {
+            if (!isServer)
+            {
+                PurrLogger.LogWarning($"Can't send broadcast to all as non-server.");
+                return;
+            }
+            
             var broadcaster = GetModule<PlayersBroadcaster>(true);
             broadcaster.SendToAll(data, method);
+        }
+        
+        private interface IPendingSubscription 
+        {
+            void Subscribe(PlayersBroadcaster broadcaster);
+        }
+
+        private class PendingSubscription<T> : IPendingSubscription where T : new()
+        {
+            public PlayerBroadcastDelegate<T> Callback { get; }
+            public bool AsServer { get; }
+
+            public PendingSubscription(PlayerBroadcastDelegate<T> callback, bool asServer)
+            {
+                Callback = callback;
+                AsServer = asServer;
+            }
+    
+            public void Subscribe(PlayersBroadcaster broadcaster)
+            {
+                broadcaster.Subscribe(Callback);
+            }
         }
     }
 }

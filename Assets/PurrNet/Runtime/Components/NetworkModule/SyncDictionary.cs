@@ -124,8 +124,6 @@ namespace PurrNet
 
         public override void OnObserverAdded(PlayerID player)
         {
-            base.OnObserverAdded(player);
-            
             HandleInitialStateTarget(player, _dict);
         }
         

@@ -19,8 +19,8 @@ namespace PurrNet
                 if (_networkManager == null)
                 {
                     _networkManager = Object.FindAnyObjectByType<NetworkManager>();
-                    if (!_networkManager)
-                        PurrLogger.LogError($"No {nameof(NetworkManager)} found in scene!");
+                    //if (!_networkManager) //Not sure we should be logging this, as it will also log when they try and do a null check
+                    //    PurrLogger.LogError($"No {nameof(NetworkManager)} found in scene!");
                 }
                 return _networkManager;
             }

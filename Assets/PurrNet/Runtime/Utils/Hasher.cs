@@ -8,17 +8,10 @@ namespace PurrNet.Utils
 {
     public class Hasher
     {
-        private const uint FNV_offset_basis32 = 2166136261;
-        private const uint FNV_prime32 = 16777619;
-        
-        private const ulong FNV_offset_basis64 = 14695981039346656037;
-        private const ulong FNV_prime64 = 1099511628211;
-        
         static readonly Dictionary<Type, uint> _hashes = new Dictionary<Type, uint>();
         static readonly Dictionary<uint, Type> _decoder = new Dictionary<uint, Type>();
         
-        static readonly Dictionary<Type, ulong> _hashes_64 = new Dictionary<Type, ulong>();
-        static readonly Dictionary<ulong, Type> _decoder_64 = new Dictionary<ulong, Type>();
+        static uint _hashCounter;
         
         public static Type ResolveType(uint hash)
         {
@@ -35,50 +28,17 @@ namespace PurrNet.Utils
             return _decoder.TryGetValue(hash, out type);
         }
         
-        public static bool TryGetType(ulong hash, out Type type)
-        {
-            return _decoder_64.TryGetValue(hash, out type);
-        }
-
         [UsedImplicitly]
         public static uint PrepareType(Type type)
         {
             if (_hashes.TryGetValue(type, out var hash))
                 return hash;
             
-            var value = GetStableHashU32(type.FullName);
-            _hashes.Add(type, value);
+            hash = _hashCounter++;
+            _hashes[type] = hash;
+            _decoder[hash] = type;
             
-            if (_decoder.TryGetValue(value, out var otherType))
-            {
-                throw new InvalidOperationException(
-                    PurrLogger.FormatMessage($"Hash of '{type.FullName}' is already registered with a different type '{otherType.FullName}'.")
-                );
-            }
-            
-            _decoder.Add(value, type);
-            
-            return value;
-        }
-        
-        static ulong PrepareType_64(Type type)
-        {
-            if (_hashes_64.TryGetValue(type, out var hash))
-                return hash;
-            
-            var value = GetStableHashU64(type.FullName);
-            _hashes_64.Add(type, value);
-            
-            if (_decoder_64.TryGetValue(value, out var otherType))
-            {
-                throw new InvalidOperationException(
-                    PurrLogger.FormatMessage($"Hash of '{type.FullName}' is already registered with a different type '{otherType.FullName}'.")
-                );
-            }
-            
-            _decoder_64.Add(value, type);
-            
-            return value;
+            return hash;
         }
         
         [UsedByIL]
@@ -93,47 +53,7 @@ namespace PurrNet.Utils
         
         public static uint GetStableHashU32<T>()
         {
-            var type = typeof(T);
-            return _hashes.TryGetValue(type, out var hash) ? hash : throw new InvalidOperationException(
-                PurrLogger.FormatMessage($"Type '{type.FullName}' is not registered.")
-            );
-        }
-        
-        static uint GetStableHashU32(string txt)
-        {
-            unchecked
-            {
-                uint hash = FNV_offset_basis32;
-                for (int i = 0; i < txt.Length; i++)
-                {
-                    uint ch = txt[i];
-                    hash *= FNV_prime32;
-                    hash ^= ch;
-                }
-
-                return hash;
-            }
-        }
-        
-        public static ulong GetStableHashU64(Type type)
-        {
-            return _hashes_64.TryGetValue(type, out var hash) ? hash : PrepareType_64(type);
-        }
-        
-        static ulong GetStableHashU64(string txt)
-        {
-            unchecked
-            {
-                ulong hash = FNV_offset_basis64;
-                for (int i = 0; i < txt.Length; i++)
-                {
-                    ulong ch = txt[i];
-                    hash *= FNV_prime64;
-                    hash ^= ch;
-                }
-
-                return hash;
-            }
+            return GetStableHashU32(typeof(T));
         }
     }
 }

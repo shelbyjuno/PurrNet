@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using PurrNet.Transports;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace PurrNet.Editor
 {
@@ -16,13 +18,17 @@ namespace PurrNet.Editor
         private SerializedProperty _cookieScope;
 
         private SerializedProperty _dontDestroyOnLoad;
-        private SerializedProperty _cheetahData;
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _networkRules;
         private SerializedProperty _authenticator;
         private SerializedProperty _transport;
         private SerializedProperty _tickRate;
         private SerializedProperty _visibilityRules;
+        
+        private bool _showStatusFoldout = true;
+        private bool _showPlayersFoldout;
+        private readonly Dictionary<object, bool> _playerFoldouts = new Dictionary<object, bool>();
+
         
         private void OnEnable()
         {
@@ -35,13 +41,19 @@ namespace PurrNet.Editor
             _cookieScope = serializedObject.FindProperty("_cookieScope");
             
             _dontDestroyOnLoad = serializedObject.FindProperty("_dontDestroyOnLoad");
-            _cheetahData = serializedObject.FindProperty("_cheetahData");
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _networkRules = serializedObject.FindProperty("_networkRules");
             _transport = serializedObject.FindProperty("_transport");
             _tickRate = serializedObject.FindProperty("_tickRate");
             _visibilityRules = serializedObject.FindProperty("_visibilityRules");
             _authenticator = serializedObject.FindProperty("_authenticator");
+            
+            EditorApplication.update += Repaint;
+        }
+
+        private void OnDisable()
+        {
+            EditorApplication.update -= Repaint;
         }
 
         public override void OnInspectorGUI()
@@ -91,7 +103,6 @@ namespace PurrNet.Editor
                 GUI.enabled = false;
             
             EditorGUILayout.PropertyField(_dontDestroyOnLoad);
-            EditorGUILayout.PropertyField(_cheetahData);
             EditorGUILayout.PropertyField(_transport);
             DrawNetworkPrefabs();
             EditorGUILayout.PropertyField(_networkRules);
@@ -108,6 +119,12 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
 
             GUI.enabled = true;
+            
+            _showStatusFoldout = EditorGUILayout.Foldout(_showStatusFoldout, "Status");
+            if (_showStatusFoldout)
+            {
+                DrawStatusFoldout(networkManager);
+            }
             
             serializedObject.ApplyModifiedProperties();
         }
@@ -175,11 +192,82 @@ namespace PurrNet.Editor
             // serializedObject.Update();
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.IntSlider(_tickRate, 1, 128, new GUIContent("Tick Rate"));
-            if (EditorGUI.EndChangeCheck())
+            /*if (EditorGUI.EndChangeCheck())
             {
                 Time.fixedDeltaTime = 1f / _tickRate.intValue;
                 AssetDatabase.SaveAssets();
+            }*/
+        }
+        
+        private void DrawStatusFoldout(NetworkManager networkManager)
+        {
+            if (!networkManager.isServer && !networkManager.isClient)
+                return;
+
+            if (networkManager.players == null)
+                return;
+
+            EditorGUILayout.BeginVertical("box");
+
+            EditorGUILayout.LabelField("Server State:", networkManager.serverState.ToString());
+            EditorGUILayout.LabelField("Client State:", networkManager.clientState.ToString());
+            EditorGUILayout.LabelField("Player Count:", networkManager.playerCount.ToString());
+
+            var players = networkManager.players;
+            if (players != null)
+            {
+                _showPlayersFoldout = EditorGUILayout.Foldout(_showPlayersFoldout, $"Players ({players.Count})");
+                if (_showPlayersFoldout)
+                {
+                    foreach (var playerId in players)
+                    {
+                        EditorGUI.indentLevel++;
+                        if (!_playerFoldouts.ContainsKey(playerId))
+                            _playerFoldouts[playerId] = false;
+
+                        _playerFoldouts[playerId] = EditorGUILayout.Foldout(_playerFoldouts[playerId], $"Player: {playerId}");
+                        if (_playerFoldouts[playerId])
+                        {
+                            EditorGUI.indentLevel++;
+                            EditorGUILayout.LabelField("Owned Objects:", networkManager.GetAllPlayerOwnedIds(playerId, networkManager.isServer).Count.ToString());
+
+                            if (!networkManager.isServer)
+                            {
+                                EditorGUI.indentLevel--;
+                                EditorGUI.indentLevel--;
+                                continue;
+                            }
+                            
+                            if (networkManager.TryGetPlayerScenes(playerId, out var scenes) && scenes.Length > 0)
+                            {
+                                EditorGUILayout.LabelField("Scenes (SceneId):");
+                                foreach (var sceneId in scenes)
+                                {
+                                    if (!networkManager.TryGetScene(sceneId, out var scene))
+                                        continue;
+                                    
+                                    EditorGUI.indentLevel++;
+                                    EditorGUILayout.LabelField($"- {scene.name} ({sceneId})");
+                                    EditorGUI.indentLevel--;
+                                }
+                            }
+                            else
+                            {
+                                EditorGUILayout.LabelField("Scenes:", "None");
+                            }
+
+                            EditorGUI.indentLevel--;
+                        }
+                        EditorGUI.indentLevel--;
+                    }
+                }
             }
+            else
+            {
+                EditorGUILayout.LabelField("No players connected.");
+            }
+
+            EditorGUILayout.EndVertical();
         }
 
         private static void RenderStartStopButtons(NetworkManager networkManager)

@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using PurrNet.Transports;
+using UnityEngine.Scripting;
 
 namespace PurrNet
 {
@@ -22,11 +23,11 @@ namespace PurrNet
     /// <summary>
     /// All the data relevant to the change that happened to the list
     /// </summary>
-    public struct SyncListChange<T>
+    public readonly struct SyncListChange<T>
     {
-        public SyncListOperation operation;
-        public T value;
-        public int index;
+        public readonly SyncListOperation operation;
+        public readonly T value;
+        public readonly int index;
 
         public SyncListChange(SyncListOperation operation, T value = default, int index = -1)
         {
@@ -112,7 +113,7 @@ namespace PurrNet
             SendInitialToTarget(player, _list);
         }
 
-        [TargetRpc(Channel.ReliableOrdered)]
+        [TargetRpc(Channel.ReliableOrdered), Preserve]
         private void SendInitialToTarget(PlayerID player, List<T> items)
         {
             HandleInitialState(items);
@@ -234,11 +235,11 @@ namespace PurrNet
         {
             ValidateAuthority();
             
-            int index = _list.IndexOf(item);
-            if (index < 0) return false;
+            int idx = _list.IndexOf(item);
+            if (idx < 0) return false;
             
-            _list.RemoveAt(index);
-            var change = new SyncListChange<T>(SyncListOperation.Removed, item, index);
+            _list.RemoveAt(idx);
+            var change = new SyncListChange<T>(SyncListOperation.Removed, item, idx);
             InvokeChange(change);
             
             if (isSpawned)
@@ -284,8 +285,8 @@ namespace PurrNet
         {
             if (!isSpawned) return;
 
-            bool isController = parent.IsController(_ownerAuth);
-            if (!isController)
+            bool controller = parent.IsController(_ownerAuth);
+            if (!controller)
             {
                 PurrLogger.LogError(
                     $"Invalid permissions when modifying '<b>SyncList<{typeof(T).Name}> {name}</b>' on '{parent.name}'." +
@@ -364,11 +365,11 @@ namespace PurrNet
         {
             if (!isServer || isHost)
             {
-                int index = _list.IndexOf(item);
-                if (index >= 0)
+                int idx = _list.IndexOf(item);
+                if (idx >= 0)
                 {
-                    _list.RemoveAt(index);
-                    InvokeChange(new SyncListChange<T>(SyncListOperation.Removed, item, index));
+                    _list.RemoveAt(idx);
+                    InvokeChange(new SyncListChange<T>(SyncListOperation.Removed, item, idx));
                 }
             }
         }
@@ -378,11 +379,11 @@ namespace PurrNet
         {
             if (!isHost)
             {
-                int index = _list.IndexOf(item);
-                if (index >= 0)
+                int idx = _list.IndexOf(item);
+                if (idx >= 0)
                 {
-                    _list.RemoveAt(index);
-                    InvokeChange(new SyncListChange<T>(SyncListOperation.Removed, item, index));
+                    _list.RemoveAt(idx);
+                    InvokeChange(new SyncListChange<T>(SyncListOperation.Removed, item, idx));
                 }
             }
         }

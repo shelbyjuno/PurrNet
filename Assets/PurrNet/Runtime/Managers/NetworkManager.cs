@@ -76,8 +76,6 @@ namespace PurrNet
         [Tooltip("Whether the network manager should not be destroyed on load. " +
                  "If true, the network manager will be moved to the DontDestroyOnLoad scene.")]
         [SerializeField] private bool _dontDestroyOnLoad = true;
-        [Tooltip("Send and receive data immediately, not bound by tick rate.")]
-        [SerializeField] private bool _cheetahData;
         [PurrDocs("systems-and-modules/network-manager/transports")]
         [SerializeField] private GenericTransport _transport;
         [PurrDocs("systems-and-modules/network-manager/network-prefabs")]
@@ -391,7 +389,7 @@ namespace PurrNet
             
             main = this;
 
-            Time.fixedDeltaTime = 1f / _tickRate;
+            //Time.fixedDeltaTime = 1f / _tickRate;
             Application.runInBackground = true;
 
             if (_networkPrefabs)
@@ -421,7 +419,8 @@ namespace PurrNet
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        //Below is no longer needed, as we don't need the fixed delta time to be set to the tick rate.
+        /*private void OnValidate()
         {
             if (!gameObject.scene.isLoaded)
                 return;
@@ -435,7 +434,7 @@ namespace PurrNet
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-        }
+        }*/
 #endif
 
         /// <summary>
@@ -664,10 +663,12 @@ namespace PurrNet
         public event OnPlayerSceneEvent onPlayerLeftScene;
         
         void OnPlayerLeftScene(PlayerID player, SceneID scene, bool asServer) => onPlayerLeftScene?.Invoke(player, scene, asServer);
+
+        private bool _isServerTicking;
         
         internal void RegisterModules(ModulesCollection modules, bool asServer)
         {
-            var tickManager = new TickManager(_tickRate);
+            var tickManager = new TickManager(_tickRate, this);
 
             if (asServer)
             {
@@ -679,6 +680,7 @@ namespace PurrNet
                 }
                 
                 _serverTickManager = tickManager;
+                _isServerTicking = true;
                 
                 _serverTickManager.onPreTick += OnServerPreTick;
                 _serverTickManager.onTick += OnServerTick;
@@ -694,7 +696,6 @@ namespace PurrNet
                 }
                 
                 _clientTickManager = tickManager;
-                
                 _clientTickManager.onPreTick += OnClientPreTick;
                 _clientTickManager.onTick += OnClientTick;
                 _clientTickManager.onPostTick += OnClientPostTick;
@@ -797,26 +798,37 @@ namespace PurrNet
             
             modules.AddModule(scenesModule);
             modules.AddModule(scenePlayers);
-            
+
             var hierarchyV2 = new HierarchyFactory(this, scenesModule, scenePlayers, playersManager);
             var ownershipModule = new GlobalOwnershipModule(hierarchyV2, playersManager, scenePlayers, scenesModule);
-            var rpcModule = new RPCModule(playersManager, hierarchyV2, ownershipModule, scenesModule);
+            var rpcModule = new RPCModule(this, playersManager, hierarchyV2, ownershipModule, scenesModule);
 
-            modules.AddModule(hierarchyV2);
             modules.AddModule(ownershipModule);
             modules.AddModule(rpcModule);
             modules.AddModule(new RpcRequestResponseModule(playersManager));
+            modules.AddModule(hierarchyV2);
+
+            RenewSubscriptions(asServer);
         }
 
         private void OnServerPreTick() => onPreTick?.Invoke(true);
 
-        private void OnServerTick() => onTick?.Invoke(true);
+        private void OnServerTick()
+        {
+            OnTick();
+            onTick?.Invoke(true);
+        }
 
         private void OnServerPostTick() => onPostTick?.Invoke(true);
 
         private void OnClientPreTick() => onPreTick?.Invoke(false);
 
-        private void OnClientTick() => onTick?.Invoke(false);
+        private void OnClientTick()
+        {
+            if (!_isServerTicking)
+                OnTick();
+            onTick?.Invoke(false);
+        }
 
         private void OnClientPostTick() => onPostTick?.Invoke(false);
 
@@ -844,12 +856,9 @@ namespace PurrNet
         {
             _serverModules.TriggerOnUpdate();
             _clientModules.TriggerOnUpdate();
-            
-            if (_cheetahData && _transport) 
-                _transport.transport.UpdateEvents(Time.deltaTime);
         }
 
-        private void FixedUpdate()
+        private void OnTick()
         {
             bool serverConnected = serverState == ConnectionState.Connected;
             bool clientConnected = clientState == ConnectionState.Connected;
@@ -860,8 +869,8 @@ namespace PurrNet
             if (clientConnected)
                 _clientModules.TriggerOnPreFixedUpdate();
             
-            if (!_cheetahData && _transport) 
-                _transport.transport.UpdateEvents(Time.fixedDeltaTime);
+            if (_transport) 
+                _transport.transport.UpdateEvents(tickModule.tickDelta);
             
             if (serverConnected)
                 _serverModules.TriggerOnFixedUpdate();
@@ -877,6 +886,7 @@ namespace PurrNet
 
             if (_isCleaningServer && _serverModules.Cleanup())
             {
+                _isServerTicking = false;
                 _serverModules.UnregisterModules();
                 _isCleaningServer = false;
             }
@@ -891,9 +901,12 @@ namespace PurrNet
                 
                 if (clientState != ConnectionState.Disconnected)
                     _clientModules.UnregisterModules();
-                
+
                 if (serverState != ConnectionState.Disconnected)
+                {
+                    _isServerTicking = false;
                     _serverModules.UnregisterModules();
+                }
             }
         }
 
@@ -941,6 +954,25 @@ namespace PurrNet
         }
         
         /// <summary>
+        /// Returns all the scenes of a given player
+        /// </summary>
+        /// <param name="playerId">PlayerID for the player whose scenes you want</param>
+        /// <param name="scenes">An array of the scenes</param>
+        /// <returns></returns>
+        public bool TryGetPlayerScenes(PlayerID playerId, out SceneID[] scenes)
+        {
+            scenes = null;
+
+            if (scenePlayersModule == null || playerId == default)
+                return false;
+
+            if (scenePlayersModule.TryGetScenesForPlayer(playerId, out scenes))
+                return true;
+
+            return false;
+        }
+        
+        /// <summary>
         /// Tries to get the scene state of the given scene ID.
         /// </summary>
         /// <param name="sceneID">The scene ID to get the state of.</param>
@@ -968,6 +1000,7 @@ namespace PurrNet
         /// </summary>
         public void InternalRegisterServerModules()
         {
+            _isServerTicking = false;
             _serverModules.RegisterModules();
             _isSubscribedServer = true;
             TriggerSubscribeEvents(true);

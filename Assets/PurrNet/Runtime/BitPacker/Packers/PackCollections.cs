@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using PurrNet.Modules;
+using PurrNet.Pooling;
+using UnityEngine;
 
 namespace PurrNet.Packing
 {
@@ -61,6 +63,104 @@ namespace PurrNet.Packing
         {
             Packer<Stack<T>>.RegisterWriter(WriteStack);
             Packer<Stack<T>>.RegisterReader(ReadStack);
+        }
+        
+        [UsedByIL]
+        public static void RegisterDisposableList<T>()
+        {
+            Packer<DisposableList<T>>.RegisterWriter(WriteDisposableList);
+            Packer<DisposableList<T>>.RegisterReader(ReadDisposableList);
+        }
+        
+        [UsedByIL]
+        public static void RegisterDisposableHashSet<T>()
+        {
+            Packer<DisposableHashSet<T>>.RegisterWriter(WriteDisposableHashSet);
+            Packer<DisposableHashSet<T>>.RegisterReader(ReadDisposableHashSet);
+        }
+        
+        [UsedByIL]
+        public static void WriteDisposableHashSet<T>(this BitPacker packer, DisposableHashSet<T> value)
+        {
+            if (value.isDisposed)
+            {
+                Packer<bool>.Write(packer, false);
+                return;
+            }
+            
+            Packer<bool>.Write(packer, true);
+
+            int length = value.Count;
+            packer.WriteInteger(length, 31);
+
+            foreach (var v in value)
+                Packer<T>.Write(packer, v);
+        }
+        
+        [UsedByIL]
+        public static void ReadDisposableHashSet<T>(this BitPacker packer, ref DisposableHashSet<T> value)
+        {
+            value.Dispose();
+
+            bool hasValue = default;
+            packer.Read(ref hasValue);
+            
+            if (!hasValue)
+                return;
+            
+            long length = default;
+            
+            packer.ReadInteger(ref length, 31);
+            value = new DisposableHashSet<T>((int)length);
+            
+            for (int i = 0; i < length; i++)
+            {
+                T item = default;
+                Packer<T>.Read(packer, ref item);
+                value.Add(item);
+            }
+        }
+        
+        [UsedByIL]
+        public static void WriteDisposableList<T>(this BitPacker packer, DisposableList<T> value)
+        {
+            if (value.isDisposed)
+            {
+                Packer<bool>.Write(packer, false);
+                return;
+            }
+            
+            Packer<bool>.Write(packer, true);
+
+            int length = value.Count;
+            packer.WriteInteger(length, 31);
+            
+            for (int i = 0; i < length; i++)
+                Packer<T>.Write(packer, value[i]);
+        }
+
+        [UsedByIL]
+        public static void ReadDisposableList<T>(this BitPacker packer, ref DisposableList<T> value)
+        {
+            value.Dispose();
+
+            bool hasValue = default;
+            
+            packer.Read(ref hasValue);
+            
+            if (!hasValue)
+                return;
+            
+            long length = default;
+            packer.ReadInteger(ref length, 31);
+            value = new DisposableList<T>((int)length);
+
+            for (int i = 0; i < length; i++)
+            {
+                T item = default;
+                Packer<T>.Read(packer, ref item);
+                value.Add(item);
+            }
         }
         
         public static void WriteQueue<T>(BitPacker packer, Queue<T> value)
@@ -196,7 +296,15 @@ namespace PurrNet.Packing
                 V val = default;
                 Packer<K>.Read(packer, ref key);
                 Packer<V>.Read(packer, ref val);
-                value.Add(key, val);
+             
+                try
+                {
+                    value.Add(key, val);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
 
@@ -263,7 +371,14 @@ namespace PurrNet.Packing
             {
                 T item = default;
                 Packer<T>.Read(packer, ref item);
-                value.Add(item);
+                try
+                {
+                    value.Add(item);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
         

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using PurrNet.Collections;
 using PurrNet.Pooling;
 using UnityEngine;
  
@@ -136,6 +137,29 @@ namespace PurrNet.Modules
             
             if (shouldTrigger)
                 visibilityChanged?.Invoke(player, transform, isVisible);
+        }
+
+        public void EvaluateAll(IReadonlyHashSet<PlayerID> players, List<NetworkIdentity> identities)
+        {
+            var hash = HashSetPool<NetworkIdentity>.Instantiate();
+
+            for (var i = 0; i < identities.Count; i++)
+            {
+                var nid = identities[i];
+                var root = nid.GetRootIdentity();
+
+                if (!root)
+                    continue;
+
+                hash.Add(root);
+            }
+
+            
+            foreach (var player in players)
+                foreach (var root in hash)
+                    RefreshVisibilityForGameObject(player, root.transform);
+            
+            HashSetPool<NetworkIdentity>.Destroy(hash);
         }
 
         /// <summary>

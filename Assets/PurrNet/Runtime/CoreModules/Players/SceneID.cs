@@ -1,9 +1,8 @@
 ﻿using System;
-using PurrNet.Packing;
 
 namespace PurrNet
 {
-    public readonly struct SceneID : IPackedAuto, IEquatable<SceneID>
+    public readonly struct SceneID : IEquatable<SceneID>
     {
         private ushort _id { get; }
 

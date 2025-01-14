@@ -222,12 +222,12 @@ namespace PurrNet
         {
             if (!TryGetPrefabData(original, out var prefabData))
             {
-                var obj = Object.Instantiate(original, scene);
+                var obj = Object.Instantiate(original, position, rotation);
                 var go = GetGameObject(obj);
-                
-                if (go)
-                    go.transform.SetPositionAndRotation(position, rotation);
-                return (T)obj;
+
+                if (go && go.scene.handle != scene.handle)
+                    SceneManager.MoveGameObjectToScene(go, scene);
+                return obj;
             }
             
             return OnPreInstantiate(prefabData, new InstantiateData<T>(original, position, rotation));

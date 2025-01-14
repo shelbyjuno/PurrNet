@@ -490,6 +490,12 @@ namespace PurrNet.Modules
             Despawn(identity.gameObject, true);
         }
 
+        public void EvaluateAllVisibilities()
+        {
+            if (_asServer && _scenePlayers.TryGetPlayersInScene(_sceneId, out var players))
+                _visibility.EvaluateAll(players, _spawnedIdentities);
+        }
+
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
         {
             if (scene != _sceneId)
@@ -516,6 +522,14 @@ namespace PurrNet.Modules
         }
         
         private int _nextPacketIdx;
+
+        struct PlayerNid
+        {
+            public PlayerID player;
+            public NetworkIdentity nid;
+        }
+        
+        private readonly List<PlayerNid> _triggerLateObserverAdded = new List<PlayerNid>();
         
         private void OnVisibilityChanged(PlayerID player, Transform scope, bool isVisible)
         {
@@ -534,8 +548,8 @@ namespace PurrNet.Modules
                         for (var i = 0; i < children.Count; i++)
                         {
                             var nid = children[i];
-                            nid.TriggerOnObserverAdded(player);
                             onObserverAdded?.Invoke(player, nid);
+                            _triggerLateObserverAdded.Add(new PlayerNid { player = player, nid = nid });
                         }
                     }
                 }
@@ -660,9 +674,21 @@ namespace PurrNet.Modules
                 foreach (var player in players)
                     _visibility.RefreshVisibilityForGameObject(player, gameObject.transform);
             }
-            
             AutoAssignOwnership(id);
         }
+
+        /*private void TriggerObserverEvents()
+        {
+            if (_triggerObserverAdded.Count > 0)
+            {
+                foreach (var nid in _triggerObserverAdded)
+                {
+                    nid.nid.TriggerOnObserverAdded(nid.player);
+                    onObserverAdded?.Invoke(nid.player, nid.nid);
+                }
+                _triggerObserverAdded.Clear();
+            }
+        }*/
 
         private void AutoAssignOwnership(NetworkIdentity id)
         {
@@ -802,12 +828,24 @@ namespace PurrNet.Modules
         
         public void PreNetworkMessages()
         {
+            SendDelayedObserverEvents();
             SendDelayedCompleteSpawns();
         }
         
         public void PostNetworkMessages()
         {
             SpawnDelayedIdentities();
+        }
+        
+        private void SendDelayedObserverEvents()
+        {
+            for (var i = 0; i < _triggerLateObserverAdded.Count; i++)
+            {
+                var nid = _triggerLateObserverAdded[i];
+                nid.nid.TriggerOnObserverAdded(nid.player);
+            }
+            
+            _triggerLateObserverAdded.Clear();
         }
 
         private void SendDelayedCompleteSpawns()
@@ -834,7 +872,11 @@ namespace PurrNet.Modules
             for (var i = 0; i < _spawnedIdentities.Count; i++)
             {
                 var identity = _spawnedIdentities[i];
+                
                 if (!identity.isSpawned)
+                    continue;
+                
+                if (_toSpawnNextFrame.Contains(identity))
                     continue;
                 
                 identity.TriggerSpawnEvent(false);
@@ -859,10 +901,9 @@ namespace PurrNet.Modules
         private void SpawnDelayedIdentities()
         {
             bool isHost = IsServerHost();
-            for (var i = 0; i < _toSpawnNextFrame.Count; i++)
+
+            foreach (var toSpawn in _toSpawnNextFrame)
             {
-                var toSpawn = _toSpawnNextFrame[i];
-                
                 if (!toSpawn || !toSpawn.isSpawned) continue;
 
                 toSpawn.TriggerSpawnEvent(_asServer);
@@ -913,13 +954,13 @@ namespace PurrNet.Modules
                 resultTrs.SetLocalPositionAndRotation(prototype.position, prototype.rotation);
             }
             
-            if (shouldActivate)
+            if (shouldActivate && !result.activeSelf)
                 result.SetActive(true);
 
             return result;
         }
         
-        readonly List<NetworkIdentity> _toSpawnNextFrame = new List<NetworkIdentity>();
+        readonly HashSet<NetworkIdentity> _toSpawnNextFrame = new HashSet<NetworkIdentity>();
         readonly List<SpawnID> _toCompleteNextFrame = new List<SpawnID>();
 
         /// <summary>
@@ -960,6 +1001,9 @@ namespace PurrNet.Modules
         
         public bool TryGetIdentity(NetworkID id, out NetworkIdentity identity)
         {
+            if (_spawnedIdentitiesMap.TryGetValue(id, out identity))
+                return identity;
+            
             if (!_asServer && _manager.isServer)
             {
                 if (_manager.TryGetModule<HierarchyFactory>(true, out var factory) &&
@@ -968,7 +1012,8 @@ namespace PurrNet.Modules
                     return other.TryGetIdentity(id, out identity);
                 }
             }
-            return _spawnedIdentitiesMap.TryGetValue(id, out identity);
+            
+            return false;
         }
     }
 }

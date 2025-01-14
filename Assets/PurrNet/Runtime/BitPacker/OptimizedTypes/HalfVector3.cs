@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 
 namespace PurrNet.Packing
 {
-    public struct HalfVector3
+    public struct HalfVector3 : IEquatable<HalfVector3>
     {
         public Half x;
         public Half y;
@@ -21,6 +22,21 @@ namespace PurrNet.Packing
                 y = new Half(value.y),
                 z = new Half(value.z)
             };
+        }
+
+        public bool Equals(HalfVector3 other)
+        {
+            return x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is HalfVector3 other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(x, y, z);
         }
     }
 }
