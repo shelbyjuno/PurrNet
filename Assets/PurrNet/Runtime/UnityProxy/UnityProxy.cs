@@ -166,7 +166,7 @@ namespace PurrNet
             return Object.Instantiate(original, position, rotation, parent);
         }
 
-#if UNITY_2022_1_OR_NEWER
+#if UNITY_2023_1_OR_NEWER
         [UsedByIL]
         public static Object Instantiate(Object original, Scene scene)
         {
