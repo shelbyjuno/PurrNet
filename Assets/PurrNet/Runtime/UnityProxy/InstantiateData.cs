@@ -138,7 +138,9 @@ namespace PurrNet
                 InstantiateType.Parent => UnityProxy.InstantiateDirectly(original, parent, instantiateInWorldSpace),
                 InstantiateType.PositionRotation => UnityProxy.InstantiateDirectly(original, position, rotation),
                 InstantiateType.PositionRotationParent => UnityProxy.InstantiateDirectly(original, position, rotation, parent),
+#if UNITY_2022_1_OR_NEWER
                 InstantiateType.Scene => UnityProxy.InstantiateDirectly(original, scene),
+#endif
                 InstantiateType.SceneParent => UnityProxy.InstantiateDirectly(original, parent),
                 _ => default
             };
