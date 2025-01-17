@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using PurrNet.Logging;
 using PurrNet.Modules;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet
 {
@@ -100,8 +101,9 @@ namespace PurrNet
             }
             else
             {
-                var instance = Instantiate(_playerPrefab, unityScene);
-                newPlayer = (GameObject)instance;
+                var instance = Instantiate(_playerPrefab);
+                SceneManager.MoveGameObjectToScene(instance, unityScene);
+                newPlayer = instance;
             }
             
             if (newPlayer.TryGetComponent(out NetworkIdentity identity))

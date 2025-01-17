@@ -166,6 +166,7 @@ namespace PurrNet
             return Object.Instantiate(original, position, rotation, parent);
         }
 
+#if UNITY_2023_1_OR_NEWER
         [UsedByIL]
         public static Object Instantiate(Object original, Scene scene)
         {
@@ -180,6 +181,7 @@ namespace PurrNet
         
         public static T InstantiateDirectly<T>(T original, Scene scene) where T : Object
             => (T)Object.Instantiate(original, scene);
+#endif
         
         [UsedByIL]
         public static Object Instantiate(Object original, Transform parent)
@@ -235,12 +237,12 @@ namespace PurrNet
         
         public static T InstantiateDirectly<T>(T original, Vector3 position, Quaternion rotation, Scene scene) where T : Object
         {
-            var obj = Object.Instantiate(original, scene);
+            var obj = Object.Instantiate(original, position, rotation);
             var go = GetGameObject(obj);
                 
             if (go)
-                go.transform.SetPositionAndRotation(position, rotation);
-            return (T)obj;
+                SceneManager.MoveGameObjectToScene(go, scene);
+            return obj;
         }
 
         [UsedByIL]
