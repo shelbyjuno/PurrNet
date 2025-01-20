@@ -64,13 +64,16 @@ namespace PurrNet
 
         public override void OnOwnerChanged(PlayerID? oldOwner, PlayerID? newOwner, bool asServer)
         {
-            if (_ownerAuth)
+            if (_ownerAuth && asServer)
+            {
                 _id = 0;
+                SendLatestStateToAll(_id, _value);
+            }
         }
 
         public override void OnObserverAdded(PlayerID player)
         {
-            SendLatestState(player, _id++, _value);
+            SendLatestState(player, _id, _value);
         }
 
         private float _lastSendTime;
@@ -135,6 +138,23 @@ namespace PurrNet
             _value = initialValue;
             _sendIntervalInSeconds = sendIntervalInSeconds;
             _ownerAuth = ownerAuth;
+        }
+
+        [ObserversRpc, UsedImplicitly]
+        private void SendLatestStateToAll(ushort packetId, T newValue)
+        {
+            if (isServer) return;
+            
+            _id = packetId;
+            
+            bool bothNull = _value == null && newValue == null;
+            bool bothEqual = _value != null && _value.Equals(newValue);
+            
+            if (bothNull || bothEqual)
+                return;
+            
+            _value = newValue;
+            onChanged?.Invoke(value);
         }
         
         [TargetRpc, UsedImplicitly]
