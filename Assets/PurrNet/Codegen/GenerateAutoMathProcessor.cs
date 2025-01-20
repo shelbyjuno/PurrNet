@@ -112,7 +112,7 @@ namespace PurrNet.Codegen
             {
                 scale = new MethodDefinition("Scale", MethodAttributes.Public, math);
                 scale.Parameters.Add(new ParameterDefinition(math));
-                scale.Parameters.Add(new ParameterDefinition(type.Module.ImportReference(typeof(float))));
+                scale.Parameters.Add(new ParameterDefinition(type.Module.TypeSystem.Single));
                 
                 type.Methods.Add(scale);
                 HandleScale(scale, type);
