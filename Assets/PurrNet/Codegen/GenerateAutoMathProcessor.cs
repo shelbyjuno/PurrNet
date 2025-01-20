@@ -82,18 +82,24 @@ namespace PurrNet.Codegen
                 });
                 return;
             }
+
+            var intMethodAttibutes = MethodAttributes.Public |
+                                     MethodAttributes.Final | 
+                                     MethodAttributes.HideBySig | 
+                                     MethodAttributes.NewSlot |
+                                     MethodAttributes.Virtual;
             
             var add = GetMathMethod(type, "Add", math);
 
             if (add == null)
             {
-                add = new MethodDefinition("Add", MethodAttributes.Public, math);
+                add = new MethodDefinition("Add", intMethodAttibutes, math);
                 add.Parameters.Add(new ParameterDefinition(math));
                 add.Parameters.Add(new ParameterDefinition(math));
 
-                var addMethod = interf.GetMethod("Add").Import(type.Module);
+                /*var addMethod = interf.GetMethod("Add").Import(type.Module);
                 var addMethodRef = new MethodReference(addMethod.Name, addMethod.ReturnType, type.Module.ImportReference(interf));
-                add.Overrides.Add(addMethodRef);
+                add.Overrides.Add(addMethodRef);*/
                 
                 type.Methods.Add(add);
                 HandleAdd(add, type);
@@ -103,12 +109,12 @@ namespace PurrNet.Codegen
             
             if (negate == null)
             {
-                negate = new MethodDefinition("Negate", MethodAttributes.Public, math);
+                negate = new MethodDefinition("Negate", intMethodAttibutes, math);
                 negate.Parameters.Add(new ParameterDefinition(math));
                 
-                var negateMethod = interf.GetMethod("Negate").Import(type.Module);
+                /*var negateMethod = interf.GetMethod("Negate").Import(type.Module);
                 var negateMethodRef = new MethodReference(negateMethod.Name, negateMethod.ReturnType, type.Module.ImportReference(interf));
-                negate.Overrides.Add(negateMethodRef);
+                negate.Overrides.Add(negateMethodRef);*/
                 
                 type.Methods.Add(negate);
                 HandleNegate(negate, type);
@@ -118,13 +124,13 @@ namespace PurrNet.Codegen
             
             if (scale == null)
             {
-                scale = new MethodDefinition("Scale", MethodAttributes.Public, math);
+                scale = new MethodDefinition("Scale", intMethodAttibutes, math);
                 scale.Parameters.Add(new ParameterDefinition(math));
                 scale.Parameters.Add(new ParameterDefinition(type.Module.TypeSystem.Single));
                 
-                var scaleMethod = interf.GetMethod("Scale").Import(type.Module);
+                /*var scaleMethod = interf.GetMethod("Scale").Import(type.Module);
                 var scaleMethodRef = new MethodReference(scaleMethod.Name, scaleMethod.ReturnType, type.Module.ImportReference(interf));
-                scale.Overrides.Add(scaleMethodRef);
+                scale.Overrides.Add(scaleMethodRef);*/
                 
                 type.Methods.Add(scale);
                 HandleScale(scale, type);
