@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace PurrNet
 {
     public interface IMath<T>
@@ -13,14 +11,5 @@ namespace PurrNet
         public T Negate(T a) => default;
 
         public T Scale(T a, float b) => default;
-    }
-    
-    public struct Test : IMath<Test>
-    {
-        private float test;
-        private Vector3 vec;
-        
-        // ignored since math doesn't make sense here
-        private bool boolean;
     }
 }
