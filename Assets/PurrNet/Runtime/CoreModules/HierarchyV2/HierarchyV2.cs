@@ -902,7 +902,13 @@ namespace PurrNet.Modules
         {
             bool isHost = IsServerHost();
 
-            foreach (var toSpawn in _toSpawnNextFrame)
+            // swap buffers to avoid editing while iterating
+            var actual = _toSpawnNextFrame;
+            _toSpawnNextFrame = _toSpawnNextFrameBuffer;
+            _toSpawnNextFrameBuffer = actual;
+            
+            // trigger spawn events
+            foreach (var toSpawn in actual)
             {
                 if (!toSpawn || !toSpawn.isSpawned) continue;
 
@@ -914,7 +920,7 @@ namespace PurrNet.Modules
                 onIdentityAdded?.Invoke(toSpawn);
             }
 
-            _toSpawnNextFrame.Clear();
+            actual.Clear();
         }
 
         public GameObject CreatePrototype(GameObjectPrototype prototype, List<NetworkIdentity> createdNids)
@@ -960,7 +966,9 @@ namespace PurrNet.Modules
             return result;
         }
         
-        readonly HashSet<NetworkIdentity> _toSpawnNextFrame = new HashSet<NetworkIdentity>();
+        HashSet<NetworkIdentity> _toSpawnNextFrame = new HashSet<NetworkIdentity>();
+        HashSet<NetworkIdentity> _toSpawnNextFrameBuffer = new HashSet<NetworkIdentity>();
+        
         readonly List<SpawnID> _toCompleteNextFrame = new List<SpawnID>();
 
         /// <summary>
