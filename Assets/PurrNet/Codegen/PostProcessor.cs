@@ -926,6 +926,11 @@ namespace PurrNet.Codegen
 
             foreach (var param in method.CustomAttributes)
                 newMethod.CustomAttributes.Add(param);
+            
+            // add preserve attribute to newMethod
+            var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
+            var constructor = preserveAttribute.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
+            newMethod.CustomAttributes.Add(new CustomAttribute(constructor));
 
             newMethod.CallingConvention = method.CallingConvention;
             method.CustomAttributes.Clear();
@@ -1531,6 +1536,39 @@ namespace PurrNet.Codegen
 
                     for (var t = 0; t < types.Count; t++)
                     {
+                        if (types[t].HasInterfaces)
+                        {
+                            try
+                            {
+                                var mathInterfaceName = typeof(IMath<>).FullName;
+
+                                for (var i = 0; i < types[t].Interfaces.Count; i++)
+                                {
+                                    var reference = types[t].Interfaces[i].InterfaceType;
+                                    var resolved = reference.Resolve();
+
+                                    if (resolved == null)
+                                        continue;
+
+                                    if (resolved.FullName == mathInterfaceName &&
+                                        reference is GenericInstanceType genRef &&
+                                        genRef.GenericArguments.Count == 1)
+                                    {
+                                        GenerateAutoMathProcessor.HandleType(types[t], genRef.GenericArguments[0],
+                                            messages);
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                messages.Add(new DiagnosticMessage
+                                {
+                                    DiagnosticType = DiagnosticType.Error,
+                                    MessageData = $"IMath: {e.Message}\n{e.StackTrace}"
+                                });
+                            }
+                        }
+                        
                         UnityProxyProcessor.Process(types[t], messages);
                         RegisterSerializersProcessor.HandleType(module, types[t], messages);
 
@@ -1570,6 +1608,13 @@ namespace PurrNet.Codegen
                         if (inheritsFromNetworkIdentity || inheritsFromNetworkClass)
                         {
                             var _networkFields = new List<FieldDefinition>();
+                            
+                            // add the Preserve attribute
+                            if (type.CustomAttributes.All(x => x.AttributeType.FullName != typeof(PreserveAttribute).FullName))
+                            {
+                                var preserveAttribute = new CustomAttribute(module.ImportReference(typeof(PreserveAttribute).GetConstructor(Type.EmptyTypes)));
+                                type.CustomAttributes.Add(preserveAttribute);
+                            }
                             
                             IncludeAnyConcreteGenericParameters(type, typesToGenerateSerializer);
                             FindNetworkModules(type, classFullName, _networkFields);
@@ -1967,6 +2012,13 @@ namespace PurrNet.Codegen
             for (int i = 0; i < networkFields.Count; i++)
             {
                 var field = networkFields[i];
+                
+                // add the Preserve attribute to field
+                if (field.CustomAttributes.All(x => x.AttributeType.FullName != typeof(PreserveAttribute).FullName))
+                {
+                    var preserveAttributeField = new CustomAttribute(module.ImportReference(typeof(PreserveAttribute).GetConstructor(Type.EmptyTypes)));
+                    field.CustomAttributes.Add(preserveAttributeField);
+                }
 
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldstr, field.Name));
