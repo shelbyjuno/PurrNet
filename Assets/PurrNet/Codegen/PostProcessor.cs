@@ -1531,6 +1531,39 @@ namespace PurrNet.Codegen
 
                     for (var t = 0; t < types.Count; t++)
                     {
+                        if (types[t].HasInterfaces)
+                        {
+                            try
+                            {
+                                var mathInterfaceName = typeof(IMath<>).FullName;
+
+                                for (var i = 0; i < types[t].Interfaces.Count; i++)
+                                {
+                                    var reference = types[t].Interfaces[i].InterfaceType;
+                                    var resolved = reference.Resolve();
+
+                                    if (resolved == null)
+                                        continue;
+
+                                    if (resolved.FullName == mathInterfaceName &&
+                                        reference is GenericInstanceType genRef &&
+                                        genRef.GenericArguments.Count == 1)
+                                    {
+                                        GenerateAutoMathProcessor.HandleType(types[t], genRef.GenericArguments[0],
+                                            messages);
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                messages.Add(new DiagnosticMessage
+                                {
+                                    DiagnosticType = DiagnosticType.Error,
+                                    MessageData = $"IMath: {e.Message}\n{e.StackTrace}"
+                                });
+                            }
+                        }
+                        
                         UnityProxyProcessor.Process(types[t], messages);
                         RegisterSerializersProcessor.HandleType(module, types[t], messages);
 
