@@ -1554,8 +1554,7 @@ namespace PurrNet.Codegen
                                         reference is GenericInstanceType genRef &&
                                         genRef.GenericArguments.Count == 1)
                                     {
-                                        GenerateAutoMathProcessor.HandleType(types[t], genRef.GenericArguments[0],
-                                            messages);
+                                        GenerateAutoMathProcessor.HandleType(types[t], genRef.GenericArguments[0], messages);
                                     }
                                 }
                             }
@@ -1612,8 +1611,9 @@ namespace PurrNet.Codegen
                             // add the Preserve attribute
                             if (type.CustomAttributes.All(x => x.AttributeType.FullName != typeof(PreserveAttribute).FullName))
                             {
-                                var preserveAttribute = new CustomAttribute(module.ImportReference(typeof(PreserveAttribute).GetConstructor(Type.EmptyTypes)));
-                                type.CustomAttributes.Add(preserveAttribute);
+                                var preserveAttribute = module.GetTypeDefinition<PreserveAttribute>();
+                                var constructor = preserveAttribute.Resolve().Methods.First(md => md.IsConstructor && !md.HasParameters).Import(module);
+                                type.CustomAttributes.Add(new CustomAttribute(constructor));
                             }
                             
                             IncludeAnyConcreteGenericParameters(type, typesToGenerateSerializer);
@@ -2015,10 +2015,7 @@ namespace PurrNet.Codegen
                 
                 // add the Preserve attribute to field
                 if (field.CustomAttributes.All(x => x.AttributeType.FullName != typeof(PreserveAttribute).FullName))
-                {
-                    var preserveAttributeField = new CustomAttribute(module.ImportReference(typeof(PreserveAttribute).GetConstructor(Type.EmptyTypes)));
-                    field.CustomAttributes.Add(preserveAttributeField);
-                }
+                    type.CustomAttributes.Add(new CustomAttribute(constructor));
 
                 code.Append(Instruction.Create(OpCodes.Ldarg_0));
                 code.Append(Instruction.Create(OpCodes.Ldstr, field.Name));
