@@ -46,6 +46,12 @@ namespace PurrNet.Codegen
         
         public static void HandleType(TypeDefinition type, TypeReference math, List<DiagnosticMessage> messages)
         {
+            if (!type.IsClass)
+                return;
+            
+            if (type.IsAbstract)
+                return;
+            
             if (!type.IsValueType)
             {
                 messages.Add(new DiagnosticMessage
