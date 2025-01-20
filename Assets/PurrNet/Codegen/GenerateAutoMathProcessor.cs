@@ -44,7 +44,7 @@ namespace PurrNet.Codegen
             return null;
         }
         
-        public static void HandleType(TypeDefinition type, TypeReference math, List<DiagnosticMessage> messages)
+        public static void HandleType(TypeDefinition type, TypeReference math, TypeReference interf, List<DiagnosticMessage> messages)
         {
             if (math == null)
                 return;
@@ -91,6 +91,8 @@ namespace PurrNet.Codegen
                 add.Parameters.Add(new ParameterDefinition(math));
                 add.Parameters.Add(new ParameterDefinition(math));
                 
+                add.Overrides.Add(type.Module.ImportReference(interf.Resolve().Methods.First(m => m.Name == "Add")));
+                
                 type.Methods.Add(add);
                 HandleAdd(add, type);
             }
@@ -101,7 +103,7 @@ namespace PurrNet.Codegen
             {
                 negate = new MethodDefinition("Negate", MethodAttributes.Public, math);
                 negate.Parameters.Add(new ParameterDefinition(math));
-                
+                negate.Overrides.Add(type.Module.ImportReference(interf.Resolve().Methods.First(m => m.Name == "Negate")));
                 type.Methods.Add(negate);
                 HandleNegate(negate, type);
             }
@@ -113,7 +115,7 @@ namespace PurrNet.Codegen
                 scale = new MethodDefinition("Scale", MethodAttributes.Public, math);
                 scale.Parameters.Add(new ParameterDefinition(math));
                 scale.Parameters.Add(new ParameterDefinition(type.Module.TypeSystem.Single));
-                
+                scale.Overrides.Add(type.Module.ImportReference(interf.Resolve().Methods.First(m => m.Name == "Scale")));
                 type.Methods.Add(scale);
                 HandleScale(scale, type);
             }

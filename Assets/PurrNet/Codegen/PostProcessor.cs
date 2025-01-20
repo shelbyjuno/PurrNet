@@ -1554,7 +1554,7 @@ namespace PurrNet.Codegen
                                         reference is GenericInstanceType genRef &&
                                         genRef.GenericArguments.Count == 1)
                                     {
-                                        GenerateAutoMathProcessor.HandleType(types[t], genRef.GenericArguments[0], messages);
+                                        GenerateAutoMathProcessor.HandleType(types[t], genRef.GenericArguments[0], reference, messages);
                                     }
                                 }
                             }
