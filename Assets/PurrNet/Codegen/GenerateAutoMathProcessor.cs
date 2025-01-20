@@ -62,11 +62,16 @@ namespace PurrNet.Codegen
                 return;
             }
             
-            if (type.FullName != math.FullName)
+            var resolvedMath = math.Resolve();
+            
+            if (resolvedMath == null)
+                return;
+            
+            if (type.FullName != resolvedMath.FullName)
             {
                 messages.Add(new DiagnosticMessage
                 {
-                    MessageData = $"Type `{type.FullName}` does not match the math type `{math.FullName}`.",
+                    MessageData = $"Type `{type.FullName}` does not match the math type `{resolvedMath.FullName}`.",
                     DiagnosticType = DiagnosticType.Warning
                 });
                 return;
