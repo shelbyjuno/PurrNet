@@ -232,7 +232,12 @@ namespace PurrNet.Codegen
                     continue;
                 }
                 
-                var multiplyOperator = fieldType.Methods.FirstOrDefault(m => m.Name == "op_Multiply");
+                var multiplyOperator = fieldType.Methods.FirstOrDefault(m => 
+                    m.Name == "op_Multiply" && 
+                    m.Parameters.Count == 2 && 
+                    m.Parameters[0].ParameterType.FullName == math.FullName &&
+                    m.Parameters[1].ParameterType.FullName == math.FullName);
+                
                 if (multiplyOperator == null)
                     continue;
 
