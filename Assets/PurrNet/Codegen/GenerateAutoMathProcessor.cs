@@ -235,8 +235,8 @@ namespace PurrNet.Codegen
                 var multiplyOperator = fieldType.Methods.FirstOrDefault(m => 
                     m.Name == "op_Multiply" && 
                     m.Parameters.Count == 2 && 
-                    m.Parameters[0].ParameterType.FullName == math.FullName &&
-                    m.Parameters[1].ParameterType.FullName == math.FullName);
+                    m.Parameters[0].ParameterType.FullName == field.FieldType.FullName &&
+                    m.Parameters[1].ParameterType.FullName == field.FieldType.FullName);
                 
                 if (multiplyOperator == null)
                     continue;
