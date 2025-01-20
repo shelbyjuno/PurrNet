@@ -179,7 +179,11 @@ namespace PurrNet.Codegen
                     continue;
                 }
                 
-                var addOperator = fieldType.Methods.FirstOrDefault(m => m.Name == "op_Addition");
+                var addOperator = fieldType.Methods.FirstOrDefault(m => 
+                    m.Name == "op_Addition" && 
+                    m.Parameters.Count == 2 && 
+                    m.Parameters[0].ParameterType.FullName == fieldType.FullName &&
+                    m.Parameters[1].ParameterType.FullName == fieldType.FullName);
 
                 // Skip if no add operator found
                 if (addOperator == null)
@@ -246,9 +250,9 @@ namespace PurrNet.Codegen
                 var multiplyOperator = fieldType.Methods.FirstOrDefault(m => 
                     m.Name == "op_Multiply" && 
                     m.Parameters.Count == 2 && 
-                    m.Parameters[0].ParameterType.FullName == field.FieldType.FullName &&
-                    m.Parameters[1].ParameterType.FullName == field.FieldType.FullName);
-                
+                    m.Parameters[0].ParameterType.FullName == fieldType.FullName &&
+                    m.Parameters[1].ParameterType.FullName == fieldType.FullName);
+
                 if (multiplyOperator == null)
                     continue;
 
@@ -301,7 +305,12 @@ namespace PurrNet.Codegen
                     continue;
                 }
                 
-                var divideOperator = fieldType.Methods.FirstOrDefault(m => m.Name == "op_Division");
+                var divideOperator = fieldType.Methods.FirstOrDefault(m => 
+                    m.Name == "op_Division" && 
+                    m.Parameters.Count == 2 && 
+                    m.Parameters[0].ParameterType.FullName == fieldType.FullName &&
+                    m.Parameters[1].ParameterType.FullName == fieldType.FullName);
+                
                 if (divideOperator == null)
                     continue;
 
@@ -351,7 +360,11 @@ namespace PurrNet.Codegen
                     continue;
                 }
                 
-                var negateOperator = fieldType.Methods.FirstOrDefault(m => m.Name == "op_UnaryNegation");
+                var negateOperator = fieldType.Methods.FirstOrDefault(m => 
+                    m.Name == "op_UnaryNegation" && 
+                    m.Parameters.Count == 1 && 
+                    m.Parameters[0].ParameterType.FullName == fieldType.FullName);
+                
                 if (negateOperator == null)
                     continue;
 
@@ -404,6 +417,7 @@ namespace PurrNet.Codegen
                 var scaleOperator = fieldType.Methods.FirstOrDefault(m => 
                     m.Name == "op_Multiply" && 
                     m.Parameters.Count == 2 && 
+                    m.Parameters[0].ParameterType.FullName == fieldType.FullName &&
                     m.Parameters[1].ParameterType.FullName == "System.Single");
                     
                 if (scaleOperator == null)
