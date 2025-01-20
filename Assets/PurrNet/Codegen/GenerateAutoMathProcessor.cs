@@ -90,8 +90,10 @@ namespace PurrNet.Codegen
                 add = new MethodDefinition("Add", MethodAttributes.Public, math);
                 add.Parameters.Add(new ParameterDefinition(math));
                 add.Parameters.Add(new ParameterDefinition(math));
-                
-                add.Overrides.Add(type.Module.ImportReference(interf.Resolve().Methods.First(m => m.Name == "Add")));
+
+                var addMethod = interf.GetMethod("Add").Import(type.Module);
+                var addMethodRef = new MethodReference(addMethod.Name, addMethod.ReturnType, type.Module.ImportReference(interf));
+                add.Overrides.Add(addMethodRef);
                 
                 type.Methods.Add(add);
                 HandleAdd(add, type);
@@ -103,7 +105,11 @@ namespace PurrNet.Codegen
             {
                 negate = new MethodDefinition("Negate", MethodAttributes.Public, math);
                 negate.Parameters.Add(new ParameterDefinition(math));
-                negate.Overrides.Add(type.Module.ImportReference(interf.Resolve().Methods.First(m => m.Name == "Negate")));
+                
+                var negateMethod = interf.GetMethod("Negate").Import(type.Module);
+                var negateMethodRef = new MethodReference(negateMethod.Name, negateMethod.ReturnType, type.Module.ImportReference(interf));
+                negate.Overrides.Add(negateMethodRef);
+                
                 type.Methods.Add(negate);
                 HandleNegate(negate, type);
             }
@@ -115,7 +121,11 @@ namespace PurrNet.Codegen
                 scale = new MethodDefinition("Scale", MethodAttributes.Public, math);
                 scale.Parameters.Add(new ParameterDefinition(math));
                 scale.Parameters.Add(new ParameterDefinition(type.Module.TypeSystem.Single));
-                scale.Overrides.Add(type.Module.ImportReference(interf.Resolve().Methods.First(m => m.Name == "Scale")));
+                
+                var scaleMethod = interf.GetMethod("Scale").Import(type.Module);
+                var scaleMethodRef = new MethodReference(scaleMethod.Name, scaleMethod.ReturnType, type.Module.ImportReference(interf));
+                scale.Overrides.Add(scaleMethodRef);
+                
                 type.Methods.Add(scale);
                 HandleScale(scale, type);
             }
