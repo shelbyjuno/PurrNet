@@ -95,31 +95,6 @@ namespace PurrNet.Codegen
                 HandleAdd(add, type);
             }
             
-            var multiply = GetMathMethod(type, "Multiply", math);
-            
-            if (multiply == null)
-            {
-                multiply = new MethodDefinition("Multiply", MethodAttributes.Public, math);
-                multiply.Parameters.Add(new ParameterDefinition(math));
-                multiply.Parameters.Add(new ParameterDefinition(math));
-                
-                type.Methods.Add(multiply);
-                HandleMultiply(multiply, type);
-            }
-            
-            var divide = GetMathMethod(type, "Divide", math);
-            
-            if (divide == null)
-            {
-                divide = new MethodDefinition("Divide", MethodAttributes.Public, math);
-                divide.Parameters.Add(new ParameterDefinition(math));
-                divide.Parameters.Add(new ParameterDefinition(math));
-                
-                type.Methods.Add(divide);
-                HandleDivide(divide, type);
-            }
-            
-            
             var negate = GetMathMethod(type, "Negate", math);
             
             if (negate == null)
@@ -153,8 +128,8 @@ namespace PurrNet.Codegen
             variables.Add(var0);
     
             // Initialize the local variable
-            processor.Emit(OpCodes.Ldloca_S, var0);
-            processor.Emit(OpCodes.Initobj, math);
+            processor.Emit(OpCodes.Ldarg_1);
+            processor.Emit(OpCodes.Stloc_0);
 
             foreach (var field in math.Fields)
             {
@@ -213,122 +188,6 @@ namespace PurrNet.Codegen
             processor.Emit(OpCodes.Ret);
         }
 
-        private static void HandleMultiply(MethodDefinition method, TypeDefinition math)
-        {
-            var processor = method.Body.GetILProcessor();
-            var variables = method.Body.Variables;
-
-            var var0 = new VariableDefinition(math);
-            variables.Add(var0);
-
-            processor.Emit(OpCodes.Ldloca_S, var0);
-            processor.Emit(OpCodes.Initobj, math);
-
-            foreach (var field in math.Fields)
-            {
-                if (field.IsInitOnly)
-                    continue;
-                
-                var fieldType = field.FieldType.Resolve();
-
-                if (IsPrimitiveNumeric(field.FieldType))
-                {
-                    processor.Emit(OpCodes.Ldloca_S, var0);
-            
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldfld, field);
-            
-                    processor.Emit(OpCodes.Ldarg_2);
-                    processor.Emit(OpCodes.Ldfld, field);
-            
-                    processor.Emit(OpCodes.Mul);
-            
-                    processor.Emit(OpCodes.Stfld, field);
-                    continue;
-                }
-                
-                var multiplyOperator = fieldType.Methods.FirstOrDefault(m => 
-                    m.Name == "op_Multiply" && 
-                    m.Parameters.Count == 2 && 
-                    m.Parameters[0].ParameterType.FullName == fieldType.FullName &&
-                    m.Parameters[1].ParameterType.FullName == fieldType.FullName);
-
-                if (multiplyOperator == null)
-                    continue;
-
-                processor.Emit(OpCodes.Ldloca_S, var0);
-                processor.Emit(OpCodes.Ldarg_1);
-                processor.Emit(OpCodes.Ldfld, field);
-                processor.Emit(OpCodes.Ldarg_2);
-                processor.Emit(OpCodes.Ldfld, field);
-
-                var importedMultiplyOperator = method.Module.ImportReference(multiplyOperator);
-                processor.Emit(OpCodes.Call, importedMultiplyOperator);
-                processor.Emit(OpCodes.Stfld, field);
-            }
-
-            processor.Emit(OpCodes.Ldloc_0);
-            processor.Emit(OpCodes.Ret);
-        }
-
-        private static void HandleDivide(MethodDefinition method, TypeDefinition math)
-        {
-            var processor = method.Body.GetILProcessor();
-            var variables = method.Body.Variables;
-
-            var var0 = new VariableDefinition(math);
-            variables.Add(var0);
-
-            processor.Emit(OpCodes.Ldloca_S, var0);
-            processor.Emit(OpCodes.Initobj, math);
-
-            foreach (var field in math.Fields)
-            {
-                if (field.IsInitOnly)
-                    continue;
-                
-                var fieldType = field.FieldType.Resolve();
-
-                if (IsPrimitiveNumeric(field.FieldType))
-                {
-                    processor.Emit(OpCodes.Ldloca_S, var0);
-            
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldfld, field);
-            
-                    processor.Emit(OpCodes.Ldarg_2);
-                    processor.Emit(OpCodes.Ldfld, field);
-            
-                    processor.Emit(OpCodes.Div);
-            
-                    processor.Emit(OpCodes.Stfld, field);
-                    continue;
-                }
-                
-                var divideOperator = fieldType.Methods.FirstOrDefault(m => 
-                    m.Name == "op_Division" && 
-                    m.Parameters.Count == 2 && 
-                    m.Parameters[0].ParameterType.FullName == fieldType.FullName &&
-                    m.Parameters[1].ParameterType.FullName == fieldType.FullName);
-                
-                if (divideOperator == null)
-                    continue;
-
-                processor.Emit(OpCodes.Ldloca_S, var0);
-                processor.Emit(OpCodes.Ldarg_1);
-                processor.Emit(OpCodes.Ldfld, field);
-                processor.Emit(OpCodes.Ldarg_2);
-                processor.Emit(OpCodes.Ldfld, field);
-
-                var importedDivideOperator = method.Module.ImportReference(divideOperator);
-                processor.Emit(OpCodes.Call, importedDivideOperator);
-                processor.Emit(OpCodes.Stfld, field);
-            }
-
-            processor.Emit(OpCodes.Ldloc_0);
-            processor.Emit(OpCodes.Ret);
-        }
-
         private static void HandleNegate(MethodDefinition method, TypeDefinition math)
         {
             var processor = method.Body.GetILProcessor();
@@ -337,8 +196,8 @@ namespace PurrNet.Codegen
             var var0 = new VariableDefinition(math);
             variables.Add(var0);
 
-            processor.Emit(OpCodes.Ldloca_S, var0);
-            processor.Emit(OpCodes.Initobj, math);
+            processor.Emit(OpCodes.Ldarg_1);
+            processor.Emit(OpCodes.Stloc_0);
 
             foreach (var field in math.Fields)
             {
@@ -388,9 +247,9 @@ namespace PurrNet.Codegen
 
             var var0 = new VariableDefinition(math);
             variables.Add(var0);
-
-            processor.Emit(OpCodes.Ldloca_S, var0);
-            processor.Emit(OpCodes.Initobj, math);
+ 
+            processor.Emit(OpCodes.Ldarg_1);
+            processor.Emit(OpCodes.Stloc_0);
 
             foreach (var field in math.Fields)
             {
