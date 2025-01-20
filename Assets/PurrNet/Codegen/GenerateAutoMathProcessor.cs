@@ -55,7 +55,7 @@ namespace PurrNet.Codegen
             if (type.IsAbstract)
                 return;
             
-            if (type.ContainsGenericParameter)
+            if (type.ContainsGenericParameter || type.HasGenericParameters)
                 return;
             
             if (!type.IsValueType)
