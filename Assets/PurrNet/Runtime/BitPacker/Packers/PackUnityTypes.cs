@@ -8,6 +8,7 @@ namespace PurrNet.Packing
     [UsedImplicitly]
     public static class BitPackerUnityExtensions
     {
+        [UsedImplicitly]
         static ushort PackHalf(float value)
         {
             value = value switch
@@ -22,6 +23,7 @@ namespace PurrNet.Packing
             return (ushort)((value * 0.5f + 0.5f) * 65535);
         }
         
+        [UsedImplicitly]
         static float UnpackHalf(ushort value)
         {
             return value / 65535f * 2f - 1f;
@@ -165,9 +167,9 @@ namespace PurrNet.Packing
         {
             value.Normalize();
             
-            packer.Write(PackHalf(value.x));
-            packer.Write(PackHalf(value.y));
-            packer.Write(PackHalf(value.z));
+            packer.Write(value.x);
+            packer.Write(value.y);
+            packer.Write(value.z);
             
             packer.Write(value.w < 0);
         }
@@ -175,17 +177,13 @@ namespace PurrNet.Packing
         [UsedByIL]
         public static void Read(this BitPacker packer, ref Quaternion value)
         {
-            ushort xs = default;
-            ushort ys = default;
-            ushort zs = default;
+            float x = default;
+            float y = default;
+            float z = default;
             
-            packer.Read(ref xs);
-            packer.Read(ref ys);
-            packer.Read(ref zs);
-            
-            float x = UnpackHalf(xs);
-            float y = UnpackHalf(ys);
-            float z = UnpackHalf(zs);
+            packer.Read(ref x);
+            packer.Read(ref y);
+            packer.Read(ref z);
             
             bool wSign = false;
             packer.Read(ref wSign);

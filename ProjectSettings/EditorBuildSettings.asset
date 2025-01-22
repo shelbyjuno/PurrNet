@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Examples/Sumo/Sumo_Scene.unity
+    guid: d21bb0e000036c2459d70dd26dd38438
+  - enabled: 1
+    path: Assets/Examples/Reddit/Rpcs2.unity
+    guid: 24bb342c4850616418e21348bcddc11b
+  - enabled: 1
     path: Assets/Examples/Top Down Shooter/TopDownShooter_Scene.unity
     guid: cd173e214694eb44ebbf6f2619dfbd04
   m_configObjects:
