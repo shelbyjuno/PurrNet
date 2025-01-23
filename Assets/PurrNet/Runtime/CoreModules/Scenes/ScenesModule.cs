@@ -363,7 +363,8 @@ namespace PurrNet.Modules
                 }
                 case SceneActionType.Unload:
                 {
-                    if (SceneManager.sceneCount == 1)
+                    var currentlyLoadedCount = _scenes.Count;
+                    if (currentlyLoadedCount == 1)
                     {
                         // wait for the next load action
                         break;
