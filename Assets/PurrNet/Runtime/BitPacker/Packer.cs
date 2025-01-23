@@ -111,7 +111,6 @@ namespace PurrNet.Packing
                 if (_write == null)
                 {
                     Packer.FallbackWriter(packer, value);
-                    PurrLogger.LogWarning($"No writer for type '{typeof(T)}' is registered, using fallback.");
                     return;
                 }
                 
@@ -130,7 +129,6 @@ namespace PurrNet.Packing
                 if (_read == null)
                 {
                     Packer.FallbackReader(packer, ref value);
-                    PurrLogger.LogWarning($"No reader for type '{typeof(T)}' is registered, using fallback.");
                     return;
                 }
                 
@@ -177,40 +175,54 @@ namespace PurrNet.Packing
 
         public static void FallbackWriter<T>(BitPacker packer, T value)
         {
-            bool hasValue = value != null;
-            Packer<bool>.Write(packer, hasValue);
+            try
+            {
+                bool hasValue = value != null;
+                Packer<bool>.Write(packer, hasValue);
 
-            if (!hasValue) return;
+                if (!hasValue) return;
 
-            object obj = value;
-            uint typeHash = Hasher.GetStableHashU32(obj.GetType());
+                object obj = value;
+                uint typeHash = Hasher.GetStableHashU32(obj.GetType());
 
-            Packer<uint>.Write(packer, typeHash);
-            Write(packer, obj);
+                Packer<uint>.Write(packer, typeHash);
+                Write(packer, obj);
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to write value of type '{typeof(T)}' when using fallback writer.\n{e.Message}\n{e.StackTrace}");
+            }
         }
         
         public static void FallbackReader<T>(BitPacker packer, ref T value)
         {
-            bool hasValue = default;
-            Packer<bool>.Read(packer, ref hasValue);
-
-            if (!hasValue)
+            try
             {
-                value = default;
-                return;
-            }
+                bool hasValue = default;
+                Packer<bool>.Read(packer, ref hasValue);
 
-            uint typeHash = default;
-            Packer<uint>.Read(packer, ref typeHash);
-    
-            var type = Hasher.ResolveType(typeHash);
-            
-            object obj = null;
-            Read(packer, type, ref obj);
-    
-            if (obj is T entity)
-                value = entity;
-            else value = default;
+                if (!hasValue)
+                {
+                    value = default;
+                    return;
+                }
+
+                uint typeHash = default;
+                Packer<uint>.Read(packer, ref typeHash);
+
+                var type = Hasher.ResolveType(typeHash);
+
+                object obj = null;
+                Read(packer, type, ref obj);
+
+                if (obj is T entity)
+                    value = entity;
+                else value = default;
+            }
+            catch (Exception e)
+            {
+                PurrLogger.LogError($"Failed to read value of type '{typeof(T)}' when using fallback reader.\n{e.Message}\n{e.StackTrace}");
+            }
         }
         
         public static void Write(BitPacker packer, object value)
