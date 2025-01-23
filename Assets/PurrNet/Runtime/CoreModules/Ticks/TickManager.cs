@@ -172,7 +172,7 @@ namespace PurrNet.Modules
             }
             catch (Exception e)
             {
-                PurrLogger.LogError($"Failed to sync tick: {e}");
+                //PurrLogger.LogError($"Failed to sync tick: {e}");
             }
         }
 
