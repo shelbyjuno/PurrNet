@@ -331,14 +331,16 @@ namespace PurrNet.Modules
                     
                     var loadAction = action.loadSceneAction;
 
-                    if (loadAction.buildIndex < 0 || loadAction.buildIndex >= SceneManager.sceneCountInBuildSettings)
+                    try
                     {
-                        PurrLogger.LogError($"Invalid build index {loadAction.buildIndex} to load");
+                        SceneManager.LoadSceneAsync(loadAction.buildIndex, loadAction.GetLoadSceneParameters());
+                    }
+                    catch (System.Exception e)
+                    {
+                        PurrLogger.LogError($"Error loading scene: {e}");
                         break;
                     }
-                    
-                    SceneManager.LoadSceneAsync(loadAction.buildIndex, loadAction.GetLoadSceneParameters());
-                    
+
                     if (loadAction.parameters.mode == LoadSceneMode.Single)
                     {
                         for (int i = 0; i < _rawScenes.Count; i++)
