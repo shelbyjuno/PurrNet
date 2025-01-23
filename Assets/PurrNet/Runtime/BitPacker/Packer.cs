@@ -110,7 +110,8 @@ namespace PurrNet.Packing
             {
                 if (_write == null)
                 {
-                    PurrLogger.LogError($"No writer for type '{typeof(T)}' is registered.");
+                    Packer.FallbackWriter(packer, value);
+                    PurrLogger.LogWarning($"No writer for type '{typeof(T)}' is registered, using fallback.");
                     return;
                 }
                 
@@ -128,7 +129,8 @@ namespace PurrNet.Packing
             {
                 if (_read == null)
                 {
-                    PurrLogger.LogError($"No reader for type '{typeof(T)}' is registered.");
+                    Packer.FallbackReader(packer, ref value);
+                    PurrLogger.LogWarning($"No reader for type '{typeof(T)}' is registered, using fallback.");
                     return;
                 }
                 
@@ -172,6 +174,44 @@ namespace PurrNet.Packing
         }
         
         static readonly object[] _args = new object[2];
+
+        public static void FallbackWriter<T>(BitPacker packer, T value)
+        {
+            bool hasValue = value != null;
+            Packer<bool>.Write(packer, hasValue);
+
+            if (!hasValue) return;
+
+            object obj = value;
+            uint typeHash = Hasher.GetStableHashU32(obj.GetType());
+
+            Packer<uint>.Write(packer, typeHash);
+            Write(packer, obj);
+        }
+        
+        public static void FallbackReader<T>(BitPacker packer, ref T value)
+        {
+            bool hasValue = default;
+            Packer<bool>.Read(packer, ref hasValue);
+
+            if (!hasValue)
+            {
+                value = default;
+                return;
+            }
+
+            uint typeHash = default;
+            Packer<uint>.Read(packer, ref typeHash);
+    
+            var type = Hasher.ResolveType(typeHash);
+            
+            object obj = null;
+            Read(packer, type, ref obj);
+    
+            if (obj is T entity)
+                value = entity;
+            else value = default;
+        }
         
         public static void Write(BitPacker packer, object value)
         {
