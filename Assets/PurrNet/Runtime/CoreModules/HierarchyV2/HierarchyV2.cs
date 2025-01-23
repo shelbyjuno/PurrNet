@@ -536,9 +536,6 @@ namespace PurrNet.Modules
         
         private void OnVisibilityChanged(PlayerID player, Transform scope, bool isVisible)
         {
-            if (!_scenePlayers.IsPlayerLoadedInScene(player, _sceneId))
-                return;
-            
             if (isVisible)
             {
                 var children = ListPool<NetworkIdentity>.Instantiate();
@@ -546,7 +543,8 @@ namespace PurrNet.Modules
                 {
                     using (prototype)
                     {
-                        SendSpawnPacket(player, prototype);
+                        if (_scenePlayers.IsPlayerLoadedInScene(player, _sceneId))
+                            SendSpawnPacket(player, prototype);
 
                         for (var i = 0; i < children.Count; i++)
                         {
@@ -574,7 +572,9 @@ namespace PurrNet.Modules
                 }
                 
                 ListPool<NetworkIdentity>.Destroy(children);
-                SendDespawnPacket(player, identity);
+                
+                if (_scenePlayers.IsPlayerLoadedInScene(player, _sceneId))
+                    SendDespawnPacket(player, identity);
             }
         }
 
