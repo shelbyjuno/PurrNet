@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using PurrNet.Logging;
 using UnityEngine;
 
 namespace PurrNet.Modules
@@ -81,11 +80,8 @@ namespace PurrNet.Modules
             this.tickRate = tickRate;
         }
 
-        private bool _asServer;
-
         public void Enable(bool asServer)
         {
-            _asServer = asServer;
         }
 
         public void Disable(bool asServer) { }
@@ -170,7 +166,7 @@ namespace PurrNet.Modules
                 float halfRTT = (float)rtt / 2;
                 syncedTick = rawServerTick + TimeToTick(halfRTT);
             }
-            catch (Exception e)
+            catch
             {
                 //PurrLogger.LogError($"Failed to sync tick: {e}");
             }
