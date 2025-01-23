@@ -363,6 +363,14 @@ namespace PurrNet.Modules
                 }
                 case SceneActionType.Unload:
                 {
+                    var currentlyLoadedCount = _scenes.Count;
+                    
+                    if (currentlyLoadedCount == 1)
+                    {
+                        // wait for the next load action
+                        break;
+                    }
+                    
                     var idx = action.unloadSceneAction.sceneID;
                     
                     if (_networkManager.isHost && !_asServer)

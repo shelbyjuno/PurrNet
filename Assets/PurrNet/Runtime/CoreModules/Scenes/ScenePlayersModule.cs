@@ -273,6 +273,9 @@ namespace PurrNet.Modules
         /// </summary>
         public void MovePlayerToSingleScene(PlayerID player, SceneID scene)
         {
+            if (_scenePlayers.TryGetValue(scene, out var playersInScene) && !playersInScene.Contains(player))
+                AddPlayerToScene(player, scene);
+            
             foreach (var (existingScene, players) in _scenePlayers)
             {
                 if (scene == existingScene)
@@ -283,8 +286,6 @@ namespace PurrNet.Modules
                 
                 RemovePlayerFromScene(player, existingScene);
             }
-            
-            AddPlayerToScene(player, scene);
         }
 
         public void AddPlayerToScene(PlayerID player, SceneID scene)
