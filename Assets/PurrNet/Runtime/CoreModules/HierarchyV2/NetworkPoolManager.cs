@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
 {
@@ -21,7 +22,7 @@ namespace PurrNet.Modules
         private static readonly Dictionary<IPrefabProvider, HierarchyPool> _pools = new();
         private static readonly Dictionary<SceneID, HierarchyPool> _scenePools = new();
 
-        public static HierarchyPool GetScenePool(SceneID scene)
+        public static HierarchyPool GetScenePool(Scene unityScene, SceneID scene)
         {
             if (_scenePools.TryGetValue(scene, out var pool))
                 return pool;
@@ -34,6 +35,8 @@ namespace PurrNet.Modules
                 hideFlags = HideFlags.HideAndDontSave
 #endif
             };
+            
+            SceneManager.MoveGameObjectToScene(poolParent, unityScene);
             
             pool = new HierarchyPool(poolParent.transform);
             _scenePools.Add(scene, pool);
