@@ -248,6 +248,11 @@ namespace PurrNet.Modules
                 AddPlayerToScene(player, scene);
             }
         }
+        
+        public bool IsPlayerLoadedInScene(PlayerID player, SceneID scene)
+        {
+            return _sceneLoadedPlayers.TryGetValue(scene, out var playersInScene) && playersInScene.Contains(player);
+        }
 
         public bool IsPlayerInScene(PlayerID player, SceneID scene)
         {
@@ -270,6 +275,9 @@ namespace PurrNet.Modules
         {
             foreach (var (existingScene, players) in _scenePlayers)
             {
+                if (scene == existingScene)
+                    continue;
+                
                 if (!players.Contains(player))
                     continue;
                 

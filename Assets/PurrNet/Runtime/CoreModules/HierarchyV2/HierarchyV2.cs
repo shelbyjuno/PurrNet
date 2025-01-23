@@ -53,7 +53,7 @@ namespace PurrNet.Modules
             _asServer = asServer;
             _playersManager = playersManager;
             
-            _scenePool = NetworkPoolManager.GetScenePool(sceneId);
+            _scenePool = NetworkPoolManager.GetScenePool(scene, sceneId);
             _prefabsPool = NetworkPoolManager.GetPool(manager);
             
             SetupSceneObjects(scene);
@@ -191,7 +191,7 @@ namespace PurrNet.Modules
             }
 
             foreach (var r in hash)
-                Despawn(r.gameObject, true);
+                Despawn(r.gameObject, true, true);
 
             foreach (var defaultPrototype in _defaultPrototypes)
             {
@@ -399,6 +399,9 @@ namespace PurrNet.Modules
 
         private void OnPlayerUnloadedScene(PlayerID player, SceneID scene, bool asserver)
         {
+            if (!asserver)
+                return;
+            
             if (scene != _sceneId)
                 return;
 
@@ -487,7 +490,7 @@ namespace PurrNet.Modules
                 return;
             }
             
-            Despawn(identity.gameObject, true);
+            Despawn(identity.gameObject, true, true);
         }
 
         public void EvaluateAllVisibilities()
@@ -533,9 +536,9 @@ namespace PurrNet.Modules
         
         private void OnVisibilityChanged(PlayerID player, Transform scope, bool isVisible)
         {
-            if (!_scenePlayers.IsPlayerInScene(player, _sceneId))
+            if (!_scenePlayers.IsPlayerLoadedInScene(player, _sceneId))
                 return;
-
+            
             if (isVisible)
             {
                 var children = ListPool<NetworkIdentity>.Instantiate();
@@ -585,7 +588,7 @@ namespace PurrNet.Modules
                 sceneId = _sceneId,
                 parentId = identity.id.Value
             };
-
+            
             if (player.isServer)
                  _playersManager.SendToServer(packet);
             else _playersManager.Send(player, packet);
@@ -733,7 +736,7 @@ namespace PurrNet.Modules
                 GetComponentsInChildren(children[j].gameObject, list);
         }
         
-        public void Despawn(GameObject gameObject, bool bypassPermissions)
+        public void Despawn(GameObject gameObject, bool bypassPermissions = false, bool bypassBroadcast = false)
         {
             var children = ListPool<NetworkIdentity>.Instantiate();
             GetComponentsInChildren(gameObject, children);
@@ -762,7 +765,8 @@ namespace PurrNet.Modules
 
             if (_asServer)
                 _visibility.ClearVisibilityForGameObject(gameObject.transform);
-            else SendDespawnPacket(default, children[0]);
+            else if (!bypassBroadcast)
+                SendDespawnPacket(default, children[0]);
             
             for (var i = 0; i < children.Count; i++)
             {
