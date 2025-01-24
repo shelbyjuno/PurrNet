@@ -22,10 +22,10 @@ namespace PurrNet
         [UsedImplicitly]
         public readonly HashSet<PlayerID> blacklist = new HashSet<PlayerID>();
 
-        private NetworkRules networkRules => _networkRules ? _networkRules : networkManager.networkRules;
+        private NetworkRules networkRules => _networkRules ? _networkRules : networkManager ? networkManager.networkRules : null;
         
         [UsedImplicitly]
-        public NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager.visibilityRules;
+        public NetworkVisibilityRuleSet visibilityRules => _visitiblityRules ? _visitiblityRules : networkManager ? networkManager.visibilityRules : null;
 
         public NetworkVisibilityRuleSet GetOverrideOrDefault(NetworkVisibilityRuleSet defaultValue)
         {

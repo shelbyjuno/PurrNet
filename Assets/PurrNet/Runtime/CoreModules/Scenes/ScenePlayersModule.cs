@@ -248,6 +248,11 @@ namespace PurrNet.Modules
                 AddPlayerToScene(player, scene);
             }
         }
+        
+        public bool IsPlayerLoadedInScene(PlayerID player, SceneID scene)
+        {
+            return _sceneLoadedPlayers.TryGetValue(scene, out var playersInScene) && playersInScene.Contains(player);
+        }
 
         public bool IsPlayerInScene(PlayerID player, SceneID scene)
         {
@@ -268,15 +273,19 @@ namespace PurrNet.Modules
         /// </summary>
         public void MovePlayerToSingleScene(PlayerID player, SceneID scene)
         {
+            if (_scenePlayers.TryGetValue(scene, out var playersInScene) && !playersInScene.Contains(player))
+                AddPlayerToScene(player, scene);
+            
             foreach (var (existingScene, players) in _scenePlayers)
             {
+                if (scene == existingScene)
+                    continue;
+                
                 if (!players.Contains(player))
                     continue;
                 
                 RemovePlayerFromScene(player, existingScene);
             }
-            
-            AddPlayerToScene(player, scene);
         }
 
         public void AddPlayerToScene(PlayerID player, SceneID scene)

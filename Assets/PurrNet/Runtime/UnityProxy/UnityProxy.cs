@@ -65,6 +65,10 @@ namespace PurrNet
         
         static bool OnDestroy(Object instance)
         {
+            if (instance is not NetworkIdentity &&
+                instance is not GameObject)
+                return true;
+            
             var go = GetGameObject(instance);
             
             if (!go)
