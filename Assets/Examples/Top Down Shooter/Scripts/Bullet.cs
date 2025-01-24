@@ -2,6 +2,11 @@ using UnityEngine;
 
 namespace PurrNet.Examples.TopDownShooter
 {
+    public struct Test : IMath<Test>
+    {
+        public int test;
+    }
+    
     public class Bullet : NetworkIdentity
     {
         [SerializeField] private float speed = 8f;

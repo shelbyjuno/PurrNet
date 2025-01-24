@@ -234,6 +234,9 @@ namespace PurrNet.Codegen
                     continue;
                 
                 var fieldType = field.FieldType.Resolve();
+                
+                if (SkipType(fieldType))
+                    continue;
 
                 if (IsPrimitiveNumeric(field.FieldType))
                 {
@@ -287,6 +290,8 @@ namespace PurrNet.Codegen
                 
                 var fieldType = field.FieldType.Resolve();
                 
+                if (SkipType(fieldType))
+                    continue;
 
                 if (IsPrimitiveNumeric(field.FieldType))
                 {
