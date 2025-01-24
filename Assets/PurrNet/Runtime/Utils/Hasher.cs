@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -54,6 +55,23 @@ namespace PurrNet.Utils
         public static uint GetStableHashU32<T>()
         {
             return GetStableHashU32(typeof(T));
+        }
+
+        public static string GetAllHashesAsText()
+        {
+            var builder = new StringBuilder();
+            
+            builder.Append($"Hashes {_hashes.Count}:\n");
+            
+            foreach (var pair in _hashes)
+            {
+                builder.Append(pair.Key.FullName);
+                builder.Append(" -> ");
+                builder.Append(pair.Value);
+                builder.Append('\n');
+            }
+            
+            return builder.ToString();
         }
     }
 }
