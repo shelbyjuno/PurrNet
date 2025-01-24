@@ -8,6 +8,14 @@ namespace PurrNet.Codegen
 {
     public static class GenerateAutoMathProcessor
     {
+        private static bool SkipType(TypeReference type)
+        {
+            if (type.FullName is "System.Int32" or "System.Int64" or "System.Int16")
+                return true;
+            
+            return false;
+        }
+        
         private static bool IsPrimitiveNumeric(TypeReference type)
         {
             return type.FullName switch
@@ -156,6 +164,9 @@ namespace PurrNet.Codegen
                 
                 var fieldType = field.FieldType.Resolve();
 
+                if (SkipType(fieldType))
+                    continue;
+                
                 if (IsPrimitiveNumeric(field.FieldType))
                 {
                     processor.Emit(OpCodes.Ldloca_S, var0);
@@ -275,6 +286,7 @@ namespace PurrNet.Codegen
                     continue;
                 
                 var fieldType = field.FieldType.Resolve();
+                
 
                 if (IsPrimitiveNumeric(field.FieldType))
                 {
