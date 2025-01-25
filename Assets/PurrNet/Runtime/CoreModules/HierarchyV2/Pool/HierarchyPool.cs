@@ -329,7 +329,7 @@ namespace PurrNet.Modules
             {
                 var child = children[i];
                 createdNids?.Add(child);
-                child.SetID(new NetworkID(baseNid, i));
+                child.SetID(new NetworkID(baseNid, (uint)i));
             }
 
             ListPool<NetworkIdentity>.Destroy(children);

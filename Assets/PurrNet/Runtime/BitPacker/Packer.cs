@@ -19,12 +19,16 @@ namespace PurrNet.Packing
         static DeltaWriteFunc<T> _write;
         static DeltaReadFunc<T> _read;
         
+        public static void Register(DeltaWriteFunc<T> write, DeltaReadFunc<T> read)
+        {
+            RegisterWriter(write);
+            RegisterReader(read);
+        }
+        
         public static void RegisterWriter(DeltaWriteFunc<T> a)
         {
             if (_write != null)
                 return;
-            
-            Packer.RegisterWriter(typeof(T), a.Method);
             _write = a;
         }
         
@@ -32,8 +36,6 @@ namespace PurrNet.Packing
         {
             if (_read != null)
                 return;
-
-            Packer.RegisterReader(typeof(T), b.Method);
             _read = b;
         }
         
@@ -43,7 +45,7 @@ namespace PurrNet.Packing
             {
                 if (_write == null)
                 {
-                    PurrLogger.LogError($"No writer for type '{typeof(T)}' is registered.");
+                    PurrLogger.LogError($"No delta writer for type '{typeof(T)}' is registered.");
                     return;
                 }
                 
@@ -51,7 +53,7 @@ namespace PurrNet.Packing
             }
             catch (Exception e)
             {
-                PurrLogger.LogError($"Failed to write value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
+                PurrLogger.LogError($"Failed to delta write value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
             }
         }
         
@@ -61,7 +63,7 @@ namespace PurrNet.Packing
             {
                 if (_read == null)
                 {
-                    PurrLogger.LogError($"No reader for type '{typeof(T)}' is registered.");
+                    PurrLogger.LogError($"No delta reader for type '{typeof(T)}' is registered.");
                     return;
                 }
                 
@@ -69,7 +71,7 @@ namespace PurrNet.Packing
             }
             catch (Exception e)
             {
-                PurrLogger.LogError($"Failed to read value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
+                PurrLogger.LogError($"Failed to delta read value of type '{typeof(T)}'.\n{e.Message}\n{e.StackTrace}");
             }
         }
         
