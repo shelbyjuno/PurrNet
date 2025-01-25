@@ -1,4 +1,3 @@
-using PurrNet.Packing;
 using UnityEngine;
 
 namespace PurrNet.Packing
