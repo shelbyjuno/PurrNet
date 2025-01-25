@@ -33,31 +33,11 @@ namespace PurrNet
             
             var components = obj.GetComponents<Component>();
             sb.Append(components.Length);
-            try
+
+            foreach (var component in components)
             {
-                foreach (var component in components)
-                {
+                if (component)
                     sb.Append(component.GetType().FullName);
-
-                    // Add serializable fields in a deterministic order
-                    var fields = component.GetType()
-                        .GetFields(System.Reflection.BindingFlags.Public |
-                                   System.Reflection.BindingFlags.Instance);
-
-                    foreach (var field in fields)
-                    {
-                        var value = field.GetValue(component);
-                        if (value != null)
-                        {
-                            sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture,
-                                "{0}:{1}", field.Name, value.ToString());
-                        }
-                    }
-                }
-            }
-            catch (System.Exception e)
-            {
-                sb.Append(e.Message);
             }
 
             var childCount = obj.transform.childCount;
