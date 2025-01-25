@@ -6,7 +6,7 @@ namespace PurrNet
 {
     public static class GameObjectHasher
     {
-        public static uint ComputeHashRecursive(GameObject obj)
+        public static StringBuilder ComputeStringRecursive(GameObject obj)
         {
             var sb = new StringBuilder();
             
@@ -45,10 +45,15 @@ namespace PurrNet
             for (var i = 0; i < childCount; i++)
             {
                 var child = obj.transform.GetChild(i);
-                sb.Append(ComputeHashRecursive(child.gameObject));
+                sb.Append(ComputeStringRecursive(child.gameObject));
             }
 
-            return Hasher.ActualHash(sb.ToString());
+            return sb;
+        }
+        
+        public static uint ComputeHashRecursive(GameObject obj)
+        {
+            return Hasher.ActualHash(ComputeStringRecursive(obj).ToString());
         }
     }
 }
