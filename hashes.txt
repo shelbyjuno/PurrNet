@@ -1,0 +1,291 @@
+Hashes 290:
+StateOne -> 0
+StateTwo -> 1
+System.Collections.Generic.List`1[[UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 2
+NTChangeOwner -> 3
+PurrNet.Examples.AnimatedCharacterExample -> 4
+PurrNet.Examples.BoxCarry.Box -> 5
+PurrNet.Examples.BoxCarry.PlayerBody -> 6
+PurrNet.Examples.BoxCarry.PlayerMovement -> 7
+PurrNet.Examples.BoxCarry.PlayerPickUp -> 8
+PurrNet.Examples.ReturnableRpcsInModules -> 9
+PurrNet.Examples.Sumo.Movement_RB_InputSync -> 10
+PurrNet.Examples.Sumo.PlayerBody -> 11
+PurrNet.Examples.Template.Movement_CharacterController -> 12
+PurrNet.Examples.Template.Movement_RB_InputSync -> 13
+PurrNet.Examples.Template.PlayerBody -> 14
+PurrNet.Examples.TopDownShooter.Bullet+HitDetection -> 15
+PurrNet.Examples.TopDownShooter.Bullet -> 16
+PurrNet.Examples.TopDownShooter.PlayerBody -> 17
+PurrNet.Examples.TopDownShooter.PlayerHealth -> 18
+PurrNet.Examples.TopDownShooter.PlayerMovement -> 19
+PurrNet.Examples.TopDownShooter.PlayerShoot -> 20
+SomeBehaviour -> 21
+SomeNode -> 22
+System.Collections.Generic.List`1[[SomeNode, PurrNet.Examples, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 23
+TestScriptNB -> 24
+UnityEngine.Vector2 -> 25
+UnityEngine.Vector3 -> 26
+UnityEngine.Vector4 -> 27
+UnityEngine.Vector2Int -> 28
+UnityEngine.Vector3Int -> 29
+PurrNet.Packing.HalfVector2 -> 30
+PurrNet.Packing.HalfVector3 -> 31
+PurrNet.Packing.HalfVector4 -> 32
+PurrNet.HalfQuaternion -> 33
+UnityEngine.Quaternion -> 34
+UnityEngine.Color32 -> 35
+UnityEngine.Color -> 36
+UnityEngine.Rect -> 37
+UnityEngine.Bounds -> 38
+UnityEngine.BoundsInt -> 39
+UnityEngine.SceneManagement.UnloadSceneOptions -> 40
+UnityEngine.SceneManagement.LoadSceneMode -> 41
+UnityEngine.SceneManagement.LocalPhysicsMode -> 42
+UnityEngine.SceneManagement.LoadSceneParameters -> 43
+PurrNet.Transports.ByteData -> 44
+PurrNet.Packing.BitPacker -> 45
+PurrNet.Packing.Half -> 46
+System.Single -> 47
+System.Double -> 48
+System.Object -> 49
+PurrNet.Packing.IPacked -> 50
+PurrNet.Packing.IPackedSimple -> 51
+System.Int64 -> 52
+System.Int32 -> 53
+System.Int16 -> 54
+System.SByte -> 55
+System.Boolean -> 56
+PurrNet.SceneID -> 57
+PurrNet.NetworkID -> 58
+PurrNet.PlayerID -> 59
+PurrNet.NetworkIdentity -> 60
+UnityEngine.GameObject -> 61
+UnityEngine.Transform -> 62
+PurrNet.NetworkManager -> 63
+PurrNet.NetworkModule -> 64
+System.String -> 65
+System.Char -> 66
+System.UInt64 -> 67
+System.UInt32 -> 68
+System.UInt16 -> 69
+System.Byte -> 70
+UnityEngine.AvatarIKHint -> 71
+UnityEngine.AvatarIKGoal -> 72
+UnityEngine.HumanBodyBones -> 73
+UnityEngine.AnimatorCullingMode -> 74
+UnityEngine.AnimatorUpdateMode -> 75
+UnityEngine.AvatarTarget -> 76
+UnityEngine.MatchTargetWeightMask -> 77
+PurrNet.Packing.PackedUint -> 78
+PurrNet.Packing.PackedInt -> 79
+PurrNet.Packing.PackedUshort -> 80
+PurrNet.ActionAuth -> 81
+PurrNet.ApplyBuiltinRootMotion -> 82
+PurrNet.Authentication.AuthenticationRequest`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 83
+PurrNet.Authentication.AuthenticationRequest -> 84
+PurrNet.Authentication.AuthenticationResponse -> 85
+PurrNet.ChildRPCPacket -> 86
+PurrNet.Collections.PurrHashSet`1[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 87
+PurrNet.ConnectionAuth -> 88
+PurrNet.CrossFadeInFixedTime -> 89
+PurrNet.CrossFade_2 -> 90
+PurrNet.CrossFade_3 -> 91
+PurrNet.CrossFade_4 -> 92
+PurrNet.CrossFade_5 -> 93
+PurrNet.DefaultOwner -> 94
+PurrNet.Interpolated`1[[UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 95
+PurrNet.Interpolated`1[[UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 96
+PurrNet.InterruptMatchTarget -> 97
+PurrNet.MatchTarget -> 98
+PurrNet.MiscRules -> 99
+PurrNet.ModulesCollection -> 100
+PurrNet.Modules.ChangeParentAction -> 101
+PurrNet.Modules.ChangeParentPacket -> 102
+PurrNet.Modules.ClientFinishedLoadingScene -> 103
+PurrNet.Modules.CookiePair -> 104
+PurrNet.Modules.CookieScope -> 105
+PurrNet.Modules.DespawnAction -> 106
+PurrNet.Modules.DespawnPacket -> 107
+PurrNet.Modules.DespawnType -> 108
+PurrNet.Modules.FinishSpawnPacket -> 109
+PurrNet.Modules.GameObjectFrameworkPiece -> 110
+PurrNet.Modules.GameObjectPrototype -> 111
+PurrNet.Modules.HierarchyPool -> 112
+PurrNet.Modules.HierarchyV2+PlayerNid -> 113
+PurrNet.Modules.HierarchyV2 -> 114
+PurrNet.Modules.KeepAlivePacket -> 115
+PurrNet.Modules.LoadSceneAction -> 116
+PurrNet.Modules.OwnershipChangeBatch -> 117
+PurrNet.Modules.OwnershipChange -> 118
+PurrNet.Modules.OwnershipInfo -> 119
+PurrNet.Modules.PendingOperation -> 120
+PurrNet.Modules.PlayerJoinedEvent -> 121
+PurrNet.Modules.PlayerLeftEvent -> 122
+PurrNet.Modules.PlayerSnapshotEvent -> 123
+PurrNet.Modules.PrefabPieceID -> 124
+PurrNet.Modules.PurrSceneSettings -> 125
+PurrNet.Modules.RpcResponse -> 126
+PurrNet.Modules.SceneActionType -> 127
+PurrNet.Modules.SceneAction -> 128
+PurrNet.Modules.SceneActionsBatch -> 129
+PurrNet.Modules.SceneHistory -> 130
+PurrNet.Modules.SceneState -> 131
+PurrNet.Modules.ScenesModule+CleanupStage -> 132
+PurrNet.Modules.ServerLoginResponse -> 133
+PurrNet.Modules.SetActiveAction -> 134
+PurrNet.Modules.SetActiveSceneAction -> 135
+PurrNet.Modules.SetEnabledAction -> 136
+PurrNet.Modules.SpawnAction -> 137
+PurrNet.Modules.SpawnID -> 138
+PurrNet.Modules.SpawnPacket -> 139
+PurrNet.Modules.TickManager+RPCClass -> 140
+PurrNet.Modules.TransformInfo -> 141
+PurrNet.Modules.UnloadSceneAction -> 142
+PurrNet.Modules.VisilityV2 -> 143
+PurrNet.Modules.WaitingConnectionAuth -> 144
+PurrNet.NetAnimatorActionBatch -> 145
+PurrNet.NetAnimatorAction -> 146
+PurrNet.NetAnimatorRPC -> 147
+PurrNet.NetworkAnimator -> 148
+PurrNet.NetworkBehaviour -> 149
+PurrNet.NetworkIdentityRules -> 150
+PurrNet.NetworkIdentity+InstanceGenericKey -> 151
+PurrNet.NetworkOwnershipToggle -> 152
+PurrNet.NetworkPrefabs+PrefabData -> 153
+PurrNet.NetworkReflection -> 154
+PurrNet.NetworkSceneRules -> 155
+PurrNet.NetworkServerToggle -> 156
+PurrNet.NetworkTransformData -> 157
+PurrNet.NetworkTransformRules -> 158
+PurrNet.NetworkTransform -> 159
+PurrNet.OwnershipRules -> 160
+PurrNet.PLAY_STATEHASH -> 161
+PurrNet.PlayInFixedTime -> 162
+PurrNet.Play_STATEHASH_LAYER_NORMALIZEDTIME -> 163
+PurrNet.Play_STATEHASH_LAYER -> 164
+PurrNet.Pooling.DisposableList`1[[PurrNet.Modules.GameObjectFrameworkPiece, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 165
+PurrNet.Pooling.DisposableList`1[[PurrNet.NetworkIdentity, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 166
+PurrNet.PrefabLink -> 167
+PurrNet.RPCInfo -> 168
+PurrNet.RPCPacket -> 169
+PurrNet.RPCSignature -> 170
+PurrNet.RPCType -> 171
+PurrNet.Rebind -> 172
+PurrNet.ReflectedValue[] -> 173
+PurrNet.ReflectionData -> 174
+PurrNet.ReflectionType -> 175
+PurrNet.ResetTrigger -> 176
+PurrNet.RpcRules -> 177
+PurrNet.SetAnimatePhysics -> 178
+PurrNet.SetApplyRootMotion -> 179
+PurrNet.SetBodyPosition -> 180
+PurrNet.SetBodyRotation -> 181
+PurrNet.SetBoneLocalRotation -> 182
+PurrNet.SetBool -> 183
+PurrNet.SetCullingMode -> 184
+PurrNet.SetFeetPivotActive -> 185
+PurrNet.SetFireEvents -> 186
+PurrNet.SetFloat -> 187
+PurrNet.SetIKHintPositionWeight -> 188
+PurrNet.SetIKHintPosition -> 189
+PurrNet.SetIKPositionWeight -> 190
+PurrNet.SetIKPosition -> 191
+PurrNet.SetIKRotationWeight -> 192
+PurrNet.SetIKRotation -> 193
+PurrNet.SetInt -> 194
+PurrNet.SetKeepAnimatorStateOnDisable -> 195
+PurrNet.SetLayerWeight -> 196
+PurrNet.SetLayersAffectMassCenter -> 197
+PurrNet.SetLogWarnings -> 198
+PurrNet.SetLookAtPosition -> 199
+PurrNet.SetLookAtWeight -> 200
+PurrNet.SetPlaybackTime -> 201
+PurrNet.SetRootPosition -> 202
+PurrNet.SetRootRotation -> 203
+PurrNet.SetSpeed -> 204
+PurrNet.SetStabilizeFeet -> 205
+PurrNet.SetTrigger -> 206
+PurrNet.SetUpdateMode -> 207
+PurrNet.SetWriteDefaultValuesOnDisable -> 208
+PurrNet.SpawnRules -> 209
+PurrNet.StartFlags -> 210
+PurrNet.StateMachine.StateMachineState -> 211
+PurrNet.StateMachine.StateMachine -> 212
+PurrNet.StateMachine.StateNode -> 213
+PurrNet.StaticRPCPacket -> 214
+PurrNet.StatisticsManager+PacketMessage -> 215
+PurrNet.StatisticsManager+PingMessage -> 216
+PurrNet.SyncEventBase -> 217
+PurrNet.SyncEvent -> 218
+PurrNet.SyncMode -> 219
+PurrNet.SyncTimer -> 220
+PurrNet.TimerEvent -> 221
+PurrNet.TimerState -> 222
+PurrNet.Tolerances -> 223
+PurrNet.TransformSyncMode -> 224
+PurrNet.Transports.Channel -> 225
+PurrNet.Transports.ConnectionState -> 226
+PurrNet.Transports.Connection -> 227
+PurrNet.UpdateWithDelta -> 228
+PurrNet.VisibilityMode -> 229
+PurrNet.VisibilityRules -> 230
+PurrNet.WriteDefaultValues -> 231
+PurrNet.StringUTF8 -> 232
+System.Byte[] -> 233
+System.Collections.Generic.Dictionary`2[[PurrNet.Modules.PrefabPieceID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Queue`1[[UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 234
+System.Collections.Generic.Dictionary`2[[PurrNet.Modules.SpawnID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.Pooling.DisposableList`1[[PurrNet.NetworkIdentity, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 235
+System.Collections.Generic.Dictionary`2[[PurrNet.NetworkID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.NetworkIdentity, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 236
+System.Collections.Generic.Dictionary`2[[PurrNet.NetworkIdentity+InstanceGenericKey, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Reflection.MethodInfo, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 237
+System.Collections.Generic.Dictionary`2[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.NetworkID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 238
+System.Collections.Generic.Dictionary`2[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.Transports.Connection, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 239
+System.Collections.Generic.Dictionary`2[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 240
+System.Collections.Generic.Dictionary`2[[PurrNet.SceneID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.Collections.PurrHashSet`1[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 241
+System.Collections.Generic.Dictionary`2[[PurrNet.SceneID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.Modules.SceneState, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 242
+System.Collections.Generic.Dictionary`2[[PurrNet.Transports.Connection, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 243
+System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 244
+System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 245
+System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 246
+System.Collections.Generic.Dictionary`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 247
+System.Collections.Generic.Dictionary`2[[System.Type, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.Collections.Generic.List`1[[System.Object, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 248
+System.Collections.Generic.Dictionary`2[[UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.Modules.GameObjectPrototype, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 249
+System.Collections.Generic.Dictionary`2[[UnityEngine.SceneManagement.Scene, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[PurrNet.SceneID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 250
+System.Collections.Generic.HashSet`1[[PurrNet.NetworkIdentity, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 251
+System.Collections.Generic.HashSet`1[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 252
+System.Collections.Generic.HashSet`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 253
+System.Collections.Generic.HashSet`1[[UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 254
+System.Collections.Generic.List`1[[PurrNet.Modules.CookiePair, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 255
+System.Collections.Generic.List`1[[PurrNet.Modules.GameObjectFrameworkPiece, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 256
+System.Collections.Generic.List`1[[PurrNet.Modules.GameObjectPrototype, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 257
+System.Collections.Generic.List`1[[PurrNet.Modules.HierarchyV2+PlayerNid, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 258
+System.Collections.Generic.List`1[[PurrNet.Modules.OwnershipInfo, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 259
+System.Collections.Generic.List`1[[PurrNet.Modules.PendingOperation, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 260
+System.Collections.Generic.List`1[[PurrNet.Modules.SceneAction, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 261
+System.Collections.Generic.List`1[[PurrNet.Modules.SpawnID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 262
+System.Collections.Generic.List`1[[PurrNet.Modules.WaitingConnectionAuth, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 263
+System.Collections.Generic.List`1[[PurrNet.NetAnimatorRPC, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 264
+System.Collections.Generic.List`1[[PurrNet.NetworkID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 265
+System.Collections.Generic.List`1[[PurrNet.NetworkIdentity, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 266
+System.Collections.Generic.List`1[[PurrNet.NetworkModule, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 267
+System.Collections.Generic.List`1[[PurrNet.NetworkPrefabs+PrefabData, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 268
+System.Collections.Generic.List`1[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 269
+System.Collections.Generic.List`1[[PurrNet.ReflectionData, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 270
+System.Collections.Generic.List`1[[PurrNet.SceneID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 271
+System.Collections.Generic.List`1[[PurrNet.StateMachine.StateNode, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 272
+System.Collections.Generic.List`1[[PurrNet.Transports.Connection, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 273
+System.Collections.Generic.List`1[[System.Object, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 274
+System.Collections.Generic.List`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 275
+System.Collections.Generic.List`1[[UnityEngine.AsyncOperation, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 276
+System.Collections.Generic.List`1[[UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 277
+System.Collections.Generic.List`1[[UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 278
+System.Collections.Generic.Queue`1[[PurrNet.Modules.SceneAction, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 279
+System.Collections.Generic.Queue`1[[UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 280
+System.Int32[] -> 281
+System.Nullable`1[[PurrNet.NetworkID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 282
+System.Nullable`1[[PurrNet.PlayerID, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 283
+System.Nullable`1[[PurrNet.Transports.Connection, PurrNet.Runtime, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 284
+System.Nullable`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]] -> 285
+System.Nullable`1[[UnityEngine.SceneManagement.Scene, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] -> 286
+System.Type[] -> 287
+Purrnet.Tests.ServerStaticRPCs -> 288
+Purrnet.Tests.StaticRPCsBuffering -> 289

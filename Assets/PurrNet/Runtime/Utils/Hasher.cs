@@ -9,10 +9,29 @@ namespace PurrNet.Utils
 {
     public class Hasher
     {
+        private const uint FNV_offset_basis32 = 2166136261;
+        private const uint FNV_prime32 = 16777619;
+        
         static readonly Dictionary<Type, uint> _hashes = new Dictionary<Type, uint>();
         static readonly Dictionary<uint, Type> _decoder = new Dictionary<uint, Type>();
         
         static uint _hashCounter;
+        
+        public static uint ActualHash(string txt)
+        {
+            unchecked
+            {
+                uint hash = FNV_offset_basis32;
+                for (int i = 0; i < txt.Length; i++)
+                {
+                    uint ch = txt[i];
+                    hash *= FNV_prime32;
+                    hash ^= ch;
+                }
+
+                return hash;
+            }
+        }
         
         public static Type ResolveType(uint hash)
         {
