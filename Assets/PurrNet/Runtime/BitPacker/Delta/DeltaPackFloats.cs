@@ -1,7 +1,7 @@
 using PurrNet.Packing;
 using UnityEngine;
 
-namespace PurrNet
+namespace PurrNet.Packing
 {
     public static class DeltaPackFloats
     {
