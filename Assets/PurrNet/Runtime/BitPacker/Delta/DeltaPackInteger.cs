@@ -7,12 +7,25 @@ namespace PurrNet.Packing
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Init()
         {
+            DeltaPacker<bool>.Register(WriteBool, ReadBool);
             DeltaPacker<sbyte>.Register(WriteInt8, ReadInt8);
             DeltaPacker<byte>.Register(WriteUInt8, ReadUInt8);
             DeltaPacker<short>.Register(WriteInt16, ReadInt16);
             DeltaPacker<ushort>.Register(WriteUInt16, ReadUInt16);
             DeltaPacker<int>.Register(WriteInt32, ReadInt32);
             DeltaPacker<uint>.Register(WriteUInt32, ReadUInt32);
+        }
+        
+        private static void WriteBool(BitPacker packer, bool oldvalue, bool newvalue)
+        {
+            Packer<bool>.Write(packer, oldvalue != newvalue);
+        }
+        
+        private static void ReadBool(BitPacker packer, bool oldvalue, ref bool value)
+        {
+            bool hasChanged = default;
+            Packer<bool>.Read(packer, ref hasChanged);
+            value = hasChanged ? !oldvalue : oldvalue;
         }
         
         private static void WriteInt8(BitPacker packer, sbyte oldvalue, sbyte newvalue)
