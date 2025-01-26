@@ -12,23 +12,23 @@ using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
 {
+    public enum HandledGenericTypes
+    {
+        None,
+        List,
+        Array,
+        HashSet,
+        Dictionary,
+        Nullable,
+        Queue,
+        Stack,
+        DisposableList,
+        DisposableHashSet
+    }
+    
     public static class GenerateSerializersProcessor
     {
-        enum HandledGenericTypes
-        {
-            None,
-            List,
-            Array,
-            HashSet,
-            Dictionary,
-            Nullable,
-            Queue,
-            Stack,
-            DisposableList,
-            DisposableHashSet
-        }
-
-        static bool ValideType(TypeReference type)
+        public static bool ValideType(TypeReference type)
         {
             // Check if the type itself is an interface
             if (type.Resolve()?.IsInterface == true)
@@ -134,9 +134,11 @@ namespace PurrNet.Codegen
                 HandleHashOnly(assembly, type, serializerClass);
                 return;
             }
+            
 
             if (IsGeneric(type, out var genericT))
             {
+                GenerateDeltaSerializersProcessor.HandleGenericType(assembly, type, genericT, messages);
                 HandleGenerics(assembly, type, genericT, serializerClass);
                 return;
             }
@@ -152,6 +154,8 @@ namespace PurrNet.Codegen
                 HandleNetworkModule(assembly, type, serializerClass);
                 return;
             }
+            
+            GenerateDeltaSerializersProcessor.HandleType(assembly, type, serializerClass, messages);
             
             // create static write method
             var writeMethod = new MethodDefinition("Write", MethodAttributes.Public | MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);

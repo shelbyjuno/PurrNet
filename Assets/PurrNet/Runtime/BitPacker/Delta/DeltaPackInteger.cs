@@ -1,26 +1,16 @@
-using UnityEngine;
+using PurrNet.Modules;
 
 namespace PurrNet.Packing
 {
     public static class DeltaPackInteger
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Init()
-        {
-            DeltaPacker<bool>.Register(WriteBool, ReadBool);
-            DeltaPacker<sbyte>.Register(WriteInt8, ReadInt8);
-            DeltaPacker<byte>.Register(WriteUInt8, ReadUInt8);
-            DeltaPacker<short>.Register(WriteInt16, ReadInt16);
-            DeltaPacker<ushort>.Register(WriteUInt16, ReadUInt16);
-            DeltaPacker<int>.Register(WriteInt32, ReadInt32);
-            DeltaPacker<uint>.Register(WriteUInt32, ReadUInt32);
-        }
-        
+        [UsedByIL]
         private static void WriteBool(BitPacker packer, bool oldvalue, bool newvalue)
         {
             Packer<bool>.Write(packer, oldvalue != newvalue);
         }
         
+        [UsedByIL]
         private static void ReadBool(BitPacker packer, bool oldvalue, ref bool value)
         {
             bool hasChanged = default;
@@ -28,6 +18,7 @@ namespace PurrNet.Packing
             value = hasChanged ? !oldvalue : oldvalue;
         }
         
+        [UsedByIL]
         private static void WriteInt8(BitPacker packer, sbyte oldvalue, sbyte newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -40,6 +31,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void ReadInt8(BitPacker packer, sbyte oldvalue, ref sbyte value)
         {
             bool hasChanged = default;
@@ -53,6 +45,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void WriteUInt8(BitPacker packer, byte oldvalue, byte newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -65,6 +58,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void ReadUInt8(BitPacker packer, byte oldvalue, ref byte value)
         {
             bool hasChanged = default;
@@ -78,6 +72,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void WriteInt16(BitPacker packer, short oldvalue, short newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -90,6 +85,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void ReadInt16(BitPacker packer, short oldvalue, ref short value)
         {
             bool hasChanged = default;
@@ -103,6 +99,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void WriteUInt16(BitPacker packer, ushort oldvalue, ushort newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -115,6 +112,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void ReadUInt16(BitPacker packer, ushort oldvalue, ref ushort value)
         {
             bool hasChanged = default;
@@ -128,6 +126,7 @@ namespace PurrNet.Packing
             }
         }
         
+        [UsedByIL]
         private static void WriteUInt32(BitPacker packer, uint oldvalue, uint newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -140,6 +139,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static void ReadUInt32(BitPacker packer, uint oldvalue, ref uint value)
         {
             bool hasChanged = default;
@@ -153,6 +153,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static void WriteInt32(BitPacker packer, int oldvalue, int newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -165,6 +166,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static void ReadInt32(BitPacker packer, int oldvalue, ref int value)
         {
             bool hasChanged = default;

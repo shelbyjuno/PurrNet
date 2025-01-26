@@ -1,17 +1,10 @@
-using UnityEngine;
+using PurrNet.Modules;
 
 namespace PurrNet.Packing
 {
     public static class DeltaPackFloats
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Init()
-        {
-            DeltaPacker<float>.Register(WriteSingle, ReadSingle);
-            DeltaPacker<double>.Register(WriteDouble, ReadDouble);
-            DeltaPacker<Half>.Register(WriteHalf, ReadHalf);
-        }
-
+        [UsedByIL]
         private static void WriteHalf(BitPacker packer, Half oldvalue, Half newvalue)
         {
             bool hasChanged = oldvalue != newvalue;
@@ -24,6 +17,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static void ReadHalf(BitPacker packer, Half oldvalue, ref Half value)
         {
             bool hasChanged = default;
@@ -37,6 +31,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static unsafe void WriteDouble(BitPacker packer, double oldvalue, double newvalue)
         {
             // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -53,6 +48,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static unsafe void ReadDouble(BitPacker packer, double oldvalue, ref double value)
         {
             bool hasChanged = default;
@@ -68,6 +64,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static unsafe void WriteSingle(BitPacker packer, float oldvalue, float newvalue)
         {
             // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -83,6 +80,7 @@ namespace PurrNet.Packing
             }
         }
 
+        [UsedByIL]
         private static unsafe void ReadSingle(BitPacker packer, float oldvalue, ref float value)
         {
             bool hasChanged = default;

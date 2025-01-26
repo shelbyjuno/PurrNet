@@ -11,6 +11,49 @@ namespace PurrNet.Codegen
 {
     public static class RegisterSerializersProcessor
     {
+        // static void WriteHalf(BitPacker packer, Half oldvalue, Half newvalue)
+        static bool IsDeltaWriteMethod(MethodDefinition method, out TypeReference type)
+        {
+            type = null;
+            
+            if (method.Parameters.Count != 3)
+                return false;
+
+            if (method.Parameters[0].ParameterType.FullName != typeof(BitPacker).FullName)
+                return false;
+            
+            if (method.Parameters[1].ParameterType.IsByReference)
+                return false;
+            
+            if (method.Parameters[2].ParameterType.IsByReference)
+                return false;
+
+            type = method.Parameters[1].ParameterType;
+            return true;
+        }
+        
+        // static void ReadHalf(BitPacker packer, Half oldvalue, ref Half value)
+        static bool IsDeltaReadMethod(MethodDefinition method, out TypeReference type)
+        {
+            type = null;
+            
+            if (method.Parameters.Count != 3)
+                return false;
+
+            if (method.Parameters[0].ParameterType.FullName != typeof(BitPacker).FullName)
+                return false;
+            
+            if (method.Parameters[1].ParameterType.IsByReference)
+                return false;
+            
+            if (!method.Parameters[2].ParameterType.IsByReference)
+                return false;
+            
+            type = method.Parameters[1].ParameterType;
+
+            return true;
+        }
+        
         static bool IsWriteMethod(MethodDefinition method, out TypeReference type)
         {
             type = null;
@@ -54,6 +97,7 @@ namespace PurrNet.Codegen
 
         struct PackType
         {
+            public bool isDelta;
             public TypeReference type;
             public MethodDefinition method;
         }
@@ -105,6 +149,30 @@ namespace PurrNet.Codegen
                         method = method
                     });
                 }
+                else if (IsDeltaWriteMethod(method, out var deltaWriteType))
+                {
+                    if (deltaWriteType == null)
+                        throw new Exception("DeltaWriteType is null");
+                    
+                    writeTypes.Add(new PackType
+                    {
+                        isDelta = true,
+                        type = deltaWriteType,
+                        method = method
+                    });
+                }
+                else if (IsDeltaReadMethod(method, out var deltaReadType))
+                {
+                    if (deltaReadType == null)
+                        throw new Exception("DeltaReadType is null");
+                    
+                    readTypes.Add(new PackType
+                    {
+                        isDelta = true,
+                        type = deltaReadType,
+                        method = method
+                    });
+                }
             }
             
             if (writeTypes.Count == 0 && readTypes.Count == 0)
@@ -112,6 +180,9 @@ namespace PurrNet.Codegen
             
             var writeFuncDelegate = module.GetTypeDefinition(typeof(WriteFunc<>)).Import(module);
             var readFuncDelegate = module.GetTypeDefinition(typeof(ReadFunc<>)).Import(module);
+            
+            var deltaWriteFuncDelegate = module.GetTypeDefinition(typeof(DeltaWriteFunc<>)).Import(module);
+            var deltaReadFuncDelegate = module.GetTypeDefinition(typeof(DeltaReadFunc<>)).Import(module);
             
             var registerMethod = new MethodDefinition("Register_Type_Generated_PurrNet", MethodAttributes.Static, module.TypeSystem.Void);
             var attributeType = module.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
@@ -134,14 +205,19 @@ namespace PurrNet.Codegen
                 
                 writeMethod.Resolve().AggressiveInlining = true;
                 
-                var packerType = module.GetTypeDefinition(typeof(Packer<>)).Import(module);
-                var genPackerType = new GenericInstanceType(packerType);
+                var nonDeltaPackerType = module.GetTypeDefinition(typeof(Packer<>)).Import(module);
+                var deltaPackerType = module.GetTypeDefinition(typeof(DeltaPacker<>)).Import(module);
+                
+                var actualPackerType = writeType.isDelta ? deltaPackerType : nonDeltaPackerType;
+                
+                var genPackerType = new GenericInstanceType(actualPackerType);
                 genPackerType.GenericArguments.Add(writeType.type.Import(module));
 
-                var writeFuncGeneric = new GenericInstanceType(writeFuncDelegate);
+                var writeDelType = writeType.isDelta ? deltaWriteFuncDelegate : writeFuncDelegate;
+                var writeFuncGeneric = new GenericInstanceType(writeDelType);
                 writeFuncGeneric.GenericArguments.Add(writeType.type.Import(module));
                 
-                var delegateConstructor = writeFuncDelegate.Resolve()
+                var delegateConstructor = writeDelType.Resolve()
                     .Methods.First(m => m.IsConstructor && m.HasParameters);
                 var delegateConstructorRef = new MethodReference(delegateConstructor.Name, delegateConstructor.ReturnType, writeFuncGeneric)
                 {
@@ -181,7 +257,7 @@ namespace PurrNet.Codegen
 
                 // Create a GenericInstanceMethod for Packer.RegisterReader<T>
                 
-                TypeReference typeArgument = readType.type.Import(module);
+                var typeArgument = readType.type.Import(module);
                 
                 // If the type is a ByReferenceType (e.g., ref int), get the base type
                 if (typeArgument is ByReferenceType byRefType)
@@ -190,15 +266,19 @@ namespace PurrNet.Codegen
                 }
                 
                 var packerType = module.GetTypeDefinition(typeof(Packer<>)).Import(module);
-                var genPackerType = new GenericInstanceType(packerType);
+                var deltaPackerType = module.GetTypeDefinition(typeof(DeltaPacker<>)).Import(module);
+                var actualPackerType = readType.isDelta ? deltaPackerType : packerType;
+                
+                var genPackerType = new GenericInstanceType(actualPackerType);
                 genPackerType.GenericArguments.Add(typeArgument);
 
                 // Create the generic delegate type (ReadFunc<T>)
-                var readFuncGeneric = new GenericInstanceType(readFuncDelegate);
+                var readDelType = readType.isDelta ? deltaReadFuncDelegate : readFuncDelegate;
+                var readFuncGeneric = new GenericInstanceType(readDelType);
                 readFuncGeneric.GenericArguments.Add(typeArgument);
 
                 // Resolve the constructor of the generic delegate (ReadFunc<T>(object, IntPtr))
-                var delegateConstructor = readFuncDelegate.Resolve()
+                var delegateConstructor = readDelType.Resolve()
                     .Methods.First(m => m.IsConstructor && m.HasParameters);
                 
                 // Construct the delegate constructor reference
