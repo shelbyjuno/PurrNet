@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace PurrNet.Transports
 {
+    [DefaultExecutionOrder(-100)]
     public class UDPTransport : GenericTransport, ITransport, INetLogger
     {
         [Header("Server Settings")]

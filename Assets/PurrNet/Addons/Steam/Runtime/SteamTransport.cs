@@ -12,6 +12,7 @@ using UnityEngine;
 
 namespace PurrNet.Steam
 {
+    [DefaultExecutionOrder(-100)]
     public class SteamTransport : GenericTransport, ITransport
     {
         [Header("Server Settings")]

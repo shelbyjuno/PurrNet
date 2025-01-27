@@ -95,6 +95,7 @@ namespace PurrNet.Transports
         }
     }
     
+    [DefaultExecutionOrder(-100)]
     public class CompositeTransport : GenericTransport, ITransport
     {
         [SerializeField] private bool _ensureAllServersStart;

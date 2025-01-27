@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace PurrNet.Transports
 {
+    [DefaultExecutionOrder(-100)]
     public abstract class GenericTransport : MonoBehaviour
     {
         /// <summary>
