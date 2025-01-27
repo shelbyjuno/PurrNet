@@ -20,8 +20,8 @@ namespace PurrNet
             foreach (var identity in allSceneIdentities)
             {
                 var go = identity.gameObject;
-                var hash = GameObjectHasher.ComputeHashRecursive(go);
-                scenetext += $"{go.name} {hash}\n";
+                var hash = GameObjectHasher.ComputeStringRecursive(go);
+                scenetext += $"{hash}\n\n";
             }
             
             File.WriteAllText("scenehashes.txt", scenetext);
