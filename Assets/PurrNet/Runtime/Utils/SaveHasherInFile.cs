@@ -8,7 +8,7 @@ namespace PurrNet
 {
     public class SaveHasherInFile : MonoBehaviour
     {
-        private void Awake()
+        private void Start()
         {
             string text = Hasher.GetAllHashesAsText();
             File.WriteAllText("hashes.txt", text);
