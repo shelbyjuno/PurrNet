@@ -155,6 +155,8 @@ namespace PurrNet
 
         protected override void OnEarlySpawn()
         {
+            _trs = transform;
+            
             float sendDelta = (_sendIntervalInTicks + 1) * networkManager.tickModule.tickDelta;
 
             if (syncPosition)
