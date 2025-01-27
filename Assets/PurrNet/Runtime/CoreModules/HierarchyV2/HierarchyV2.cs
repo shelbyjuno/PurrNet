@@ -501,6 +501,9 @@ namespace PurrNet.Modules
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
         {
+            if (!_asServer)
+                return;
+            
             if (scene != _sceneId)
                 return;
 

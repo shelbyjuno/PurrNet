@@ -635,7 +635,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _stopPlayingOnDisconnect: 0
   _startServerFlags: 1
-  _startClientFlags: 3
+  _startClientFlags: 2
   _cookieScope: 1
   _dontDestroyOnLoad: 1
   _transport: {fileID: 1386555453}
@@ -776,7 +776,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1472014771
 MonoBehaviour:
   m_ObjectHideFlags: 0
