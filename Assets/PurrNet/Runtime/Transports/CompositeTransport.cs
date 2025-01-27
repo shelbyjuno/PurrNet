@@ -190,8 +190,15 @@ namespace PurrNet.Transports
             return conn;
         }
 
+        private bool _wasAwakeCalled;
+
         private void Awake()
         {
+            if (_wasAwakeCalled)
+                return;
+            
+            _wasAwakeCalled = true;
+            
             if (_clientTransport == null)
             {
                 for (int i = 0; i < _transports.Length; i++)
@@ -332,6 +339,8 @@ namespace PurrNet.Transports
 
         protected override void StartClientInternal()
         {
+            Awake();
+
             if (!_clientTransport || !_clientTransport.isSupported)
                 throw new NotSupportedException("No supported transport found for client.");
 
@@ -352,6 +361,8 @@ namespace PurrNet.Transports
 
         protected override void StartServerInternal()
         {
+            Awake();
+            
             if (_internalIsListening)
                 return;
             
