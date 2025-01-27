@@ -10,13 +10,10 @@ namespace PurrNet.Editor
     public class NetworkManagerInspector : UnityEditor.Editor
     {
         private SerializedProperty _scriptProp;
-
         private SerializedProperty _startServerFlags;
         private SerializedProperty _startClientFlags;
         private SerializedProperty _stopPlayingOnDisconnect;
-        
         private SerializedProperty _cookieScope;
-
         private SerializedProperty _dontDestroyOnLoad;
         private SerializedProperty _networkPrefabs;
         private SerializedProperty _networkRules;
@@ -29,17 +26,21 @@ namespace PurrNet.Editor
         private bool _showPlayersFoldout;
         private readonly Dictionary<object, bool> _playerFoldouts = new Dictionary<object, bool>();
 
+        // Cache for performance
+        private NetworkManager _networkManager;
+        private ConnectionState _lastServerState;
+        private ConnectionState _lastClientState;
+        private int _lastPlayerCount;
+        private float _nextRepaintTime;
+        private const float REPAINT_INTERVAL = 0.5f; // Repaint every 500ms
         
         private void OnEnable()
         {
             _scriptProp = serializedObject.FindProperty("m_Script");
-
             _startServerFlags = serializedObject.FindProperty("_startServerFlags");
             _startClientFlags = serializedObject.FindProperty("_startClientFlags");
             _stopPlayingOnDisconnect = serializedObject.FindProperty("_stopPlayingOnDisconnect");
-            
             _cookieScope = serializedObject.FindProperty("_cookieScope");
-            
             _dontDestroyOnLoad = serializedObject.FindProperty("_dontDestroyOnLoad");
             _networkPrefabs = serializedObject.FindProperty("_networkPrefabs");
             _networkRules = serializedObject.FindProperty("_networkRules");
@@ -48,36 +49,102 @@ namespace PurrNet.Editor
             _visibilityRules = serializedObject.FindProperty("_visibilityRules");
             _authenticator = serializedObject.FindProperty("_authenticator");
             
-            EditorApplication.update += Repaint;
+            _networkManager = (NetworkManager)target;
+            
+            // Only update when playing
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
         private void OnDisable()
         {
-            EditorApplication.update -= Repaint;
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        }
+
+        private void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.EnteredPlayMode)
+            {
+                EditorApplication.update += CheckForStateChanges;
+            }
+            else if (state == PlayModeStateChange.ExitingPlayMode)
+            {
+                EditorApplication.update -= CheckForStateChanges;
+            }
+        }
+
+        private void CheckForStateChanges()
+        {
+            if (_networkManager == null) return;
+
+            bool needsRepaint = false;
+            
+            if (_lastServerState != _networkManager.serverState)
+            {
+                _lastServerState = _networkManager.serverState;
+                needsRepaint = true;
+            }
+
+            if (_lastClientState != _networkManager.clientState)
+            {
+                _lastClientState = _networkManager.clientState;
+                needsRepaint = true;
+            }
+
+            if (_lastPlayerCount != _networkManager.playerCount)
+            {
+                _lastPlayerCount = _networkManager.playerCount;
+                needsRepaint = true;
+            }
+
+            if (needsRepaint || Time.realtimeSinceStartup >= _nextRepaintTime)
+            {
+                Repaint();
+                _nextRepaintTime = Time.realtimeSinceStartup + REPAINT_INTERVAL;
+            }
         }
 
         public override void OnInspectorGUI()
         {
-            var networkManager = (NetworkManager)target;
+            if (_networkManager == null)
+                _networkManager = (NetworkManager)target;
 
-            if (networkManager.networkRules == null)
+            if (_networkManager.networkRules == null)
             {
-                GUILayout.Label("Network Rules", EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
-                const string description = "Set the network rules of your network manager. " +
-                                           "This can be changed later. ";
-
-                GUILayout.Label(description, new GUIStyle(GUI.skin.label) { wordWrap = true });
-                
-                GUILayout.Space(10);
-                
-                GUI.backgroundColor = Color.yellow;
-                EditorGUILayout.PropertyField(_networkRules, new GUIContent("Network Rules"));
-                serializedObject.ApplyModifiedProperties();
+                DrawInitialSetup();
                 return;
             }
                 
-            bool willStartServer = networkManager.shouldAutoStartServer;
-            bool willStartClient = networkManager.shouldAutoStartClient;
+            serializedObject.Update();
+            
+            DrawHeaderSection();
+            
+            if (Application.isPlaying)
+                RenderStartStopButtons();
+            DrawConfigurationSection();
+
+            DrawRuntimeSettings();
+            
+            if (_showStatusFoldout)
+                DrawStatusFoldout();
+            
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawInitialSetup()
+        {
+            GUILayout.Label("Network Rules", EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
+            const string description = "Set the network rules of your network manager. This can be changed later. ";
+            GUILayout.Label(description, new GUIStyle(GUI.skin.label) { wordWrap = true });
+            GUILayout.Space(10);
+            GUI.backgroundColor = Color.yellow;
+            EditorGUILayout.PropertyField(_networkRules, new GUIContent("Network Rules"));
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawHeaderSection()
+        {
+            bool willStartServer = _networkManager.shouldAutoStartServer;
+            bool willStartClient = _networkManager.shouldAutoStartClient;
             string status = willStartClient && willStartServer ? "HOST" : willStartClient ? "CLIENT" : willStartServer ? "SERVER" : "NONE";
 
             GUI.enabled = false;
@@ -89,18 +156,16 @@ namespace PurrNet.Editor
             GUI.color = Color.white;
             EditorGUILayout.LabelField($"During play mode this instance will start as a <b>{status}</b>", new GUIStyle(GUI.skin.label) {richText = true});
             GUILayout.EndVertical();
+        }
 
+        private void DrawConfigurationSection()
+        {
             EditorGUILayout.PropertyField(_startServerFlags);
             EditorGUILayout.PropertyField(_startClientFlags);
-            
-
-            if (Application.isPlaying)
-                RenderStartStopButtons(networkManager);
-
             EditorGUILayout.PropertyField(_cookieScope);
 
-            if (networkManager && networkManager.isClient || networkManager.isServer)
-                GUI.enabled = false;
+            bool isRunning = _networkManager && (_networkManager.isClient || _networkManager.isServer);
+            GUI.enabled = !isRunning;
             
             EditorGUILayout.PropertyField(_dontDestroyOnLoad);
             EditorGUILayout.PropertyField(_transport);
@@ -110,46 +175,198 @@ namespace PurrNet.Editor
             EditorGUILayout.PropertyField(_authenticator);
 
             GUI.enabled = true;
+        }
 
-            if (networkManager.serverState != ConnectionState.Disconnected || networkManager.clientState != ConnectionState.Disconnected)
-                GUI.enabled = false;
-
-            RenderTickSlider();
+        private void DrawRuntimeSettings()
+        {
+            bool isDisconnected = _networkManager.serverState == ConnectionState.Disconnected && 
+                                _networkManager.clientState == ConnectionState.Disconnected;
             
+            GUI.enabled = isDisconnected;
+            RenderTickSlider();
             EditorGUILayout.PropertyField(_stopPlayingOnDisconnect);
-
             GUI.enabled = true;
             
             _showStatusFoldout = EditorGUILayout.Foldout(_showStatusFoldout, "Status");
-            if (_showStatusFoldout)
-            {
-                DrawStatusFoldout(networkManager);
-            }
-            
-            serializedObject.ApplyModifiedProperties();
         }
 
         private void DrawNetworkPrefabs()
         {
             EditorGUILayout.BeginHorizontal();
             Color originalBgColor = GUI.backgroundColor;
+            
             if (_networkPrefabs.objectReferenceValue == null)
-            {
                 GUI.backgroundColor = Color.yellow;
-            }
+                
             EditorGUILayout.PropertyField(_networkPrefabs);
             GUI.backgroundColor = originalBgColor;
 
             if (_networkPrefabs.objectReferenceValue == null)
             {
                 if (GUILayout.Button("New", GUILayout.Width(50)))
-                {
                     CreateNewNetworkPrefabs();
-                }
             }
+            
             EditorGUILayout.EndHorizontal();
         }
-        
+
+        private void DrawStatusFoldout()
+        {
+            if (!_networkManager.isServer && !_networkManager.isClient)
+                return;
+
+            if (_networkManager.players == null)
+                return;
+
+            EditorGUILayout.BeginVertical("box");
+
+            EditorGUILayout.LabelField("Server State:", _networkManager.serverState.ToString());
+            EditorGUILayout.LabelField("Client State:", _networkManager.clientState.ToString());
+            EditorGUILayout.LabelField("Player Count:", _networkManager.playerCount.ToString());
+
+            var players = _networkManager.players;
+            if (players != null && players.Count > 0)
+            {
+                DrawPlayersSection(players);
+            }
+            else
+            {
+                EditorGUILayout.LabelField("No players connected.");
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawPlayersSection(IReadOnlyCollection<PlayerID> players)
+        {
+            _showPlayersFoldout = EditorGUILayout.Foldout(_showPlayersFoldout, $"Players ({players.Count})");
+            if (!_showPlayersFoldout) return;
+
+            foreach (var playerId in players)
+            {
+                EditorGUI.indentLevel++;
+                if (!_playerFoldouts.ContainsKey(playerId))
+                    _playerFoldouts[playerId] = false;
+
+                _playerFoldouts[playerId] = EditorGUILayout.Foldout(_playerFoldouts[playerId], $"Player: {playerId}");
+                if (_playerFoldouts[playerId])
+                {
+                    DrawPlayerDetails(playerId);
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        private void DrawPlayerDetails(PlayerID playerId)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField("Owned Objects:", _networkManager.GetAllPlayerOwnedIds(playerId, _networkManager.isServer).Count.ToString());
+
+            if (!_networkManager.isServer)
+            {
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            if (_networkManager.TryGetPlayerScenes(playerId, out var scenes) && scenes.Length > 0)
+            {
+                DrawPlayerScenes(scenes);
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Scenes:", "None");
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        private void DrawPlayerScenes(SceneID[] scenes)
+        {
+            EditorGUILayout.LabelField("Scenes (SceneId):");
+            foreach (var sceneId in scenes)
+            {
+                if (!_networkManager.TryGetScene(sceneId, out var scene))
+                    continue;
+
+                EditorGUI.indentLevel++;
+                EditorGUILayout.LabelField($"- {scene.name} ({sceneId})");
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        private void RenderTickSlider()
+        {
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.IntSlider(_tickRate, 1, 128, new GUIContent("Tick Rate"));
+        }
+
+        private void RenderStartStopButtons()
+        {
+            GUILayout.BeginHorizontal();
+            GUI.enabled = Application.isPlaying;
+
+            RenderServerButton();
+            RenderClientButton();
+
+            GUI.color = Color.white;
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+        }
+
+        private void RenderServerButton()
+        {
+            switch (_networkManager.serverState)
+            {
+                case ConnectionState.Disconnected:
+                    GUI.color = Color.white;
+                    if (GUILayout.Button("Start Server", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
+                        _networkManager.StartServer();
+                    break;
+                case ConnectionState.Disconnecting:
+                    GUI.color = new Color(1f, 0.5f, 0f);
+                    GUI.enabled = false;
+                    GUILayout.Button("Stopping Server", GUILayout.Width(10), GUILayout.ExpandWidth(true));
+                    break;
+                case ConnectionState.Connecting:
+                    GUI.color = Color.yellow;
+                    GUI.enabled = false;
+                    GUILayout.Button("Starting Server", GUILayout.Width(10), GUILayout.ExpandWidth(true));
+                    break;
+                case ConnectionState.Connected:
+                    GUI.color = Color.green;
+                    if (GUILayout.Button("Stop Server", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
+                        _networkManager.StopServer();
+                    break;
+            }
+        }
+
+        private void RenderClientButton()
+        {
+            switch (_networkManager.clientState)
+            {
+                case ConnectionState.Disconnected:
+                    GUI.color = Color.white;
+                    if (GUILayout.Button("Start Client", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
+                        _networkManager.StartClient();
+                    break;
+                case ConnectionState.Disconnecting:
+                    GUI.color = new Color(1f, 0.5f, 0f);
+                    GUI.enabled = false;
+                    GUILayout.Button("Stopping Client", GUILayout.Width(10), GUILayout.ExpandWidth(true));
+                    break;
+                case ConnectionState.Connecting:
+                    GUI.color = Color.yellow;
+                    GUI.enabled = false;
+                    GUILayout.Button("Starting Client", GUILayout.Width(10), GUILayout.ExpandWidth(true));
+                    break;
+                case ConnectionState.Connected:
+                    GUI.color = Color.green;
+                    if (GUILayout.Button("Stop Client", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
+                        _networkManager.StopClient();
+                    break;
+            }
+        }
+
         private void CreateNewNetworkPrefabs()
         {
             string folderPath = "Assets";
@@ -185,165 +402,6 @@ namespace PurrNet.Editor
             serializedObject.ApplyModifiedProperties();
     
             EditorGUIUtility.PingObject(networkPrefabs);
-        }
-
-        private void RenderTickSlider()
-        {
-            // serializedObject.Update();
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.IntSlider(_tickRate, 1, 128, new GUIContent("Tick Rate"));
-            /*if (EditorGUI.EndChangeCheck())
-            {
-                Time.fixedDeltaTime = 1f / _tickRate.intValue;
-                AssetDatabase.SaveAssets();
-            }*/
-        }
-        
-        private void DrawStatusFoldout(NetworkManager networkManager)
-        {
-            if (!networkManager.isServer && !networkManager.isClient)
-                return;
-
-            if (networkManager.players == null)
-                return;
-
-            EditorGUILayout.BeginVertical("box");
-
-            EditorGUILayout.LabelField("Server State:", networkManager.serverState.ToString());
-            EditorGUILayout.LabelField("Client State:", networkManager.clientState.ToString());
-            EditorGUILayout.LabelField("Player Count:", networkManager.playerCount.ToString());
-
-            var players = networkManager.players;
-            if (players != null)
-            {
-                _showPlayersFoldout = EditorGUILayout.Foldout(_showPlayersFoldout, $"Players ({players.Count})");
-                if (_showPlayersFoldout)
-                {
-                    foreach (var playerId in players)
-                    {
-                        EditorGUI.indentLevel++;
-                        if (!_playerFoldouts.ContainsKey(playerId))
-                            _playerFoldouts[playerId] = false;
-
-                        _playerFoldouts[playerId] = EditorGUILayout.Foldout(_playerFoldouts[playerId], $"Player: {playerId}");
-                        if (_playerFoldouts[playerId])
-                        {
-                            EditorGUI.indentLevel++;
-                            EditorGUILayout.LabelField("Owned Objects:", networkManager.GetAllPlayerOwnedIds(playerId, networkManager.isServer).Count.ToString());
-
-                            if (!networkManager.isServer)
-                            {
-                                EditorGUI.indentLevel--;
-                                EditorGUI.indentLevel--;
-                                continue;
-                            }
-                            
-                            if (networkManager.TryGetPlayerScenes(playerId, out var scenes) && scenes.Length > 0)
-                            {
-                                EditorGUILayout.LabelField("Scenes (SceneId):");
-                                foreach (var sceneId in scenes)
-                                {
-                                    if (!networkManager.TryGetScene(sceneId, out var scene))
-                                        continue;
-                                    
-                                    EditorGUI.indentLevel++;
-                                    EditorGUILayout.LabelField($"- {scene.name} ({sceneId})");
-                                    EditorGUI.indentLevel--;
-                                }
-                            }
-                            else
-                            {
-                                EditorGUILayout.LabelField("Scenes:", "None");
-                            }
-
-                            EditorGUI.indentLevel--;
-                        }
-                        EditorGUI.indentLevel--;
-                    }
-                }
-            }
-            else
-            {
-                EditorGUILayout.LabelField("No players connected.");
-            }
-
-            EditorGUILayout.EndVertical();
-        }
-
-        private static void RenderStartStopButtons(NetworkManager networkManager)
-        {
-            GUILayout.BeginHorizontal();
-            GUI.enabled = Application.isPlaying;
-
-            switch (networkManager.serverState)
-            {
-                case ConnectionState.Disconnected:
-                {
-                    GUI.color = Color.white;
-                    if (GUILayout.Button("Start Server", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
-                        networkManager.StartServer();
-                    break;
-                }
-                case ConnectionState.Disconnecting:
-                {
-                    GUI.color = new Color(1f, 0.5f, 0f);
-                    GUI.enabled = false;
-                    GUILayout.Button("Stopping Server", GUILayout.Width(10), GUILayout.ExpandWidth(true));
-                    break;
-                }
-                case ConnectionState.Connecting:
-                {
-                    GUI.color = Color.yellow;
-                    GUI.enabled = false;
-                    GUILayout.Button("Starting Server", GUILayout.Width(10), GUILayout.ExpandWidth(true));
-                    break;
-                }
-                case ConnectionState.Connected:
-                {
-                    GUI.color = Color.green;
-                    if (GUILayout.Button("Stop Server", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
-                        networkManager.StopServer();
-                    break;
-                }
-            }
-
-            GUI.enabled = Application.isPlaying;
-
-            switch (networkManager.clientState)
-            {
-                case ConnectionState.Disconnected:
-                {
-                    GUI.color = Color.white;
-                    if (GUILayout.Button("Start Client", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
-                        networkManager.StartClient();
-                    break;
-                }
-                case ConnectionState.Disconnecting:
-                {
-                    GUI.color = new Color(1f, 0.5f, 0f);
-                    GUI.enabled = false;
-                    GUILayout.Button("Stopping Client", GUILayout.Width(10), GUILayout.ExpandWidth(true));
-                    break;
-                }
-                case ConnectionState.Connecting:
-                {
-                    GUI.color = Color.yellow;
-                    GUI.enabled = false;
-                    GUILayout.Button("Starting Client", GUILayout.Width(10), GUILayout.ExpandWidth(true));
-                    break;
-                }
-                case ConnectionState.Connected:
-                {
-                    GUI.color = Color.green;
-                    if (GUILayout.Button("Stop Client", GUILayout.Width(10), GUILayout.ExpandWidth(true)))
-                        networkManager.StopClient();
-                    break;
-                }
-            }
-
-            GUI.color = Color.white;
-            GUI.enabled = true;
-            GUILayout.EndHorizontal();
         }
     }
 }
