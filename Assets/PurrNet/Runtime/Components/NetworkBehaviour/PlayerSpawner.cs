@@ -21,15 +21,19 @@ namespace PurrNet
 
         private void CleanupSpawnPoints()
         {
+            bool hadNullEntry = false;
             for (int i = 0; i < spawnPoints.Count; i++)
             {
                 if (!spawnPoints[i])
                 {
-                    PurrLogger.LogWarning($"Spawn point is null, removing it from the list.", this);
+                    hadNullEntry = true;
                     spawnPoints.RemoveAt(i);
                     i--;
                 }
             }
+            
+            if (hadNullEntry)
+                PurrLogger.LogWarning($"Some spawn points were invalid and have been cleaned up.", this);
         }
 
         private void OnValidate()
