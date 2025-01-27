@@ -25,7 +25,7 @@ namespace PurrNet
             {
                 if (!spawnPoints[i])
                 {
-                    PurrLogger.LogWarning($"Spawn point at index {i} is null. Removing it from the list.", this);
+                    PurrLogger.LogWarning($"Spawn point is null, removing it from the list.", this);
                     spawnPoints.RemoveAt(i);
                     i--;
                 }
