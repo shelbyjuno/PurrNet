@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.IO;
-using PurrNet.Modules;
 using UnityEngine;
 
 namespace PurrNet
@@ -14,7 +12,6 @@ namespace PurrNet
             var rootGameObjects = gameObject.scene.GetRootGameObjects();
             
             PurrSceneInfo sceneInfo = null;
-            
             
             foreach (var rootObject in rootGameObjects)
             {

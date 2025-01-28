@@ -94,17 +94,17 @@ namespace PurrNet.Editor
         public void OnProcessScene(Scene scene, BuildReport report)
         {
             var rootObjects = scene.GetRootGameObjects();
+            var obj = new GameObject("PurrNetSceneHelper");
             
-            var list = new System.Collections.Generic.List<GameObject>();
+            if (report == null)
+                obj.hideFlags = HideFlags.HideAndDontSave;
 
-            for (uint i = 0; i < rootObjects.Length; i++)
-                list.Add(rootObjects[i]);
-
+            var sceneInfo = obj.AddComponent<PurrSceneInfo>();
+            sceneInfo.rootGameObjects = new System.Collections.Generic.List<GameObject>();
+            
             for (uint i = 0; i < rootObjects.Length; i++)
             {
-                var rootObject = rootObjects[i];
-                var sceneInfo = rootObject.AddComponent<PurrSceneInfo>();
-                sceneInfo.rootGameObjects = list;
+                sceneInfo.rootGameObjects.Add(rootObjects[i]);
             }
         }
     }

@@ -13,7 +13,6 @@ namespace PurrNet.Modules
             
             PurrSceneInfo sceneInfo = null;
             
-            
             foreach (var rootObject in rootGameObjects)
             {
                 if (rootObject.TryGetComponent<PurrSceneInfo>(out var si))
