@@ -294,3 +294,13 @@ System.Nullable`1[[UnityEngine.SceneManagement.Scene, UnityEngine.CoreModule, Ve
 System.Type[] -> 292
 Purrnet.Tests.ServerStaticRPCs -> 293
 Purrnet.Tests.StaticRPCsBuffering -> 294
+A2UnityEngine.TransformPurrNet.NetworkTransform1B2UnityEngine.TransformPurrNet.NetworkTransform0
+
+B2UnityEngine.TransformPurrNet.NetworkTransform0
+
+GameObject2UnityEngine.TransformPurrNet.NetworkIdentity0
+
+test4UnityEngine.TransformUnityEngine.TrailRendererPurrNet.NetworkReflectionPurrNet.PrefabLink0
+
+test4UnityEngine.TransformUnityEngine.TrailRendererPurrNet.NetworkReflectionPurrNet.PrefabLink0
+
