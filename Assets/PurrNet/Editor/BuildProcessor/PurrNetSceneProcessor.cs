@@ -4,6 +4,7 @@ using PurrNet.Utils;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace PurrNet.Editor
@@ -99,6 +100,11 @@ namespace PurrNet.Editor
             for (uint i = 0; i < rootObjects.Length; i++)
             {
                 var rootObj = rootObjects[i];
+                bool isPrefab = PrefabUtility.IsPartOfPrefabAsset(rootObj);
+
+                if (isPrefab)
+                    PrefabUtility.UnpackPrefabInstance(rootObj, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                
                 var id = rootObj.AddComponent<SceneObjectIdentitfier>();
                 id.order = i;
             }
