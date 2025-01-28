@@ -48,6 +48,13 @@ namespace PurrNet.Utils
             return _decoder.TryGetValue(hash, out type);
         }
         
+        public static uint Load(Type type, uint hash)
+        {
+            _hashes[type] = hash;
+            _decoder[hash] = type;
+            return hash;
+        }
+        
         [UsedImplicitly]
         public static uint PrepareType(Type type)
         {
@@ -75,22 +82,32 @@ namespace PurrNet.Utils
         {
             return GetStableHashU32(typeof(T));
         }
-
+        
         public static string GetAllHashesAsText()
         {
             var builder = new StringBuilder();
             
-            builder.Append($"Hashes {_hashes.Count}:\n");
-            
             foreach (var pair in _hashes)
             {
                 builder.Append(pair.Key.FullName);
-                builder.Append(" -> ");
+                builder.Append(";");
                 builder.Append(pair.Value);
                 builder.Append('\n');
             }
             
             return builder.ToString();
+        }
+
+        public static void ClearState()
+        {
+            _hashes.Clear();
+            _decoder.Clear();
+            _hashCounter = 0;
+        }
+
+        public static void FinishLoad(int linesLength)
+        {
+            _hashCounter += (uint)linesLength;
         }
     }
 }

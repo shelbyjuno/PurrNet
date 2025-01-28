@@ -359,6 +359,42 @@ namespace PurrNet
             return false;
         }
 
+        static void RefreshHashes()
+        {
+            // ReSharper disable once Unity.UnknownResource
+            var hashes = Resources.Load<TextAsset>("PurrHashes");
+
+            if (hashes == null)
+                return;
+            
+            Hasher.ClearState();
+
+            var lines = hashes.text.Split('\n');
+            
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                if (string.IsNullOrEmpty(line))
+                    continue;
+                
+                var parts = line.Split(';');
+                if (parts.Length != 2)
+                    continue;
+                
+                var fullTypeName = parts[0];
+                var hash = uint.Parse(parts[1]);
+                
+                var type = Type.GetType(fullTypeName);
+
+                if (type == null)
+                    continue;
+                
+                Hasher.Load(type, hash);
+            }
+
+            Hasher.FinishLoad(lines.Length);
+        }
+
         private void Awake()
         {
             if (main && main != this)
@@ -388,6 +424,7 @@ namespace PurrNet
             }
             
             main = this;
+            RefreshHashes();
 
             //Time.fixedDeltaTime = 1f / _tickRate;
             Application.runInBackground = true;

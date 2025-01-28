@@ -23,12 +23,23 @@ namespace PurrNet.Modules
             for (var i = 0; i < rootGameObjects.Length; i++)
             {
                 var rootObject = rootGameObjects[i];
-                var hash = GameObjectHasher.ComputeHashRecursive(rootObject);
-                gameObjectsWithHash[i] = new GameObjectWithHash
+
+                if (rootObject.TryGetComponent<SceneObjectIdentitfier>(out var sid))
                 {
-                    gameObject = rootObject,
-                    hash = hash
-                };
+                    gameObjectsWithHash[i] = new GameObjectWithHash
+                    {
+                        gameObject = rootObject,
+                        hash = sid.order
+                    };
+                }
+                else
+                {
+                    gameObjectsWithHash[i] = new GameObjectWithHash
+                    {
+                        gameObject = rootObject,
+                        hash = 0
+                    };
+                }
             }
             
             Array.Sort(gameObjectsWithHash, (a, b) => 

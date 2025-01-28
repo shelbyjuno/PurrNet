@@ -1509,6 +1509,17 @@ namespace PurrNet.Codegen
                 if (!WillProcess(compiledAssembly))
                     return null!;
                 
+                bool isEditor = false;
+
+                foreach (var define in compiledAssembly.Defines)
+                {
+                    if (define == "UNITY_EDITOR")
+                    {
+                        isEditor = true;
+                        break;
+                    }
+                }
+                
                 var visitedTypes = new HashSet<string>();
                 var typesToGenerateSerializer = new HashSet<TypeReference>();
                 var typesToPrepareHasher = new HashSet<TypeReference>();
@@ -1569,7 +1580,7 @@ namespace PurrNet.Codegen
                         }
                         
                         UnityProxyProcessor.Process(types[t], messages);
-                        RegisterSerializersProcessor.HandleType(module, types[t], messages);
+                        RegisterSerializersProcessor.HandleType(module, types[t], isEditor, messages);
 
                         var type = types[t];
                         
@@ -1736,10 +1747,10 @@ namespace PurrNet.Codegen
                 typesToPrepareHasher.ExceptWith(typesToGenerateSerializer);
 
                 foreach (var typeRef in typesToGenerateSerializer)
-                    GenerateSerializersProcessor.HandleType(false, assemblyDefinition, typeRef, visitedTypes, messages);
+                    GenerateSerializersProcessor.HandleType(false, assemblyDefinition, typeRef, visitedTypes, isEditor, messages);
                 
                 foreach (var typeRef in typesToPrepareHasher)
-                    GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, visitedTypes, messages);
+                    GenerateSerializersProcessor.HandleType(true, assemblyDefinition, typeRef, visitedTypes, isEditor, messages);
                 
                 var pe = new MemoryStream();
                 var pdb = new MemoryStream();

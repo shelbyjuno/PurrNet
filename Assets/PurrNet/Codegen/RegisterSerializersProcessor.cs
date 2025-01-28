@@ -5,6 +5,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace PurrNet.Codegen
@@ -102,7 +103,7 @@ namespace PurrNet.Codegen
             public MethodDefinition method;
         }
         
-        public static void HandleType(ModuleDefinition module, TypeDefinition type, List<DiagnosticMessage> messages)
+        public static void HandleType(ModuleDefinition module, TypeDefinition type, bool isEditor, List<DiagnosticMessage> messages)
         {
             if (type.FullName == typeof(Packer).FullName) 
                 return;
@@ -188,6 +189,14 @@ namespace PurrNet.Codegen
             var attributeType = module.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
             var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(module);
             var attribute = new CustomAttribute(constructor);
+            
+            if (isEditor)
+            {
+                var editorType = module.GetTypeDefinition<UnityEditor.InitializeOnLoadMethodAttribute>().Import(module);
+                var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
+                var editorAttribute = new CustomAttribute(editorConstructor);
+                registerMethod.CustomAttributes.Add(editorAttribute);
+            }
             
             registerMethod.CustomAttributes.Add(attribute);
             attribute.ConstructorArguments.Add(new CustomAttributeArgument(module.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
