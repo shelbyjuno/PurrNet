@@ -94,16 +94,20 @@ namespace PurrNet.Editor
         public void OnProcessScene(Scene scene, BuildReport report)
         {
             var rootObjects = scene.GetRootGameObjects();
-
-            var obj = new GameObject("PurrNetSceneHelper")
-            {
-                hideFlags = HideFlags.HideAndDontSave
-            };
+            var obj = new GameObject("PurrNetSceneHelper");
+            
+#if UNITY_EDITOR
+            obj.hideFlags = HideFlags.HideAndDontSave;
+#endif
             SceneManager.MoveGameObjectToScene(obj, scene);
+            
             var sceneInfo = obj.AddComponent<PurrSceneInfo>();
             sceneInfo.rootGameObjects = new System.Collections.Generic.List<GameObject>();
+            
             for (uint i = 0; i < rootObjects.Length; i++)
                 sceneInfo.rootGameObjects.Add(rootObjects[i]);
+            
+            
         }
     }
 }
