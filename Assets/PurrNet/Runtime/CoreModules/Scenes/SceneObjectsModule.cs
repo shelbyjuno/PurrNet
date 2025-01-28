@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
@@ -21,9 +22,20 @@ namespace PurrNet.Modules
                     break;
                 }
             }
-            
+
             if (sceneInfo)
-                rootGameObjects = sceneInfo.rootGameObjects.ToArray();
+            {
+                var copy = new List<GameObject>(sceneInfo.rootGameObjects);
+                
+                // add any missing root objects
+                foreach (var rootObject in rootGameObjects)
+                {
+                    if (copy.Contains(rootObject)) continue;
+                    copy.Add(rootObject);
+                }
+                
+                rootGameObjects = copy.ToArray();
+            }
             
             foreach (var rootObject in rootGameObjects)
             {
