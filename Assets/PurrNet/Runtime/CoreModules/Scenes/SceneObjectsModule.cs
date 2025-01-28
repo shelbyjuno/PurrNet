@@ -27,6 +27,8 @@ namespace PurrNet.Modules
             
             foreach (var rootObject in rootGameObjects)
             {
+                if (rootObject.scene.handle != scene.handle) continue;
+                
                 rootObject.gameObject.GetComponentsInChildren(true, _sceneIdentities);
                 
                 if (_sceneIdentities.Count == 0) continue;

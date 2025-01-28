@@ -455,25 +455,6 @@ namespace PurrNet
             transport = gameObject.AddComponent<UDPTransport>();
         }
 
-#if UNITY_EDITOR
-        //Below is no longer needed, as we don't need the fixed delta time to be set to the tick rate.
-        /*private void OnValidate()
-        {
-            if (!gameObject.scene.isLoaded)
-                return;
-            
-            float tickRate = 1f / _tickRate;
-            
-            if (Mathf.Approximately(Time.fixedDeltaTime, tickRate))
-                return;
-
-            Time.fixedDeltaTime = tickRate;
-            EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-        }*/
-#endif
-
         /// <summary>
         /// Gets the module of the given type.
         /// Throws an exception if the module is not found.
