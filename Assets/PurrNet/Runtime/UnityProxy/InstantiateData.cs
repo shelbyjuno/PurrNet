@@ -23,11 +23,14 @@ namespace PurrNet
         public readonly InstantiateType type;
         public readonly T original;
         public readonly Vector3 position;
-        public readonly InstantiateParameters parameters;
         public readonly Quaternion rotation;
         public readonly Transform parent;
         public readonly Scene scene;
         public readonly bool instantiateInWorldSpace;
+        
+#if UNITY_6000_0_35
+        public readonly InstantiateParameters parameters;
+#endif
         
         public InstantiateData(T original)
         {
@@ -101,6 +104,7 @@ namespace PurrNet
             this.parameters = default;
         }
         
+#if UNITY_6000_0_35
         public InstantiateData(T original, InstantiateParameters parameters)
         {
             type = InstantiateType.Parameters;
@@ -124,6 +128,7 @@ namespace PurrNet
             instantiateInWorldSpace = parameters.worldSpace;
             this.parameters = parameters;
         }
+#endif
         
         public bool TryGetHierarchy(out HierarchyV2 result)
         {
@@ -218,6 +223,7 @@ namespace PurrNet
                     break;
                 case InstantiateType.Parameters:
                 case InstantiateType.ParametersWithPosRot:
+#if UNITY_6000_0_35
                     bool usePosRot = type == InstantiateType.ParametersWithPosRot;
                     
                     if (parameters.worldSpace)
@@ -237,6 +243,7 @@ namespace PurrNet
                         );
                     }
                     break;
+#endif
                 case InstantiateType.Default:
                 case InstantiateType.Scene:
                     trs.SetPositionAndRotation(
