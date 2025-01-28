@@ -23,7 +23,10 @@ namespace PurrNet
             }
 
             if (!sceneInfo)
+            {
+                File.WriteAllText("scene.txt", "No PurrSceneInfo found");
                 return;
+            }
             
             for (var i = 0; i < sceneInfo.rootGameObjects.Count; i++)
             {
