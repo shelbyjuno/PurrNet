@@ -5,7 +5,6 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using PurrNet.Packing;
 using Unity.CompilationPipeline.Common.Diagnostics;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace PurrNet.Codegen
@@ -121,6 +120,9 @@ namespace PurrNet.Codegen
 
             foreach (var method in type.Methods)
             {
+                if (method.HasGenericParameters || method.ContainsGenericParameter)
+                    continue;
+                
                 // Skip non-static classes
                 if (!method.IsStatic)
                     break;
@@ -192,7 +194,7 @@ namespace PurrNet.Codegen
             
             if (isEditor)
             {
-                var editorType = module.GetTypeDefinition<UnityEditor.InitializeOnLoadMethodAttribute>().Import(module);
+                var editorType = module.GetTypeDefinition<RegisterPackersAttribute>().Import(module);
                 var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(module);
                 var editorAttribute = new CustomAttribute(editorConstructor);
                 registerMethod.CustomAttributes.Add(editorAttribute);

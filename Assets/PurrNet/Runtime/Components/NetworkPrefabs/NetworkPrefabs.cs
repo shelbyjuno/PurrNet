@@ -7,17 +7,12 @@ using Object = UnityEngine.Object;
 #if UNITY_EDITOR
 using PurrNet.Utils;
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 #endif
 
 namespace PurrNet
 {
     [CreateAssetMenu(fileName = "NetworkPrefabs", menuName = "PurrNet/Network Prefabs", order = -201)]
     public class NetworkPrefabs : PrefabProviderScriptable
-#if UNITY_EDITOR
-        , IPreprocessBuildWithReport
-#endif
     {
         public bool autoGenerate = true;
         public bool networkOnly = true;
@@ -32,15 +27,6 @@ namespace PurrNet
             public bool pooled;
             public int warmupCount;
         }
-
-#if UNITY_EDITOR
-        public int callbackOrder { get; }
-        public void OnPreprocessBuild(BuildReport report)
-        {
-            if (autoGenerate)
-                Generate();
-        }
-#endif
 
         public override IReadOnlyList<PrefabData> allPrefabs => prefabs;
 
@@ -98,6 +84,12 @@ namespace PurrNet
 #if UNITY_EDITOR
         private bool _generating;
 #endif
+
+        private void OnValidate()
+        {
+            if (autoGenerate)
+                Generate();
+        }
 
         /// <summary>
         /// Editor only method to generate network prefabs from a specified folder.

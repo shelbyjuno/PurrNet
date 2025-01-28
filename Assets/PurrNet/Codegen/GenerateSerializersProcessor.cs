@@ -204,7 +204,7 @@ namespace PurrNet.Codegen
 
             if (isEditor)
             {
-                var editorType = assembly.MainModule.GetTypeDefinition<UnityEditor.InitializeOnLoadMethodAttribute>().Import(assembly.MainModule);
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>().Import(assembly.MainModule);
                 var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
                 var editorAttribute = new CustomAttribute(editorConstructor);
                 registerMethod.CustomAttributes.Add(editorAttribute);
@@ -241,7 +241,7 @@ namespace PurrNet.Codegen
             
             if (isEditor)
             {
-                var editorType = assembly.MainModule.GetTypeDefinition<UnityEditor.InitializeOnLoadMethodAttribute>();
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>();
                 var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
                 var editorAttribute = new CustomAttribute(editorConstructor);
                 registerMethod.CustomAttributes.Add(editorAttribute);
@@ -268,7 +268,7 @@ namespace PurrNet.Codegen
             registerMethod.CustomAttributes.Add(attribute);
             if (isEditor)
             {
-                var editorType = assembly.MainModule.GetTypeDefinition<UnityEditor.InitializeOnLoadMethodAttribute>();
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>();
                 var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
                 var editorAttribute = new CustomAttribute(editorConstructor);
                 registerMethod.CustomAttributes.Add(editorAttribute);
@@ -294,7 +294,7 @@ namespace PurrNet.Codegen
             registerMethod.CustomAttributes.Add(attribute);
             if (isEditor)
             {
-                var editorType = assembly.MainModule.GetTypeDefinition<UnityEditor.InitializeOnLoadMethodAttribute>();
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>();
                 var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
                 var editorAttribute = new CustomAttribute(editorConstructor);
                 registerMethod.CustomAttributes.Add(editorAttribute);

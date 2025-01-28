@@ -1,4 +1,5 @@
 using System.IO;
+using PurrNet.Packing;
 using PurrNet.Utils;
 using UnityEditor;
 using UnityEditor.Build;
@@ -9,6 +10,48 @@ namespace PurrNet.Editor
 {
     public class PurrNetSceneProcessor : IProcessSceneWithReport, IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
+        static void CallAllRegisters()
+        {
+            // call all static functions with RegisterPackersAttribute on static classes
+            
+            var allAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            
+            foreach (var assembly in allAssemblies)
+            {
+                var types = assembly.GetTypes();
+                
+                foreach (var type in types)
+                {
+                    if (!type.IsAbstract || !type.IsSealed)
+                        continue;
+                    
+                    var methods = type.GetMethods(System.Reflection.BindingFlags.Static | 
+                                                  System.Reflection.BindingFlags.Public | 
+                                                  System.Reflection.BindingFlags.NonPublic);
+                    
+                    foreach (var method in methods)
+                    {
+                        if (!method.IsStatic)
+                            continue;
+                        
+                        var attributes = method.GetCustomAttributes(typeof(RegisterPackersAttribute), false);
+                        if (attributes.Length > 0)
+                        {
+                            try
+                            {
+                                method.Invoke(null, null);
+                            }
+                            catch (System.Exception e)
+                            {
+                                UnityEngine.Debug.LogError(e);
+                                UnityEngine.Debug.LogError("Failed to call " + method.Name + " in " + type.Name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         public int callbackOrder => 0;
         
         public void OnPostprocessBuild(BuildReport report)
@@ -36,6 +79,8 @@ namespace PurrNet.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
+            CallAllRegisters();
+
             const string PATH = "Assets/Resources/PurrHashes.json";
             Directory.CreateDirectory(Path.GetDirectoryName(PATH) ?? string.Empty);
             
@@ -47,7 +92,6 @@ namespace PurrNet.Editor
 
         public void OnProcessScene(Scene scene, BuildReport report)
         {
-            
             if (report == null)
                 return;
             
