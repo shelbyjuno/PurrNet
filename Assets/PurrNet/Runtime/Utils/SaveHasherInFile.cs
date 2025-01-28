@@ -1,5 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
-using PurrNet.Utils;
+using PurrNet.Modules;
 using UnityEngine;
 
 namespace PurrNet
@@ -8,14 +9,25 @@ namespace PurrNet
     {
         private void Start()
         {
-            var hashes = Resources.Load<TextAsset>($"PurrHashes");
-            if (hashes == null)
-                return;
+            string names = "";
             
-            File.WriteAllText("hashes.txt", hashes.text);
+            var rootGameObjects = gameObject.scene.GetRootGameObjects();
 
-            var hashesRuntume = Hasher.GetAllHashesAsText();
-            File.WriteAllText("myhashes.txt", hashesRuntume);
+            for (var i = 0; i < rootGameObjects.Length; i++)
+            {
+                var rootObject = rootGameObjects[i];
+
+                if (rootObject.TryGetComponent<SceneObjectIdentitfier>(out var sid))
+                {
+                    names += rootObject.name + " " + sid.order + "\n";
+                }
+                else
+                {
+                    names += rootObject.name + " ?\n";
+                }
+            }
+
+            File.WriteAllText("scene.txt", names);
         }
     }
 }
