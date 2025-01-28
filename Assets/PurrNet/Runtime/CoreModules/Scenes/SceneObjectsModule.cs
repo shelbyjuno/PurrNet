@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using PurrNet.Logging;
 using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
@@ -9,43 +9,26 @@ namespace PurrNet.Modules
     {
         private static readonly List<NetworkIdentity> _sceneIdentities = new List<NetworkIdentity>();
         
-        struct GameObjectWithHash
-        {
-            public GameObject gameObject;
-            public uint hash;
-        }
-        
         public static void GetSceneIdentities(Scene scene, List<NetworkIdentity> networkIdentities)
         {
             var rootGameObjects = scene.GetRootGameObjects();
-            var gameObjectsWithHash = new GameObjectWithHash[rootGameObjects.Length];
             
-            for (var i = 0; i < rootGameObjects.Length; i++)
+            PurrSceneInfo sceneInfo = null;
+            
+            
+            foreach (var rootObject in rootGameObjects)
             {
-                var rootObject = rootGameObjects[i];
-
-                if (rootObject.TryGetComponent<SceneObjectIdentitfier>(out var sid))
+                if (rootObject.TryGetComponent<PurrSceneInfo>(out var si))
                 {
-                    gameObjectsWithHash[i] = new GameObjectWithHash
-                    {
-                        gameObject = rootObject,
-                        hash = sid.order
-                    };
-                }
-                else
-                {
-                    gameObjectsWithHash[i] = new GameObjectWithHash
-                    {
-                        gameObject = rootObject,
-                        hash = uint.MaxValue
-                    };
+                    sceneInfo = si;
+                    break;
                 }
             }
             
-            Array.Sort(gameObjectsWithHash, (a, b) =>
-                a.hash.CompareTo(b.hash));
-
-            foreach (var rootObject in gameObjectsWithHash)
+            if (sceneInfo)
+                rootGameObjects = sceneInfo.rootGameObjects.ToArray();
+            
+            foreach (var rootObject in rootGameObjects)
             {
                 rootObject.gameObject.GetComponentsInChildren(true, _sceneIdentities);
                 

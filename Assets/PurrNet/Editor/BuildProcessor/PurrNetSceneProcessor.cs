@@ -44,8 +44,8 @@ namespace PurrNet.Editor
                             }
                             catch (System.Exception e)
                             {
-                                UnityEngine.Debug.LogError(e);
-                                UnityEngine.Debug.LogError("Failed to call " + method.Name + " in " + type.Name);
+                                Debug.LogError(e);
+                                Debug.LogError("Failed to call " + method.Name + " in " + type.Name);
                             }
                         }
                     }
@@ -93,17 +93,17 @@ namespace PurrNet.Editor
 
         public void OnProcessScene(Scene scene, BuildReport report)
         {
-            if (report == null)
-                return;
-            
             var rootObjects = scene.GetRootGameObjects();
-            for (uint i = 0; i < rootObjects.Length; i++)
+
+            var obj = new GameObject("PurrNetSceneHelper")
             {
-                var rootObj = rootObjects[i];
-                PrefabUtility.UnpackPrefabInstance(rootObj, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-                var id = rootObj.AddComponent<SceneObjectIdentitfier>();
-                id.order = i;
-            }
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            SceneManager.MoveGameObjectToScene(obj, scene);
+            var sceneInfo = obj.AddComponent<PurrSceneInfo>();
+            sceneInfo.rootGameObjects = new System.Collections.Generic.List<GameObject>();
+            for (uint i = 0; i < rootObjects.Length; i++)
+                sceneInfo.rootGameObjects.Add(rootObjects[i]);
         }
     }
 }

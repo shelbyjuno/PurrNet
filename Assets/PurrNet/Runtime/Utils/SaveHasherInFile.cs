@@ -9,7 +9,7 @@ namespace PurrNet
     {
         private void Start()
         {
-            string names = "";
+            /*string names = "";
             
             var rootGameObjects = gameObject.scene.GetRootGameObjects();
 
@@ -27,7 +27,7 @@ namespace PurrNet
                 }
             }
 
-            File.WriteAllText("scene.txt", names);
+            File.WriteAllText("scene.txt", names);*/
         }
     }
 }
