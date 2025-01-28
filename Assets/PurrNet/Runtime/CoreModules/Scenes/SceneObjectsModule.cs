@@ -37,28 +37,13 @@ namespace PurrNet.Modules
                     gameObjectsWithHash[i] = new GameObjectWithHash
                     {
                         gameObject = rootObject,
-                        hash = 0
+                        hash = uint.MaxValue
                     };
                 }
             }
             
-            Array.Sort(gameObjectsWithHash, (a, b) => 
-            {
-                // First compare by name
-                int nameComparison = string.Compare(
-                    a.gameObject.name,
-                    b.gameObject.name, 
-                    StringComparison.Ordinal
-                );
-    
-                // If names are equal, then compare by hash
-                if (nameComparison == 0)
-                {
-                    return a.hash.CompareTo(b.hash);
-                }
-    
-                return nameComparison;
-            });
+            Array.Sort(gameObjectsWithHash, (a, b) =>
+                a.hash.CompareTo(b.hash));
 
             foreach (var rootObject in gameObjectsWithHash)
             {

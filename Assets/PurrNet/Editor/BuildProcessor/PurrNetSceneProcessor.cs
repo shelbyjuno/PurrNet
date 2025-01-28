@@ -95,14 +95,12 @@ namespace PurrNet.Editor
             if (report == null)
                 return;
             
-            uint hash = Hasher.ActualHash(scene.path);
-            
             var rootObjects = scene.GetRootGameObjects();
             for (uint i = 0; i < rootObjects.Length; i++)
             {
                 var rootObj = rootObjects[i];
                 var id = rootObj.AddComponent<SceneObjectIdentitfier>();
-                id.order = hash + i;
+                id.order = i;
             }
         }
     }
