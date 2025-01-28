@@ -32,7 +32,7 @@ namespace PurrNet
         public readonly InstantiateParameters parameters;
 #endif
         
-        public InstantiateData(T original)
+        public InstantiateData(T original) : this()
         {
             type = InstantiateType.Default;
             this.original = original;
@@ -41,10 +41,9 @@ namespace PurrNet
             parent = null;
             scene = default;
             instantiateInWorldSpace = false;
-            this.parameters = default;
         }
         
-        public InstantiateData(T original, Transform parent, bool instantiateInWorldSpace)
+        public InstantiateData(T original, Transform parent, bool instantiateInWorldSpace) : this()
         {
             type = InstantiateType.Parent;
             this.original = original;
@@ -53,10 +52,9 @@ namespace PurrNet
             this.parent = parent;
             scene = default;
             this.instantiateInWorldSpace = instantiateInWorldSpace;
-            this.parameters = default;
         }
         
-        public InstantiateData(T original, Vector3 position, Quaternion rotation)
+        public InstantiateData(T original, Vector3 position, Quaternion rotation) : this()
         {
             type = InstantiateType.PositionRotation;
             this.original = original;
@@ -65,10 +63,9 @@ namespace PurrNet
             parent = null;
             scene = default;
             instantiateInWorldSpace = false;
-            this.parameters = default;
         }
         
-        public InstantiateData(T original, Vector3 position, Quaternion rotation, Transform parent)
+        public InstantiateData(T original, Vector3 position, Quaternion rotation, Transform parent) : this()
         {
             type = InstantiateType.PositionRotationParent;
             this.original = original;
@@ -77,10 +74,9 @@ namespace PurrNet
             this.parent = parent;
             scene = default;
             instantiateInWorldSpace = false;
-            this.parameters = default;
         }
         
-        public InstantiateData(T original, Scene scene)
+        public InstantiateData(T original, Scene scene) : this()
         {
             type = InstantiateType.Scene;
             this.original = original;
@@ -89,10 +85,9 @@ namespace PurrNet
             parent = null;
             this.scene = scene;
             instantiateInWorldSpace = false;
-            this.parameters = default;
         }
         
-        public InstantiateData(T original, Transform parent)
+        public InstantiateData(T original, Transform parent) : this()
         {
             type = InstantiateType.SceneParent;
             this.original = original;
@@ -101,7 +96,6 @@ namespace PurrNet
             this.parent = parent;
             scene = default;
             instantiateInWorldSpace = false;
-            this.parameters = default;
         }
         
 #if UNITY_6000_0_35
