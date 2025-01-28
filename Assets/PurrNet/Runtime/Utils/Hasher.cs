@@ -89,7 +89,7 @@ namespace PurrNet.Utils
             
             foreach (var pair in _hashes)
             {
-                builder.Append(pair.Key.FullName);
+                builder.Append(pair.Key.AssemblyQualifiedName);
                 builder.Append(";");
                 builder.Append(pair.Value);
                 builder.Append('\n');
