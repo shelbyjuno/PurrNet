@@ -208,6 +208,32 @@ namespace PurrNet
             return OnPreInstantiate(prefabData, new InstantiateData<T>(original));
         }
         
+#if UNITY_6000_0_35
+        [UsedByIL]
+        public static T Instantiate<T>(T original, InstantiateParameters parameters) where T : Object
+        {
+            if (!TryGetPrefabData(original, out var prefabData))
+                return Object.Instantiate(original, parameters);
+            return OnPreInstantiate(prefabData, new InstantiateData<T>(original, parameters));
+        }
+        
+        [UsedByIL]
+        public static T Instantiate<T>(T original, Vector3 pos, Quaternion rot, InstantiateParameters parameters) where T : Object
+        {
+            if (!TryGetPrefabData(original, out var prefabData))
+                return Object.Instantiate(original, pos, rot, parameters);
+            return OnPreInstantiate(prefabData, new InstantiateData<T>(original, pos, rot, parameters));
+        }
+        
+        [UsedByIL]
+        public static T InstantiateDirectly<T>(T original, InstantiateParameters parameters) where T : Object
+            => Object.Instantiate(original, parameters);
+        
+        [UsedByIL]
+        public static T InstantiateDirectly<T>(T original, Vector3 pos, Quaternion rot, InstantiateParameters parameters) where T : Object
+            => Object.Instantiate(original, pos, rot, parameters);
+#endif
+        
         public static T InstantiateDirectly<T>(T original) where T : Object
             => Object.Instantiate(original);
 
