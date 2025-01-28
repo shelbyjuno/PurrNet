@@ -96,9 +96,9 @@ namespace PurrNet.Editor
             var rootObjects = scene.GetRootGameObjects();
             var obj = new GameObject("PurrNetSceneHelper");
             
-#if UNITY_EDITOR
-            obj.hideFlags = HideFlags.HideAndDontSave;
-#endif
+            if (report == null)
+                obj.hideFlags = HideFlags.HideAndDontSave;
+            
             SceneManager.MoveGameObjectToScene(obj, scene);
             
             var sceneInfo = obj.AddComponent<PurrSceneInfo>();
