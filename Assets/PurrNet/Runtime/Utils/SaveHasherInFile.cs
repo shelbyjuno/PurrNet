@@ -9,25 +9,32 @@ namespace PurrNet
     {
         private void Start()
         {
-            /*string names = "";
+            string names = "";
             
             var rootGameObjects = gameObject.scene.GetRootGameObjects();
-
-            for (var i = 0; i < rootGameObjects.Length; i++)
+            
+            PurrSceneInfo sceneInfo = null;
+            
+            
+            foreach (var rootObject in rootGameObjects)
             {
-                var rootObject = rootGameObjects[i];
-
-                if (rootObject.TryGetComponent<SceneObjectIdentitfier>(out var sid))
+                if (rootObject.TryGetComponent<PurrSceneInfo>(out var si))
                 {
-                    names += rootObject.name + " " + sid.order + "\n";
-                }
-                else
-                {
-                    names += rootObject.name + " ?\n";
+                    sceneInfo = si;
+                    break;
                 }
             }
 
-            File.WriteAllText("scene.txt", names);*/
+            if (!sceneInfo)
+                return;
+            
+            for (var i = 0; i < sceneInfo.rootGameObjects.Count; i++)
+            {
+                var rootObject = sceneInfo.rootGameObjects[i];
+                names += rootObject.name + "\n";
+            }
+
+            File.WriteAllText("scene.txt", names);
         }
     }
 }
