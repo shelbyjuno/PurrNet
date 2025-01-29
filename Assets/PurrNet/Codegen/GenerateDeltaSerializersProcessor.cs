@@ -192,7 +192,6 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ldloc, isEqualVar);
             il.Emit(OpCodes.Call, packerTypeBoolean);
             il.Emit(OpCodes.Ldloc_0);
-            il.Emit(OpCodes.Dup);
             
             // if true, return
             il.Emit(OpCodes.Brtrue, endOfFunction);
