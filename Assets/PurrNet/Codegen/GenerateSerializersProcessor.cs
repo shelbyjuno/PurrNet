@@ -134,7 +134,6 @@ namespace PurrNet.Codegen
                 HandleHashOnly(assembly, type, serializerClass, isEditor);
                 return;
             }
-            
 
             if (IsGeneric(type, out var genericT))
             {
@@ -154,8 +153,6 @@ namespace PurrNet.Codegen
                 HandleNetworkModule(assembly, type, serializerClass, isEditor);
                 return;
             }
-            
-            GenerateDeltaSerializersProcessor.HandleType(assembly, type, serializerClass, messages);
             
             // create static write method
             var writeMethod = new MethodDefinition("Write", MethodAttributes.Public | MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
@@ -190,6 +187,7 @@ namespace PurrNet.Codegen
             GenerateMethod(false, readMethod, readMethodP, type, read, mainmodule, valueArg);
             serializerClass.Methods.Add(readMethod);
             
+            GenerateDeltaSerializersProcessor.HandleType(assembly, type, serializerClass, messages);
             RegisterSerializersProcessor.HandleType(type.Module, serializerClass, isEditor, messages);
         }
 
@@ -676,7 +674,7 @@ namespace PurrNet.Codegen
             il.Append(ret);
         }
         
-        static TypeReference ResolveGenericFieldType(FieldDefinition field, TypeReference declaringType)
+        public static TypeReference ResolveGenericFieldType(FieldDefinition field, TypeReference declaringType)
         {
             var fieldType = field.FieldType;
 
@@ -800,7 +798,7 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ret);
         }
 
-        private static MethodReference CreateGenericMethod(TypeReference packerType, TypeReference type,
+        public static MethodReference CreateGenericMethod(TypeReference packerType, TypeReference type,
             MethodReference writeMethod, ModuleDefinition mainmodule)
         {
             var genericPackerType = new GenericInstanceType(packerType);

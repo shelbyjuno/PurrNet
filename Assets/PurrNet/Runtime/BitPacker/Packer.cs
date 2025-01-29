@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using PurrNet.Logging;
+using PurrNet.Modules;
 using PurrNet.Utils;
 
 namespace PurrNet.Packing
@@ -152,6 +153,30 @@ namespace PurrNet.Packing
 
     public static class Packer
     {
+        [UsedByIL]
+        public static bool AreEqual<T>(T a, T b)
+        {
+            using var packerA = BitPackerPool.Get();
+            using var packerB = BitPackerPool.Get();
+            
+            Write(packerA, a);
+            Write(packerB, b);
+            
+            return packerA.ToByteData().span.SequenceEqual(packerB.ToByteData().span);
+        }
+        
+        [UsedByIL]
+        public static bool AreEqualRef<T>(ref T a, ref T b)
+        {
+            using var packerA = BitPackerPool.Get();
+            using var packerB = BitPackerPool.Get();
+            
+            Write(packerA, a);
+            Write(packerB, b);
+            
+            return packerA.ToByteData().span.SequenceEqual(packerB.ToByteData().span);
+        }
+        
         static readonly Dictionary<Type, MethodInfo> _writeMethods = new Dictionary<Type, MethodInfo>();
         static readonly Dictionary<Type, MethodInfo> _readMethods = new Dictionary<Type, MethodInfo>();
         

@@ -13,6 +13,27 @@ namespace PurrNet.Packing
         {
             Packer<T?>.RegisterWriter(WriteNullable);
             Packer<T?>.RegisterReader(ReadNullable);
+            
+            DeltaPacker<T?>.RegisterWriter(WriteDeltaNullable);
+            DeltaPacker<T?>.RegisterReader(ReadDeltaNullable);
+        }
+
+        private static void WriteDeltaNullable<T>(BitPacker packer, T? oldvalue, T? newvalue) where T : struct
+        {
+            bool hasChanged = oldvalue.HasValue != newvalue.HasValue;
+            Packer<bool>.Write(packer, hasChanged);
+            
+            if (hasChanged)
+                WriteNullable(packer, newvalue);
+        }
+
+        private static void ReadDeltaNullable<T>(BitPacker packer, T? oldvalue, ref T? value) where T : struct
+        {
+            bool hasChanged = default;
+            packer.Read(ref hasChanged);
+            
+            if (hasChanged)
+                ReadNullable(packer, ref value);
         }
 
         private static void WriteNullable<T>(BitPacker packer, T? value) where T : struct
@@ -320,15 +341,49 @@ namespace PurrNet.Packing
         {
             Packer<List<T>>.RegisterWriter(WriteList);
             Packer<List<T>>.RegisterReader(ReadList);
+            
+            DeltaPacker<List<T>>.RegisterWriter(WriteDeltaList);
+            DeltaPacker<List<T>>.RegisterReader(ReadDeltaList);
         }
-        
+
         [UsedByIL]
         public static void RegisterArray<T>()
         {
             Packer<T[]>.RegisterWriter(WriteList);
             Packer<T[]>.RegisterReader(ReadArray);
+            
+            DeltaPacker<T[]>.RegisterWriter(WriteDeltaList);
+            DeltaPacker<T[]>.RegisterReader(ReadDeltaArray);
         }
         
+        private static void WriteDeltaList<T>(BitPacker packer, IList<T> oldvalue, IList<T> newvalue)
+        {
+            bool areEqual = Packer.AreEqual(oldvalue, newvalue);
+            
+            Packer<bool>.Write(packer, areEqual);
+            
+            if (!areEqual)
+                WriteList(packer, newvalue);
+        }
+
+        private static void ReadDeltaArray<T>(BitPacker packer, T[] oldvalue, ref T[] value)
+        {
+            bool areEqual = default;
+            packer.Read(ref areEqual);
+            
+            if (!areEqual)
+                ReadArray(packer, ref value);
+        }
+        
+        private static void ReadDeltaList<T>(BitPacker packer, List<T> oldvalue, ref List<T> value)
+        {
+            bool areEqual = default;
+            packer.Read(ref areEqual);
+            
+            if (!areEqual)
+                ReadList(packer, ref value);
+        }
+
         [UsedByIL]
         public static void WriteCollection<T>(this BitPacker packer, ICollection<T> value)
         {
