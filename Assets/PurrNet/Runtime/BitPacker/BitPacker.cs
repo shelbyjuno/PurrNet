@@ -74,6 +74,11 @@ namespace PurrNet.Packing
             _isReading = readMode;
         }
         
+        public void SetBitPosition(int bitPosition)
+        {
+            positionInBits = bitPosition;
+        }
+        
         public void ResetPositionAndMode(bool readMode)
         {
             positionInBits = 0;
