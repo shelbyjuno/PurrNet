@@ -152,6 +152,33 @@ namespace PurrNet.Packing
                 value = (uint)(oldvalue + packed.value);
             }
         }
+        
+        [UsedByIL]
+        private static void WriteUInt32(BitPacker packer, PackedUInt oldvalue, PackedUInt newvalue)
+        {
+            bool hasChanged = oldvalue != newvalue;
+            Packer<bool>.Write(packer, hasChanged);
+
+            if (hasChanged)
+            {
+                long diff = newvalue - (long)oldvalue;
+                Packer<PackedLong>.Write(packer, diff);
+            }
+        }
+
+        [UsedByIL]
+        private static void ReadUInt32(BitPacker packer, PackedUInt oldvalue, ref PackedUInt value)
+        {
+            bool hasChanged = default;
+            Packer<bool>.Read(packer, ref hasChanged);
+            
+            if (hasChanged)
+            {
+                PackedLong packed = default;
+                Packer<PackedLong>.Read(packer, ref packed);
+                value = (uint)(oldvalue + packed.value);
+            }
+        }
 
         [UsedByIL]
         private static void WriteInt32(BitPacker packer, int oldvalue, int newvalue)
