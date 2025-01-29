@@ -91,6 +91,8 @@ namespace PurrNet.Packing
         {
             Packer<DisposableList<T>>.RegisterWriter(WriteDisposableList);
             Packer<DisposableList<T>>.RegisterReader(ReadDisposableList);
+            DeltaPacker<DisposableList<T>>.RegisterWriter(WriteDisposableDeltaList);
+            DeltaPacker<DisposableList<T>>.RegisterReader(ReadDisposableDeltaList);
         }
         
         [UsedByIL]
@@ -158,6 +160,37 @@ namespace PurrNet.Packing
             
             for (int i = 0; i < length; i++)
                 Packer<T>.Write(packer, value[i]);
+        }
+
+        [UsedByIL]
+        public static void ReadDisposableDeltaList<T>(this BitPacker packer, DisposableList<T> old, ref DisposableList<T> value)
+        {
+            bool areEqual = default;
+            packer.Read(ref areEqual);
+
+            if (areEqual)
+            {
+                // do a deep copy
+                using var tmpPacker = BitPackerPool.Get();
+                WriteDisposableList(tmpPacker, old);
+                ReadDisposableList(tmpPacker, ref value);
+                return;
+            }
+            
+            ReadDisposableList(packer, ref value);
+        }
+        
+        [UsedByIL]
+        public static void WriteDisposableDeltaList<T>(this BitPacker packer, DisposableList<T> old, DisposableList<T> value)
+        {
+            if (Packer.AreEqual(old, value))
+            {
+                Packer<bool>.Write(packer, true);
+                return;
+            }
+            
+            Packer<bool>.Write(packer, false);
+            WriteDisposableList(packer, value);
         }
 
         [UsedByIL]
