@@ -156,7 +156,7 @@ namespace PurrNet.Transports
             StopClientInternal();
         }
 
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
         {
             while (_serverQueue.Count > 0)
             {

@@ -60,13 +60,18 @@ namespace PurrNet.Transports
             _client = new NetManager(_clientListener)
             {
                 UnconnectedMessagesEnabled = true,
-                PingInterval = 900
+                PingInterval = 900,
+                AutoRecycle = true,
+                EnableStatistics = false,
             };
             
             _server = new NetManager(_serverListener)
             {
                 UnconnectedMessagesEnabled = true,
-                PingInterval = 900
+                PingInterval = 900,
+                AutoRecycle = true,
+                EnableStatistics = false,
+                
             };
 
             _clientListener.PeerConnectedEvent += OnClientConnected;
@@ -162,7 +167,9 @@ namespace PurrNet.Transports
             onConnected?.Invoke(conn, true);
         }
 
-        public void UpdateEvents(float delta)
+        /// In this mode you should use ManualReceive (without PollEvents) for receive packets
+        /// and ManualUpdate(...) for update and send packets
+        public void TickUpdate(float delta)
         {
             var dInMs = Mathf.FloorToInt(delta * 1000);
             
@@ -177,6 +184,12 @@ namespace PurrNet.Transports
                 _client.ManualUpdate(dInMs);
                 _client.PollEvents();
             }
+        }
+        
+        public void UnityUpdate(float delta)
+        {
+            if (_server.IsRunning) _server.PollEvents();
+            if (_client.IsRunning) _client.PollEvents();
         }
 
         public void Connect(string ip, ushort port)

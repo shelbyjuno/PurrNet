@@ -874,6 +874,9 @@ namespace PurrNet
         {
             _serverModules.TriggerOnUpdate();
             _clientModules.TriggerOnUpdate();
+            
+            if (_transport) 
+                _transport.transport.UnityUpdate(Time.deltaTime);
         }
 
         private void OnTick()
@@ -888,7 +891,7 @@ namespace PurrNet
                 _clientModules.TriggerOnPreFixedUpdate();
             
             if (_transport) 
-                _transport.transport.UpdateEvents(tickModule.tickDelta);
+                _transport.transport.TickUpdate(tickModule.tickDelta);
             
             if (serverConnected)
                 _serverModules.TriggerOnFixedUpdate();

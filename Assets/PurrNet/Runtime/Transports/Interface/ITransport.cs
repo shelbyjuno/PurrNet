@@ -125,7 +125,9 @@ namespace PurrNet.Transports
         
         void CloseConnection(Connection conn);
 
-        void UpdateEvents(float delta);
+        void TickUpdate(float delta);
+        
+        void UnityUpdate(float delta) {}
     }
 
     public enum DisconnectReason

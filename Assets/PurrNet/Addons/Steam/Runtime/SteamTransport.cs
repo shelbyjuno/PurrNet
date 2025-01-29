@@ -240,7 +240,7 @@ namespace PurrNet.Steam
             _server.Kick(conn.connectionId);
         }
 
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
         {
             _server?.RunCallbacks();
             _client?.RunCallbacks();

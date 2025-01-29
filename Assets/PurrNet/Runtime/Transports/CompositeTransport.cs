@@ -215,14 +215,26 @@ namespace PurrNet.Transports
             SetupEvents();
         }
 
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
         {
             for (int i = 0; i < _transports.Length; i++)
             {
                 if (_transports[i])
-                    _transports[i].transport.UpdateEvents(delta);
+                    _transports[i].transport.TickUpdate(delta);
             }
 
+            TriggerConnectionStateEvent(true);
+            TriggerConnectionStateEvent(false);
+        }
+        
+        public void UnityUpdate(float delta)
+        {
+            for (int i = 0; i < _transports.Length; i++)
+            {
+                if (_transports[i])
+                    _transports[i].transport.UnityUpdate(delta);
+            }
+            
             TriggerConnectionStateEvent(true);
             TriggerConnectionStateEvent(false);
         }
