@@ -12,8 +12,7 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "System.Collections.Immutable.dll",
-        "Newtonsoft.Json.dll",
-        "Delta.dll"
+        "Newtonsoft.Json.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

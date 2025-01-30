@@ -78,6 +78,16 @@ namespace PurrNet.Packing
             positionInBits = bitPosition;
         }
         
+        public void SkipBytes(int skip)
+        {
+            positionInBits += skip * 8;
+        }
+        
+        public void SkipBytes(uint skip)
+        {
+            positionInBits += (int)skip * 8;
+        }
+        
         public void ResetPositionAndMode(bool readMode)
         {
             positionInBits = 0;
@@ -290,6 +300,11 @@ namespace PurrNet.Packing
             
             ReadBytes(bytes);
             return utf8.GetString(bytes);
+        }
+
+        public char ReadChar()
+        {
+            return (char)ReadBits(8);
         }
     }
 }

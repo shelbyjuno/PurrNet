@@ -37,7 +37,7 @@ namespace PurrNet.Transports
 
         public override string ToString()
         {
-            string str = string.Empty;
+            string str = $"LENGTH: {length} DATA: ";
             for (int i = 0; i < length; i++)
                 str += data[i + offset].ToString("X2") + " ";
             return str;
