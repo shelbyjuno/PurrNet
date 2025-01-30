@@ -173,6 +173,7 @@ namespace PurrNet.Packing
                 // do a deep copy
                 using var tmpPacker = BitPackerPool.Get();
                 WriteDisposableList(tmpPacker, old);
+                tmpPacker.ResetPositionAndMode(true);
                 ReadDisposableList(tmpPacker, ref value);
                 return;
             }
