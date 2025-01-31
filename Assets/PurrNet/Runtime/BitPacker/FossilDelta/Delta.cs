@@ -7,7 +7,8 @@ namespace Fossil
 	public enum DeltaOp : byte
 	{
 		At,
-		Colon
+		Colon,
+		Semicolon
 	}
 	
 	public static class Delta
@@ -15,13 +16,13 @@ namespace Fossil
 		[UsedByIL]
 		static void DeltaOpWrite(BitPacker zDelta, DeltaOp op)
 		{
-			zDelta.WriteBits((byte)op, 1);
+			zDelta.WriteBits((byte)op, 2);
 		}
 		
 		[UsedByIL]
 		static void DeltaOpReader(BitPacker zDelta, ref DeltaOp op)
 		{
-			op = (DeltaOp)zDelta.ReadBits(1);
+			op = (DeltaOp)zDelta.ReadBits(2);
 		}
 		
 		public const ushort NHASH = 16;
@@ -142,6 +143,9 @@ namespace Fossil
 				Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
 				zDelta.WriteBytes(remainingBytes);
 			}
+			
+			Packer<PackedUInt>.Write(zDelta, Checksum(target));
+			Packer<DeltaOp>.Write(zDelta, DeltaOp.Semicolon);
 		}
 		
 		public static void Apply(ReadOnlySpan<byte> origin, BitPacker delta, ReadOnlySpan<byte> deltaRaw, BitPacker zOut) {
@@ -168,10 +172,54 @@ namespace Fossil
 					case DeltaOp.Colon:
 						zOut.WriteBytes(delta, (int)cnt);
 						break;
+
+					case DeltaOp.Semicolon: return;
 					default:
 						throw new ArgumentOutOfRangeException();
 				}
 			}
 		}
+		
+		// Return a 32-bit checksum of the array.
+		static uint Checksum(ReadOnlySpan<byte> arr, int count = 0, uint sum = 0) {
+			uint sum0 = 0, sum1 = 0, sum2 = 0, N = (uint) (count == 0 ? arr.Length : count);
+
+			int z = 0;
+
+			while(N >= 16){
+				sum0 += (uint) arr[z+0] + arr[z+4] + arr[z+8]  + arr[z+12];
+				sum1 += (uint) arr[z+1] + arr[z+5] + arr[z+9]  + arr[z+13];
+				sum2 += (uint) arr[z+2] + arr[z+6] + arr[z+10] + arr[z+14];
+				sum  += (uint) arr[z+3] + arr[z+7] + arr[z+11] + arr[z+15];
+				z += 16;
+				N -= 16;
+			}
+			while(N >= 4){
+				sum0 += arr[z+0];
+				sum1 += arr[z+1];
+				sum2 += arr[z+2];
+				sum  += arr[z+3];
+				z += 4;
+				N -= 4;
+			}
+
+			sum += (sum2 << 8) + (sum1 << 16) + (sum0 << 24);
+			switch (N&3) {
+			case 3:
+				sum += (uint) (arr [z + 2] << 8);
+				sum += (uint) (arr [z + 1] << 16);
+				sum += (uint) (arr [z + 0] << 24);
+				break;
+			case 2:
+				sum += (uint) (arr [z + 1] << 16);
+				sum += (uint) (arr [z + 0] << 24);
+				break;
+			case 1:
+				sum += (uint) (arr [z + 0] << 24);
+				break;
+			}
+			return sum;
+		}
+
 	}
 }
