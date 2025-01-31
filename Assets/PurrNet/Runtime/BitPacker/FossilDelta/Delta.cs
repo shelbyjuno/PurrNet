@@ -1,10 +1,30 @@
 ﻿using System;
+using PurrNet.Modules;
 using PurrNet.Packing;
 
 namespace Fossil
 {
+	public enum DeltaOp : byte
+	{
+		At,
+		Colon,
+		Semicolon
+	}
+	
 	public static class Delta
 	{
+		[UsedByIL]
+		static void DeltaOpWrite(BitPacker zDelta, DeltaOp op)
+		{
+			zDelta.WriteBits((byte)op, 2);
+		}
+		
+		[UsedByIL]
+		static void DeltaOpReader(BitPacker zDelta, ref DeltaOp op)
+		{
+			op = (DeltaOp)zDelta.ReadBits(2);
+		}
+		
 		public const ushort NHASH = 16;
 
 		static readonly RollingHash _rollingHash = new RollingHash();
@@ -15,20 +35,7 @@ namespace Fossil
 			var originLength = origin.Length;
 			var targetLength = target.Length;
 
-			Packer<int>.Write(zDelta, targetLength);
-			Packer<char>.Write(zDelta, '\n');
-
-			// If the source is very small, it means that we have no
-			// chance of ever doing a copy command.  Just output a single
-			// literal segment for the entire target and exit.
-			if (originLength <= NHASH) {
-				Packer<int>.Write(zDelta, targetLength);
-				Packer<char>.Write(zDelta, ':');
-				zDelta.WriteBytes(target);
-				Packer<int>.Write(zDelta, (int)Checksum(target));
-				Packer<char>.Write(zDelta, ';');
-				return;
-			}
+			Packer<PackedUInt>.Write(zDelta, (uint)targetLength);
 
 			// Compute the hash table used to locate matching sections in the source.
 			int nHash = originLength / NHASH;
@@ -59,26 +66,9 @@ namespace Fossil
 					hv = (int) (_rollingHash.Value() % nHash);
 					iBlock = landmark[hv];
 					while (iBlock >= 0 && (limit--)>0 ) {
-						//
-						// The hash window has identified a potential match against
-						// landmark block iBlock.  But we need to investigate further.
-						//
-						// Look for a region in zOut that matches zSrc. Anchor the search
-						// at zSrc[iSrc] and zOut[_base+i].  Do not include anything prior to
-						// zOut[_base] or after zOut[outLen] nor anything after zSrc[srcLen].
-						//
-						// Set cnt equal to the length of the match and set ofst so that
-						// zSrc[ofst] is the first element of the match.  litsz is the number
-						// of characters between zOut[_base] and the beginning of the match.
-						// sz will be the overhead (in bytes) needed to encode the copy
-						// command.  Only generate copy command if the overhead of the
-						// copy command is less than the amount of literal text to be copied.
-						//
 						int cnt, litsz;
 						int j, k, x, y;
 
-						// Beginning at iSrc, match forwards as far as we can.
-						// j counts the number of characters that match.
 						iSrc = iBlock*NHASH;
 						for (j = 0, x = iSrc, y = _base+i; x < originLength && y < targetLength; j++, x++, y++) {
 							if (origin[x] != target[y]) break;
@@ -98,11 +88,7 @@ namespace Fossil
 						// sz will hold the number of bytes needed to encode the "insert"
 						// command and the copy command, not counting the "insert" text.
 						
-						// Fixed overhead in bytes:
-						// - 4 bytes for each integer (i-k, cnt, ofst)
-						// - 1 byte for each command character (':', '@', ',')
-						const int COMMAND_OVERHEAD = 4 * 3 + 3;
-						if (cnt >= COMMAND_OVERHEAD && cnt > bestCnt) {
+						if (cnt > bestCnt) {
 							// Remember this match only if it is the best so far and it
 							// does not increase the file size.
 							bestCnt = cnt;
@@ -119,16 +105,15 @@ namespace Fossil
 					if (bestCnt > 0) {
 						if (bestLitsz > 0) {
 							// Add an insert command before the copy.
-							Packer<int>.Write(zDelta, bestLitsz);
-							Packer<char>.Write(zDelta, ':');
+							Packer<PackedUInt>.Write(zDelta, (uint)bestLitsz);
+							Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
 							zDelta.WriteBytes(target.Slice(_base, bestLitsz));
 							_base += bestLitsz;
 						}
 						_base += bestCnt;
-						Packer<int>.Write(zDelta, bestCnt);
-						Packer<char>.Write(zDelta, '@');
-						Packer<int>.Write(zDelta, bestOfst);
-						Packer<char>.Write(zDelta, ',');
+						Packer<PackedUInt>.Write(zDelta, (uint)bestCnt);
+						Packer<DeltaOp>.Write(zDelta, DeltaOp.At);
+						Packer<PackedUInt>.Write(zDelta, (uint)bestOfst);
 						
 						if (bestOfst + bestCnt -1 > lastRead) {
 							lastRead = bestOfst + bestCnt - 1;
@@ -140,8 +125,8 @@ namespace Fossil
 					if (_base+i+NHASH >= targetLength){
 						// We have reached the end and have not found any
 						// matches.  Do an "insert" for everything that does not match
-						Packer<int>.Write(zDelta, targetLength-_base);
-						Packer<char>.Write(zDelta, ':');
+						Packer<PackedUInt>.Write(zDelta, (uint)(targetLength-_base));
+						Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
 						zDelta.WriteBytes(target.Slice(_base, targetLength-_base));
 						_base = targetLength;
 						break;
@@ -155,35 +140,44 @@ namespace Fossil
 			// Output a final "insert" record to get all the text at the end of
 			// the file that does not match anything in the source.
 			if(_base < targetLength) {
-				Packer<int>.Write(zDelta, targetLength-_base);
-				Packer<char>.Write(zDelta, ':');
+				Packer<PackedUInt>.Write(zDelta, (uint)(targetLength-_base));
+				Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
 				zDelta.WriteBytes(target.Slice(_base, targetLength-_base));
 			}
-			// Output the final checksum record.
-			Packer<int>.Write(zDelta, (int)Checksum(target));
-			Packer<char>.Write(zDelta, ';');
+			
+			Packer<PackedUInt>.Write(zDelta, Checksum(target));
+			Packer<DeltaOp>.Write(zDelta, DeltaOp.Semicolon);
+		}
+		
+		static DeltaOp ReadOp(this BitPacker delta) {
+			DeltaOp _op = default;
+			DeltaOpReader(delta, ref _op);
+			return _op;
 		}
 
 		public static void Apply(ReadOnlySpan<byte> origin, BitPacker delta, ReadOnlySpan<byte> deltaRaw, BitPacker zOut) {
-			int limit = 0, total = 0;
+			int limit, total = 0;
 			uint lenSrc = (uint) origin.Length;
 			uint lenDelta = (uint) deltaRaw.Length;
-			Packer<int>.Read(delta, ref limit);
+
+			PackedUInt cache = default;
 			
-			if (delta.ReadChar() != '\n')
-				throw new Exception("size integer not terminated by \'\\n\'");
+			Packer<PackedUInt>.Read(delta, ref cache);
+			limit = (int)(uint)cache;
 			
 			while(delta.positionInBytes < lenDelta) {
-				int cnt = 0, ofst = 0;
+				int cnt, ofst;
 				
-				Packer<int>.Read(delta, ref cnt);
+				Packer<PackedUInt>.Read(delta, ref cache);
+				cnt = (int)(uint)cache;
 
-				switch (delta.ReadChar()) {
-				case '@':
-					Packer<int>.Read(delta, ref ofst);
+				var op = delta.ReadOp();
+				switch (op) 
+				{
+				case DeltaOp.At:
+					Packer<PackedUInt>.Read(delta, ref cache);
+					ofst = (int)(uint)cache;
 
-					if (delta.positionInBytes < lenDelta && delta.ReadChar() != ',')
-						throw new Exception("copy command not terminated by \',\'");
 					total += cnt;
 					if (total > limit)
 						throw new Exception("copy exceeds output file size");
@@ -192,30 +186,21 @@ namespace Fossil
 					zOut.WriteBytes(origin.Slice(ofst, cnt));
 					break;
 
-				case ':':
+				case DeltaOp.Colon:
 					total += cnt;
 					if (total > limit)
 						throw new Exception("insert command gives an output larger than predicted");
-					if (cnt > lenDelta)
-						throw new Exception("insert count exceeds size of delta");
 					
 					var deltapos = delta.positionInBytes;
 					zOut.WriteBytes(deltaRaw.Slice(deltapos, cnt));
 					delta.SkipBytes(cnt);
 					break;
-
-				case ';':
-					/*if (cnt != Checksum(zOut.ToByteData().span))
-						throw new Exception("bad checksum");*/
-					if (total != limit)
-						throw new Exception("generated size does not match predicted size");
+				case DeltaOp.Semicolon:
 					return;
-
 				default:
-					throw new Exception("unknown delta operator");
+					throw new Exception($"unknown delta operator '{op}'");
 				}
 			}
-			throw new Exception("unterminated delta");
 		}
 
 		// Return a 32-bit checksum of the array.

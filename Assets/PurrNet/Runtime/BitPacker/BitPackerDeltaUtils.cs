@@ -17,16 +17,19 @@ namespace PurrNet
             Packer<long>.Write(origin, 666);
             Packer<long>.Write(origin, 666);
             Packer<long>.Write(origin, 666);
+            Packer<long>.Write(origin, 666);
             
             using var target = BitPackerPool.Get();
             
             Packer<long>.Write(target, 69);
+            Packer<long>.Write(target, 42);
             Packer<long>.Write(target, 6942);
             Packer<long>.Write(target, 666);
             Packer<long>.Write(target, 666);
             Packer<long>.Write(target, 666);
             Packer<long>.Write(target, 666);
-            Packer<long>.Write(target, 667);
+            Packer<long>.Write(target, 666);
+            Packer<long>.Write(target, 666);
             
             using var delta = BitPackerPool.Get();
             
