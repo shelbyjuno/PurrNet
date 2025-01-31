@@ -29,6 +29,9 @@ namespace Fossil
 
 		static readonly RollingHash _rollingHash = new RollingHash();
 		
+		static int[] _collide = new int[1024];
+		static int[] _landmark = new int[1024];
+		
 		public static void Create(ReadOnlySpan<byte> origin, ReadOnlySpan<byte> target, BitPacker zDelta) {
 			int i, lastRead = -1;
 			
@@ -37,17 +40,21 @@ namespace Fossil
 
 			// Compute the hash table used to locate matching sections in the source.
 			int nHash = originLength / NHASH;
-			int[] collide =  new int[nHash];
-			int[] landmark = new int[nHash];
-			for (i = 0; i < collide.Length; i++) collide[i] = -1;
-			for (i = 0; i < landmark.Length; i++) landmark[i] = -1;
+			
+			if (nHash > _collide.Length) {
+				Array.Resize(ref _collide, nHash);
+				Array.Resize(ref _landmark, nHash);
+			}
+			
+			for (i = 0; i < nHash; i++) _collide[i] = -1;
+			for (i = 0; i < nHash; i++) _landmark[i] = -1;
 			int hv;
 			
 			for (i = 0; i < originLength-NHASH; i += NHASH) {
 				_rollingHash.Init(origin, i);
 				hv = (int) (_rollingHash.Value() % nHash);
-				collide[i/NHASH] = landmark[hv];
-				landmark[hv] = i/NHASH;
+				_collide[i/NHASH] = _landmark[hv];
+				_landmark[hv] = i/NHASH;
 			}
 
 			int _base = 0;
@@ -62,7 +69,7 @@ namespace Fossil
 				while (true) {
 					int limit = 250;
 					hv = (int) (_rollingHash.Value() % nHash);
-					iBlock = landmark[hv];
+					iBlock = _landmark[hv];
 					while (iBlock >= 0 && (limit--)>0 ) {
 						int cnt, litsz;
 						int j, k, x, y;
@@ -96,7 +103,7 @@ namespace Fossil
 						}
 
 						// Check the next matching block
-						iBlock = collide[iBlock];
+						iBlock = _collide[iBlock];
 					}
 
 					// We have a copy command that does not cause the delta to be larger
