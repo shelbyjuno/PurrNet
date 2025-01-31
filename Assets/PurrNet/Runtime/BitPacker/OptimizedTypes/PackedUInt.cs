@@ -65,7 +65,7 @@ namespace PurrNet.Packing
     }
     
     [Serializable]
-    public struct PackedUInt
+    public struct PackedUInt : IEquatable<PackedUInt>
     {
         public uint value;
         
@@ -77,6 +77,21 @@ namespace PurrNet.Packing
         public static implicit operator PackedUInt(uint value) => new PackedUInt(value);
         
         public static implicit operator uint(PackedUInt value) => value.value;
+
+        public bool Equals(PackedUInt other)
+        {
+            return value == other.value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PackedUInt other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)value;
+        }
     }
     
     [Serializable]

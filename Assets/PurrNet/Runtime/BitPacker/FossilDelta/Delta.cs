@@ -7,8 +7,7 @@ namespace Fossil
 	public enum DeltaOp : byte
 	{
 		At,
-		Colon,
-		Semicolon
+		Colon
 	}
 	
 	public static class Delta
@@ -16,13 +15,13 @@ namespace Fossil
 		[UsedByIL]
 		static void DeltaOpWrite(BitPacker zDelta, DeltaOp op)
 		{
-			zDelta.WriteBits((byte)op, 2);
+			zDelta.WriteBits((byte)op, 1);
 		}
 		
 		[UsedByIL]
 		static void DeltaOpReader(BitPacker zDelta, ref DeltaOp op)
 		{
-			op = (DeltaOp)zDelta.ReadBits(2);
+			op = (DeltaOp)zDelta.ReadBits(1);
 		}
 		
 		public const ushort NHASH = 16;
@@ -34,8 +33,6 @@ namespace Fossil
 			
 			var originLength = origin.Length;
 			var targetLength = target.Length;
-
-			Packer<PackedUInt>.Write(zDelta, (uint)targetLength);
 
 			// Compute the hash table used to locate matching sections in the source.
 			int nHash = originLength / NHASH;
@@ -88,7 +85,8 @@ namespace Fossil
 						// sz will hold the number of bytes needed to encode the "insert"
 						// command and the copy command, not counting the "insert" text.
 						
-						if (cnt > bestCnt) {
+						const int MIN_MATCH_LENGTH = 4;
+						if (cnt >= MIN_MATCH_LENGTH &&  cnt > bestCnt) {
 							// Remember this match only if it is the best so far and it
 							// does not increase the file size.
 							bestCnt = cnt;
@@ -114,7 +112,6 @@ namespace Fossil
 						Packer<PackedUInt>.Write(zDelta, (uint)bestCnt);
 						Packer<DeltaOp>.Write(zDelta, DeltaOp.At);
 						Packer<PackedUInt>.Write(zDelta, (uint)bestOfst);
-						
 						if (bestOfst + bestCnt -1 > lastRead) {
 							lastRead = bestOfst + bestCnt - 1;
 						}
@@ -140,109 +137,41 @@ namespace Fossil
 			// Output a final "insert" record to get all the text at the end of
 			// the file that does not match anything in the source.
 			if(_base < targetLength) {
+				var remainingBytes = target.Slice(_base, targetLength-_base);
 				Packer<PackedUInt>.Write(zDelta, (uint)(targetLength-_base));
 				Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
-				zDelta.WriteBytes(target.Slice(_base, targetLength-_base));
+				zDelta.WriteBytes(remainingBytes);
 			}
-			
-			Packer<PackedUInt>.Write(zDelta, Checksum(target));
-			Packer<DeltaOp>.Write(zDelta, DeltaOp.Semicolon);
 		}
 		
-		static DeltaOp ReadOp(this BitPacker delta) {
-			DeltaOp _op = default;
-			DeltaOpReader(delta, ref _op);
-			return _op;
-		}
-
 		public static void Apply(ReadOnlySpan<byte> origin, BitPacker delta, ReadOnlySpan<byte> deltaRaw, BitPacker zOut) {
-			int limit, total = 0;
-			uint lenSrc = (uint) origin.Length;
-			uint lenDelta = (uint) deltaRaw.Length;
-
+			uint lenDelta = (uint) deltaRaw.Length * 8;
 			PackedUInt cache = default;
-			
-			Packer<PackedUInt>.Read(delta, ref cache);
-			limit = (int)(uint)cache;
-			
-			while(delta.positionInBytes < lenDelta) {
-				int cnt, ofst;
-				
+    
+			while(delta.positionInBits < lenDelta) {
+				uint cnt, ofst;
+        
 				Packer<PackedUInt>.Read(delta, ref cache);
-				cnt = (int)(uint)cache;
+				cnt = cache;
 
-				var op = delta.ReadOp();
+				DeltaOp op = default;
+				Packer<DeltaOp>.Read(delta, ref op);
+        
 				switch (op) 
 				{
-				case DeltaOp.At:
-					Packer<PackedUInt>.Read(delta, ref cache);
-					ofst = (int)(uint)cache;
+					case DeltaOp.At:
+						Packer<PackedUInt>.Read(delta, ref cache);
+						ofst = cache;
+						zOut.WriteBytes(origin.Slice((int)ofst, (int)cnt));
+						break;
 
-					total += cnt;
-					if (total > limit)
-						throw new Exception("copy exceeds output file size");
-					if (ofst+cnt > lenSrc)
-						throw new Exception("copy extends past end of input");
-					zOut.WriteBytes(origin.Slice(ofst, cnt));
-					break;
-
-				case DeltaOp.Colon:
-					total += cnt;
-					if (total > limit)
-						throw new Exception("insert command gives an output larger than predicted");
-					
-					var deltapos = delta.positionInBytes;
-					zOut.WriteBytes(deltaRaw.Slice(deltapos, cnt));
-					delta.SkipBytes(cnt);
-					break;
-				case DeltaOp.Semicolon:
-					return;
-				default:
-					throw new Exception($"unknown delta operator '{op}'");
+					case DeltaOp.Colon:
+						zOut.WriteBytes(delta, (int)cnt);
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
 				}
 			}
 		}
-
-		// Return a 32-bit checksum of the array.
-		static uint Checksum(ReadOnlySpan<byte> arr, int count = 0, uint sum = 0) {
-			uint sum0 = 0, sum1 = 0, sum2 = 0, N = (uint) (count == 0 ? arr.Length : count);
-
-			int z = 0;
-
-			while(N >= 16){
-				sum0 += (uint) arr[z+0] + arr[z+4] + arr[z+8]  + arr[z+12];
-				sum1 += (uint) arr[z+1] + arr[z+5] + arr[z+9]  + arr[z+13];
-				sum2 += (uint) arr[z+2] + arr[z+6] + arr[z+10] + arr[z+14];
-				sum  += (uint) arr[z+3] + arr[z+7] + arr[z+11] + arr[z+15];
-				z += 16;
-				N -= 16;
-			}
-			while(N >= 4){
-				sum0 += arr[z+0];
-				sum1 += arr[z+1];
-				sum2 += arr[z+2];
-				sum  += arr[z+3];
-				z += 4;
-				N -= 4;
-			}
-
-			sum += (sum2 << 8) + (sum1 << 16) + (sum0 << 24);
-			switch (N&3) {
-			case 3:
-				sum += (uint) (arr [z + 2] << 8);
-				sum += (uint) (arr [z + 1] << 16);
-				sum += (uint) (arr [z + 0] << 24);
-				break;
-			case 2:
-				sum += (uint) (arr [z + 1] << 16);
-				sum += (uint) (arr [z + 0] << 24);
-				break;
-			case 1:
-				sum += (uint) (arr [z + 0] << 24);
-				break;
-			}
-			return sum;
-		}
-
 	}
 }

@@ -1,4 +1,5 @@
 using PurrNet.Packing;
+using UnityEngine;
 
 namespace PurrNet
 {
@@ -25,10 +26,10 @@ namespace PurrNet
             Packer<long>.Write(target, 42);
             Packer<long>.Write(target, 6942);
             Packer<long>.Write(target, 666);
-            Packer<long>.Write(target, 666);
-            Packer<long>.Write(target, 666);
-            Packer<long>.Write(target, 666);
-            Packer<long>.Write(target, 666);
+            Packer<long>.Write(target, 58);
+            Packer<long>.Write(target, 66586);
+            Packer<long>.Write(target, 86);
+            Packer<long>.Write(target, 68);
             Packer<long>.Write(target, 666);
             
             using var delta = BitPackerPool.Get();
@@ -40,6 +41,7 @@ namespace PurrNet
             
             ApplyDelta(origin, delta, result);
             
+            Debug.Log(origin.ToByteData().ToString());
             Debug.Log(target.ToByteData().ToString());
             Debug.Log(result.ToByteData().ToString());
         }*/

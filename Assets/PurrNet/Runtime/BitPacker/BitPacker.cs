@@ -239,6 +239,22 @@ namespace PurrNet.Packing
         {
             WriteBytes(byteData.span);
         }
+
+        public void WriteBytes(BitPacker other, int count)
+        {
+            EnsureBitsExist(count * 8);
+
+            int excess = count % 8;
+            int fullChunks = count / 8;
+
+            // Process excess bytes (remaining bytes before full 64-bit chunks)
+            for (int i = 0; i < excess; i++)
+                WriteBits(other.ReadBits(8), 8);
+
+            // Process full 64-bit chunks
+            for (int i = 0; i < fullChunks; i++)
+                WriteBits(other.ReadBits(64), 64);
+        }
         
         public void WriteBytes(ReadOnlySpan<byte> bytes)
         {
