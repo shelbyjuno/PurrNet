@@ -145,10 +145,9 @@ namespace Fossil
 			// Output a final "insert" record to get all the text at the end of
 			// the file that does not match anything in the source.
 			if(_base < targetLength) {
-				var remainingBytes = target.Slice(_base, targetLength-_base);
 				Packer<PackedUInt>.Write(zDelta, (uint)(targetLength-_base));
 				Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
-				zDelta.WriteBytes(remainingBytes);
+				zDelta.WriteBytes(target.Slice(_base, targetLength-_base));
 			}
 			
 			Packer<PackedUInt>.Write(zDelta, Checksum(target));
@@ -181,7 +180,7 @@ namespace Fossil
 
 					case DeltaOp.Colon:
 						if (delta.positionInBits + cnt * 8 > deltaRaw.Length * 8)
-							throw new Exception($"Insert command exceeds delta bounds: pos={delta.positionInBits}, count={cnt}, length={deltaRaw.Length}");
+							throw new Exception($"Insert command exceeds delta bounds: pos={delta.positionInBits}, count={cnt*8}, length={deltaRaw.Length*8}");
 						zOut.WriteBytes(delta, (int)cnt);
 						break;
 

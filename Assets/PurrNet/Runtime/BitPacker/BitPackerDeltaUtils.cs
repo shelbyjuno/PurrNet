@@ -25,13 +25,14 @@ namespace PurrNet
             result.ResetPositionAndMode(false);
 
             var o = origin.ToByteData().span;
-            var t = delta.ToByteData().span;
 
             var unpickled = LZ4Pickler.Unpickle(delta.ToByteData().span);
 
             delta.ResetPositionAndMode(true);
             delta.WriteBytes(unpickled);
             delta.ResetPositionAndMode(true);
+            
+            var t = delta.ToByteData().span;
 
             Fossil.Delta.Apply(o, delta, t, result);
         }
