@@ -182,7 +182,7 @@ namespace Fossil
 
 					case DeltaOp.Semicolon: return;
 					default:
-						throw new ArgumentOutOfRangeException();
+						throw new Exception($"Unknown delta operation: {op}");
 				}
 			}
 		}
