@@ -31,7 +31,8 @@ namespace PurrNet
 
             delta.ResetPositionAndMode(true);
             delta.WriteBytes(unpickled);
-            
+            delta.ResetPositionAndMode(true);
+
             Fossil.Delta.Apply(o, delta, t, result);
         }
     }
