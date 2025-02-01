@@ -173,10 +173,15 @@ namespace Fossil
 					case DeltaOp.At:
 						Packer<PackedUInt>.Read(delta, ref cache);
 						ofst = cache;
+						
+						if (ofst + cnt > origin.Length)
+							throw new Exception($"Copy command exceeds origin bounds: offset={ofst}, count={cnt}, length={origin.Length}");
 						zOut.WriteBytes(origin.Slice((int)ofst, (int)cnt));
 						break;
 
 					case DeltaOp.Colon:
+						if (delta.positionInBytes + cnt > deltaRaw.Length)
+							throw new Exception($"Insert command exceeds delta bounds: pos={delta.positionInBytes}, count={cnt}, length={deltaRaw.Length}");
 						zOut.WriteBytes(delta, (int)cnt);
 						break;
 
