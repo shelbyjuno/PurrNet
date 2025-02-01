@@ -1,10 +1,11 @@
 using System;
 using PurrNet.Modules;
 using PurrNet.Transports;
+using UnityEngine.Scripting;
 
 namespace PurrNet
 {
-    public class ServerRpcAttribute : Attribute
+    public class ServerRpcAttribute : PreserveAttribute
     {
         [UsedByIL]
         public ServerRpcAttribute(

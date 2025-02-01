@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 
 namespace PurrNet
 {
@@ -7,6 +8,43 @@ namespace PurrNet
     [CustomPropertyDrawer(typeof(PurrSceneAttribute))]
     public class PurrSceneDrawer : PropertyDrawer
     {
+        private static Dictionary<string, SceneAsset> sceneCache = new Dictionary<string, SceneAsset>();
+        private static double lastCacheUpdate;
+        private const double CACHE_LIFETIME = 30.0;
+
+        private static void UpdateSceneCache()
+        {
+            double currentTime = EditorApplication.timeSinceStartup;
+            if (currentTime - lastCacheUpdate < CACHE_LIFETIME && sceneCache.Count > 0)
+            {
+                return;
+            }
+
+            sceneCache.Clear();
+            string[] sceneGuids = AssetDatabase.FindAssets("t:SceneAsset");
+            
+            foreach (string guid in sceneGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                SceneAsset scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+                if (scene != null && !sceneCache.ContainsKey(scene.name))
+                {
+                    sceneCache[scene.name] = scene;
+                }
+            }
+
+            lastCacheUpdate = currentTime;
+        }
+
+        private static SceneAsset GetSceneAssetFromName(string sceneName)
+        {
+            if (string.IsNullOrEmpty(sceneName))
+                return null;
+
+            UpdateSceneCache();
+            return sceneCache.TryGetValue(sceneName, out SceneAsset scene) ? scene : null;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (property.propertyType != SerializedPropertyType.String)
@@ -17,23 +55,9 @@ namespace PurrNet
 
             EditorGUI.BeginProperty(position, label, property);
 
-            SceneAsset sceneObj = null;
-            if (!string.IsNullOrEmpty(property.stringValue))
-            {
-                // Find the scene asset by searching for the stored scene name
-                string[] sceneGuids = AssetDatabase.FindAssets("t:SceneAsset");
-                foreach (string guid in sceneGuids)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(guid);
-                    SceneAsset scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
-                    if (scene.name == property.stringValue)
-                    {
-                        sceneObj = scene;
-                        break;
-                    }
-                }
-            }
+            SceneAsset sceneObj = GetSceneAssetFromName(property.stringValue);
 
+            EditorGUI.BeginChangeCheck();
             var newScene = EditorGUI.ObjectField(
                 position,
                 label,
@@ -42,17 +66,9 @@ namespace PurrNet
                 false
             ) as SceneAsset;
 
-            if (newScene != null)
+            if (EditorGUI.EndChangeCheck())
             {
-                string sceneName = newScene.name;
-                if (sceneName != property.stringValue)
-                {
-                    property.stringValue = sceneName;
-                }
-            }
-            else if (sceneObj != null)
-            {
-                property.stringValue = "";
+                property.stringValue = newScene != null ? newScene.name : "";
             }
 
             EditorGUI.EndProperty();

@@ -26,7 +26,7 @@ namespace PurrNet.Modules
         private readonly List<NetworkIdentity> _spawnedIdentities = new();
         private readonly Dictionary<NetworkID, NetworkIdentity> _spawnedIdentitiesMap = new();
         
-        private int _nextId;
+        private uint _nextId;
 
         private bool _areSceneObjectsReady;
         
@@ -501,6 +501,9 @@ namespace PurrNet.Modules
 
         private void OnPlayerLoadedScene(PlayerID player, SceneID scene, bool asserver)
         {
+            if (!_asServer)
+                return;
+            
             if (scene != _sceneId)
                 return;
 
@@ -793,13 +796,13 @@ namespace PurrNet.Modules
             for (var i = 0; i < siblings.Count; i++)
             {
                 var sibling = siblings[i];
-                sibling.SetID(new NetworkID(baseNid, i));
+                sibling.SetID(new NetworkID(baseNid, (uint)i));
                 sibling.SetIdentity(_manager, this, _sceneId, _asServer);
                 RegisterIdentity(sibling, true);
             }
 
             // update next id
-            _nextId += siblings.list.Count;
+            _nextId += (uint)siblings.list.Count;
             baseNid = new NetworkID(_nextId, baseNid.scope);
             
             // handle children

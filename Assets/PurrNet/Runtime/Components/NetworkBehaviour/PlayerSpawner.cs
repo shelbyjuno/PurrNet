@@ -16,15 +16,24 @@ namespace PurrNet
         
         private void Awake()
         {
+            CleanupSpawnPoints();
+        }
+
+        private void CleanupSpawnPoints()
+        {
+            bool hadNullEntry = false;
             for (int i = 0; i < spawnPoints.Count; i++)
             {
                 if (!spawnPoints[i])
                 {
-                    PurrLogger.LogError($"Spawn point at index {i} is null. Removing it from the list.", this);
+                    hadNullEntry = true;
                     spawnPoints.RemoveAt(i);
                     i--;
                 }
             }
+            
+            if (hadNullEntry)
+                PurrLogger.LogWarning($"Some spawn points were invalid and have been cleaned up.", this);
         }
 
         private void OnValidate()
@@ -92,6 +101,8 @@ namespace PurrNet
                 return;
             
             GameObject newPlayer;
+            
+            CleanupSpawnPoints();
             
             if (spawnPoints.Count > 0)
             {

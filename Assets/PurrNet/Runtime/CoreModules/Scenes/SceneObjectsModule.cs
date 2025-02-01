@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace PurrNet.Modules
@@ -10,34 +11,43 @@ namespace PurrNet.Modules
         public static void GetSceneIdentities(Scene scene, List<NetworkIdentity> networkIdentities)
         {
             var rootGameObjects = scene.GetRootGameObjects();
-
+            
+            PurrSceneInfo sceneInfo = null;
+            
             foreach (var rootObject in rootGameObjects)
             {
-                rootObject.GetComponentsInChildren(true, _sceneIdentities);
+                if (rootObject.TryGetComponent<PurrSceneInfo>(out var si))
+                {
+                    sceneInfo = si;
+                    break;
+                }
+            }
+
+            if (sceneInfo)
+            {
+                var copy = new List<GameObject>(sceneInfo.rootGameObjects);
+                
+                // add any missing root objects
+                foreach (var rootObject in rootGameObjects)
+                {
+                    if (copy.Contains(rootObject)) continue;
+                    copy.Add(rootObject);
+                }
+                
+                rootGameObjects = copy.ToArray();
+            }
+            
+            foreach (var rootObject in rootGameObjects)
+            {
+                if (rootObject.scene.handle != scene.handle) continue;
+                
+                rootObject.gameObject.GetComponentsInChildren(true, _sceneIdentities);
                 
                 if (_sceneIdentities.Count == 0) continue;
                 
-                rootObject.MakeSureAwakeIsCalled();
+                rootObject.gameObject.MakeSureAwakeIsCalled();
                 networkIdentities.AddRange(_sceneIdentities);
             }
-        }
-        
-        public static List<NetworkIdentity> GetSceneIdentities(Scene scene)
-        {
-            var rootGameObjects = scene.GetRootGameObjects();
-            var networkIdentities = new List<NetworkIdentity>();
-
-            foreach (var rootObject in rootGameObjects)
-            {
-                rootObject.GetComponentsInChildren(true, _sceneIdentities);
-                
-                if (_sceneIdentities.Count == 0) continue;
-                
-                rootObject.MakeSureAwakeIsCalled();
-                networkIdentities.AddRange(_sceneIdentities);
-            }
-
-            return networkIdentities;
         }
     }
 }

@@ -359,6 +359,42 @@ namespace PurrNet
             return false;
         }
 
+        static void RefreshHashes()
+        {
+            // ReSharper disable once Unity.UnknownResource
+            var hashes = Resources.Load<TextAsset>("PurrHashes");
+
+            if (hashes == null)
+                return;
+            
+            Hasher.ClearState();
+
+            var lines = hashes.text.Split('\n');
+            
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                if (string.IsNullOrEmpty(line))
+                    continue;
+                
+                var parts = line.Split(';');
+                if (parts.Length != 2)
+                    continue;
+                
+                var fullTypeName = parts[0];
+                var hash = uint.Parse(parts[1]);
+                
+                var type = Type.GetType(fullTypeName);
+
+                if (type == null)
+                    continue;
+                
+                Hasher.Load(type, hash);
+            }
+
+            Hasher.FinishLoad(lines.Length);
+        }
+
         private void Awake()
         {
             if (main && main != this)
@@ -388,6 +424,7 @@ namespace PurrNet
             }
             
             main = this;
+            RefreshHashes();
 
             //Time.fixedDeltaTime = 1f / _tickRate;
             Application.runInBackground = true;
@@ -417,25 +454,6 @@ namespace PurrNet
                 return;
             transport = gameObject.AddComponent<UDPTransport>();
         }
-
-#if UNITY_EDITOR
-        //Below is no longer needed, as we don't need the fixed delta time to be set to the tick rate.
-        /*private void OnValidate()
-        {
-            if (!gameObject.scene.isLoaded)
-                return;
-            
-            float tickRate = 1f / _tickRate;
-            
-            if (Mathf.Approximately(Time.fixedDeltaTime, tickRate))
-                return;
-
-            Time.fixedDeltaTime = tickRate;
-            EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-        }*/
-#endif
 
         /// <summary>
         /// Gets the module of the given type.
@@ -856,6 +874,9 @@ namespace PurrNet
         {
             _serverModules.TriggerOnUpdate();
             _clientModules.TriggerOnUpdate();
+            
+            if (_transport) 
+                _transport.transport.UnityUpdate(Time.deltaTime);
         }
 
         private void OnTick()
@@ -870,7 +891,7 @@ namespace PurrNet
                 _clientModules.TriggerOnPreFixedUpdate();
             
             if (_transport) 
-                _transport.transport.UpdateEvents(tickModule.tickDelta);
+                _transport.transport.TickUpdate(tickModule.tickDelta);
             
             if (serverConnected)
                 _serverModules.TriggerOnFixedUpdate();

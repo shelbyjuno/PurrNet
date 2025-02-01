@@ -1,4 +1,4 @@
-# PurrNet - Unity3D
+# PurrNet - Unity3D  
 
 ![9ed350a5-2701-4163-b19c-89618669479c](https://github.com/user-attachments/assets/25cdde72-47d3-4510-ba82-7348b8dba792)
 
@@ -13,7 +13,7 @@ Docs (source): https://github.com/BlenMiner/PurrNet-Docs
 You can install PurrNet through Unity's Package Manager by adding a package through this URL:
 
 ```bash
-https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release
+https://github.com/PurrNet/PurrNet.git?path=/Assets/PurrNet#release
 ```
 
 You can also fallback to the asset store but versions will be behind.

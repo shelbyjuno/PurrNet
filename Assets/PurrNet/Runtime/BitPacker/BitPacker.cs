@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using JetBrains.Annotations;
@@ -72,6 +71,21 @@ namespace PurrNet.Packing
         public void ResetMode(bool readMode)
         {
             _isReading = readMode;
+        }
+        
+        public void SetBitPosition(int bitPosition)
+        {
+            positionInBits = bitPosition;
+        }
+        
+        public void SkipBytes(int skip)
+        {
+            positionInBits += skip * 8;
+        }
+        
+        public void SkipBytes(uint skip)
+        {
+            positionInBits += (int)skip * 8;
         }
         
         public void ResetPositionAndMode(bool readMode)
@@ -225,6 +239,22 @@ namespace PurrNet.Packing
         {
             WriteBytes(byteData.span);
         }
+
+        public void WriteBytes(BitPacker other, int count)
+        {
+            EnsureBitsExist(count * 8);
+
+            int fullChunks = count / 8;
+            int excess = count % 8;
+
+            // Process full 64-bit chunks
+            for (int i = 0; i < fullChunks; i++)
+                WriteBits(other.ReadBits(64), 64);
+            
+            // Process excess bytes (remaining bytes before full 64-bit chunks)
+            for (int i = 0; i < excess; i++)
+                WriteBits(other.ReadBits(8), 8);
+        }
         
         public void WriteBytes(ReadOnlySpan<byte> bytes)
         {
@@ -286,6 +316,11 @@ namespace PurrNet.Packing
             
             ReadBytes(bytes);
             return utf8.GetString(bytes);
+        }
+
+        public char ReadChar()
+        {
+            return (char)ReadBits(8);
         }
     }
 }

@@ -146,7 +146,12 @@ namespace PurrNet.Transports
             onConnected?.Invoke(new Connection(0), false);
         }
         
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
+        {
+            
+        }
+
+        public void UnityUpdate(float delta)
         {
             _server.ProcessMessageQueue();
             _client.ProcessMessageQueue();

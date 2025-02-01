@@ -95,6 +95,7 @@ namespace PurrNet.Transports
         }
     }
     
+    [DefaultExecutionOrder(-100)]
     public class CompositeTransport : GenericTransport, ITransport
     {
         [SerializeField] private bool _ensureAllServersStart;
@@ -190,8 +191,15 @@ namespace PurrNet.Transports
             return conn;
         }
 
+        private bool _wasAwakeCalled;
+
         private void Awake()
         {
+            if (_wasAwakeCalled)
+                return;
+            
+            _wasAwakeCalled = true;
+            
             if (_clientTransport == null)
             {
                 for (int i = 0; i < _transports.Length; i++)
@@ -207,14 +215,26 @@ namespace PurrNet.Transports
             SetupEvents();
         }
 
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
         {
             for (int i = 0; i < _transports.Length; i++)
             {
                 if (_transports[i])
-                    _transports[i].transport.UpdateEvents(delta);
+                    _transports[i].transport.TickUpdate(delta);
             }
 
+            TriggerConnectionStateEvent(true);
+            TriggerConnectionStateEvent(false);
+        }
+        
+        public void UnityUpdate(float delta)
+        {
+            for (int i = 0; i < _transports.Length; i++)
+            {
+                if (_transports[i])
+                    _transports[i].transport.UnityUpdate(delta);
+            }
+            
             TriggerConnectionStateEvent(true);
             TriggerConnectionStateEvent(false);
         }
@@ -332,6 +352,8 @@ namespace PurrNet.Transports
 
         protected override void StartClientInternal()
         {
+            Awake();
+
             if (!_clientTransport || !_clientTransport.isSupported)
                 throw new NotSupportedException("No supported transport found for client.");
 
@@ -352,6 +374,8 @@ namespace PurrNet.Transports
 
         protected override void StartServerInternal()
         {
+            Awake();
+            
             if (_internalIsListening)
                 return;
             

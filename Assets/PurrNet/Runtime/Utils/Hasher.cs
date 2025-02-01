@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using JetBrains.Annotations;
 using PurrNet.Logging;
 using PurrNet.Modules;
@@ -8,10 +9,29 @@ namespace PurrNet.Utils
 {
     public class Hasher
     {
+        private const uint FNV_offset_basis32 = 2166136261;
+        private const uint FNV_prime32 = 16777619;
+        
         static readonly Dictionary<Type, uint> _hashes = new Dictionary<Type, uint>();
         static readonly Dictionary<uint, Type> _decoder = new Dictionary<uint, Type>();
         
         static uint _hashCounter;
+        
+        public static uint ActualHash(string txt)
+        {
+            unchecked
+            {
+                uint hash = FNV_offset_basis32;
+                for (int i = 0; i < txt.Length; i++)
+                {
+                    uint ch = txt[i];
+                    hash *= FNV_prime32;
+                    hash ^= ch;
+                }
+
+                return hash;
+            }
+        }
         
         public static Type ResolveType(uint hash)
         {
@@ -26,6 +46,13 @@ namespace PurrNet.Utils
         public static bool TryGetType(uint hash, out Type type)
         {
             return _decoder.TryGetValue(hash, out type);
+        }
+        
+        public static uint Load(Type type, uint hash)
+        {
+            _hashes[type] = hash;
+            _decoder[hash] = type;
+            return hash;
         }
         
         [UsedImplicitly]
@@ -54,6 +81,33 @@ namespace PurrNet.Utils
         public static uint GetStableHashU32<T>()
         {
             return GetStableHashU32(typeof(T));
+        }
+        
+        public static string GetAllHashesAsText()
+        {
+            var builder = new StringBuilder();
+            
+            foreach (var pair in _hashes)
+            {
+                builder.Append(pair.Key.AssemblyQualifiedName);
+                builder.Append(";");
+                builder.Append(pair.Value);
+                builder.Append('\n');
+            }
+            
+            return builder.ToString();
+        }
+
+        public static void ClearState()
+        {
+            _hashes.Clear();
+            _decoder.Clear();
+            _hashCounter = 0;
+        }
+
+        public static void FinishLoad(int linesLength)
+        {
+            _hashCounter += (uint)linesLength;
         }
     }
 }

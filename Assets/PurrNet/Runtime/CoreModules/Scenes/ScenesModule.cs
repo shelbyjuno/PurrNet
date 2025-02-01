@@ -399,13 +399,44 @@ namespace PurrNet.Modules
         private void OnSceneActionsBatch(PlayerID player, SceneActionsBatch data, bool asServer)
         {
             if (_networkManager.isServer || _asServer)
+            {
+                var serverModule = _networkManager.GetModule<ScenesModule>(true);
+                for (var i = 0; i < data.actions.Count; i++)
+                {
+                    var action = data.actions[i];
+
+                    switch (action.type)
+                    {
+                        case SceneActionType.Load:
+                        {
+                            if (_scenes.ContainsKey(action.loadSceneAction.sceneID))
+                                continue;
+                            
+                            if (serverModule.TryGetSceneState(action.loadSceneAction.sceneID, out var state))
+                                AddScene(state.scene, state.settings, action.loadSceneAction.sceneID);
+                            break;
+                        }
+                        case SceneActionType.Unload:
+                        {
+                            if (!_scenes.ContainsKey(action.unloadSceneAction.sceneID))
+                                continue;
+                            
+                            if (serverModule.TryGetSceneState(action.unloadSceneAction.sceneID, out var state))
+                                RemoveScene(state.scene);
+                            break;
+                        }
+                        
+                        case SceneActionType.SetActive:
+                        default:
+                            break;
+                    }
+                }
+                
                 return;
+            }
             
             for (var i = 0; i < data.actions.Count; i++)
-            {
-                //PurrLogger.Log($"Received action {data.actions[i].type} from {player} {asServer}");
                 _actionsQueue.Enqueue(data.actions[i]);
-            }
             
             HandleNextSceneAction();
         }

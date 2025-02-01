@@ -13,7 +13,9 @@ namespace PurrNet
         PositionRotation,
         PositionRotationParent,
         Scene,
-        SceneParent
+        SceneParent,
+        Parameters,
+        ParametersWithPosRot
     }
     
     internal readonly struct InstantiateData<T> where T : Object
@@ -26,7 +28,11 @@ namespace PurrNet
         public readonly Scene scene;
         public readonly bool instantiateInWorldSpace;
         
-        public InstantiateData(T original)
+#if UNITY_6000_0_35
+        public readonly InstantiateParameters parameters;
+#endif
+        
+        public InstantiateData(T original) : this()
         {
             type = InstantiateType.Default;
             this.original = original;
@@ -37,7 +43,7 @@ namespace PurrNet
             instantiateInWorldSpace = false;
         }
         
-        public InstantiateData(T original, Transform parent, bool instantiateInWorldSpace)
+        public InstantiateData(T original, Transform parent, bool instantiateInWorldSpace) : this()
         {
             type = InstantiateType.Parent;
             this.original = original;
@@ -48,7 +54,7 @@ namespace PurrNet
             this.instantiateInWorldSpace = instantiateInWorldSpace;
         }
         
-        public InstantiateData(T original, Vector3 position, Quaternion rotation)
+        public InstantiateData(T original, Vector3 position, Quaternion rotation) : this()
         {
             type = InstantiateType.PositionRotation;
             this.original = original;
@@ -59,7 +65,7 @@ namespace PurrNet
             instantiateInWorldSpace = false;
         }
         
-        public InstantiateData(T original, Vector3 position, Quaternion rotation, Transform parent)
+        public InstantiateData(T original, Vector3 position, Quaternion rotation, Transform parent) : this()
         {
             type = InstantiateType.PositionRotationParent;
             this.original = original;
@@ -70,7 +76,7 @@ namespace PurrNet
             instantiateInWorldSpace = false;
         }
         
-        public InstantiateData(T original, Scene scene)
+        public InstantiateData(T original, Scene scene) : this()
         {
             type = InstantiateType.Scene;
             this.original = original;
@@ -81,7 +87,7 @@ namespace PurrNet
             instantiateInWorldSpace = false;
         }
         
-        public InstantiateData(T original, Transform parent)
+        public InstantiateData(T original, Transform parent) : this()
         {
             type = InstantiateType.SceneParent;
             this.original = original;
@@ -91,6 +97,32 @@ namespace PurrNet
             scene = default;
             instantiateInWorldSpace = false;
         }
+        
+#if UNITY_6000_0_35
+        public InstantiateData(T original, InstantiateParameters parameters)
+        {
+            type = InstantiateType.Parameters;
+            this.original = original;
+            position = Vector3.zero;
+            rotation = Quaternion.identity;
+            this.parent = parameters.parent;
+            this.scene = parameters.scene;
+            instantiateInWorldSpace = parameters.worldSpace;
+            this.parameters = parameters;
+        }
+        
+        public InstantiateData(T original, Vector3 pos, Quaternion rot, InstantiateParameters parameters)
+        {
+            type = InstantiateType.ParametersWithPosRot;
+            this.original = original;
+            position = pos;
+            rotation = rot;
+            this.parent = parameters.parent;
+            this.scene = parameters.scene;
+            instantiateInWorldSpace = parameters.worldSpace;
+            this.parameters = parameters;
+        }
+#endif
         
         public bool TryGetHierarchy(out HierarchyV2 result)
         {
@@ -183,8 +215,31 @@ namespace PurrNet
                     );
                     trs.SetParent(parent);
                     break;
+                case InstantiateType.Parameters:
+                case InstantiateType.ParametersWithPosRot:
+#if UNITY_6000_0_35
+                    bool usePosRot = type == InstantiateType.ParametersWithPosRot;
+                    
+                    if (parameters.worldSpace)
+                    {
+                        trs.SetParent(parameters.parent, true);
+                        trs.SetPositionAndRotation(
+                            usePosRot ? position : prefab.transform.position,
+                            usePosRot ? rotation : prefab.transform.rotation
+                        );
+                    }
+                    else
+                    {
+                        trs.SetParent(parameters.parent);
+                        trs.SetLocalPositionAndRotation(
+                            usePosRot ? position : prefab.transform.localPosition,
+                            usePosRot ? rotation : prefab.transform.localRotation
+                        );
+                    }
+                    break;
+#endif
                 case InstantiateType.Default:
-                case InstantiateType.Scene: 
+                case InstantiateType.Scene:
                     trs.SetPositionAndRotation(
                         prefab.transform.position,
                         prefab.transform.rotation

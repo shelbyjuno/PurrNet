@@ -481,7 +481,7 @@ namespace PurrNet.Transports
             throw new NotImplementedException();
         }
 
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
         {
             _server?.ProcessMessageQueue();
             _client?.ProcessMessageQueue();

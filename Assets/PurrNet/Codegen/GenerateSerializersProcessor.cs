@@ -12,23 +12,23 @@ using Object = UnityEngine.Object;
 
 namespace PurrNet.Codegen
 {
+    public enum HandledGenericTypes
+    {
+        None,
+        List,
+        Array,
+        HashSet,
+        Dictionary,
+        Nullable,
+        Queue,
+        Stack,
+        DisposableList,
+        DisposableHashSet
+    }
+    
     public static class GenerateSerializersProcessor
     {
-        enum HandledGenericTypes
-        {
-            None,
-            List,
-            Array,
-            HashSet,
-            Dictionary,
-            Nullable,
-            Queue,
-            Stack,
-            DisposableList,
-            DisposableHashSet
-        }
-
-        static bool ValideType(TypeReference type)
+        public static bool ValideType(TypeReference type)
         {
             // Check if the type itself is an interface
             if (type.Resolve()?.IsInterface == true)
@@ -80,7 +80,7 @@ namespace PurrNet.Codegen
             return name.Replace("<", "_").Replace(">", "_").Replace(",", "_").Replace(" ", "_").Replace(".", "_").Replace("`", "_").Replace("/", "_").Replace("[", "_I_").Replace("]", "_I_");
         }
         
-        public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, List<DiagnosticMessage> messages)
+        public static void HandleType(bool hashOnly, AssemblyDefinition assembly, TypeReference type, HashSet<string> visited, bool isEditor, List<DiagnosticMessage> messages)
         {
             if (!visited.Add(type.FullName))
                 return;
@@ -131,25 +131,26 @@ namespace PurrNet.Codegen
 
             if (hashOnly)
             {
-                HandleHashOnly(assembly, type, serializerClass);
+                HandleHashOnly(assembly, type, serializerClass, isEditor);
                 return;
             }
 
             if (IsGeneric(type, out var genericT))
             {
-                HandleGenerics(assembly, type, genericT, serializerClass);
+                GenerateDeltaSerializersProcessor.HandleGenericType(assembly, type, genericT, messages);
+                HandleGenerics(assembly, type, genericT, serializerClass, isEditor);
                 return;
             }
             
             if (isNetworkIdentity)
             {
-                HandleNetworkIdentity(assembly, type, serializerClass);
+                HandleNetworkIdentity(assembly, type, serializerClass, isEditor);
                 return;
             }
 
             if (isNetworkModule)
             {
-                HandleNetworkModule(assembly, type, serializerClass);
+                HandleNetworkModule(assembly, type, serializerClass, isEditor);
                 return;
             }
             
@@ -186,16 +187,27 @@ namespace PurrNet.Codegen
             GenerateMethod(false, readMethod, readMethodP, type, read, mainmodule, valueArg);
             serializerClass.Methods.Add(readMethod);
             
-            RegisterSerializersProcessor.HandleType(type.Module, serializerClass, messages);
+            GenerateDeltaSerializersProcessor.HandleType(assembly, type, serializerClass, messages);
+            RegisterSerializersProcessor.HandleType(type.Module, serializerClass, isEditor, messages);
         }
 
-        private static void HandleHashOnly(AssemblyDefinition assembly, TypeReference type, TypeDefinition serializerClass)
+        private static void HandleHashOnly(AssemblyDefinition assembly, TypeReference type, TypeDefinition serializerClass, bool isEditor)
         {
             var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            
             var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
             var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
             var attribute = new CustomAttribute(constructor);
             registerMethod.CustomAttributes.Add(attribute);
+
+            if (isEditor)
+            {
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>().Import(assembly.MainModule);
+                var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
+                var editorAttribute = new CustomAttribute(editorConstructor);
+                registerMethod.CustomAttributes.Add(editorAttribute);
+            }
+            
             attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
             registerMethod.Body = new MethodBody(registerMethod)
             {
@@ -216,13 +228,23 @@ namespace PurrNet.Codegen
         }
 
         private static void HandleNetworkIdentity(AssemblyDefinition assembly, TypeReference type,
-            TypeDefinition serializerClass)
+            TypeDefinition serializerClass, bool isEditor)
         {
             var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
+            
             var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
             var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
             var attribute = new CustomAttribute(constructor);
             registerMethod.CustomAttributes.Add(attribute);
+            
+            if (isEditor)
+            {
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>();
+                var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
+                var editorAttribute = new CustomAttribute(editorConstructor);
+                registerMethod.CustomAttributes.Add(editorAttribute);
+            }
+            
             attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
             registerMethod.Body = new MethodBody(registerMethod)
             {
@@ -235,13 +257,20 @@ namespace PurrNet.Codegen
         }
         
         private static void HandleNetworkModule(AssemblyDefinition assembly, TypeReference type,
-            TypeDefinition serializerClass)
+            TypeDefinition serializerClass, bool isEditor)
         {
             var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
             var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
             var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
             var attribute = new CustomAttribute(constructor);
             registerMethod.CustomAttributes.Add(attribute);
+            if (isEditor)
+            {
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>();
+                var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
+                var editorAttribute = new CustomAttribute(editorConstructor);
+                registerMethod.CustomAttributes.Add(editorAttribute);
+            }
             attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
             registerMethod.Body = new MethodBody(registerMethod)
             {
@@ -254,13 +283,20 @@ namespace PurrNet.Codegen
         }
 
         private static void HandleGenerics(AssemblyDefinition assembly, TypeReference type, HandledGenericTypes genericT,
-            TypeDefinition serializerClass)
+            TypeDefinition serializerClass, bool isEditor)
         {
             var registerMethod = new MethodDefinition("Register", MethodAttributes.Static, assembly.MainModule.TypeSystem.Void);
             var attributeType = assembly.MainModule.GetTypeDefinition<RuntimeInitializeOnLoadMethodAttribute>(); 
             var constructor = attributeType.Resolve().Methods.First(m => m.IsConstructor && m.HasParameters).Import(assembly.MainModule);
             var attribute = new CustomAttribute(constructor);
             registerMethod.CustomAttributes.Add(attribute);
+            if (isEditor)
+            {
+                var editorType = assembly.MainModule.GetTypeDefinition<RegisterPackersAttribute>();
+                var editorConstructor = editorType.Resolve().Methods.First(m => m.IsConstructor && !m.HasParameters).Import(assembly.MainModule);
+                var editorAttribute = new CustomAttribute(editorConstructor);
+                registerMethod.CustomAttributes.Add(editorAttribute);
+            }
             attribute.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, (int)RuntimeInitializeLoadType.AfterAssembliesLoaded));
             registerMethod.Body = new MethodBody(registerMethod)
             {
@@ -638,7 +674,7 @@ namespace PurrNet.Codegen
             il.Append(ret);
         }
         
-        static TypeReference ResolveGenericFieldType(FieldDefinition field, TypeReference declaringType)
+        public static TypeReference ResolveGenericFieldType(FieldDefinition field, TypeReference declaringType)
         {
             var fieldType = field.FieldType;
 
@@ -762,7 +798,7 @@ namespace PurrNet.Codegen
             il.Emit(OpCodes.Ret);
         }
 
-        private static MethodReference CreateGenericMethod(TypeReference packerType, TypeReference type,
+        public static MethodReference CreateGenericMethod(TypeReference packerType, TypeReference type,
             MethodReference writeMethod, ModuleDefinition mainmodule)
         {
             var genericPackerType = new GenericInstanceType(packerType);

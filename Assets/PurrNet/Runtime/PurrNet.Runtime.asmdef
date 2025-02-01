@@ -11,7 +11,9 @@
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "System.Collections.Immutable.dll"
+        "System.Collections.Immutable.dll",
+        "Newtonsoft.Json.dll",
+        "K4os.Compression.LZ4.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

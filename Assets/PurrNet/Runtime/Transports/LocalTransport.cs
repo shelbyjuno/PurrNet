@@ -1,9 +1,10 @@
 using System.Collections.Generic;
-using System.Data;
 using PurrNet.Packing;
+using UnityEngine;
 
 namespace PurrNet.Transports
 {
+    [DefaultExecutionOrder(-100)]
     public class LocalTransport : GenericTransport, ITransport
     {
         public event OnConnected onConnected;
@@ -155,7 +156,7 @@ namespace PurrNet.Transports
             StopClientInternal();
         }
 
-        public void UpdateEvents(float delta)
+        public void TickUpdate(float delta)
         {
             while (_serverQueue.Count > 0)
             {

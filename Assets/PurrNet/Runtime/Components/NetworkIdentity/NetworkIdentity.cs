@@ -180,7 +180,7 @@ namespace PurrNet
         /// <summary>
         /// Unique ObjectId of this object
         /// </summary>
-        public int objectId => id?.id ?? 0;
+        public uint objectId => id?.id ?? 0;
         
         /// <summary>
         /// Scene id of this object.
