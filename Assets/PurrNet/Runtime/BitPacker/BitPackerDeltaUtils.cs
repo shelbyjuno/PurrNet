@@ -1,3 +1,4 @@
+using K4os.Compression.LZ4;
 using PurrNet.Packing;
 
 namespace PurrNet
@@ -12,16 +13,24 @@ namespace PurrNet
             var t = target.ToByteData().span;
             
             Fossil.Delta.Create(o, t, result);
+
+            var pickled = LZ4Pickler.Pickle(result.ToByteData().span);
+            
+            result.ResetPositionAndMode(true);
+            result.WriteBytes(pickled);
         }
         
         public static void ApplyDelta(BitPacker origin, BitPacker delta, BitPacker result)
         {
             result.ResetPositionAndMode(false);
-            
+
             var o = origin.ToByteData().span;
             var t = delta.ToByteData().span;
-            
+
+            var unpickled = LZ4Pickler.Unpickle(delta.ToByteData().span);
+
             delta.ResetPositionAndMode(true);
+            delta.WriteBytes(unpickled);
             
             Fossil.Delta.Apply(o, delta, t, result);
         }
