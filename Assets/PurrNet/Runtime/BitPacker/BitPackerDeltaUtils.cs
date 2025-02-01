@@ -28,7 +28,7 @@ namespace PurrNet
 
             var unpickled = LZ4Pickler.Unpickle(delta.ToByteData().span);
 
-            delta.ResetPositionAndMode(true);
+            delta.ResetPositionAndMode(false);
             delta.WriteBytes(unpickled);
             var t = delta.ToByteData().span;
             delta.ResetPositionAndMode(true);
