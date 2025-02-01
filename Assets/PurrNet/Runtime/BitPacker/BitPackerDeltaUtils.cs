@@ -30,9 +30,8 @@ namespace PurrNet
 
             delta.ResetPositionAndMode(true);
             delta.WriteBytes(unpickled);
-            delta.ResetPositionAndMode(true);
-            
             var t = delta.ToByteData().span;
+            delta.ResetPositionAndMode(true);
 
             Fossil.Delta.Apply(o, delta, t, result);
         }
