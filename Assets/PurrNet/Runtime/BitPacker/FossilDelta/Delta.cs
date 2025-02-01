@@ -37,6 +37,16 @@ namespace Fossil
 			
 			var originLength = origin.Length;
 			var targetLength = target.Length;
+			
+			// For very small files, just write target as-is
+			if (originLength <= NHASH) {
+				Packer<PackedUInt>.Write(zDelta, (uint)targetLength);
+				Packer<DeltaOp>.Write(zDelta, DeltaOp.Colon);
+				zDelta.WriteBytes(target);
+				Packer<PackedUInt>.Write(zDelta, Checksum(target));
+				Packer<DeltaOp>.Write(zDelta, DeltaOp.Semicolon);
+				return;
+			}
 
 			// Compute the hash table used to locate matching sections in the source.
 			int nHash = originLength / NHASH;
