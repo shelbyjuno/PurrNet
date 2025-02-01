@@ -180,8 +180,8 @@ namespace Fossil
 						break;
 
 					case DeltaOp.Colon:
-						if (delta.positionInBytes + cnt > deltaRaw.Length)
-							throw new Exception($"Insert command exceeds delta bounds: pos={delta.positionInBytes}, count={cnt}, length={deltaRaw.Length}");
+						if (delta.positionInBits + cnt * 8 > deltaRaw.Length * 8)
+							throw new Exception($"Insert command exceeds delta bounds: pos={delta.positionInBits}, count={cnt}, length={deltaRaw.Length}");
 						zOut.WriteBytes(delta, (int)cnt);
 						break;
 
